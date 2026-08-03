@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <data name="Dashboard" xml:space="preserve"><value>Дашборд</value></data>
+  <data name="Management" xml:space="preserve"><value>Управление</value></data>
+  <data name="People" xml:space="preserve"><value>Пользователи</value></data>
+  <data name="Users" xml:space="preserve"><value>Пользователи</value></data>
+  <data name="Sellers" xml:space="preserve"><value>Продавцы</value></data>
+  <data name="Moderation" xml:space="preserve"><value>Модерация</value></data>
+  <data name="Categories" xml:space="preserve"><value>Категории</value></data>
+  <data name="Orders" xml:space="preserve"><value>Заказы</value></data>
+  <data name="HelpCenter" xml:space="preserve"><value>Центр помощи</value></data>
+  <data name="Search" xml:space="preserve"><value>Поиск</value></data>
+  <data name="SearchPlaceholder" xml:space="preserve"><value>Поиск заказов, товаров...</value></data>
+  <data name="Language" xml:space="preserve"><value>Язык интерфейса</value></data>
+  <data name="Notifications" xml:space="preserve"><value>Уведомления</value></data>
+  <data name="Administrator" xml:space="preserve"><value>Администратор</value></data>
+  <data name="AdminPanel" xml:space="preserve"><value>Админ-панель</value></data>
+  <data name="OrdersManagement" xml:space="preserve"><value>Управление заказами</value></data>
+  <data name="TrackOrdersDesc" xml:space="preserve"><value>Отслеживайте и обрабатывайте заказы маркетплейса.</value></data>
+  <data name="UsersManagement" xml:space="preserve"><value>Управление пользователями</value></data>
+  <data name="ManageUsersDesc" xml:space="preserve"><value>Управляйте пользователями маркетплейса.</value></data>
+  <data name="SellersManagement" xml:space="preserve"><value>Управление продавцами</value></data>
+  <data name="ViewManageSellersDesc" xml:space="preserve"><value>Просматривайте и управляйте продавцами.</value></data>
+  <data name="CategoriesManagement" xml:space="preserve"><value>Управление категориями</value></data>
+  <data name="ManageCategoriesDesc" xml:space="preserve"><value>Управляйте категориями товаров.</value></data>
+  <data name="ModerationQueue" xml:space="preserve"><value>Очередь модерации</value></data>
+  <data name="ModerateProductsDesc" xml:space="preserve"><value>Проверяйте товары перед публикацией.</value></data>
+  <data name="Login" xml:space="preserve"><value>Войти</value></data>
+  <data name="AdminSignIn" xml:space="preserve"><value>Вход администратора</value></data>
+  <data name="NotFound" xml:space="preserve"><value>Не найдено</value></data>
+  <data name="NothingAtAddress" xml:space="preserve"><value>По этому адресу ничего нет.</value></data>
+  <data name="StoreOverview" xml:space="preserve"><value>Обзор магазина</value></data>
+  <data name="DashboardSubtitle" xml:space="preserve"><value>Ключевые показатели маркетплейса за сегодня.</value></data>
+  <data name="GoToModeration" xml:space="preserve"><value>Перейти к модерации</value></data>
+  <data name="Revenue" xml:space="preserve"><value>Оборот</value></data>
+  <data name="NewUsers" xml:space="preserve"><value>Новые пользователи</value></data>
+  <data name="InModeration" xml:space="preserve"><value>На модерации</value></data>
+  <data name="WeeklyGrowth" xml:space="preserve"><value>12,5% за неделю</value></data>
+  <data name="WeeklyRevenueGrowth" xml:space="preserve"><value>8,4% за неделю</value></data>
+  <data name="WeeklyUsersGrowth" xml:space="preserve"><value>5,7% за неделю</value></data>
+  <data name="NeedsAttention" xml:space="preserve"><value>Требуют внимания</value></data>
+  <data name="RecentOrders" xml:space="preserve"><value>Последние заказы</value></data>
+  <data name="AllOrders" xml:space="preserve"><value>Все заказы</value></data>
+  <data name="Order" xml:space="preserve"><value>Заказ</value></data>
+  <data name="Customer" xml:space="preserve"><value>Клиент</value></data>
+  <data name="Amount" xml:space="preserve"><value>Сумма</value></data>
+  <data name="Status" xml:space="preserve"><value>Статус</value></data>
+  <data name="SellerApplications" xml:space="preserve"><value>Заявки продавцов</value></data>
+  <data name="All" xml:space="preserve"><value>Все</value></data>
+  <data name="System" xml:space="preserve"><value>Система</value></data>
+  <data name="Settings" xml:space="preserve"><value>Настройки</value></data>
+  <data name="SettingsSubtitle" xml:space="preserve"><value>Единый центр настройки маркетплейса. По мере развития платформы здесь можно добавлять новые разделы.</value></data>
+  <data name="Planned" xml:space="preserve"><value>Запланировано</value></data>
+  <data name="GeneralSettings" xml:space="preserve"><value>Общие</value></data>
+  <data name="GeneralSettingsDesc" xml:space="preserve"><value>Название маркетплейса, региональные параметры и общее поведение платформы.</value></data>
+  <data name="CatalogSettings" xml:space="preserve"><value>Каталог</value></data>
+  <data name="CatalogSettingsDesc" xml:space="preserve"><value>Настройки товаров, категорий, брендов и модерации.</value></data>
+  <data name="OrderSettings" xml:space="preserve"><value>Заказы и оплата</value></data>
+  <data name="OrderSettingsDesc" xml:space="preserve"><value>Правила обработки заказов, платежей и возвратов.</value></data>
+  <data name="DeliverySettings" xml:space="preserve"><value>Доставка</value></data>
+  <data name="DeliverySettingsDesc" xml:space="preserve"><value>Службы доставки, регионы, тарифы и сроки обработки.</value></data>
+  <data name="NotificationSettings" xml:space="preserve"><value>Уведомления</value></data>
+  <data name="NotificationSettingsDesc" xml:space="preserve"><value>Настройки почтовых, системных и событийных уведомлений.</value></data>
+  <data name="AccessSettings" xml:space="preserve"><value>Доступ и безопасность</value></data>
+  <data name="AccessSettingsDesc" xml:space="preserve"><value>Роли администраторов, разрешения и политики безопасности.</value></data>
+</root>
