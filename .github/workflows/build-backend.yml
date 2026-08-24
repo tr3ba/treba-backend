@@ -1,0 +1,33 @@
+name: Backend Build
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore all projects
+        run: |
+          for proj in $(find src -name "*.csproj"); do
+            echo "Restoring $proj"
+            dotnet restore "$proj"
+          done
+
+      - name: Build all projects
+        run: |
+          for proj in $(find src -name "*.csproj"); do
+            echo "Building $proj"
+            dotnet build "$proj" --configuration Release --no-restore
+          done

@@ -1,18 +1,37 @@
 # Default ignored files
 /shelf/
 /workspace.xml
+
 # Rider ignored files
 /.idea.Rozetka-clone.iml
 /contentModel.xml
 /projectSettingsUpdater.xml
 /modules.xml
+
 # Editor-based HTTP Client requests
 /httpRequests/
+
 # Ignored default folder with query files
 /queries/
+
 # Datasource local storage ignored files
 /dataSources/
 /dataSources.local.xml
 
+# Build
 **/bin/
 **/obj/
+
+# Visual Studio
+.vs/
+**/.vs/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Secrets
+secrets.json
+appsettings.Local.json
