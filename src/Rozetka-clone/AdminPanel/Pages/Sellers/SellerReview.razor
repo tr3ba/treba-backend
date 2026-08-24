@@ -1,0 +1,9 @@
+@page "/sellers/review/{Id:guid}"
+
+<PageTitle>@L["SellerReview"]</PageTitle>
+
+<h3>@L["ReviewSellerApplication"]: @Id</h3>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+}

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <data name="Dashboard" xml:space="preserve"><value>Дашборд</value></data>
+  <data name="Management" xml:space="preserve"><value>Керування</value></data>
+  <data name="People" xml:space="preserve"><value>Користувачі</value></data>
+  <data name="Users" xml:space="preserve"><value>Користувачі</value></data>
+  <data name="Sellers" xml:space="preserve"><value>Продавці</value></data>
+  <data name="Moderation" xml:space="preserve"><value>Модерація</value></data>
+  <data name="Categories" xml:space="preserve"><value>Категорії</value></data>
+  <data name="Orders" xml:space="preserve"><value>Замовлення</value></data>
+  <data name="HelpCenter" xml:space="preserve"><value>Центр допомоги</value></data>
+  <data name="Search" xml:space="preserve"><value>Пошук</value></data>
+  <data name="SearchPlaceholder" xml:space="preserve"><value>Пошук замовлень, товарів...</value></data>
+  <data name="Language" xml:space="preserve"><value>Мова інтерфейсу</value></data>
+  <data name="Notifications" xml:space="preserve"><value>Сповіщення</value></data>
+  <data name="Administrator" xml:space="preserve"><value>Адміністратор</value></data>
+  <data name="AdminPanel" xml:space="preserve"><value>Адмін-панель</value></data>
+  <data name="OrdersManagement" xml:space="preserve"><value>Керування замовленнями</value></data>
+  <data name="TrackOrdersDesc" xml:space="preserve"><value>Відстежуйте та опрацьовуйте замовлення маркетплейсу.</value></data>
+  <data name="UsersManagement" xml:space="preserve"><value>Керування користувачами</value></data>
+  <data name="ManageUsersDesc" xml:space="preserve"><value>Керуйте користувачами маркетплейсу.</value></data>
+  <data name="SellersManagement" xml:space="preserve"><value>Керування продавцями</value></data>
+  <data name="ViewManageSellersDesc" xml:space="preserve"><value>Переглядайте та керуйте продавцями.</value></data>
+  <data name="CategoriesManagement" xml:space="preserve"><value>Керування категоріями</value></data>
+  <data name="ManageCategoriesDesc" xml:space="preserve"><value>Керуйте категоріями товарів.</value></data>
+  <data name="ModerationQueue" xml:space="preserve"><value>Черга модерації</value></data>
+  <data name="ModerateProductsDesc" xml:space="preserve"><value>Перевіряйте товари перед публікацією.</value></data>
+  <data name="Login" xml:space="preserve"><value>Увійти</value></data>
+  <data name="AdminSignIn" xml:space="preserve"><value>Вхід адміністратора</value></data>
+  <data name="NotFound" xml:space="preserve"><value>Не знайдено</value></data>
+  <data name="NothingAtAddress" xml:space="preserve"><value>За цією адресою нічого немає.</value></data>
+  <data name="StoreOverview" xml:space="preserve"><value>Огляд магазину</value></data>
+  <data name="DashboardSubtitle" xml:space="preserve"><value>Ключові показники маркетплейсу за сьогодні.</value></data>
+  <data name="GoToModeration" xml:space="preserve"><value>Перейти до модерації</value></data>
+  <data name="Revenue" xml:space="preserve"><value>Оборот</value></data>
+  <data name="NewUsers" xml:space="preserve"><value>Нові користувачі</value></data>
+  <data name="InModeration" xml:space="preserve"><value>На модерації</value></data>
+  <data name="WeeklyGrowth" xml:space="preserve"><value>12,5% за тиждень</value></data>
+  <data name="WeeklyRevenueGrowth" xml:space="preserve"><value>8,4% за тиждень</value></data>
+  <data name="WeeklyUsersGrowth" xml:space="preserve"><value>5,7% за тиждень</value></data>
+  <data name="NeedsAttention" xml:space="preserve"><value>Потребують уваги</value></data>
+  <data name="RecentOrders" xml:space="preserve"><value>Останні замовлення</value></data>
+  <data name="AllOrders" xml:space="preserve"><value>Усі замовлення</value></data>
+  <data name="Order" xml:space="preserve"><value>Замовлення</value></data>
+  <data name="Customer" xml:space="preserve"><value>Клієнт</value></data>
+  <data name="Amount" xml:space="preserve"><value>Сума</value></data>
+  <data name="Status" xml:space="preserve"><value>Статус</value></data>
+  <data name="SellerApplications" xml:space="preserve"><value>Заявки продавців</value></data>
+  <data name="All" xml:space="preserve"><value>Усі</value></data>
+  <data name="System" xml:space="preserve"><value>Система</value></data>
+  <data name="Settings" xml:space="preserve"><value>Налаштування</value></data>
+  <data name="SettingsSubtitle" xml:space="preserve"><value>Єдиний центр налаштування маркетплейсу. У міру розвитку платформи тут можна додавати нові розділи.</value></data>
+  <data name="Planned" xml:space="preserve"><value>Заплановано</value></data>
+  <data name="GeneralSettings" xml:space="preserve"><value>Загальні</value></data>
+  <data name="GeneralSettingsDesc" xml:space="preserve"><value>Назва маркетплейсу, регіональні параметри та загальна поведінка платформи.</value></data>
+  <data name="CatalogSettings" xml:space="preserve"><value>Каталог</value></data>
+  <data name="CatalogSettingsDesc" xml:space="preserve"><value>Налаштування товарів, категорій, брендів і модерації.</value></data>
+  <data name="OrderSettings" xml:space="preserve"><value>Замовлення та оплата</value></data>
+  <data name="OrderSettingsDesc" xml:space="preserve"><value>Правила обробки замовлень, платежів і повернень.</value></data>
+  <data name="DeliverySettings" xml:space="preserve"><value>Доставка</value></data>
+  <data name="DeliverySettingsDesc" xml:space="preserve"><value>Служби доставки, регіони, тарифи та строки обробки.</value></data>
+  <data name="NotificationSettings" xml:space="preserve"><value>Сповіщення</value></data>
+  <data name="NotificationSettingsDesc" xml:space="preserve"><value>Налаштування поштових, системних і подієвих сповіщень.</value></data>
+  <data name="AccessSettings" xml:space="preserve"><value>Доступ і безпека</value></data>
+  <data name="AccessSettingsDesc" xml:space="preserve"><value>Ролі адміністраторів, дозволи та політики безпеки.</value></data>
+</root>
