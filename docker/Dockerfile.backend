@@ -1,31 +1,36 @@
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS builder
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-COPY ["treba-backend.csproj", "."]
-RUN dotnet restore "treba-backend.csproj"
+COPY src/Rozetka-clone/Rozetka-clone.sln ./src/Rozetka-clone/
 
-COPY . .
+COPY src/Rozetka-clone/AdminPanel/AdminPanel.csproj ./src/Rozetka-clone/AdminPanel/
+COPY src/Rozetka-clone/Application/Application.csproj ./src/Rozetka-clone/Application/
+COPY src/Rozetka-clone/Contracts/Contracts.csproj ./src/Rozetka-clone/Contracts/
+COPY src/Rozetka-clone/Domain/Domain.csproj ./src/Rozetka-clone/Domain/
+COPY src/Rozetka-clone/Infrastructure/Infrastructure.csproj ./src/Rozetka-clone/Infrastructure/
+COPY src/Rozetka-clone/WebApi/WebApi.csproj ./src/Rozetka-clone/WebApi/
 
-RUN dotnet build "treba-backend.csproj" -c Release -o /app/build
+RUN dotnet restore src/Rozetka-clone/WebApi/WebApi.csproj
 
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS publish
-WORKDIR /src
-COPY --from=builder /app/build .
-RUN dotnet publish "treba-backend.csproj" -c Release -o /app/publish /p:UseAppHost=false
+COPY src/Rozetka-clone ./src/Rozetka-clone
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0
+RUN dotnet publish src/Rozetka-clone/WebApi/WebApi.csproj \
+    -c Release \
+    -o /app/publish \
+    /p:UseAppHost=false
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update \
+    && apt-get install -y curl \
+    && rm -rf /var/lib/apt/lists/*
 
-COPY --from=publish /app/publish .
+COPY --from=build /app/publish .
 
 EXPOSE 5000
 
 ENV ASPNETCORE_URLS=http://+:5000
 ENV ASPNETCORE_ENVIRONMENT=Production
 
-HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost:5000/health || exit 1
-
-ENTRYPOINT ["dotnet", "treba-backend.dll"]
+ENTRYPOINT ["dotnet", "WebApi.dll"]
