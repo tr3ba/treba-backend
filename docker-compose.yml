@@ -21,7 +21,7 @@ services:
 
   backend:
     build:
-      context: ./treba-backend
+      context: .
       dockerfile: docker/Dockerfile.backend
     container_name: treba-backend
     environment:
@@ -57,7 +57,7 @@ services:
 
   frontend:
     build:
-      context: ./treba-frontend
+      context: ../treba-frontend
       dockerfile: docker/Dockerfile.frontend
     container_name: treba-frontend
     environment:
