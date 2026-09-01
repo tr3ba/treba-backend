@@ -10,8 +10,8 @@ on:
 
 env:
   AWS_REGION: eu-west-1
-  EC2_INSTANCE_ID: i-0f233b90127909f9d
-  ECR_REGISTRY: 319426459282.dkr.ecr.eu-west-1.amazonaws.com
+  EC2_INSTANCE_ID: i-0d469acaa36d8d39d
+  ECR_REGISTRY: 019066823315.dkr.ecr.eu-west-1.amazonaws.com
   ECR_REPOSITORY: treba-backend
 
 jobs:
@@ -36,11 +36,11 @@ jobs:
             --comment "Deploy Treba backend from ECR" \
             --parameters 'commands=[
               "set -e",
-              "aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin 319426459282.dkr.ecr.eu-west-1.amazonaws.com",
-              "docker pull 319426459282.dkr.ecr.eu-west-1.amazonaws.com/treba-backend:latest",
+              "aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin 019066823315.dkr.ecr.eu-west-1.amazonaws.com",
+              "docker pull 019066823315.dkr.ecr.eu-west-1.amazonaws.com/treba-backend:latest",
               "docker stop treba-backend || true",
               "docker rm treba-backend || true",
-              "docker run -d --name treba-backend --restart unless-stopped --env-file /home/ubuntu/treba-backend.env -p 5000:5000 319426459282.dkr.ecr.eu-west-1.amazonaws.com/treba-backend:latest",
+              "docker run -d --name treba-backend --restart unless-stopped --env-file /home/ubuntu/treba-backend.env -p 5000:5000 019066823315.dkr.ecr.eu-west-1.amazonaws.com/treba-backend:latest",
               "sleep 5",
               "curl -fsS http://localhost:5000/WeatherForecast >/dev/null",
               "docker ps --filter name=treba-backend"
