@@ -1,0 +1,43 @@
+@page "/settings"
+
+<PageTitle>@L["Settings"] — Treba Admin</PageTitle>
+
+<section class="dashboard-header settings-page-header">
+    <div>
+        <p class="eyebrow">@L["System"]</p>
+        <h1>@L["Settings"]</h1>
+        <p>@L["SettingsSubtitle"]</p>
+    </div>
+</section>
+
+<section class="settings-grid" aria-label="@L["Settings"]">
+    @foreach (var section in Sections)
+    {
+        <article class="settings-card">
+            <div class="settings-card-icon" aria-hidden="true">
+                <i class="bi @section.Icon"></i>
+            </div>
+            <div class="settings-card-content">
+                <div class="settings-card-heading">
+                    <h2>@section.Title</h2>
+                    <span class="settings-status">@L["Planned"]</span>
+                </div>
+                <p>@section.Description</p>
+            </div>
+        </article>
+    }
+</section>
+
+@code {
+    private IReadOnlyList<SettingsSection> Sections =>
+    [
+        new("bi-sliders", L["GeneralSettings"], L["GeneralSettingsDesc"]),
+        new("bi-grid", L["CatalogSettings"], L["CatalogSettingsDesc"]),
+        new("bi-bag-check", L["OrderSettings"], L["OrderSettingsDesc"]),
+        new("bi-truck", L["DeliverySettings"], L["DeliverySettingsDesc"]),
+        new("bi-bell", L["NotificationSettings"], L["NotificationSettingsDesc"]),
+        new("bi-shield-lock", L["AccessSettings"], L["AccessSettingsDesc"])
+    ];
+
+    private sealed record SettingsSection(string Icon, string Title, string Description);
+}

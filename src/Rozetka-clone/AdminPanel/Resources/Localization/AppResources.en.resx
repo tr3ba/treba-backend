@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <data name="Dashboard" xml:space="preserve"><value>Dashboard</value></data>
+  <data name="Management" xml:space="preserve"><value>Management</value></data>
+  <data name="People" xml:space="preserve"><value>People</value></data>
+  <data name="Users" xml:space="preserve"><value>Users</value></data>
+  <data name="Sellers" xml:space="preserve"><value>Sellers</value></data>
+  <data name="Moderation" xml:space="preserve"><value>Moderation</value></data>
+  <data name="Categories" xml:space="preserve"><value>Categories</value></data>
+  <data name="Orders" xml:space="preserve"><value>Orders</value></data>
+  <data name="HelpCenter" xml:space="preserve"><value>Help center</value></data>
+  <data name="Search" xml:space="preserve"><value>Search</value></data>
+  <data name="SearchPlaceholder" xml:space="preserve"><value>Search orders, products...</value></data>
+  <data name="Language" xml:space="preserve"><value>Interface language</value></data>
+  <data name="Notifications" xml:space="preserve"><value>Notifications</value></data>
+  <data name="Administrator" xml:space="preserve"><value>Administrator</value></data>
+  <data name="AdminPanel" xml:space="preserve"><value>Admin panel</value></data>
+  <data name="OrdersManagement" xml:space="preserve"><value>Order management</value></data>
+  <data name="TrackOrdersDesc" xml:space="preserve"><value>Track and process marketplace orders.</value></data>
+  <data name="UsersManagement" xml:space="preserve"><value>User management</value></data>
+  <data name="ManageUsersDesc" xml:space="preserve"><value>Manage marketplace users.</value></data>
+  <data name="SellersManagement" xml:space="preserve"><value>Seller management</value></data>
+  <data name="ViewManageSellersDesc" xml:space="preserve"><value>Review and manage sellers.</value></data>
+  <data name="CategoriesManagement" xml:space="preserve"><value>Category management</value></data>
+  <data name="ManageCategoriesDesc" xml:space="preserve"><value>Manage product categories.</value></data>
+  <data name="ModerationQueue" xml:space="preserve"><value>Moderation queue</value></data>
+  <data name="ModerateProductsDesc" xml:space="preserve"><value>Review products before publication.</value></data>
+  <data name="Login" xml:space="preserve"><value>Sign in</value></data>
+  <data name="AdminSignIn" xml:space="preserve"><value>Administrator sign in</value></data>
+  <data name="NotFound" xml:space="preserve"><value>Not found</value></data>
+  <data name="NothingAtAddress" xml:space="preserve"><value>There is nothing at this address.</value></data>
+  <data name="StoreOverview" xml:space="preserve"><value>Store overview</value></data>
+  <data name="DashboardSubtitle" xml:space="preserve"><value>Key marketplace metrics for today.</value></data>
+  <data name="GoToModeration" xml:space="preserve"><value>Go to moderation</value></data>
+  <data name="Revenue" xml:space="preserve"><value>Revenue</value></data>
+  <data name="NewUsers" xml:space="preserve"><value>New users</value></data>
+  <data name="InModeration" xml:space="preserve"><value>In moderation</value></data>
+  <data name="WeeklyGrowth" xml:space="preserve"><value>12.5% this week</value></data>
+  <data name="WeeklyRevenueGrowth" xml:space="preserve"><value>8.4% this week</value></data>
+  <data name="WeeklyUsersGrowth" xml:space="preserve"><value>5.7% this week</value></data>
+  <data name="NeedsAttention" xml:space="preserve"><value>Needs attention</value></data>
+  <data name="RecentOrders" xml:space="preserve"><value>Recent orders</value></data>
+  <data name="AllOrders" xml:space="preserve"><value>All orders</value></data>
+  <data name="Order" xml:space="preserve"><value>Order</value></data>
+  <data name="Customer" xml:space="preserve"><value>Customer</value></data>
+  <data name="Amount" xml:space="preserve"><value>Amount</value></data>
+  <data name="Status" xml:space="preserve"><value>Status</value></data>
+  <data name="SellerApplications" xml:space="preserve"><value>Seller applications</value></data>
+  <data name="All" xml:space="preserve"><value>All</value></data>
+  <data name="System" xml:space="preserve"><value>System</value></data>
+  <data name="Settings" xml:space="preserve"><value>Settings</value></data>
+  <data name="SettingsSubtitle" xml:space="preserve"><value>Centralized marketplace configuration. New settings sections can be added here as the platform grows.</value></data>
+  <data name="Planned" xml:space="preserve"><value>Planned</value></data>
+  <data name="GeneralSettings" xml:space="preserve"><value>General</value></data>
+  <data name="GeneralSettingsDesc" xml:space="preserve"><value>Marketplace name, regional preferences and general platform behavior.</value></data>
+  <data name="CatalogSettings" xml:space="preserve"><value>Catalog</value></data>
+  <data name="CatalogSettingsDesc" xml:space="preserve"><value>Product, category, brand and moderation defaults.</value></data>
+  <data name="OrderSettings" xml:space="preserve"><value>Orders and payments</value></data>
+  <data name="OrderSettingsDesc" xml:space="preserve"><value>Order processing, payment and refund rules.</value></data>
+  <data name="DeliverySettings" xml:space="preserve"><value>Delivery</value></data>
+  <data name="DeliverySettingsDesc" xml:space="preserve"><value>Delivery providers, regions, rates and processing times.</value></data>
+  <data name="NotificationSettings" xml:space="preserve"><value>Notifications</value></data>
+  <data name="NotificationSettingsDesc" xml:space="preserve"><value>Email, system and event notification preferences.</value></data>
+  <data name="AccessSettings" xml:space="preserve"><value>Access and security</value></data>
+  <data name="AccessSettingsDesc" xml:space="preserve"><value>Administrator roles, permissions and security policies.</value></data>
+</root>

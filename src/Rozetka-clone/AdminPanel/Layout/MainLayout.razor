@@ -1,0 +1,27 @@
+@inherits LayoutComponentBase
+@using System.Globalization
+@inject NavigationManager Navigation
+
+@{
+    var currentCulture = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+    var returnPath = Uri.EscapeDataString(new Uri(Navigation.Uri).PathAndQuery);
+}
+
+<div class="page">
+    <aside class="sidebar"><NavMenu /></aside>
+    <main>
+        <header class="top-header">
+            <label class="search-box"><i class="bi bi-search" aria-hidden="true"></i><input type="search" placeholder="@L["SearchPlaceholder"]" aria-label="@L["Search"]" /></label>
+            <div class="header-actions">
+                <div class="lang-selector" aria-label="@L["Language"]">
+                    <a class="lang-btn @(currentCulture == "uk" ? "active" : "")" href="/culture/set?culture=uk&redirectUri=@returnPath">UA</a>
+                    <a class="lang-btn @(currentCulture == "en" ? "active" : "")" href="/culture/set?culture=en&redirectUri=@returnPath">EN</a>
+                    <a class="lang-btn @(currentCulture == "ru" ? "active" : "")" href="/culture/set?culture=ru&redirectUri=@returnPath">RU</a>
+                </div>
+                <button class="header-icon-button" type="button" aria-label="@L["Notifications"]"><i class="bi bi-bell"></i><span></span></button>
+                <div class="user-profile-badge"><div class="avatar">A</div><div class="user-info-text"><span class="user-name">@L["Administrator"]</span><span class="user-role">@L["AdminPanel"]</span></div><i class="bi bi-chevron-down user-chevron"></i></div>
+            </div>
+        </header>
+        <article class="content-body">@Body</article>
+    </main>
+</div>

@@ -1,0 +1,9 @@
+@page "/users/{Id:guid}"
+
+<PageTitle>@L["UserDetails"]</PageTitle>
+
+<h3>@L["UserDetails"]: @Id</h3>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+}
