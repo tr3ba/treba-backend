@@ -1,11 +1,13 @@
 ﻿using Application.Abstractions;
+using Domain.Entities.Product;
+using Domain.Entities.ProductTag;
 using Domain.Entities.Users;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Persistence
 {
     public sealed class ApplicationDbContext
-    : DbContext, IApplicationDbContext
+        : DbContext, IApplicationDbContext
     {
         public ApplicationDbContext(
             DbContextOptions<ApplicationDbContext> options)
@@ -13,6 +15,7 @@ namespace Infrastructure.Persistence
         {
         }
 
+        // Users
         public DbSet<User> Users => Set<User>();
 
         public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
@@ -23,6 +26,18 @@ namespace Infrastructure.Persistence
 
         public DbSet<Permission> Permissions => Set<Permission>();
 
+        // Products
+        public DbSet<Product> Products => Set<Product>();
+
+        public DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();
+
+        public DbSet<ProductImage> ProductImages => Set<ProductImage>();
+
+        public DbSet<ProductTag> ProductTags => Set<ProductTag>();
+
+        public DbSet<ProductTagRelation> ProductTagRelations =>
+            Set<ProductTagRelation>();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -31,4 +46,5 @@ namespace Infrastructure.Persistence
                 typeof(ApplicationDbContext).Assembly);
         }
     }
+
 }
