@@ -31,3 +31,6 @@ jobs:
             echo "Building $proj"
             dotnet build "$proj" --configuration Release --no-restore
           done
+
+      - name: Check NuGet packages for vulnerabilities
+        run: dotnet list src/Rozetka-clone/Rozetka-clone.sln package --vulnerable --include-transitive
