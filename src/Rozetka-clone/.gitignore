@@ -1,0 +1,40 @@
+# Default ignored files
+/shelf/
+/workspace.xml
+
+# Rider
+.idea/
+**/.idea/
+/.idea.Rozetka-clone.iml
+/contentModel.xml
+/projectSettingsUpdater.xml
+/modules.xml
+
+# Editor-based HTTP Client requests
+/httpRequests/
+
+# Datasource local storage
+/dataSources/
+/dataSources.local.xml
+
+# .NET Build
+**/bin/
+**/obj/
+
+# Visual Studio
+.vs/
+**/.vs/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Secrets
+secrets.json
+appsettings.Local.json
+
+# macOS
+.DS_Store
+**/.DS_Store

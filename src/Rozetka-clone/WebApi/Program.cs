@@ -1,3 +1,4 @@
+using Application.Products;
 using Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,6 +14,8 @@ builder.Services.AddOpenApi();
 // PostgreSQL + DbContext + IApplicationDbContext
 builder.Services.AddInfrastructure(
     builder.Configuration);
+
+builder.Services.AddScoped<IProductService, ProductService>();
 
 var app = builder.Build();
 
