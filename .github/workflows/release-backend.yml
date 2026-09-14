@@ -1,0 +1,53 @@
+name: Release Backend
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  AWS_REGION: eu-west-1
+  ECR_REPOSITORY: treba-backend
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore src/Rozetka-clone/WebApi/WebApi.csproj
+
+      - name: Build
+        run: dotnet build src/Rozetka-clone/WebApi/WebApi.csproj --configuration Release --no-restore
+
+      - name: Run tests
+        run: dotnet test tests/WebApi.Tests/WebApi.Tests.csproj --configuration Release
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push release image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          docker build -f docker/Dockerfile.backend \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$RELEASE_TAG .
+
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$RELEASE_TAG
