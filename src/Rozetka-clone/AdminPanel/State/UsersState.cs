@@ -1,10 +1,11 @@
 using AdminPanel.Services.Abstractions;
+using Contracts.Admin.Users;
 
 namespace AdminPanel.State;
 
 public class UsersState
 {
-    public List<UserDto> Users { get; private set; } = new();
+    public List<UserListItemResponse> Users { get; private set; } = new();
     public bool IsLoading { get; private set; }
     public int CurrentPage { get; set; } = 1;
     public int TotalPages { get; set; } = 1;
@@ -18,7 +19,7 @@ public class UsersState
         NotifyStateChanged();
     }
 
-    public void SetUsers(List<UserDto> users, int totalPages)
+    public void SetUsers(List<UserListItemResponse> users, int totalPages)
     {
         Users = users;
         TotalPages = totalPages;

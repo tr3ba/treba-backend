@@ -1,5 +1,6 @@
 using Application.Products;
 using Infrastructure;
+using Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +19,24 @@ builder.Services.AddInfrastructure(
 builder.Services.AddScoped<IProductService, ProductService>();
 
 var app = builder.Build();
+
+if (app.Environment.IsDevelopment() &&
+    builder.Configuration.GetValue<bool>("SeedDemoUsers"))
+{
+    try
+    {
+        var createdUsers = await app.Services.SeedDemoUsersAsync();
+        app.Logger.LogInformation(
+            "Demo user seed completed. Created entities: {CreatedUsers}.",
+            createdUsers);
+    }
+    catch (Exception exception)
+    {
+        app.Logger.LogWarning(
+            exception,
+            "Demo users could not be created because the database is unavailable.");
+    }
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

@@ -1,0 +1,26 @@
+@page "/support"
+
+<PageTitle>@L["SupportAndReturns"] — Treba Admin</PageTitle>
+<section class="page-hero"><div><p class="eyebrow">@L["CustomerCare"]</p><h1>@L["SupportCenter"]</h1></div><button class="primary-button" type="button"><i class="bi bi-person-plus"></i>@L["AssignAgent"]</button></section>
+
+<section class="support-board">
+    <div class="support-queue card-box">
+        <div class="support-tabs"><button class="active" type="button">@L["Messages"] <span>18</span></button><button type="button">@L["Returns"] <span>7</span></button><button type="button">@L["Warranty"] <span>4</span></button></div>
+        <label class="workspace-search support-search"><i class="bi bi-search"></i><input placeholder="@L["SearchRequests"]" /></label>
+        @foreach(var item in Tickets)
+        {
+            <article class="ticket-row @(item.Active ? "active" : null)"><span class="ticket-avatar @item.Color">@item.Initials</span><div><div><strong>@item.Name</strong><time>@(item.Yesterday ? $"{L["YesterdayAt"]} {item.Time}" : item.Time)</time></div><p>@item.Subject</p><small>@item.Preview</small></div>@if(item.Unread>0){<b>@item.Unread</b>}</article>
+        }
+    </div>
+    <article class="conversation card-box">
+        <header><div><span class="ticket-avatar blue">ОМ</span><div><strong>Олена Мельник</strong><small><i></i>@L["Online"] · #RZ-10482</small></div></div><button class="secondary-button" type="button">@L["OrderDetails"]</button></header>
+        <div class="conversation-body"><div class="chat-day">@L["Today"]</div><div class="message customer">Добрий день! Підкажіть, будь ласка, коли буде відправлено моє замовлення?<time>10:24</time></div><div class="message agent">Вітаю, Олено! Замовлення вже передано перевізнику. Номер накладної з’явиться протягом години.<time>10:26 ✓✓</time></div><div class="message customer">Дякую! Чекатиму на повідомлення.<time>10:27</time></div></div>
+        <footer><button type="button" aria-label="@L["AttachFile"]"><i class="bi bi-paperclip"></i></button><input placeholder="@L["WriteReply"]"/><button class="send-message" type="button" aria-label="@L["SendMessage"]"><i class="bi bi-send"></i></button></footer>
+    </article>
+    <aside class="customer-context card-box"><span class="ticket-avatar blue large">ОМ</span><h2>Олена Мельник</h2><p>olena.melnyk@example.com</p><div><span>@L["TotalOrders"]</span><strong>12</strong></div><div><span>@L["CustomerValue"]</span><strong>₴ 38 420</strong></div><div><span>@L["OpenRequests"]</span><strong>1</strong></div><a href="/users">@L["OpenProfile"] <i class="bi bi-arrow-right"></i></a></aside>
+</section>
+
+@code {
+    private static readonly TicketRow[] Tickets=[new("ОМ","Олена Мельник","Статус замовлення #RZ-10482","Коли буде відправлено моє замовлення?","10:27",2,true,"blue",false),new("МБ","Максим Бондар","Повернення товару","Хочу оформити повернення навушників","09:48",1,false,"orange",false),new("ІК","Ірина Коваль","Гарантійний випадок","Мультипіч перестала вмикатися","18:14",0,false,"purple",true),new("ДС","Дмитро Савчук","Питання продавцю","Чи є товар у білому кольорі?","16:02",0,false,"green",true)];
+    private sealed record TicketRow(string Initials,string Name,string Subject,string Preview,string Time,int Unread,bool Active,string Color,bool Yesterday);
+}

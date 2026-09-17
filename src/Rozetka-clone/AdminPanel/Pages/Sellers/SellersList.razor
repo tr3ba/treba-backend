@@ -1,6 +1,47 @@
 @page "/sellers"
 
-<PageTitle>@L["Sellers"]</PageTitle>
+<PageTitle>@L["Sellers"] — Treba Admin</PageTitle>
 
-<h3>@L["SellersManagement"]</h3>
-<p>@L["ViewManageSellersDesc"]</p>
+<section class="page-hero sellers-hero">
+    <div>
+        <p class="eyebrow">@L["PartnerNetwork"]</p>
+        <h1>@L["SellersManagement"]</h1>
+    </div>
+    <button class="primary-button" type="button"><i class="bi bi-shop-window"></i>@L["InviteSeller"]</button>
+</section>
+
+<section class="seller-summary-strip">
+    <div><span class="summary-icon green"><i class="bi bi-patch-check"></i></span><p><strong>326</strong><span>@L["VerifiedSellers"]</span></p></div>
+    <div><span class="summary-icon amber"><i class="bi bi-hourglass-split"></i></span><p><strong>18</strong><span>@L["PendingReview"]</span></p></div>
+    <div><span class="summary-icon red"><i class="bi bi-pause-circle"></i></span><p><strong>9</strong><span>@L["Suspended"]</span></p></div>
+    <div class="seller-gmv"><p><span>@L["MonthlyGmv"]</span><strong>₴ 12.8M</strong></p><small><i class="bi bi-arrow-up-right"></i> 14.2%</small></div>
+</section>
+
+<section class="seller-board">
+    <div class="seller-board-header"><div class="filter-pills"><button class="filter-pill active" type="button">@L["All"]</button><button class="filter-pill" type="button">@L["Applications"]</button><button class="filter-pill" type="button">@L["Verified"]</button></div><label class="workspace-search seller-search"><i class="bi bi-search"></i><input type="search" placeholder="@L["SellerSearchPlaceholder"]" /></label></div>
+    <div class="seller-grid">
+        @foreach (var seller in SellersData)
+        {
+            <article class="seller-card">
+                <div class="seller-card-top"><div class="seller-logo @seller.Color">@seller.Initials</div><span class="status-badge @seller.StatusClass">@seller.Status</span></div>
+                <h2>@seller.Name</h2><p>@seller.Category</p>
+                <div class="seller-card-metrics"><div><span>@L["Rating"]</span><strong><i class="bi bi-star-fill"></i> @seller.Rating</strong></div><div><span>@L["Products"]</span><strong>@seller.Products</strong></div><div><span>@L["Orders"]</span><strong>@seller.Orders</strong></div></div>
+                <div class="seller-card-footer"><span>@L["Since"] @seller.Since</span><a href="@($"/sellers/review/{seller.Id}")">@L["OpenProfile"] <i class="bi bi-arrow-right"></i></a></div>
+            </article>
+        }
+    </div>
+</section>
+
+@code {
+    private IReadOnlyList<SellerCard> SellersData =>
+    [
+        new(Guid.Parse("10000000-0000-0000-0000-000000000001"), "TechPoint UA", "TP", L["Electronics"], "4.9", "1 248", "8 410", "2023", L["Verified"], "badge-active", "blue"),
+        new(Guid.Parse("10000000-0000-0000-0000-000000000002"), "Home & Style", "HS", L["HomeAndGarden"], "4.8", "842", "5 126", "2024", L["Verified"], "badge-active", "orange"),
+        new(Guid.Parse("10000000-0000-0000-0000-000000000003"), "Sport Pro", "SP", L["SportsAndHobby"], "—", "18", "0", "2026", L["PendingReview"], "badge-pending", "green"),
+        new(Guid.Parse("10000000-0000-0000-0000-000000000004"), "Beauty Lab", "BL", L["BeautyAndHealth"], "4.7", "516", "3 902", "2024", L["Verified"], "badge-active", "pink"),
+        new(Guid.Parse("10000000-0000-0000-0000-000000000005"), "Digital Hub", "DH", L["Electronics"], "4.2", "304", "1 882", "2025", L["UnderReview"], "badge-shipped", "purple"),
+        new(Guid.Parse("10000000-0000-0000-0000-000000000006"), "Toy House", "TH", L["Kids"], "4.8", "621", "4 608", "2023", L["Verified"], "badge-active", "amber")
+    ];
+
+    private sealed record SellerCard(Guid Id, string Name, string Initials, string Category, string Rating, string Products, string Orders, string Since, string Status, string StatusClass, string Color);
+}

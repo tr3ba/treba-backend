@@ -63,4 +63,229 @@
   <data name="NotificationSettingsDesc" xml:space="preserve"><value>Email, system and event notification preferences.</value></data>
   <data name="AccessSettings" xml:space="preserve"><value>Access and security</value></data>
   <data name="AccessSettingsDesc" xml:space="preserve"><value>Administrator roles, permissions and security policies.</value></data>
+  <data name="TotalUsers" xml:space="preserve"><value>Total users</value></data>
+  <data name="UserSearchPlaceholder" xml:space="preserve"><value>Name, email or phone</value></data>
+  <data name="SearchUsers" xml:space="preserve"><value>Search users</value></data>
+  <data name="Clear" xml:space="preserve"><value>Clear</value></data>
+  <data name="LoadingUsers" xml:space="preserve"><value>Loading users...</value></data>
+  <data name="TryAgain" xml:space="preserve"><value>Try again</value></data>
+  <data name="UsersNotFound" xml:space="preserve"><value>No users found</value></data>
+  <data name="UsersNotFoundDesc" xml:space="preserve"><value>Try changing the search query.</value></data>
+  <data name="User" xml:space="preserve"><value>User</value></data>
+  <data name="Phone" xml:space="preserve"><value>Phone</value></data>
+  <data name="RegisteredAt" xml:space="preserve"><value>Registered</value></data>
+  <data name="LastLogin" xml:space="preserve"><value>Last login</value></data>
+  <data name="Actions" xml:space="preserve"><value>Actions</value></data>
+  <data name="NotSpecified" xml:space="preserve"><value>Not specified</value></data>
+  <data name="Never" xml:space="preserve"><value>Never</value></data>
+  <data name="ViewUser" xml:space="preserve"><value>View user</value></data>
+  <data name="View" xml:space="preserve"><value>View</value></data>
+  <data name="UsersLoadError" xml:space="preserve"><value>Could not load the users. Check the API connection and try again.</value></data>
+  <data name="UserStatusPendingActivation" xml:space="preserve"><value>Pending activation</value></data>
+  <data name="UserStatusActive" xml:space="preserve"><value>Active</value></data>
+  <data name="UserStatusBlocked" xml:space="preserve"><value>Blocked</value></data>
+  <data name="UserStatusDeleted" xml:space="preserve"><value>Deleted</value></data>
+  <data name="UserDetails" xml:space="preserve"><value>User details</value></data>
+  <data name="BackToUsers" xml:space="preserve"><value>Back to users</value></data>
+  <data name="LoadingUser" xml:space="preserve"><value>Loading user...</value></data>
+  <data name="UserLoadError" xml:space="preserve"><value>Could not load the user. Check the API connection and try again.</value></data>
+  <data name="UserNotFound" xml:space="preserve"><value>User not found</value></data>
+  <data name="UserNotFoundDesc" xml:space="preserve"><value>The user may have been deleted or the link is invalid.</value></data>
+  <data name="ContactAndAccount" xml:space="preserve"><value>Contact and account</value></data>
+  <data name="EmailVerified" xml:space="preserve"><value>Email verified</value></data>
+  <data name="PhoneVerified" xml:space="preserve"><value>Phone verified</value></data>
+  <data name="LastUpdated" xml:space="preserve"><value>Last updated</value></data>
+  <data name="Profile" xml:space="preserve"><value>Profile</value></data>
+  <data name="ProfileNotCreated" xml:space="preserve"><value>The user has not created a profile yet.</value></data>
+  <data name="BirthDate" xml:space="preserve"><value>Birth date</value></data>
+  <data name="Gender" xml:space="preserve"><value>Gender</value></data>
+  <data name="MarketingEmails" xml:space="preserve"><value>Marketing emails</value></data>
+  <data name="Addresses" xml:space="preserve"><value>Addresses</value></data>
+  <data name="AddressesNotAdded" xml:space="preserve"><value>The user has not added any addresses.</value></data>
+  <data name="DefaultAddress" xml:space="preserve"><value>Default</value></data>
+  <data name="Verified" xml:space="preserve"><value>Verified</value></data>
+  <data name="NotVerified" xml:space="preserve"><value>Not verified</value></data>
+  <data name="Yes" xml:space="preserve"><value>Yes</value></data>
+  <data name="No" xml:space="preserve"><value>No</value></data>
+  <data name="Accessories" xml:space="preserve"><value>Accessories</value></data>
+  <data name="Active" xml:space="preserve"><value>Active</value></data>
+  <data name="ActiveCategories" xml:space="preserve"><value>Active categories</value></data>
+  <data name="AdminEmail" xml:space="preserve"><value>Administrator email</value></data>
+  <data name="ApplicationReview" xml:space="preserve"><value>Application review</value></data>
+  <data name="Applications" xml:space="preserve"><value>Applications</value></data>
+  <data name="Approve" xml:space="preserve"><value>Approve</value></data>
+  <data name="Approved" xml:space="preserve"><value>Approved</value></data>
+  <data name="ApproveSeller" xml:space="preserve"><value>Approve seller</value></data>
+  <data name="AreYouSure" xml:space="preserve"><value>Are you sure you want to continue?</value></data>
+  <data name="Audio" xml:space="preserve"><value>Audio</value></data>
+  <data name="AwaitingPayment" xml:space="preserve"><value>Awaiting payment</value></data>
+  <data name="AwaitingReview" xml:space="preserve"><value>Awaiting review</value></data>
+  <data name="BackToSellers" xml:space="preserve"><value>Back to sellers</value></data>
+  <data name="BankDetails" xml:space="preserve"><value>Bank details</value></data>
+  <data name="BeautyAndHealth" xml:space="preserve"><value>Beauty and health</value></data>
+  <data name="Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="CashOnDelivery" xml:space="preserve"><value>Cash on delivery</value></data>
+  <data name="CatalogQuality" xml:space="preserve"><value>Catalog quality</value></data>
+  <data name="CatalogStructure" xml:space="preserve"><value>Catalog structure</value></data>
+  <data name="Category" xml:space="preserve"><value>Category</value></data>
+  <data name="CategoryFocus" xml:space="preserve"><value>Product categories</value></data>
+  <data name="CategoryFocusDesc" xml:space="preserve"><value>The seller plans to launch with these product categories.</value></data>
+  <data name="CategorySearchPlaceholder" xml:space="preserve"><value>Find a category</value></data>
+  <data name="CategoryTree" xml:space="preserve"><value>Category tree</value></data>
+  <data name="ClothingAndShoes" xml:space="preserve"><value>Clothing and shoes</value></data>
+  <data name="CompanyRegistration" xml:space="preserve"><value>Company registration</value></data>
+  <data name="ComparedYesterday" xml:space="preserve"><value>vs yesterday</value></data>
+  <data name="Completeness" xml:space="preserve"><value>Completeness</value></data>
+  <data name="Confirm" xml:space="preserve"><value>Confirm</value></data>
+  <data name="Confirmation" xml:space="preserve"><value>Confirmation</value></data>
+  <data name="ContactPerson" xml:space="preserve"><value>Contact person</value></data>
+  <data name="ContactSupport" xml:space="preserve"><value>Contact support</value></data>
+  <data name="Courier" xml:space="preserve"><value>Courier delivery</value></data>
+  <data name="CreateCategory" xml:space="preserve"><value>Create category</value></data>
+  <data name="Decision" xml:space="preserve"><value>Decision</value></data>
+  <data name="DecisionDesc" xml:space="preserve"><value>Review the documents and leave a note before making the final decision.</value></data>
+  <data name="DecisionRecorded" xml:space="preserve"><value>Auditable decision</value></data>
+  <data name="DecisionRecordedDesc" xml:space="preserve"><value>Your name, time and decision will be saved in the audit log.</value></data>
+  <data name="Delivery" xml:space="preserve"><value>Delivery</value></data>
+  <data name="DemoData" xml:space="preserve"><value>Demo</value></data>
+  <data name="DirectorPassport" xml:space="preserve"><value>Director passport</value></data>
+  <data name="Dnipro" xml:space="preserve"><value>Dnipro</value></data>
+  <data name="Documents" xml:space="preserve"><value>Documents</value></data>
+  <data name="DocumentsReady" xml:space="preserve"><value>Documents ready</value></data>
+  <data name="Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="Electronics" xml:space="preserve"><value>Electronics</value></data>
+  <data name="Export" xml:space="preserve"><value>Export</value></data>
+  <data name="Files" xml:space="preserve"><value>files</value></data>
+  <data name="Filters" xml:space="preserve"><value>Filters</value></data>
+  <data name="FinalStep" xml:space="preserve"><value>Final step</value></data>
+  <data name="Fitness" xml:space="preserve"><value>Fitness</value></data>
+  <data name="ForgotPassword" xml:space="preserve"><value>Forgot password?</value></data>
+  <data name="HiddenCategories" xml:space="preserve"><value>Hidden categories</value></data>
+  <data name="HomeAndGarden" xml:space="preserve"><value>Home and garden</value></data>
+  <data name="InDelivery" xml:space="preserve"><value>In delivery</value></data>
+  <data name="InviteSeller" xml:space="preserve"><value>Invite seller</value></data>
+  <data name="KeyMetrics" xml:space="preserve"><value>Key metrics</value></data>
+  <data name="Kids" xml:space="preserve"><value>Kids</value></data>
+  <data name="Kyiv" xml:space="preserve"><value>Kyiv</value></data>
+  <data name="Laptops" xml:space="preserve"><value>Laptops</value></data>
+  <data name="LegalName" xml:space="preserve"><value>Legal name</value></data>
+  <data name="LoginBrandCopy" xml:space="preserve"><value>One workspace for orders, catalog quality, partners and marketplace growth.</value></data>
+  <data name="LoginHelp" xml:space="preserve"><value>Having trouble signing in?</value></data>
+  <data name="LoginIntro" xml:space="preserve"><value>Use your corporate account to continue.</value></data>
+  <data name="LowRisk" xml:space="preserve"><value>Low risk</value></data>
+  <data name="Lviv" xml:space="preserve"><value>Lviv</value></data>
+  <data name="MinutesAgo" xml:space="preserve"><value>min ago</value></data>
+  <data name="MonthlyGmv" xml:space="preserve"><value>Monthly GMV</value></data>
+  <data name="NeedChanges" xml:space="preserve"><value>Needs changes</value></data>
+  <data name="NewStatus" xml:space="preserve"><value>New</value></data>
+  <data name="Next" xml:space="preserve"><value>Next</value></data>
+  <data name="NextInQueue" xml:space="preserve"><value>Next in queue</value></data>
+  <data name="Nutrition" xml:space="preserve"><value>Sports nutrition</value></data>
+  <data name="Odesa" xml:space="preserve"><value>Odesa</value></data>
+  <data name="Of" xml:space="preserve"><value>of</value></data>
+  <data name="OnTheWay" xml:space="preserve"><value>orders on the way</value></data>
+  <data name="OpenProfile" xml:space="preserve"><value>Open profile</value></data>
+  <data name="OperateWithClarity" xml:space="preserve"><value>Operate with clarity.</value></data>
+  <data name="Operations" xml:space="preserve"><value>Operations</value></data>
+  <data name="OrderItems" xml:space="preserve"><value>Items</value></data>
+  <data name="OrderSearchPlaceholder" xml:space="preserve"><value>Order, customer or phone</value></data>
+  <data name="OrderStatuses" xml:space="preserve"><value>Order statuses</value></data>
+  <data name="OrdersToday" xml:space="preserve"><value>Orders today</value></data>
+  <data name="Outdoor" xml:space="preserve"><value>Outdoor activities</value></data>
+  <data name="Page" xml:space="preserve"><value>Page</value></data>
+  <data name="Paid" xml:space="preserve"><value>Paid</value></data>
+  <data name="PartnerNetwork" xml:space="preserve"><value>Partner network</value></data>
+  <data name="Password" xml:space="preserve"><value>Password</value></data>
+  <data name="Payment" xml:space="preserve"><value>Payment</value></data>
+  <data name="PendingReview" xml:space="preserve"><value>Pending review</value></data>
+  <data name="Previous" xml:space="preserve"><value>Previous</value></data>
+  <data name="Price" xml:space="preserve"><value>Price</value></data>
+  <data name="Processing" xml:space="preserve"><value>Processing</value></data>
+  <data name="Product" xml:space="preserve"><value>product</value></data>
+  <data name="ProductCoverage" xml:space="preserve"><value>Product coverage</value></data>
+  <data name="Products" xml:space="preserve"><value>products</value></data>
+  <data name="ProductsCategorized" xml:space="preserve"><value>products categorized</value></data>
+  <data name="ProtectedAccess" xml:space="preserve"><value>Protected access</value></data>
+  <data name="ProtectedAccessDesc" xml:space="preserve"><value>Administrative sessions are protected and logged.</value></data>
+  <data name="Queue" xml:space="preserve"><value>Queue</value></data>
+  <data name="QueueHealth" xml:space="preserve"><value>Queue health</value></data>
+  <data name="Rating" xml:space="preserve"><value>Rating</value></data>
+  <data name="Refunded" xml:space="preserve"><value>Refunded</value></data>
+  <data name="Reject" xml:space="preserve"><value>Reject</value></data>
+  <data name="RejectApplication" xml:space="preserve"><value>Reject application</value></data>
+  <data name="RememberMe" xml:space="preserve"><value>Remember me</value></data>
+  <data name="RequestChanges" xml:space="preserve"><value>Request changes</value></data>
+  <data name="RequireAttention" xml:space="preserve"><value>require attention</value></data>
+  <data name="Returned" xml:space="preserve"><value>Returned</value></data>
+  <data name="Returns" xml:space="preserve"><value>Returns</value></data>
+  <data name="ReviewNote" xml:space="preserve"><value>Review note</value></data>
+  <data name="ReviewNotePlaceholder" xml:space="preserve"><value>Add a concise note for the audit log</value></data>
+  <data name="Risk" xml:space="preserve"><value>Risk</value></data>
+  <data name="SecureWorkspace" xml:space="preserve"><value>Secure workspace</value></data>
+  <data name="SelectedCategory" xml:space="preserve"><value>Selected category</value></data>
+  <data name="SellerReview" xml:space="preserve"><value>Seller review</value></data>
+  <data name="SellerSearchPlaceholder" xml:space="preserve"><value>Store name or category</value></data>
+  <data name="Shipped" xml:space="preserve"><value>Shipped</value></data>
+  <data name="ShowingOrders" xml:space="preserve"><value>Showing 1–4 of 1,284 orders</value></data>
+  <data name="ShowPassword" xml:space="preserve"><value>Show password</value></data>
+  <data name="SignIn" xml:space="preserve"><value>Sign in</value></data>
+  <data name="Since" xml:space="preserve"><value>Since</value></data>
+  <data name="SmartHome" xml:space="preserve"><value>Smart home</value></data>
+  <data name="Smartphones" xml:space="preserve"><value>Smartphones</value></data>
+  <data name="SportsAndHobby" xml:space="preserve"><value>Sports and hobby</value></data>
+  <data name="Sportswear" xml:space="preserve"><value>Sportswear</value></data>
+  <data name="StoreDetails" xml:space="preserve"><value>Store details</value></data>
+  <data name="Subcategories" xml:space="preserve"><value>subcategories</value></data>
+  <data name="Submitted" xml:space="preserve"><value>Submitted</value></data>
+  <data name="Suspended" xml:space="preserve"><value>Suspended</value></data>
+  <data name="TaxCertificate" xml:space="preserve"><value>Tax certificate</value></data>
+  <data name="TaxId" xml:space="preserve"><value>Tax ID</value></data>
+  <data name="Televisions" xml:space="preserve"><value>Televisions</value></data>
+  <data name="ThisWeek" xml:space="preserve"><value>this week</value></data>
+  <data name="TodayAt" xml:space="preserve"><value>Today at</value></data>
+  <data name="UnderReview" xml:space="preserve"><value>Under review</value></data>
+  <data name="UpNext" xml:space="preserve"><value>Up next</value></data>
+  <data name="VerifiedSellers" xml:space="preserve"><value>Verified sellers</value></data>
+  <data name="ViewFullQueue" xml:space="preserve"><value>View full queue</value></data>
+  <data name="Website" xml:space="preserve"><value>Website</value></data>
+  <data name="WelcomeBack" xml:space="preserve"><value>Welcome back</value></data>
+  <data name="YesterdayAt" xml:space="preserve"><value>Yesterday at</value></data>
+  <data name="CreateUser" xml:space="preserve"><value>Create user</value></data>
+  <data name="CreateUserTitle" xml:space="preserve"><value>New user</value></data>
+  <data name="CreateUserSubtitle" xml:space="preserve"><value>Add a real user to the database.</value></data>
+  <data name="PersonalInformation" xml:space="preserve"><value>Personal information</value></data>
+  <data name="PersonalInformationDesc" xml:space="preserve"><value>Enter the user’s name as it should appear in the system.</value></data>
+  <data name="ContactInformation" xml:space="preserve"><value>Contact information</value></data>
+  <data name="ContactInformationDesc" xml:space="preserve"><value>Email must be unique for each user.</value></data>
+  <data name="FirstName" xml:space="preserve"><value>First name</value></data>
+  <data name="LastName" xml:space="preserve"><value>Last name</value></data>
+  <data name="MiddleName" xml:space="preserve"><value>Middle name</value></data>
+  <data name="Email" xml:space="preserve"><value>Email</value></data>
+  <data name="Optional" xml:space="preserve"><value>optional</value></data>
+  <data name="Creating" xml:space="preserve"><value>Creating...</value></data>
+  <data name="RequiredField" xml:space="preserve"><value>This field is required.</value></data>
+  <data name="InvalidEmail" xml:space="preserve"><value>Enter a valid email.</value></data>
+  <data name="EmailAlreadyExists" xml:space="preserve"><value>A user with this email already exists.</value></data>
+  <data name="CreateUserError" xml:space="preserve"><value>The user could not be created. Check the API connection and try again.</value></data>
+  <data name="AccountWillAwaitActivation" xml:space="preserve"><value>Awaiting activation</value></data>
+  <data name="AccountWillAwaitActivationDesc" xml:space="preserve"><value>The record will be created without a password and will await activation. Sign-in becomes available after registration or invitations are connected.</value></data>
+  <data name="Growth" xml:space="preserve"><value>Growth</value></data><data name="Catalog" xml:space="preserve"><value>Catalog</value></data><data name="Seller" xml:space="preserve"><value>Seller</value></data><data name="Stock" xml:space="preserve"><value>Stock</value></data><data name="Items" xml:space="preserve"><value>items</value></data>
+  <data name="ProductManagement" xml:space="preserve"><value>Product management</value></data><data name="ProductManagementDesc" xml:space="preserve"><value>Control assortment, prices, inventory and storefront visibility.</value></data><data name="AddProduct" xml:space="preserve"><value>Add product</value></data><data name="AllProducts" xml:space="preserve"><value>All products</value></data><data name="Published" xml:space="preserve"><value>Published</value></data><data name="LowStock" xml:space="preserve"><value>Low stock</value></data><data name="OnPromotion" xml:space="preserve"><value>On promotion</value></data><data name="ActiveNow" xml:space="preserve"><value>Active now</value></data><data name="Drafts" xml:space="preserve"><value>Drafts</value></data><data name="OutOfStock" xml:space="preserve"><value>Out of stock</value></data><data name="ProductSearchPlaceholder" xml:space="preserve"><value>Name, SKU or seller...</value></data>
+  <data name="Storefront" xml:space="preserve"><value>Storefront</value></data><data name="StorefrontContent" xml:space="preserve"><value>Store content</value></data><data name="StorefrontManagement" xml:space="preserve"><value>Storefront management</value></data><data name="StorefrontManagementDesc" xml:space="preserve"><value>Configure banners, collections and service benefits on the home page.</value></data><data name="PreviewStorefront" xml:space="preserve"><value>Preview storefront</value></data><data name="MainBanner" xml:space="preserve"><value>Main banner</value></data><data name="MainBannerDesc" xml:space="preserve"><value>The store’s first screen and primary advertising campaign.</value></data><data name="FeaturedCampaign" xml:space="preserve"><value>Featured campaign</value></data><data name="DreamAndOwn" xml:space="preserve"><value>Don’t dream it. Own it.</value></data><data name="InstallmentOffer" xml:space="preserve"><value>Up to 15 interest-free payments</value></data><data name="ProductShelves" xml:space="preserve"><value>Product shelves</value></data><data name="HomepageCollections" xml:space="preserve"><value>Homepage collections</value></data><data name="HomepageCollectionsDesc" xml:space="preserve"><value>Block order and the products shoppers will see.</value></data><data name="AddCollection" xml:space="preserve"><value>Add collection</value></data><data name="BestOffers" xml:space="preserve"><value>Best offers for you</value></data><data name="Recommendations" xml:space="preserve"><value>Recommendations</value></data><data name="TotalSale" xml:space="preserve"><value>Total sale</value></data><data name="Scheduled" xml:space="preserve"><value>Scheduled</value></data><data name="StorefrontStatus" xml:space="preserve"><value>Storefront status</value></data><data name="LastPublished" xml:space="preserve"><value>Last published:</value></data><data name="ServiceBenefits" xml:space="preserve"><value>Service benefits</value></data><data name="ServiceBenefitsDesc" xml:space="preserve"><value>Cards below the main banner.</value></data><data name="Enabled" xml:space="preserve"><value>Enabled</value></data><data name="Warranty" xml:space="preserve"><value>Warranty</value></data>
+  <data name="Reviews" xml:space="preserve"><value>Reviews</value></data><data name="TrustAndQuality" xml:space="preserve"><value>Trust and quality</value></data><data name="ReviewsManagement" xml:space="preserve"><value>Review management</value></data><data name="ReviewsManagementDesc" xml:space="preserve"><value>Moderate product and seller reviews while maintaining shopper trust.</value></data><data name="ModerationRules" xml:space="preserve"><value>Moderation rules</value></data><data name="CustomerReviews" xml:space="preserve"><value>customer reviews</value></data><data name="Reported" xml:space="preserve"><value>Reported</value></data><data name="SellerReviews" xml:space="preserve"><value>Seller reviews</value></data><data name="SearchReviews" xml:space="preserve"><value>Search reviews...</value></data><data name="VerifiedPurchase" xml:space="preserve"><value>Verified purchase</value></data><data name="QualitySnapshot" xml:space="preserve"><value>Quality snapshot</value></data><data name="ReviewQuality" xml:space="preserve"><value>Review quality</value></data><data name="ReviewQualityDesc" xml:space="preserve"><value>Most reviews are useful and follow marketplace guidelines.</value></data><data name="WithPhotos" xml:space="preserve"><value>With photos</value></data><data name="SellerResponse" xml:space="preserve"><value>Seller response</value></data><data name="AverageResponse" xml:space="preserve"><value>Average response</value></data>
+  <data name="SupportAndReturns" xml:space="preserve"><value>Support</value></data><data name="CustomerCare" xml:space="preserve"><value>Customer care</value></data><data name="SupportCenter" xml:space="preserve"><value>Support and returns</value></data><data name="SupportCenterDesc" xml:space="preserve"><value>Handle conversations, returns and warranty cases in one workspace.</value></data><data name="AssignAgent" xml:space="preserve"><value>Assign agent</value></data><data name="Messages" xml:space="preserve"><value>Messages</value></data><data name="SearchRequests" xml:space="preserve"><value>Search requests...</value></data><data name="Online" xml:space="preserve"><value>Online</value></data><data name="OrderDetails" xml:space="preserve"><value>Order details</value></data><data name="Today" xml:space="preserve"><value>Today</value></data><data name="WriteReply" xml:space="preserve"><value>Write a reply...</value></data><data name="TotalOrders" xml:space="preserve"><value>Total orders</value></data><data name="CustomerValue" xml:space="preserve"><value>Customer value</value></data><data name="OpenRequests" xml:space="preserve"><value>Open requests</value></data>
+  <data name="PromotionsAndLoyalty" xml:space="preserve"><value>Promotions and loyalty</value></data><data name="PromotionsAndLoyaltyDesc" xml:space="preserve"><value>Manage campaigns, wallets, gift certificates and customer subscriptions.</value></data><data name="CreateCampaign" xml:space="preserve"><value>Create campaign</value></data><data name="WalletBalance" xml:space="preserve"><value>Wallet balance</value></data><data name="ActiveWallets" xml:space="preserve"><value>active wallets</value></data><data name="ActiveCampaigns" xml:space="preserve"><value>Active campaigns</value></data><data name="IssuedCertificates" xml:space="preserve"><value>Issued certificates</value></data><data name="Subscriptions" xml:space="preserve"><value>Subscriptions</value></data><data name="SummerSale" xml:space="preserve"><value>Summer sale</value></data><data name="SummerSaleDesc" xml:space="preserve"><value>Up to 30% off popular categories.</value></data><data name="Participants" xml:space="preserve"><value>participants</value></data><data name="Manage" xml:space="preserve"><value>Manage</value></data><data name="FreeFirstDelivery" xml:space="preserve"><value>First delivery for ₴0</value></data><data name="FreeFirstDeliveryDesc" xml:space="preserve"><value>Acquire new shoppers with free first-order delivery.</value></data><data name="GiftCertificates" xml:space="preserve"><value>Gift certificates</value></data><data name="GiftCertificatesDesc" xml:space="preserve"><value>Seasonal digital certificate campaign.</value></data><data name="StartsOn" xml:space="preserve"><value>Starts</value></data><data name="RecentActivity" xml:space="preserve"><value>Recent activity</value></data><data name="ViewAll" xml:space="preserve"><value>View all</value></data><data name="Activity" xml:space="preserve"><value>Activity</value></data><data name="Campaign" xml:space="preserve"><value>Campaign</value></data><data name="Date" xml:space="preserve"><value>Date</value></data><data name="WalletCredit" xml:space="preserve"><value>Wallet credit</value></data><data name="CertificatePurchase" xml:space="preserve"><value>Certificate purchase</value></data>
+  <data name="NewProduct" xml:space="preserve"><value>New product</value></data><data name="NewProductDesc" xml:space="preserve"><value>Complete the product card before publishing it to the storefront.</value></data><data name="BackToProducts" xml:space="preserve"><value>Back to products</value></data><data name="SaveDraft" xml:space="preserve"><value>Save draft</value></data><data name="PublishProduct" xml:space="preserve"><value>Publish product</value></data><data name="BasicInformation" xml:space="preserve"><value>Basic information</value></data><data name="BasicInformationDesc" xml:space="preserve"><value>Product name, category and seller.</value></data><data name="ProductName" xml:space="preserve"><value>Product name</value></data><data name="ProductNamePlaceholder" xml:space="preserve"><value>Enter the full product name</value></data><data name="SelectCategory" xml:space="preserve"><value>Select category</value></data><data name="Brand" xml:space="preserve"><value>Brand</value></data><data name="SelectSeller" xml:space="preserve"><value>Select seller</value></data><data name="Description" xml:space="preserve"><value>Description</value></data><data name="ProductDescriptionPlaceholder" xml:space="preserve"><value>Describe the product’s benefits and features...</value></data><data name="Media" xml:space="preserve"><value>Media</value></data><data name="MediaDesc" xml:space="preserve"><value>Add a primary image and gallery.</value></data><data name="DropProductImages" xml:space="preserve"><value>Drop product images here</value></data><data name="UpTo" xml:space="preserve"><value>up to</value></data><data name="ChooseFiles" xml:space="preserve"><value>Choose files</value></data><data name="CharacteristicsAndVariants" xml:space="preserve"><value>Characteristics and variants</value></data><data name="CharacteristicsAndVariantsDesc" xml:space="preserve"><value>Parameters, colors, configurations and related offers.</value></data><data name="Characteristics" xml:space="preserve"><value>Characteristics</value></data><data name="Variants" xml:space="preserve"><value>Variants</value></data><data name="Services" xml:space="preserve"><value>Services</value></data><data name="AddCharacteristic" xml:space="preserve"><value>Add characteristic</value></data><data name="PriceAndStock" xml:space="preserve"><value>Price and stock</value></data><data name="OldPrice" xml:space="preserve"><value>Old price</value></data><data name="MarkAsPromotion" xml:space="preserve"><value>Mark as promotional</value></data><data name="StorefrontTip" xml:space="preserve"><value>Storefront tip</value></data><data name="StorefrontTipDesc" xml:space="preserve"><value>Cards with quality images and complete specifications receive more visits.</value></data>
+  <data name="CustomerActivity" xml:space="preserve"><value>Customer activity</value></data><data name="CustomerInsights" xml:space="preserve"><value>Customer insights</value></data><data name="CustomerActivityDesc" xml:space="preserve"><value>Analyze views, comparisons, wishlists, carts and parcel delivery.</value></data><data name="ViewedProducts" xml:space="preserve"><value>Product views</value></data><data name="Comparisons" xml:space="preserve"><value>Comparisons</value></data><data name="Wishlists" xml:space="preserve"><value>Wishlists</value></data><data name="ActiveCarts" xml:space="preserve"><value>Active carts</value></data><data name="ShoppingIntent" xml:space="preserve"><value>Shopping intent</value></data><data name="ShoppingIntentDesc" xml:space="preserve"><value>High-intent shopping activity over time.</value></data><data name="Last30Days" xml:space="preserve"><value>Last 30 days</value></data><data name="Parcels" xml:space="preserve"><value>Parcels</value></data><data name="InTransit" xml:space="preserve"><value>In transit</value></data><data name="Delivered" xml:space="preserve"><value>Delivered</value></data><data name="Delayed" xml:space="preserve"><value>Delayed</value></data><data name="CustomerSegments" xml:space="preserve"><value>Customer segments</value></data><data name="CreateSegment" xml:space="preserve"><value>Create segment</value></data><data name="HighIntent" xml:space="preserve"><value>High intent</value></data><data name="HighIntentDesc" xml:space="preserve"><value>Compared or wishlisted products during the last 7 days.</value></data><data name="AbandonedCarts" xml:space="preserve"><value>Abandoned carts</value></data><data name="AbandonedCartsDesc" xml:space="preserve"><value>Products have remained in the cart for over 24 hours.</value></data><data name="LoyalCustomers" xml:space="preserve"><value>Loyal customers</value></data><data name="LoyalCustomersDesc" xml:space="preserve"><value>Three or more completed orders.</value></data>
+  <data name="OpenMenu" xml:space="preserve"><value>Open menu</value></data><data name="CloseMenu" xml:space="preserve"><value>Close menu</value></data><data name="ProductsNav" xml:space="preserve"><value>Products</value></data><data name="CharacteristicName" xml:space="preserve"><value>Characteristic name</value></data><data name="CharacteristicValue" xml:space="preserve"><value>Characteristic value</value></data><data name="DeleteCharacteristic" xml:space="preserve"><value>Delete characteristic</value></data><data name="AttachFile" xml:space="preserve"><value>Attach file</value></data><data name="SendMessage" xml:space="preserve"><value>Send message</value></data><data name="Period" xml:space="preserve"><value>Period</value></data>
+  <data name="BlockUser" xml:space="preserve"><value>Block user</value></data>
+  <data name="UnblockUser" xml:space="preserve"><value>Unblock user</value></data>
+  <data name="UserStatusChangeError" xml:space="preserve"><value>The user status could not be changed. Try again.</value></data>
+  <data name="FilterByStatus" xml:space="preserve"><value>Filter by status</value></data>
+  <data name="AllStatuses" xml:space="preserve"><value>All statuses</value></data>
+  <data name="ApplyFilters" xml:space="preserve"><value>Apply filters</value></data>
+  <data name="UsersPageSubtitle" xml:space="preserve"><value>Manage customer accounts, activation status and access in one place.</value></data>
+  <data name="ShowingUsers" xml:space="preserve"><value>Users found:</value></data>
+  <data name="ClearSearch" xml:space="preserve"><value>Clear search</value></data>
+  <data name="ResetFilters" xml:space="preserve"><value>Reset filters</value></data>
 </root>

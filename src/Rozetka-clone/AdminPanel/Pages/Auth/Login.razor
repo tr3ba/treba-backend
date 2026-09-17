@@ -1,7 +1,26 @@
 @page "/auth/login"
+@layout AuthLayout
 
-<PageTitle>@L["Login"]</PageTitle>
+<PageTitle>@L["Login"] — Treba Admin</PageTitle>
 
-<div class="login-container">
-    <h3>@L["AdminSignIn"]</h3>
-</div>
+<section class="login-shell">
+    <div class="login-brand-panel">
+        <div class="login-brand"><span>T</span><div><strong>TREBA</strong><small>ADMIN PANEL</small></div></div>
+        <div class="login-brand-copy"><p class="eyebrow">@L["SecureWorkspace"]</p><h1>@L["OperateWithClarity"]</h1></div>
+        <div class="login-security-note"><i class="bi bi-shield-check"></i><div><strong>@L["ProtectedAccess"]</strong><span>@L["ProtectedAccessDesc"]</span></div></div>
+        <div class="login-orbit orbit-one"></div><div class="login-orbit orbit-two"></div>
+    </div>
+    <div class="login-form-panel">
+        <div class="login-form-wrap">
+            <span class="login-mobile-mark">T</span>
+            <p class="eyebrow">@L["WelcomeBack"]</p><h2>@L["AdminSignIn"]</h2><p class="login-intro">@L["LoginIntro"]</p>
+            <form class="login-form">
+                <label><span>@L["AdminEmail"]</span><div class="login-input"><i class="bi bi-envelope"></i><input type="email" placeholder="admin@treba.ua" /></div></label>
+                <label><span>@L["Password"]</span><div class="login-input"><i class="bi bi-lock"></i><input type="password" placeholder="••••••••••••" /><button type="button" aria-label="@L["ShowPassword"]"><i class="bi bi-eye"></i></button></div></label>
+                <div class="login-options"><label class="remember-check"><input type="checkbox" /><span>@L["RememberMe"]</span></label><a href="#">@L["ForgotPassword"]</a></div>
+                <button class="primary-button wide login-submit" type="button">@L["SignIn"]<i class="bi bi-arrow-right"></i></button>
+            </form>
+            <p class="login-help">@L["LoginHelp"] <a href="#">@L["ContactSupport"]</a></p>
+        </div>
+    </div>
+</section>

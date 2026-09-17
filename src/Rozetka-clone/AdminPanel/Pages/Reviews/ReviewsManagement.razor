@@ -1,0 +1,35 @@
+@page "/reviews"
+
+<PageTitle>@L["Reviews"] — Treba Admin</PageTitle>
+<section class="page-hero"><div><p class="eyebrow">@L["TrustAndQuality"]</p><h1>@L["ReviewsManagement"]</h1></div><button class="primary-button" type="button"><i class="bi bi-sliders"></i>@L["ModerationRules"]</button></section>
+
+<section class="review-summary">
+    <article class="review-score-card"><strong>4.7</strong><div><span class="review-stars">★★★★★</span><p>18 420 @L["CustomerReviews"]</p></div></article>
+    <article><i class="bi bi-hourglass-split amber"></i><div><small>@L["AwaitingReview"]</small><strong>126</strong></div></article>
+    <article><i class="bi bi-flag red"></i><div><small>@L["Reported"]</small><strong>34</strong></div></article>
+    <article><i class="bi bi-shop blue"></i><div><small>@L["SellerReviews"]</small><strong>2 184</strong></div></article>
+</section>
+
+<section class="review-workspace">
+    <div class="review-feed card-box">
+        <div class="store-toolbar"><div class="store-filter-row"><button class="store-filter active">@L["AwaitingReview"] <b>126</b></button><button class="store-filter">@L["Published"]</button><button class="store-filter">@L["Reported"]</button></div><label class="workspace-search"><i class="bi bi-search"></i><input placeholder="@L["SearchReviews"]" /></label></div>
+        @foreach (var review in Reviews)
+        {
+            <article class="review-item">
+                <span class="review-avatar">@review.Initials</span>
+                <div class="review-body"><div class="review-meta-line"><strong>@review.Author</strong><span class="review-stars small">@review.Stars</span><small>@review.Time @L["MinutesAgo"]</small></div><button class="review-product-link" type="button">@review.Product</button><p>@review.Text</p><div class="review-tags"><span><i class="bi bi-check2"></i>@L["VerifiedPurchase"]</span>@if(review.Reported){<span class="reported"><i class="bi bi-flag"></i>@L["Reported"]</span>}</div></div>
+                <div class="review-actions"><button class="review-approve" type="button" aria-label="@L["Approve"]"><i class="bi bi-check-lg"></i></button><button class="review-reject" type="button" aria-label="@L["Reject"]"><i class="bi bi-x-lg"></i></button></div>
+            </article>
+        }
+    </div>
+    <aside class="card-box review-insight"><p class="eyebrow">@L["QualitySnapshot"]</p><h2>@L["ReviewQuality"]</h2><div class="quality-ring">92<small>%</small></div><p>@L["ReviewQualityDesc"]</p><div class="quality-row"><span>@L["WithPhotos"]</span><strong>38%</strong></div><div class="quality-row"><span>@L["SellerResponse"]</span><strong>81%</strong></div><div class="quality-row"><span>@L["AverageResponse"]</span><strong>3.2h</strong></div></aside>
+</section>
+
+@code {
+    private static readonly ReviewRow[] Reviews = [
+        new("ОМ","Олена Мельник","★★★★★","12","Ігрова клавіатура HATOR Hellyberry HK75","Дуже приємна клавіатура, якісні перемикачі та швидка доставка.",false),
+        new("АК","Андрій Коваль","★★★★☆","34","Мультипіч NINJA Foodi Dual Zone Max","Все працює добре. Хотілося б докладнішу інструкцію українською.",false),
+        new("ІБ","Ірина Бондар","★★☆☆☆","60","Зволожувач повітря LEVOIT Dual 200S","Товар чудовий, але коробка приїхала пошкодженою.",true)
+    ];
+    private sealed record ReviewRow(string Initials,string Author,string Stars,string Time,string Product,string Text,bool Reported);
+}

@@ -63,4 +63,229 @@
   <data name="NotificationSettingsDesc" xml:space="preserve"><value>Настройки почтовых, системных и событийных уведомлений.</value></data>
   <data name="AccessSettings" xml:space="preserve"><value>Доступ и безопасность</value></data>
   <data name="AccessSettingsDesc" xml:space="preserve"><value>Роли администраторов, разрешения и политики безопасности.</value></data>
+  <data name="TotalUsers" xml:space="preserve"><value>Всего пользователей</value></data>
+  <data name="UserSearchPlaceholder" xml:space="preserve"><value>Имя, email или телефон</value></data>
+  <data name="SearchUsers" xml:space="preserve"><value>Поиск пользователей</value></data>
+  <data name="Clear" xml:space="preserve"><value>Сбросить</value></data>
+  <data name="LoadingUsers" xml:space="preserve"><value>Загрузка пользователей...</value></data>
+  <data name="TryAgain" xml:space="preserve"><value>Повторить</value></data>
+  <data name="UsersNotFound" xml:space="preserve"><value>Пользователи не найдены</value></data>
+  <data name="UsersNotFoundDesc" xml:space="preserve"><value>Попробуйте изменить поисковый запрос.</value></data>
+  <data name="User" xml:space="preserve"><value>Пользователь</value></data>
+  <data name="Phone" xml:space="preserve"><value>Телефон</value></data>
+  <data name="RegisteredAt" xml:space="preserve"><value>Дата регистрации</value></data>
+  <data name="LastLogin" xml:space="preserve"><value>Последний вход</value></data>
+  <data name="Actions" xml:space="preserve"><value>Действия</value></data>
+  <data name="NotSpecified" xml:space="preserve"><value>Не указан</value></data>
+  <data name="Never" xml:space="preserve"><value>Никогда</value></data>
+  <data name="ViewUser" xml:space="preserve"><value>Просмотреть пользователя</value></data>
+  <data name="View" xml:space="preserve"><value>Открыть</value></data>
+  <data name="UsersLoadError" xml:space="preserve"><value>Не удалось загрузить пользователей. Проверьте подключение к API и повторите попытку.</value></data>
+  <data name="UserStatusPendingActivation" xml:space="preserve"><value>Ожидает активации</value></data>
+  <data name="UserStatusActive" xml:space="preserve"><value>Активен</value></data>
+  <data name="UserStatusBlocked" xml:space="preserve"><value>Заблокирован</value></data>
+  <data name="UserStatusDeleted" xml:space="preserve"><value>Удалён</value></data>
+  <data name="UserDetails" xml:space="preserve"><value>Данные пользователя</value></data>
+  <data name="BackToUsers" xml:space="preserve"><value>Назад к пользователям</value></data>
+  <data name="LoadingUser" xml:space="preserve"><value>Загрузка пользователя...</value></data>
+  <data name="UserLoadError" xml:space="preserve"><value>Не удалось загрузить пользователя. Проверьте подключение к API и повторите попытку.</value></data>
+  <data name="UserNotFound" xml:space="preserve"><value>Пользователь не найден</value></data>
+  <data name="UserNotFoundDesc" xml:space="preserve"><value>Пользователь мог быть удалён или ссылка неверна.</value></data>
+  <data name="ContactAndAccount" xml:space="preserve"><value>Контакты и учётная запись</value></data>
+  <data name="EmailVerified" xml:space="preserve"><value>Email подтверждён</value></data>
+  <data name="PhoneVerified" xml:space="preserve"><value>Телефон подтверждён</value></data>
+  <data name="LastUpdated" xml:space="preserve"><value>Последнее обновление</value></data>
+  <data name="Profile" xml:space="preserve"><value>Профиль</value></data>
+  <data name="ProfileNotCreated" xml:space="preserve"><value>Пользователь ещё не создал профиль.</value></data>
+  <data name="BirthDate" xml:space="preserve"><value>Дата рождения</value></data>
+  <data name="Gender" xml:space="preserve"><value>Пол</value></data>
+  <data name="MarketingEmails" xml:space="preserve"><value>Маркетинговые письма</value></data>
+  <data name="Addresses" xml:space="preserve"><value>Адреса</value></data>
+  <data name="AddressesNotAdded" xml:space="preserve"><value>Пользователь ещё не добавил адреса.</value></data>
+  <data name="DefaultAddress" xml:space="preserve"><value>Основной</value></data>
+  <data name="Verified" xml:space="preserve"><value>Подтверждён</value></data>
+  <data name="NotVerified" xml:space="preserve"><value>Не подтверждён</value></data>
+  <data name="Yes" xml:space="preserve"><value>Да</value></data>
+  <data name="No" xml:space="preserve"><value>Нет</value></data>
+  <data name="Accessories" xml:space="preserve"><value>Аксессуары</value></data>
+  <data name="Active" xml:space="preserve"><value>Активные</value></data>
+  <data name="ActiveCategories" xml:space="preserve"><value>Активные категории</value></data>
+  <data name="AdminEmail" xml:space="preserve"><value>Email администратора</value></data>
+  <data name="ApplicationReview" xml:space="preserve"><value>Проверка заявки</value></data>
+  <data name="Applications" xml:space="preserve"><value>Заявки</value></data>
+  <data name="Approve" xml:space="preserve"><value>Одобрить</value></data>
+  <data name="Approved" xml:space="preserve"><value>Одобрено</value></data>
+  <data name="ApproveSeller" xml:space="preserve"><value>Одобрить продавца</value></data>
+  <data name="AreYouSure" xml:space="preserve"><value>Вы уверены, что хотите продолжить?</value></data>
+  <data name="Audio" xml:space="preserve"><value>Аудио</value></data>
+  <data name="AwaitingPayment" xml:space="preserve"><value>Ожидают оплаты</value></data>
+  <data name="AwaitingReview" xml:space="preserve"><value>Ожидают проверки</value></data>
+  <data name="BackToSellers" xml:space="preserve"><value>Назад к продавцам</value></data>
+  <data name="BankDetails" xml:space="preserve"><value>Банковские реквизиты</value></data>
+  <data name="BeautyAndHealth" xml:space="preserve"><value>Красота и здоровье</value></data>
+  <data name="Cancel" xml:space="preserve"><value>Отмена</value></data>
+  <data name="CashOnDelivery" xml:space="preserve"><value>Наложенный платёж</value></data>
+  <data name="CatalogQuality" xml:space="preserve"><value>Качество каталога</value></data>
+  <data name="CatalogStructure" xml:space="preserve"><value>Структура каталога</value></data>
+  <data name="Category" xml:space="preserve"><value>Категория</value></data>
+  <data name="CategoryFocus" xml:space="preserve"><value>Товарные категории</value></data>
+  <data name="CategoryFocusDesc" xml:space="preserve"><value>Продавец планирует начать работу с этими категориями товаров.</value></data>
+  <data name="CategorySearchPlaceholder" xml:space="preserve"><value>Найти категорию</value></data>
+  <data name="CategoryTree" xml:space="preserve"><value>Дерево категорий</value></data>
+  <data name="ClothingAndShoes" xml:space="preserve"><value>Одежда и обувь</value></data>
+  <data name="CompanyRegistration" xml:space="preserve"><value>Регистрационные документы</value></data>
+  <data name="ComparedYesterday" xml:space="preserve"><value>к вчерашнему дню</value></data>
+  <data name="Completeness" xml:space="preserve"><value>Заполненность</value></data>
+  <data name="Confirm" xml:space="preserve"><value>Подтвердить</value></data>
+  <data name="Confirmation" xml:space="preserve"><value>Подтверждение</value></data>
+  <data name="ContactPerson" xml:space="preserve"><value>Контактное лицо</value></data>
+  <data name="ContactSupport" xml:space="preserve"><value>Связаться с поддержкой</value></data>
+  <data name="Courier" xml:space="preserve"><value>Курьерская доставка</value></data>
+  <data name="CreateCategory" xml:space="preserve"><value>Создать категорию</value></data>
+  <data name="Decision" xml:space="preserve"><value>Решение</value></data>
+  <data name="DecisionDesc" xml:space="preserve"><value>Проверьте документы и оставьте комментарий перед финальным решением.</value></data>
+  <data name="DecisionRecorded" xml:space="preserve"><value>Решение фиксируется</value></data>
+  <data name="DecisionRecordedDesc" xml:space="preserve"><value>Ваше имя, время и решение сохранятся в журнале аудита.</value></data>
+  <data name="Delivery" xml:space="preserve"><value>Доставка</value></data>
+  <data name="DemoData" xml:space="preserve"><value>Демо</value></data>
+  <data name="DirectorPassport" xml:space="preserve"><value>Паспорт директора</value></data>
+  <data name="Dnipro" xml:space="preserve"><value>Днепр</value></data>
+  <data name="Documents" xml:space="preserve"><value>Документы</value></data>
+  <data name="DocumentsReady" xml:space="preserve"><value>Документы готовы</value></data>
+  <data name="Edit" xml:space="preserve"><value>Редактировать</value></data>
+  <data name="Electronics" xml:space="preserve"><value>Электроника</value></data>
+  <data name="Export" xml:space="preserve"><value>Экспорт</value></data>
+  <data name="Files" xml:space="preserve"><value>файла</value></data>
+  <data name="Filters" xml:space="preserve"><value>Фильтры</value></data>
+  <data name="FinalStep" xml:space="preserve"><value>Финальный этап</value></data>
+  <data name="Fitness" xml:space="preserve"><value>Фитнес</value></data>
+  <data name="ForgotPassword" xml:space="preserve"><value>Забыли пароль?</value></data>
+  <data name="HiddenCategories" xml:space="preserve"><value>Скрытые категории</value></data>
+  <data name="HomeAndGarden" xml:space="preserve"><value>Дом и сад</value></data>
+  <data name="InDelivery" xml:space="preserve"><value>В доставке</value></data>
+  <data name="InviteSeller" xml:space="preserve"><value>Пригласить продавца</value></data>
+  <data name="KeyMetrics" xml:space="preserve"><value>Ключевые показатели</value></data>
+  <data name="Kids" xml:space="preserve"><value>Детские товары</value></data>
+  <data name="Kyiv" xml:space="preserve"><value>Киев</value></data>
+  <data name="Laptops" xml:space="preserve"><value>Ноутбуки</value></data>
+  <data name="LegalName" xml:space="preserve"><value>Юридическое название</value></data>
+  <data name="LoginBrandCopy" xml:space="preserve"><value>Единое пространство для заказов, качества каталога, партнёров и роста маркетплейса.</value></data>
+  <data name="LoginHelp" xml:space="preserve"><value>Не получается войти?</value></data>
+  <data name="LoginIntro" xml:space="preserve"><value>Используйте корпоративную учётную запись.</value></data>
+  <data name="LowRisk" xml:space="preserve"><value>Низкий риск</value></data>
+  <data name="Lviv" xml:space="preserve"><value>Львов</value></data>
+  <data name="MinutesAgo" xml:space="preserve"><value>мин назад</value></data>
+  <data name="MonthlyGmv" xml:space="preserve"><value>Оборот за месяц</value></data>
+  <data name="NeedChanges" xml:space="preserve"><value>Нужны изменения</value></data>
+  <data name="NewStatus" xml:space="preserve"><value>Новый</value></data>
+  <data name="Next" xml:space="preserve"><value>Далее</value></data>
+  <data name="NextInQueue" xml:space="preserve"><value>Следующий в очереди</value></data>
+  <data name="Nutrition" xml:space="preserve"><value>Спортивное питание</value></data>
+  <data name="Odesa" xml:space="preserve"><value>Одесса</value></data>
+  <data name="Of" xml:space="preserve"><value>из</value></data>
+  <data name="OnTheWay" xml:space="preserve"><value>заказов в пути</value></data>
+  <data name="OpenProfile" xml:space="preserve"><value>Открыть профиль</value></data>
+  <data name="OperateWithClarity" xml:space="preserve"><value>Управляйте уверенно.</value></data>
+  <data name="Operations" xml:space="preserve"><value>Операции</value></data>
+  <data name="OrderItems" xml:space="preserve"><value>Состав</value></data>
+  <data name="OrderSearchPlaceholder" xml:space="preserve"><value>Заказ, клиент или телефон</value></data>
+  <data name="OrderStatuses" xml:space="preserve"><value>Статусы заказов</value></data>
+  <data name="OrdersToday" xml:space="preserve"><value>Заказы сегодня</value></data>
+  <data name="Outdoor" xml:space="preserve"><value>Активный отдых</value></data>
+  <data name="Page" xml:space="preserve"><value>Страница</value></data>
+  <data name="Paid" xml:space="preserve"><value>Оплачено</value></data>
+  <data name="PartnerNetwork" xml:space="preserve"><value>Партнёрская сеть</value></data>
+  <data name="Password" xml:space="preserve"><value>Пароль</value></data>
+  <data name="Payment" xml:space="preserve"><value>Оплата</value></data>
+  <data name="PendingReview" xml:space="preserve"><value>Ожидают проверки</value></data>
+  <data name="Previous" xml:space="preserve"><value>Назад</value></data>
+  <data name="Price" xml:space="preserve"><value>Цена</value></data>
+  <data name="Processing" xml:space="preserve"><value>В обработке</value></data>
+  <data name="Product" xml:space="preserve"><value>товар</value></data>
+  <data name="ProductCoverage" xml:space="preserve"><value>Покрытие товаров</value></data>
+  <data name="Products" xml:space="preserve"><value>товаров</value></data>
+  <data name="ProductsCategorized" xml:space="preserve"><value>товаров распределено</value></data>
+  <data name="ProtectedAccess" xml:space="preserve"><value>Защищённый доступ</value></data>
+  <data name="ProtectedAccessDesc" xml:space="preserve"><value>Сеансы администраторов защищены и журналируются.</value></data>
+  <data name="Queue" xml:space="preserve"><value>Очередь</value></data>
+  <data name="QueueHealth" xml:space="preserve"><value>Состояние очереди</value></data>
+  <data name="Rating" xml:space="preserve"><value>Рейтинг</value></data>
+  <data name="Refunded" xml:space="preserve"><value>Возвращено</value></data>
+  <data name="Reject" xml:space="preserve"><value>Отклонить</value></data>
+  <data name="RejectApplication" xml:space="preserve"><value>Отклонить заявку</value></data>
+  <data name="RememberMe" xml:space="preserve"><value>Запомнить меня</value></data>
+  <data name="RequestChanges" xml:space="preserve"><value>Запросить изменения</value></data>
+  <data name="RequireAttention" xml:space="preserve"><value>требуют внимания</value></data>
+  <data name="Returned" xml:space="preserve"><value>Возврат</value></data>
+  <data name="Returns" xml:space="preserve"><value>Возвраты</value></data>
+  <data name="ReviewNote" xml:space="preserve"><value>Комментарий проверки</value></data>
+  <data name="ReviewNotePlaceholder" xml:space="preserve"><value>Добавьте краткий комментарий для журнала</value></data>
+  <data name="Risk" xml:space="preserve"><value>Риск</value></data>
+  <data name="SecureWorkspace" xml:space="preserve"><value>Безопасное пространство</value></data>
+  <data name="SelectedCategory" xml:space="preserve"><value>Выбранная категория</value></data>
+  <data name="SellerReview" xml:space="preserve"><value>Проверка продавца</value></data>
+  <data name="SellerSearchPlaceholder" xml:space="preserve"><value>Название магазина или категория</value></data>
+  <data name="Shipped" xml:space="preserve"><value>Отправлено</value></data>
+  <data name="ShowingOrders" xml:space="preserve"><value>Показано 1–4 из 1 284 заказов</value></data>
+  <data name="ShowPassword" xml:space="preserve"><value>Показать пароль</value></data>
+  <data name="SignIn" xml:space="preserve"><value>Войти</value></data>
+  <data name="Since" xml:space="preserve"><value>С</value></data>
+  <data name="SmartHome" xml:space="preserve"><value>Умный дом</value></data>
+  <data name="Smartphones" xml:space="preserve"><value>Смартфоны</value></data>
+  <data name="SportsAndHobby" xml:space="preserve"><value>Спорт и хобби</value></data>
+  <data name="Sportswear" xml:space="preserve"><value>Спортивная одежда</value></data>
+  <data name="StoreDetails" xml:space="preserve"><value>Данные магазина</value></data>
+  <data name="Subcategories" xml:space="preserve"><value>подкатегорий</value></data>
+  <data name="Submitted" xml:space="preserve"><value>Подано</value></data>
+  <data name="Suspended" xml:space="preserve"><value>Приостановлены</value></data>
+  <data name="TaxCertificate" xml:space="preserve"><value>Налоговая справка</value></data>
+  <data name="TaxId" xml:space="preserve"><value>Код ЕГРПОУ</value></data>
+  <data name="Televisions" xml:space="preserve"><value>Телевизоры</value></data>
+  <data name="ThisWeek" xml:space="preserve"><value>за эту неделю</value></data>
+  <data name="TodayAt" xml:space="preserve"><value>Сегодня в</value></data>
+  <data name="UnderReview" xml:space="preserve"><value>На проверке</value></data>
+  <data name="UpNext" xml:space="preserve"><value>Далее</value></data>
+  <data name="VerifiedSellers" xml:space="preserve"><value>Проверенные продавцы</value></data>
+  <data name="ViewFullQueue" xml:space="preserve"><value>Открыть всю очередь</value></data>
+  <data name="Website" xml:space="preserve"><value>Сайт</value></data>
+  <data name="WelcomeBack" xml:space="preserve"><value>С возвращением</value></data>
+  <data name="YesterdayAt" xml:space="preserve"><value>Вчера в</value></data>
+  <data name="CreateUser" xml:space="preserve"><value>Создать пользователя</value></data>
+  <data name="CreateUserTitle" xml:space="preserve"><value>Новый пользователь</value></data>
+  <data name="CreateUserSubtitle" xml:space="preserve"><value>Добавьте реального пользователя в базу данных.</value></data>
+  <data name="PersonalInformation" xml:space="preserve"><value>Личные данные</value></data>
+  <data name="PersonalInformationDesc" xml:space="preserve"><value>Укажите имя пользователя так, как оно будет отображаться в системе.</value></data>
+  <data name="ContactInformation" xml:space="preserve"><value>Контактные данные</value></data>
+  <data name="ContactInformationDesc" xml:space="preserve"><value>Email должен быть уникальным для каждого пользователя.</value></data>
+  <data name="FirstName" xml:space="preserve"><value>Имя</value></data>
+  <data name="LastName" xml:space="preserve"><value>Фамилия</value></data>
+  <data name="MiddleName" xml:space="preserve"><value>Отчество</value></data>
+  <data name="Email" xml:space="preserve"><value>Email</value></data>
+  <data name="Optional" xml:space="preserve"><value>необязательно</value></data>
+  <data name="Creating" xml:space="preserve"><value>Создание...</value></data>
+  <data name="RequiredField" xml:space="preserve"><value>Заполните это поле.</value></data>
+  <data name="InvalidEmail" xml:space="preserve"><value>Введите корректный email.</value></data>
+  <data name="EmailAlreadyExists" xml:space="preserve"><value>Пользователь с таким email уже существует.</value></data>
+  <data name="CreateUserError" xml:space="preserve"><value>Не удалось создать пользователя. Проверьте подключение к API и повторите попытку.</value></data>
+  <data name="AccountWillAwaitActivation" xml:space="preserve"><value>Ожидание активации</value></data>
+  <data name="AccountWillAwaitActivationDesc" xml:space="preserve"><value>Новая запись будет создана без пароля и получит статус ожидания активации. Вход станет доступен после подключения регистрации или приглашений.</value></data>
+  <data name="Growth" xml:space="preserve"><value>Рост</value></data><data name="Catalog" xml:space="preserve"><value>Каталог</value></data><data name="Seller" xml:space="preserve"><value>Продавец</value></data><data name="Stock" xml:space="preserve"><value>Остаток</value></data><data name="Items" xml:space="preserve"><value>шт.</value></data>
+  <data name="ProductManagement" xml:space="preserve"><value>Управление товарами</value></data><data name="ProductManagementDesc" xml:space="preserve"><value>Контролируйте ассортимент, цены, остатки и отображение товаров на витрине.</value></data><data name="AddProduct" xml:space="preserve"><value>Добавить товар</value></data><data name="AllProducts" xml:space="preserve"><value>Все товары</value></data><data name="Published" xml:space="preserve"><value>Опубликовано</value></data><data name="LowStock" xml:space="preserve"><value>Мало на складе</value></data><data name="OnPromotion" xml:space="preserve"><value>В акции</value></data><data name="ActiveNow" xml:space="preserve"><value>Активно сейчас</value></data><data name="Drafts" xml:space="preserve"><value>Черновики</value></data><data name="OutOfStock" xml:space="preserve"><value>Нет в наличии</value></data><data name="ProductSearchPlaceholder" xml:space="preserve"><value>Название, SKU или продавец...</value></data>
+  <data name="Storefront" xml:space="preserve"><value>Витрина</value></data><data name="StorefrontContent" xml:space="preserve"><value>Контент магазина</value></data><data name="StorefrontManagement" xml:space="preserve"><value>Управление витриной</value></data><data name="StorefrontManagementDesc" xml:space="preserve"><value>Настраивайте баннеры, подборки и сервисные преимущества главной страницы.</value></data><data name="PreviewStorefront" xml:space="preserve"><value>Открыть предпросмотр</value></data><data name="MainBanner" xml:space="preserve"><value>Главный баннер</value></data><data name="MainBannerDesc" xml:space="preserve"><value>Первый экран магазина и ключевая рекламная кампания.</value></data><data name="FeaturedCampaign" xml:space="preserve"><value>Спецпредложение</value></data><data name="DreamAndOwn" xml:space="preserve"><value>Не мечтайте. Владейте.</value></data><data name="InstallmentOffer" xml:space="preserve"><value>До 15 платежей без переплат</value></data><data name="ProductShelves" xml:space="preserve"><value>Подборки товаров</value></data><data name="HomepageCollections" xml:space="preserve"><value>Коллекции главной страницы</value></data><data name="HomepageCollectionsDesc" xml:space="preserve"><value>Порядок блоков и товары, которые увидит покупатель.</value></data><data name="AddCollection" xml:space="preserve"><value>Добавить подборку</value></data><data name="BestOffers" xml:space="preserve"><value>Лучшие предложения для вас</value></data><data name="Recommendations" xml:space="preserve"><value>Рекомендации</value></data><data name="TotalSale" xml:space="preserve"><value>Тотальная распродажа</value></data><data name="Scheduled" xml:space="preserve"><value>Запланировано</value></data><data name="StorefrontStatus" xml:space="preserve"><value>Статус витрины</value></data><data name="LastPublished" xml:space="preserve"><value>Последняя публикация:</value></data><data name="ServiceBenefits" xml:space="preserve"><value>Сервисные преимущества</value></data><data name="ServiceBenefitsDesc" xml:space="preserve"><value>Плашки под главным баннером.</value></data><data name="Enabled" xml:space="preserve"><value>Включено</value></data><data name="Warranty" xml:space="preserve"><value>Гарантия</value></data>
+  <data name="Reviews" xml:space="preserve"><value>Отзывы</value></data><data name="TrustAndQuality" xml:space="preserve"><value>Доверие и качество</value></data><data name="ReviewsManagement" xml:space="preserve"><value>Управление отзывами</value></data><data name="ReviewsManagementDesc" xml:space="preserve"><value>Модерируйте отзывы о товарах и продавцах, поддерживая доверие покупателей.</value></data><data name="ModerationRules" xml:space="preserve"><value>Правила модерации</value></data><data name="CustomerReviews" xml:space="preserve"><value>отзывов покупателей</value></data><data name="Reported" xml:space="preserve"><value>Жалобы</value></data><data name="SellerReviews" xml:space="preserve"><value>Отзывы о продавцах</value></data><data name="SearchReviews" xml:space="preserve"><value>Поиск отзывов...</value></data><data name="VerifiedPurchase" xml:space="preserve"><value>Подтверждённая покупка</value></data><data name="QualitySnapshot" xml:space="preserve"><value>Показатель качества</value></data><data name="ReviewQuality" xml:space="preserve"><value>Качество отзывов</value></data><data name="ReviewQualityDesc" xml:space="preserve"><value>Большинство отзывов полезны и соответствуют правилам площадки.</value></data><data name="WithPhotos" xml:space="preserve"><value>С фотографиями</value></data><data name="SellerResponse" xml:space="preserve"><value>Ответ продавца</value></data><data name="AverageResponse" xml:space="preserve"><value>Среднее время ответа</value></data>
+  <data name="SupportAndReturns" xml:space="preserve"><value>Поддержка</value></data><data name="CustomerCare" xml:space="preserve"><value>Забота о клиентах</value></data><data name="SupportCenter" xml:space="preserve"><value>Поддержка и возвраты</value></data><data name="SupportCenterDesc" xml:space="preserve"><value>Обрабатывайте обращения, возвраты и гарантийные случаи в одном рабочем окне.</value></data><data name="AssignAgent" xml:space="preserve"><value>Назначить оператора</value></data><data name="Messages" xml:space="preserve"><value>Сообщения</value></data><data name="SearchRequests" xml:space="preserve"><value>Поиск обращений...</value></data><data name="Online" xml:space="preserve"><value>В сети</value></data><data name="OrderDetails" xml:space="preserve"><value>Детали заказа</value></data><data name="Today" xml:space="preserve"><value>Сегодня</value></data><data name="WriteReply" xml:space="preserve"><value>Напишите ответ...</value></data><data name="TotalOrders" xml:space="preserve"><value>Всего заказов</value></data><data name="CustomerValue" xml:space="preserve"><value>Ценность клиента</value></data><data name="OpenRequests" xml:space="preserve"><value>Открытых обращений</value></data>
+  <data name="PromotionsAndLoyalty" xml:space="preserve"><value>Акции и лояльность</value></data><data name="PromotionsAndLoyaltyDesc" xml:space="preserve"><value>Управляйте акциями, кошельками, сертификатами и подписками покупателей.</value></data><data name="CreateCampaign" xml:space="preserve"><value>Создать кампанию</value></data><data name="WalletBalance" xml:space="preserve"><value>Баланс кошельков</value></data><data name="ActiveWallets" xml:space="preserve"><value>активных кошельков</value></data><data name="ActiveCampaigns" xml:space="preserve"><value>Активные кампании</value></data><data name="IssuedCertificates" xml:space="preserve"><value>Выпущено сертификатов</value></data><data name="Subscriptions" xml:space="preserve"><value>Подписки</value></data><data name="SummerSale" xml:space="preserve"><value>Летняя распродажа</value></data><data name="SummerSaleDesc" xml:space="preserve"><value>Скидки до 30% на популярные категории.</value></data><data name="Participants" xml:space="preserve"><value>участников</value></data><data name="Manage" xml:space="preserve"><value>Управлять</value></data><data name="FreeFirstDelivery" xml:space="preserve"><value>Первая доставка за 0 ₴</value></data><data name="FreeFirstDeliveryDesc" xml:space="preserve"><value>Привлечение новых покупателей бесплатной доставкой первого заказа.</value></data><data name="GiftCertificates" xml:space="preserve"><value>Подарочные сертификаты</value></data><data name="GiftCertificatesDesc" xml:space="preserve"><value>Сезонная кампания цифровых сертификатов.</value></data><data name="StartsOn" xml:space="preserve"><value>Старт</value></data><data name="RecentActivity" xml:space="preserve"><value>Последняя активность</value></data><data name="ViewAll" xml:space="preserve"><value>Показать всё</value></data><data name="Activity" xml:space="preserve"><value>Операция</value></data><data name="Campaign" xml:space="preserve"><value>Кампания</value></data><data name="Date" xml:space="preserve"><value>Дата</value></data><data name="WalletCredit" xml:space="preserve"><value>Пополнение кошелька</value></data><data name="CertificatePurchase" xml:space="preserve"><value>Покупка сертификата</value></data>
+  <data name="NewProduct" xml:space="preserve"><value>Новый товар</value></data><data name="NewProductDesc" xml:space="preserve"><value>Заполните карточку товара для публикации на витрине.</value></data><data name="BackToProducts" xml:space="preserve"><value>Назад к товарам</value></data><data name="SaveDraft" xml:space="preserve"><value>Сохранить черновик</value></data><data name="PublishProduct" xml:space="preserve"><value>Опубликовать</value></data><data name="BasicInformation" xml:space="preserve"><value>Основная информация</value></data><data name="BasicInformationDesc" xml:space="preserve"><value>Название, категория и продавец товара.</value></data><data name="ProductName" xml:space="preserve"><value>Название товара</value></data><data name="ProductNamePlaceholder" xml:space="preserve"><value>Введите полное название товара</value></data><data name="SelectCategory" xml:space="preserve"><value>Выберите категорию</value></data><data name="Brand" xml:space="preserve"><value>Бренд</value></data><data name="SelectSeller" xml:space="preserve"><value>Выберите продавца</value></data><data name="Description" xml:space="preserve"><value>Описание</value></data><data name="ProductDescriptionPlaceholder" xml:space="preserve"><value>Расскажите о преимуществах и особенностях товара...</value></data><data name="Media" xml:space="preserve"><value>Медиа</value></data><data name="MediaDesc" xml:space="preserve"><value>Добавьте главное изображение и галерею.</value></data><data name="DropProductImages" xml:space="preserve"><value>Перетащите изображения товара сюда</value></data><data name="UpTo" xml:space="preserve"><value>до</value></data><data name="ChooseFiles" xml:space="preserve"><value>Выбрать файлы</value></data><data name="CharacteristicsAndVariants" xml:space="preserve"><value>Характеристики и варианты</value></data><data name="CharacteristicsAndVariantsDesc" xml:space="preserve"><value>Параметры, цвета, комплектации и связанные предложения.</value></data><data name="Characteristics" xml:space="preserve"><value>Характеристики</value></data><data name="Variants" xml:space="preserve"><value>Варианты</value></data><data name="Services" xml:space="preserve"><value>Сервисы</value></data><data name="AddCharacteristic" xml:space="preserve"><value>Добавить характеристику</value></data><data name="PriceAndStock" xml:space="preserve"><value>Цена и остаток</value></data><data name="OldPrice" xml:space="preserve"><value>Старая цена</value></data><data name="MarkAsPromotion" xml:space="preserve"><value>Отметить как акционный товар</value></data><data name="StorefrontTip" xml:space="preserve"><value>Совет для витрины</value></data><data name="StorefrontTipDesc" xml:space="preserve"><value>Карточки с качественными фото и полными характеристиками получают больше переходов.</value></data>
+  <data name="CustomerActivity" xml:space="preserve"><value>Активность клиентов</value></data><data name="CustomerInsights" xml:space="preserve"><value>Поведение покупателей</value></data><data name="CustomerActivityDesc" xml:space="preserve"><value>Анализируйте просмотры, сравнения, списки желаний, корзины и доставку.</value></data><data name="ViewedProducts" xml:space="preserve"><value>Просмотры товаров</value></data><data name="Comparisons" xml:space="preserve"><value>Сравнения</value></data><data name="Wishlists" xml:space="preserve"><value>Списки желаний</value></data><data name="ActiveCarts" xml:space="preserve"><value>Активные корзины</value></data><data name="ShoppingIntent" xml:space="preserve"><value>Покупательский интерес</value></data><data name="ShoppingIntentDesc" xml:space="preserve"><value>Динамика действий с высоким намерением совершить покупку.</value></data><data name="Last30Days" xml:space="preserve"><value>Последние 30 дней</value></data><data name="Parcels" xml:space="preserve"><value>Посылки</value></data><data name="InTransit" xml:space="preserve"><value>В пути</value></data><data name="Delivered" xml:space="preserve"><value>Доставлено</value></data><data name="Delayed" xml:space="preserve"><value>Задерживается</value></data><data name="CustomerSegments" xml:space="preserve"><value>Сегменты клиентов</value></data><data name="CreateSegment" xml:space="preserve"><value>Создать сегмент</value></data><data name="HighIntent" xml:space="preserve"><value>Высокий интерес</value></data><data name="HighIntentDesc" xml:space="preserve"><value>Сравнивали или добавляли товары в желания за 7 дней.</value></data><data name="AbandonedCarts" xml:space="preserve"><value>Брошенные корзины</value></data><data name="AbandonedCartsDesc" xml:space="preserve"><value>Товары остаются в корзине более 24 часов.</value></data><data name="LoyalCustomers" xml:space="preserve"><value>Лояльные клиенты</value></data><data name="LoyalCustomersDesc" xml:space="preserve"><value>Три и более выполненных заказа.</value></data>
+  <data name="OpenMenu" xml:space="preserve"><value>Открыть меню</value></data><data name="CloseMenu" xml:space="preserve"><value>Закрыть меню</value></data><data name="ProductsNav" xml:space="preserve"><value>Товары</value></data><data name="CharacteristicName" xml:space="preserve"><value>Название характеристики</value></data><data name="CharacteristicValue" xml:space="preserve"><value>Значение характеристики</value></data><data name="DeleteCharacteristic" xml:space="preserve"><value>Удалить характеристику</value></data><data name="AttachFile" xml:space="preserve"><value>Прикрепить файл</value></data><data name="SendMessage" xml:space="preserve"><value>Отправить сообщение</value></data><data name="Period" xml:space="preserve"><value>Период</value></data>
+  <data name="BlockUser" xml:space="preserve"><value>Заблокировать пользователя</value></data>
+  <data name="UnblockUser" xml:space="preserve"><value>Разблокировать пользователя</value></data>
+  <data name="UserStatusChangeError" xml:space="preserve"><value>Не удалось изменить статус пользователя. Попробуйте ещё раз.</value></data>
+  <data name="FilterByStatus" xml:space="preserve"><value>Фильтр по статусу</value></data>
+  <data name="AllStatuses" xml:space="preserve"><value>Все статусы</value></data>
+  <data name="ApplyFilters" xml:space="preserve"><value>Применить фильтры</value></data>
+  <data name="UsersPageSubtitle" xml:space="preserve"><value>Управляйте аккаунтами клиентов, статусами активации и доступом в одном месте.</value></data>
+  <data name="ShowingUsers" xml:space="preserve"><value>Найдено пользователей:</value></data>
+  <data name="ClearSearch" xml:space="preserve"><value>Очистить поиск</value></data>
+  <data name="ResetFilters" xml:space="preserve"><value>Сбросить фильтры</value></data>
 </root>

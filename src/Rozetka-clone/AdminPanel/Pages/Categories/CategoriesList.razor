@@ -1,6 +1,69 @@
 @page "/categories"
 
-<PageTitle>@L["Categories"]</PageTitle>
+<PageTitle>@L["Categories"] — Treba Admin</PageTitle>
 
-<h3>@L["CategoriesManagement"]</h3>
-<p>@L["ManageCategoriesDesc"]</p>
+<section class="page-hero categories-hero">
+    <div>
+        <p class="eyebrow">@L["CatalogStructure"]</p>
+        <h1>@L["CategoriesManagement"]</h1>
+    </div>
+    <button class="primary-button" type="button"><i class="bi bi-plus-lg"></i>@L["CreateCategory"]</button>
+</section>
+
+<section class="category-overview">
+    <article class="category-overview-main">
+        <span>@L["ProductCoverage"]</span><strong>98.4%</strong><div class="coverage-track"><i style="width:98.4%"></i></div><small>24 860 @L["ProductsCategorized"]</small>
+    </article>
+    <article><i class="bi bi-grid-fill"></i><div><strong>148</strong><span>@L["ActiveCategories"]</span></div></article>
+    <article><i class="bi bi-eye-slash"></i><div><strong>7</strong><span>@L["HiddenCategories"]</span></div></article>
+</section>
+
+<section class="categories-workspace">
+    <div class="category-tree-panel card-box">
+        <div class="card-box-header"><h2 class="card-box-title">@L["CategoryTree"]</h2><button class="row-menu" type="button" aria-label="@L["Actions"]"><i class="bi bi-three-dots"></i></button></div>
+        <label class="workspace-search"><i class="bi bi-search"></i><input type="search" placeholder="@L["CategorySearchPlaceholder"]" /></label>
+        <nav class="category-tree">
+            @foreach (var branch in CategoryBranches)
+            {
+                <button class="category-tree-row @(branch.Selected ? "selected" : "")" type="button"><span class="category-tree-icon @branch.Color"><i class="bi @branch.Icon"></i></span><span><strong>@branch.Name</strong><small>@branch.Count @L["Products"]</small></span><i class="bi bi-chevron-right"></i></button>
+            }
+        </nav>
+    </div>
+
+    <div class="category-content-panel">
+        <div class="category-content-heading"><div><span class="category-hero-icon blue"><i class="bi bi-phone"></i></span><div><p class="eyebrow">@L["SelectedCategory"]</p><h2>@L["Electronics"]</h2><span>8 @L["Subcategories"] · 6 842 @L["Products"]</span></div></div><button class="secondary-button" type="button"><i class="bi bi-pencil"></i>@L["Edit"]</button></div>
+        <div class="subcategory-grid">
+            @foreach (var item in Subcategories)
+            {
+                <article class="subcategory-card">
+                    <div class="subcategory-icon"><i class="bi @item.Icon"></i></div>
+                    <div><strong>@item.Name</strong><span>@item.Count @L["Products"]</span></div>
+                    <span class="category-status">@L["Active"]</span>
+                    <button class="row-menu" type="button" aria-label="@L["Actions"]"><i class="bi bi-three-dots-vertical"></i></button>
+                </article>
+            }
+        </div>
+    </div>
+</section>
+
+@code {
+    private IReadOnlyList<CategoryBranch> CategoryBranches =>
+    [
+        new(L["Electronics"], "6 842", "bi-phone", "blue", true),
+        new(L["HomeAndGarden"], "5 106", "bi-house", "green", false),
+        new(L["ClothingAndShoes"], "4 221", "bi-bag", "pink", false),
+        new(L["BeautyAndHealth"], "3 018", "bi-heart-pulse", "red", false),
+        new(L["SportsAndHobby"], "2 795", "bi-bicycle", "amber", false),
+        new(L["Kids"], "2 878", "bi-balloon", "purple", false)
+    ];
+
+    private IReadOnlyList<Subcategory> Subcategories =>
+    [
+        new(L["Smartphones"], "1 248", "bi-phone"), new(L["Laptops"], "846", "bi-laptop"),
+        new(L["Televisions"], "624", "bi-tv"), new(L["Audio"], "1 106", "bi-headphones"),
+        new(L["SmartHome"], "798", "bi-house-gear"), new(L["Accessories"], "2 220", "bi-usb-plug")
+    ];
+
+    private sealed record CategoryBranch(string Name, string Count, string Icon, string Color, bool Selected);
+    private sealed record Subcategory(string Name, string Count, string Icon);
+}

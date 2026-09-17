@@ -1,6 +1,60 @@
 @page "/moderation"
 
-<PageTitle>@L["Moderation"]</PageTitle>
+<PageTitle>@L["Moderation"] — Treba Admin</PageTitle>
 
-<h3>@L["ModerationQueue"]</h3>
-<p>@L["ModerateProductsDesc"]</p>
+<section class="page-hero moderation-hero">
+    <div>
+        <p class="eyebrow">@L["CatalogQuality"]</p>
+        <h1>@L["ModerationQueue"]</h1>
+    </div>
+    <div class="moderation-score"><span>@L["QueueHealth"]</span><strong>82%</strong><small><i class="bi bi-arrow-up-right"></i> 6% @L["ThisWeek"]</small></div>
+</section>
+
+<section class="moderation-layout">
+    <div class="moderation-main">
+        <div class="moderation-tabs">
+            <button class="moderation-tab active" type="button">@L["AwaitingReview"] <span>47</span></button>
+            <button class="moderation-tab" type="button">@L["NeedChanges"] <span>13</span></button>
+            <button class="moderation-tab" type="button">@L["Approved"] <span>284</span></button>
+        </div>
+
+        <article class="featured-review card-box">
+            <div class="featured-product-visual"><span>NEW</span><i class="bi bi-headphones"></i></div>
+            <div class="featured-review-copy">
+                <div class="review-meta"><span class="risk-chip risk-low"><i class="bi bi-shield-check"></i>@L["LowRisk"]</span><span>@L["Submitted"] · 12 @L["MinutesAgo"]</span></div>
+                <p class="eyebrow">@L["NextInQueue"]</p>
+                <h2>Wireless Headphones Pro X2</h2>
+                <p class="product-sku">SKU TRB-HDP-X2 · TechPoint UA</p>
+                <div class="product-review-facts"><div><span>@L["Category"]</span><strong>@L["Electronics"]</strong></div><div><span>@L["Price"]</span><strong>₴ 3 299</strong></div><div><span>@L["Completeness"]</span><strong>96%</strong></div></div>
+                <div class="moderation-actions"><button class="secondary-button danger" type="button"><i class="bi bi-x-lg"></i>@L["Reject"]</button><button class="secondary-button" type="button"><i class="bi bi-chat-left-text"></i>@L["NeedChanges"]</button><button class="primary-button" type="button"><i class="bi bi-check-lg"></i>@L["Approve"]</button></div>
+            </div>
+        </article>
+    </div>
+
+    <aside class="queue-panel card-box">
+        <div class="card-box-header"><div><p class="eyebrow">@L["UpNext"]</p><h2 class="card-box-title">@L["Queue"]</h2></div><button class="row-menu" type="button" aria-label="@L["Filters"]"><i class="bi bi-sliders"></i></button></div>
+        <div class="queue-list">
+            @foreach (var item in QueueItems)
+            {
+                <article class="queue-item">
+                    <div class="queue-thumb @item.Color"><i class="bi @item.Icon"></i></div>
+                    <div><strong>@item.Name</strong><span>@item.Seller</span><small>@item.Age</small></div>
+                    <span class="risk-dot @item.Risk" title="@L["Risk"]"></span>
+                </article>
+            }
+        </div>
+        <button class="queue-more" type="button">@L["ViewFullQueue"] <i class="bi bi-arrow-right"></i></button>
+    </aside>
+</section>
+
+@code {
+    private IReadOnlyList<QueueItem> QueueItems =>
+    [
+        new("Smart Watch S8", "Digital Hub", "18 " + L["MinutesAgo"], "bi-smartwatch", "blue", "risk-medium"),
+        new("Organic Face Cream", "Beauty Lab", "24 " + L["MinutesAgo"], "bi-droplet", "pink", "risk-low"),
+        new("Power Station 1200W", "Volt Market", "31 " + L["MinutesAgo"], "bi-battery-charging", "green", "risk-high"),
+        new("Kids Constructor 4+", "Toy House", "42 " + L["MinutesAgo"], "bi-box", "amber", "risk-low")
+    ];
+
+    private sealed record QueueItem(string Name, string Seller, string Age, string Icon, string Color, string Risk);
+}

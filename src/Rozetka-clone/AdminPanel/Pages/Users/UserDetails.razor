@@ -1,9 +1,263 @@
 @page "/users/{Id:guid}"
+@rendermode InteractiveServer
+@inject IUsersApiClient UsersApiClient
+@inject IConfiguration Configuration
 
 <PageTitle>@L["UserDetails"]</PageTitle>
 
-<h3>@L["UserDetails"]: @Id</h3>
+<a class="users-back-link" href="/users"><i class="bi bi-arrow-left"></i> @L["BackToUsers"]</a>
+
+@if (_isLoading)
+{
+    <div class="users-state user-details-state" role="status">
+        <div class="spinner-border text-warning" aria-hidden="true"></div>
+        <span>@L["LoadingUser"]</span>
+    </div>
+}
+else if (_errorMessage is not null)
+{
+    <div class="users-state users-state-error user-details-state" role="alert">
+        <i class="bi bi-exclamation-triangle"></i>
+        <span>@_errorMessage</span>
+        <button class="btn-action-sm btn-orange" type="button" @onclick="LoadUserAsync">@L["TryAgain"]</button>
+    </div>
+}
+else if (_user is null)
+{
+    <div class="users-state user-details-state">
+        <i class="bi bi-person-x users-state-icon"></i>
+        <strong>@L["UserNotFound"]</strong>
+        <span>@L["UserNotFoundDesc"]</span>
+    </div>
+}
+else
+{
+    <section class="user-details-header card-box">
+        @if (!string.IsNullOrWhiteSpace(_user.Profile?.AvatarUrl))
+        {
+            <img class="user-details-avatar" src="@_user.Profile.AvatarUrl" alt="" />
+        }
+        else
+        {
+            <div class="user-details-avatar user-details-initials">@GetInitials(_user)</div>
+        }
+        <div class="user-details-heading">
+            <div class="user-details-name-line">
+                <h1>@GetFullName(_user)</h1>
+                <span class="status-badge @GetStatusClass(_user.Status)">@GetStatusLabel(_user.Status)</span>
+            </div>
+            <a href="mailto:@_user.Email">@_user.Email</a>
+            <span class="table-muted">ID: @_user.Id</span>
+        </div>
+        <div class="user-details-actions">
+            @if (_user.Status == "Blocked")
+            {
+                <button class="secondary-button" type="button" @onclick="UnblockUserAsync" disabled="@_isChangingStatus">
+                    <i class="bi bi-unlock"></i> @L["UnblockUser"]
+                </button>
+            }
+            else if (_user.Status != "Deleted")
+            {
+                <button class="secondary-button danger-button" type="button" @onclick="BlockUserAsync" disabled="@_isChangingStatus">
+                    <i class="bi bi-person-slash"></i> @L["BlockUser"]
+                </button>
+            }
+        </div>
+    </section>
+
+    @if (_statusErrorMessage is not null)
+    {
+        <div class="users-state users-state-error" role="alert">
+            <i class="bi bi-exclamation-triangle"></i><span>@_statusErrorMessage</span>
+        </div>
+    }
+
+    <div class="user-details-grid">
+        <section class="card-box user-info-card">
+            <div class="card-box-header"><h2 class="card-box-title">@L["ContactAndAccount"]</h2></div>
+            <dl class="user-property-list">
+                <div><dt>@L["Phone"]</dt><dd>@(_user.Phone ?? L["NotSpecified"])</dd></div>
+                <div><dt>@L["EmailVerified"]</dt><dd>@VerificationLabel(_user.EmailVerified)</dd></div>
+                <div><dt>@L["PhoneVerified"]</dt><dd>@VerificationLabel(_user.PhoneVerified)</dd></div>
+                <div><dt>@L["RegisteredAt"]</dt><dd>@FormatDate(_user.CreatedAt)</dd></div>
+                <div><dt>@L["LastLogin"]</dt><dd>@(_user.LastLoginAt is null ? L["Never"] : FormatDate(_user.LastLoginAt.Value))</dd></div>
+                <div><dt>@L["LastUpdated"]</dt><dd>@(_user.UpdatedAt is null ? L["Never"] : FormatDate(_user.UpdatedAt.Value))</dd></div>
+            </dl>
+        </section>
+
+        <section class="card-box user-info-card">
+            <div class="card-box-header"><h2 class="card-box-title">@L["Profile"]</h2></div>
+            @if (_user.Profile is null)
+            {
+                <p class="empty-card-text">@L["ProfileNotCreated"]</p>
+            }
+            else
+            {
+                <dl class="user-property-list">
+                    <div><dt>@L["BirthDate"]</dt><dd>@(_user.Profile.BirthDate?.ToString("d") ?? L["NotSpecified"])</dd></div>
+                    <div><dt>@L["Gender"]</dt><dd>@(_user.Profile.Gender ?? L["NotSpecified"])</dd></div>
+                    <div><dt>@L["Language"]</dt><dd>@_user.Profile.Language.ToUpperInvariant()</dd></div>
+                    <div><dt>@L["MarketingEmails"]</dt><dd>@YesNoLabel(_user.Profile.MarketingEmailsEnabled)</dd></div>
+                </dl>
+            }
+        </section>
+    </div>
+
+    <section class="card-box user-addresses-card">
+        <div class="card-box-header">
+            <h2 class="card-box-title">@L["Addresses"]</h2>
+            <span class="address-count">@_user.Addresses.Count</span>
+        </div>
+        @if (_user.Addresses.Count == 0)
+        {
+            <p class="empty-card-text">@L["AddressesNotAdded"]</p>
+        }
+        else
+        {
+            <div class="user-addresses-grid">
+                @foreach (var address in _user.Addresses)
+                {
+                    <article class="user-address-item">
+                        <div class="user-address-heading">
+                            <strong>@address.RecipientName</strong>
+                            @if (address.DefaultAddress)
+                            {
+                                <span class="default-address-badge">@L["DefaultAddress"]</span>
+                            }
+                        </div>
+                        <p>@FormatAddress(address)</p>
+                        <span><i class="bi bi-telephone"></i> @address.RecipientPhone</span>
+                    </article>
+                }
+            </div>
+        }
+    </section>
+}
 
 @code {
     [Parameter] public Guid Id { get; set; }
+
+    private UserDetailsResponse? _user;
+    private string? _errorMessage;
+    private bool _isLoading = true;
+    private bool _isChangingStatus;
+    private string? _statusErrorMessage;
+
+    protected override Task OnParametersSetAsync() => LoadUserAsync();
+
+    private async Task LoadUserAsync()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+
+        try
+        {
+            if (Configuration.GetValue<bool>("UseDemoData"))
+            {
+                _user = BuildDemoUser(Id);
+                return;
+            }
+
+            _user = await UsersApiClient.GetUserByIdAsync(Id);
+        }
+        catch (HttpRequestException)
+        {
+            _errorMessage = L["UserLoadError"];
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private Task BlockUserAsync() => ChangeStatusAsync(UsersApiClient.BlockUserAsync);
+
+    private Task UnblockUserAsync() => ChangeStatusAsync(UsersApiClient.UnblockUserAsync);
+
+    private async Task ChangeStatusAsync(Func<Guid, CancellationToken, Task<UserStatusResponse>> changeStatus)
+    {
+        if (_user is null)
+        {
+            return;
+        }
+
+        _isChangingStatus = true;
+        _statusErrorMessage = null;
+
+        try
+        {
+            await changeStatus(_user.Id, CancellationToken.None);
+            await LoadUserAsync();
+        }
+        catch (Exception exception) when (exception is HttpRequestException or ApiException)
+        {
+            _statusErrorMessage = L["UserStatusChangeError"];
+        }
+        finally
+        {
+            _isChangingStatus = false;
+        }
+    }
+
+    private string GetStatusLabel(string status) => L[$"UserStatus{status}"];
+
+    private string VerificationLabel(bool verified) => verified ? L["Verified"] : L["NotVerified"];
+
+    private string YesNoLabel(bool value) => value ? L["Yes"] : L["No"];
+
+    private static string GetFullName(UserDetailsResponse user) =>
+        string.Join(" ", new[] { user.LastName, user.FirstName, user.MiddleName }
+            .Where(value => !string.IsNullOrWhiteSpace(value)));
+
+    private static string GetInitials(UserDetailsResponse user)
+    {
+        var first = string.IsNullOrWhiteSpace(user.FirstName) ? string.Empty : user.FirstName[..1];
+        var last = string.IsNullOrWhiteSpace(user.LastName) ? string.Empty : user.LastName[..1];
+        return (first + last).ToUpperInvariant();
+    }
+
+    private static string GetStatusClass(string status) => status switch
+    {
+        "Active" => "badge-active",
+        "Blocked" => "badge-blocked",
+        "Deleted" => "badge-deleted",
+        _ => "badge-pending"
+    };
+
+    private static string FormatDate(DateTimeOffset value) => value.ToLocalTime().ToString("g");
+
+    private static string FormatAddress(UserAddressResponse address) =>
+        string.Join(", ", new[]
+        {
+            address.PostalCode,
+            address.Country,
+            address.Region,
+            address.City,
+            address.Street,
+            address.Building,
+            address.Apartment
+        }.Where(value => !string.IsNullOrWhiteSpace(value)));
+
+    private static UserDetailsResponse? BuildDemoUser(Guid id)
+    {
+        var demoUsers = new Dictionary<Guid, (string FirstName, string LastName, string Email, string Status)>
+        {
+            [Guid.Parse("a92c6542-dde4-44c8-97e5-8c61ce600001")] = ("Анна", "Коваль", "anna.demo@treba.local", "Active"),
+            [Guid.Parse("a92c6542-dde4-44c8-97e5-8c61ce600002")] = ("Богдан", "Мельник", "bohdan.demo@treba.local", "Active"),
+            [Guid.Parse("a92c6542-dde4-44c8-97e5-8c61ce600003")] = ("Ірина", "Шевченко", "iryna.demo@treba.local", "PendingActivation"),
+            [Guid.Parse("a92c6542-dde4-44c8-97e5-8c61ce600004")] = ("Максим", "Бондар", "maksym.demo@treba.local", "Blocked"),
+            [Guid.Parse("a92c6542-dde4-44c8-97e5-8c61ce600005")] = ("Олена", "Ткаченко", "olena.demo@treba.local", "Active")
+        };
+
+        if (!demoUsers.TryGetValue(id, out var demo))
+        {
+            return null;
+        }
+
+        return new UserDetailsResponse(
+            id, demo.Email, "+380 50 111 00 " + id.ToString()[^2..], demo.FirstName, demo.LastName, null,
+            demo.Status, demo.Status != "PendingActivation", true, DateTimeOffset.Now.AddDays(-18), DateTimeOffset.Now.AddDays(-2), DateTimeOffset.Now.AddHours(-3),
+            new UserProfileResponse(new DateOnly(1994, 6, 14), null, null, "uk", true),
+            [new UserAddressResponse(Guid.NewGuid(), "Україна", "Київська область", "Київ", "Хрещатик", "24", "18", "01001", $"{demo.FirstName} {demo.LastName}", "+380 50 111 00 01", true)]);
+    }
 }

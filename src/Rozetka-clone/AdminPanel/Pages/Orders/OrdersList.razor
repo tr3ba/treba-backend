@@ -1,6 +1,79 @@
 @page "/orders"
 
-<PageTitle>@L["Orders"]</PageTitle>
+<PageTitle>@L["Orders"] — Treba Admin</PageTitle>
 
-<h3>@L["OrdersManagement"]</h3>
-<p>@L["TrackOrdersDesc"]</p>
+<section class="page-hero orders-hero">
+    <div>
+        <p class="eyebrow">@L["Operations"]</p>
+        <h1>@L["OrdersManagement"]</h1>
+    </div>
+    <button class="primary-button" type="button"><i class="bi bi-download"></i>@L["Export"]</button>
+</section>
+
+<section class="orders-kpi-grid">
+    @foreach (var metric in Metrics)
+    {
+        <article class="orders-kpi @metric.Accent">
+            <div class="orders-kpi-top"><span>@metric.Label</span><i class="bi @metric.Icon"></i></div>
+            <strong>@metric.Value</strong>
+            <small>@metric.Note</small>
+        </article>
+    }
+</section>
+
+<section class="card-box orders-workspace">
+    <div class="workspace-toolbar">
+        <label class="workspace-search"><i class="bi bi-search"></i><input type="search" placeholder="@L["OrderSearchPlaceholder"]" /></label>
+        <div class="filter-pills" aria-label="@L["OrderStatuses"]">
+            <button class="filter-pill active" type="button">@L["All"] <span>1 284</span></button>
+            <button class="filter-pill" type="button">@L["Processing"] <span>86</span></button>
+            <button class="filter-pill" type="button">@L["InDelivery"] <span>143</span></button>
+            <button class="filter-pill" type="button">@L["Returns"] <span>12</span></button>
+        </div>
+        <button class="icon-filter-button" type="button" aria-label="@L["Filters"]"><i class="bi bi-sliders"></i></button>
+    </div>
+
+    <div class="table-wrap">
+        <table class="custom-table orders-table">
+            <thead><tr><th>@L["Order"]</th><th>@L["Customer"]</th><th>@L["OrderItems"]</th><th>@L["Delivery"]</th><th>@L["Payment"]</th><th>@L["Amount"]</th><th>@L["Status"]</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var order in OrderRows)
+                {
+                    <tr>
+                        <td><strong>@order.Number</strong><span class="table-muted">@order.Time</span></td>
+                        <td><div class="compact-person"><span>@Initials(order.Customer)</span><div><strong>@order.Customer</strong><small>@order.Phone</small></div></div></td>
+                        <td><strong>@order.Items</strong><span class="table-muted">@order.ItemCaption</span></td>
+                        <td><strong>@order.City</strong><span class="table-muted">@order.Delivery</span></td>
+                        <td><span class="payment-state"><i class="bi @order.PaymentIcon"></i>@order.Payment</span></td>
+                        <td><strong>@order.Amount</strong></td>
+                        <td><span class="status-badge @order.StatusClass">@order.Status</span></td>
+                        <td><button class="row-menu" type="button" aria-label="@L["Actions"]"><i class="bi bi-three-dots"></i></button></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="table-footer"><span>@L["ShowingOrders"]</span><PaginationControl CurrentPage="1" TotalPages="8" /></div>
+</section>
+
+@code {
+    private IReadOnlyList<Metric> Metrics =>
+    [
+        new(L["OrdersToday"], "126", L["ComparedYesterday"], "bi-receipt", "orange"),
+        new(L["AwaitingPayment"], "18", L["RequireAttention"], "bi-credit-card", "amber"),
+        new(L["InDelivery"], "143", L["OnTheWay"], "bi-truck", "blue"),
+        new(L["Returns"], "12", L["ThisWeek"], "bi-arrow-counterclockwise", "red")
+    ];
+
+    private IReadOnlyList<OrderRow> OrderRows =>
+    [
+        new("#RZ-10482", L["TodayAt"] + " 10:48", "Олена Мельник", "+380 67 210 48 22", "3", L["Products"], L["Kyiv"], "Nova Poshta · №128", L["Paid"], "bi-check-circle-fill", "₴ 2 499", L["Processing"], "badge-pending"),
+        new("#RZ-10481", L["TodayAt"] + " 10:31", "Максим Бондар", "+380 93 441 18 09", "1", L["Product"], L["Lviv"], L["Courier"], L["Paid"], "bi-check-circle-fill", "₴ 8 750", L["Shipped"], "badge-shipped"),
+        new("#RZ-10480", L["TodayAt"] + " 10:04", "Ірина Коваль", "+380 50 722 51 40", "2", L["Products"], L["Dnipro"], "Nova Poshta · №24", L["CashOnDelivery"], "bi-wallet2", "₴ 1 280", L["NewStatus"], "badge-new"),
+        new("#RZ-10479", L["YesterdayAt"] + " 18:22", "Андрій Левченко", "+380 97 810 33 21", "4", L["Products"], L["Odesa"], "Ukrposhta", L["Refunded"], "bi-arrow-return-left", "₴ 4 106", L["Returned"], "badge-deleted")
+    ];
+
+    private static string Initials(string name) => string.Concat(name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(part => part[0]));
+    private sealed record Metric(string Label, string Value, string Note, string Icon, string Accent);
+    private sealed record OrderRow(string Number, string Time, string Customer, string Phone, string Items, string ItemCaption, string City, string Delivery, string Payment, string PaymentIcon, string Amount, string Status, string StatusClass);
+}

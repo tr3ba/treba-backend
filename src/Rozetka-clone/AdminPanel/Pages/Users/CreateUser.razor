@@ -1,0 +1,116 @@
+@page "/users/create"
+@rendermode InteractiveServer
+@using System.ComponentModel.DataAnnotations
+@inject IUsersApiClient UsersApiClient
+@inject NavigationManager Navigation
+
+<PageTitle>@L["CreateUser"]</PageTitle>
+
+<section class="page-hero create-user-hero">
+    <div>
+        <a class="back-link" href="/users"><i class="bi bi-arrow-left"></i> @L["BackToUsers"]</a>
+        <p class="eyebrow">@L["People"]</p>
+        <h1>@L["CreateUserTitle"]</h1>
+    </div>
+</section>
+
+<div class="create-user-layout">
+    <section class="card-box create-user-card">
+        <EditForm Model="_model" OnSubmit="CreateAsync">
+            <div class="form-section-heading">
+                <span class="form-section-icon"><i class="bi bi-person"></i></span>
+                <div><h2>@L["PersonalInformation"]</h2></div>
+            </div>
+
+            <div class="create-user-grid">
+                <label class="field-group"><span>@L["FirstName"] <b>*</b></span><InputText class="form-control" @bind-Value="_model.FirstName" autocomplete="given-name" />@FieldError(nameof(_model.FirstName))</label>
+                <label class="field-group"><span>@L["LastName"] <b>*</b></span><InputText class="form-control" @bind-Value="_model.LastName" autocomplete="family-name" />@FieldError(nameof(_model.LastName))</label>
+                <label class="field-group create-user-full-row"><span>@L["MiddleName"] <em>@L["Optional"]</em></span><InputText class="form-control" @bind-Value="_model.MiddleName" autocomplete="additional-name" /></label>
+            </div>
+
+            <div class="form-section-heading form-section-divider">
+                <span class="form-section-icon"><i class="bi bi-envelope"></i></span>
+                <div><h2>@L["ContactInformation"]</h2></div>
+            </div>
+
+            <div class="create-user-grid">
+                <label class="field-group"><span>@L["Email"] <b>*</b></span><InputText class="form-control" type="email" @bind-Value="_model.Email" autocomplete="email" />@FieldError(nameof(_model.Email))</label>
+                <label class="field-group"><span>@L["Phone"] <em>@L["Optional"]</em></span><InputText class="form-control" type="tel" @bind-Value="_model.Phone" autocomplete="tel" /></label>
+            </div>
+
+            @if (_submitError is not null)
+            {
+                <div class="form-alert" role="alert"><i class="bi bi-exclamation-circle"></i> @_submitError</div>
+            }
+
+            <div class="create-user-actions">
+                <a class="create-user-cancel" href="/users">@L["Cancel"]</a>
+                <button class="primary-button" type="submit" disabled="@_isSubmitting">
+                    @if (_isSubmitting) { <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> @L["Creating"] }
+                    else { <i class="bi bi-person-plus"></i> @L["CreateUser"] }
+                </button>
+            </div>
+        </EditForm>
+    </section>
+
+    <aside class="create-user-note">
+        <span class="create-user-note-icon"><i class="bi bi-shield-check"></i></span>
+        <h2>@L["AccountWillAwaitActivation"]</h2>
+        <p>@L["AccountWillAwaitActivationDesc"]</p>
+        <div class="create-user-note-status"><span class="status-dot"></span>@L["UserStatusPendingActivation"]</div>
+    </aside>
+</div>
+
+@code {
+    private readonly UserFormModel _model = new();
+    private readonly Dictionary<string, string> _errors = new();
+    private string? _submitError;
+    private bool _isSubmitting;
+
+    private MarkupString FieldError(string fieldName) => _errors.TryGetValue(fieldName, out var message)
+        ? new MarkupString($"<small class=\"field-error\">{System.Net.WebUtility.HtmlEncode(message)}</small>")
+        : new MarkupString(string.Empty);
+
+    private async Task CreateAsync()
+    {
+        if (!Validate()) return;
+        _isSubmitting = true;
+        _submitError = null;
+
+        try
+        {
+            var created = await UsersApiClient.CreateUserAsync(new CreateUserRequest
+            {
+                FirstName = _model.FirstName.Trim(), LastName = _model.LastName.Trim(),
+                MiddleName = NormalizeOptional(_model.MiddleName), Email = _model.Email.Trim(),
+                Phone = NormalizeOptional(_model.Phone)
+            });
+            Navigation.NavigateTo($"/users/{created.Id}");
+        }
+        catch (ApiException exception) when (exception.Code == "USER_EMAIL_EXISTS") { _errors[nameof(_model.Email)] = L["EmailAlreadyExists"]; }
+        catch (Exception exception) when (exception is HttpRequestException or ApiException) { _submitError = L["CreateUserError"]; }
+        finally { _isSubmitting = false; }
+    }
+
+    private bool Validate()
+    {
+        _errors.Clear(); _submitError = null;
+        Require(nameof(_model.FirstName), _model.FirstName);
+        Require(nameof(_model.LastName), _model.LastName);
+        Require(nameof(_model.Email), _model.Email);
+        if (!_errors.ContainsKey(nameof(_model.Email)) && !new EmailAddressAttribute().IsValid(_model.Email)) _errors[nameof(_model.Email)] = L["InvalidEmail"];
+        return _errors.Count == 0;
+    }
+
+    private void Require(string fieldName, string value) { if (string.IsNullOrWhiteSpace(value)) _errors[fieldName] = L["RequiredField"]; }
+    private static string? NormalizeOptional(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private sealed class UserFormModel
+    {
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public string? MiddleName { get; set; }
+        public string Email { get; set; } = string.Empty;
+        public string? Phone { get; set; }
+    }
+}
