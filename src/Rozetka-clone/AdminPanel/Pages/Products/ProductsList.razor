@@ -1,0 +1,53 @@
+@page "/products"
+
+<PageTitle>@L["Products"] — Treba Admin</PageTitle>
+
+<section class="page-hero storefront-blue-hero">
+    <div><p class="eyebrow">@L["Catalog"]</p><h1>@L["ProductManagement"]</h1></div>
+    <a class="storefront-action" href="/products/new"><i class="bi bi-plus-lg"></i>@L["AddProduct"]</a>
+</section>
+
+<section class="store-kpi-grid">
+    <article><span class="store-kpi-icon blue"><i class="bi bi-box2"></i></span><div><small>@L["AllProducts"]</small><strong>12 846</strong><em>+184 @L["ThisWeek"].ToString().ToLower()</em></div></article>
+    <article><span class="store-kpi-icon green"><i class="bi bi-check-circle"></i></span><div><small>@L["Published"]</small><strong>11 924</strong><em>92.8%</em></div></article>
+    <article><span class="store-kpi-icon amber"><i class="bi bi-exclamation-triangle"></i></span><div><small>@L["LowStock"]</small><strong>263</strong><em>@L["RequireAttention"]</em></div></article>
+    <article><span class="store-kpi-icon orange"><i class="bi bi-percent"></i></span><div><small>@L["OnPromotion"]</small><strong>741</strong><em>@L["ActiveNow"]</em></div></article>
+</section>
+
+<section class="card-box product-catalog-card">
+    <div class="store-toolbar">
+        <label class="workspace-search"><i class="bi bi-search"></i><input placeholder="@L["ProductSearchPlaceholder"]" /></label>
+        <div class="store-filter-row"><button class="store-filter active">@L["All"]</button><button class="store-filter">@L["Published"]</button><button class="store-filter">@L["Drafts"]</button><button class="store-filter">@L["OutOfStock"]</button></div>
+        <button class="secondary-button"><i class="bi bi-funnel"></i>@L["Filters"]</button>
+    </div>
+    <div class="table-wrap">
+        <table class="custom-table storefront-products-table">
+            <thead><tr><th>@L["Product"]</th><th>@L["Seller"]</th><th>@L["Category"]</th><th>@L["Price"]</th><th>@L["Stock"]</th><th>@L["Status"]</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var product in Products)
+                {
+                    <tr>
+                        <td><div class="catalog-product"><span class="product-thumb @product.Color"><i class="bi @product.Icon"></i></span><div><strong>@product.Name</strong><small>SKU: @product.Sku</small></div></div></td>
+                        <td>@product.Seller</td><td><span class="catalog-category">@L[product.Category]</span></td>
+                        <td><strong>₴ @product.Price</strong>@if (product.OldPrice is not null){<small class="old-price">₴ @product.OldPrice</small>}</td>
+                        <td><span class="stock-value @(product.Stock < 10 ? "low" : null)">@product.Stock @L["Items"]</span></td>
+                        <td><span class="status-badge @product.StatusClass">@L[product.Status]</span></td>
+                        <td><button class="icon-more" aria-label="@L["Actions"]"><i class="bi bi-three-dots"></i></button></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+@code {
+    private static readonly ProductRow[] Products =
+    [
+        new("Зволожувач повітря LEVOIT Dual 200S", "LV-200S-01", "TechPoint UA", "HomeAndGarden", "12 999", "14 799", 38, "Published", "badge-paid", "blue", "bi-wind"),
+        new("Ігрова клавіатура HATOR Hellyberry HK75", "HT-HK75-WV", "Digital Hub", "Electronics", "1 599", "3 190", 7, "Published", "badge-paid", "purple", "bi-keyboard"),
+        new("Мультипіч NINJA Foodi Dual Zone Max", "NJ-AF400-EU", "Home & Style", "HomeAndGarden", "12 999", "18 799", 16, "OnPromotion", "badge-pending", "orange", "bi-boombox"),
+        new("Крісло-качалка LUARO KV7630", "LR-KV7630-B", "Comfort Store", "HomeAndGarden", "999", "1 090", 0, "OutOfStock", "badge-refunded", "green", "bi-lamp"),
+        new("Бездротові навушники QCY T13", "QCY-T13-W", "TechPoint UA", "Electronics", "1 249", null, 92, "Draft", "badge-shipped", "pink", "bi-earbuds")
+    ];
+    private sealed record ProductRow(string Name,string Sku,string Seller,string Category,string Price,string? OldPrice,int Stock,string Status,string StatusClass,string Color,string Icon);
+}

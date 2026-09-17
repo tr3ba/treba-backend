@@ -6,7 +6,6 @@
     <div>
         <p class="eyebrow">@L["StoreOverview"]</p>
         <h1>@L["Dashboard"]</h1>
-        <p>@L["DashboardSubtitle"]</p>
     </div>
     <a class="dashboard-primary-action" href="moderation">
         <i class="bi bi-box-seam"></i>
@@ -14,7 +13,7 @@
     </a>
 </section>
 
-<section class="stats-grid" aria-label="Ключові показники">
+<section class="stats-grid" aria-label="@L["KeyMetrics"]">
     <article class="stat-card">
         <div class="stat-info"><p class="stat-title">@L["Orders"]</p><p class="stat-value">1 284</p><p class="stat-trend trend-up"><i class="bi bi-arrow-up-right"></i> @L["WeeklyGrowth"]</p></div>
         <div class="stat-icon icon-orange"><i class="bi bi-bag-check"></i></div>
@@ -39,9 +38,9 @@
         <div class="table-wrap">
             <table class="custom-table"><thead><tr><th>@L["Order"]</th><th>@L["Customer"]</th><th>@L["Amount"]</th><th>@L["Status"]</th></tr></thead>
                 <tbody>
-                    <tr><td><strong>#RZ-10482</strong><span class="table-muted">Сьогодні, 10:48</span></td><td>Олена Мельник</td><td>₴ 2 499</td><td><span class="status-badge badge-paid"><i class="bi bi-check-circle-fill"></i> Оплачено</span></td></tr>
-                    <tr><td><strong>#RZ-10481</strong><span class="table-muted">Сьогодні, 10:31</span></td><td>Максим Бондар</td><td>₴ 8 750</td><td><span class="status-badge badge-shipped"><i class="bi bi-truck"></i> Відправлено</span></td></tr>
-                    <tr><td><strong>#RZ-10480</strong><span class="table-muted">Сьогодні, 10:04</span></td><td>Ірина Коваль</td><td>₴ 1 280</td><td><span class="status-badge badge-pending"><i class="bi bi-clock-fill"></i> В обробці</span></td></tr>
+                    <tr><td><strong>#RZ-10482</strong><span class="table-muted">@L["TodayAt"] 10:48</span></td><td>Олена Мельник</td><td>₴ 2 499</td><td><span class="status-badge badge-paid"><i class="bi bi-check-circle-fill"></i> @L["Paid"]</span></td></tr>
+                    <tr><td><strong>#RZ-10481</strong><span class="table-muted">@L["TodayAt"] 10:31</span></td><td>Максим Бондар</td><td>₴ 8 750</td><td><span class="status-badge badge-shipped"><i class="bi bi-truck"></i> @L["Shipped"]</span></td></tr>
+                    <tr><td><strong>#RZ-10480</strong><span class="table-muted">@L["TodayAt"] 10:04</span></td><td>Ірина Коваль</td><td>₴ 1 280</td><td><span class="status-badge badge-pending"><i class="bi bi-clock-fill"></i> @L["Processing"]</span></td></tr>
                 </tbody>
             </table>
         </div>
@@ -49,9 +48,9 @@
     <article class="card-box">
         <div class="card-box-header"><h2 class="card-box-title">@L["SellerApplications"]</h2><a class="btn-link-action" href="sellers">@L["All"] <i class="bi bi-arrow-right"></i></a></div>
         <div class="request-list">
-            <div class="request-item"><div class="request-item-info"><strong>TechPoint UA</strong><span>Електроніка · 18 товарів</span></div><a class="btn-action-sm btn-orange" href="sellers">Переглянути</a></div>
-            <div class="request-item"><div class="request-item-info"><strong>Home &amp; Style</strong><span>Дім і сад · 42 товари</span></div><a class="btn-action-sm btn-orange" href="sellers">Переглянути</a></div>
-            <div class="request-item"><div class="request-item-info"><strong>Sport Pro</strong><span>Спорт · 11 товарів</span></div><a class="btn-action-sm btn-orange" href="sellers">Переглянути</a></div>
+            <div class="request-item"><div class="request-item-info"><strong>TechPoint UA</strong><span>@L["Electronics"] · 18 @L["Products"]</span></div><a class="btn-action-sm btn-orange" href="sellers">@L["View"]</a></div>
+            <div class="request-item"><div class="request-item-info"><strong>Home &amp; Style</strong><span>@L["HomeAndGarden"] · 42 @L["Products"]</span></div><a class="btn-action-sm btn-orange" href="sellers">@L["View"]</a></div>
+            <div class="request-item"><div class="request-item-info"><strong>Sport Pro</strong><span>@L["SportsAndHobby"] · 11 @L["Products"]</span></div><a class="btn-action-sm btn-orange" href="sellers">@L["View"]</a></div>
         </div>
     </article>
 </section>

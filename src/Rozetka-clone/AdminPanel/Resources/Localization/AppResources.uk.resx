@@ -63,4 +63,229 @@
   <data name="NotificationSettingsDesc" xml:space="preserve"><value>Налаштування поштових, системних і подієвих сповіщень.</value></data>
   <data name="AccessSettings" xml:space="preserve"><value>Доступ і безпека</value></data>
   <data name="AccessSettingsDesc" xml:space="preserve"><value>Ролі адміністраторів, дозволи та політики безпеки.</value></data>
+  <data name="TotalUsers" xml:space="preserve"><value>Усього користувачів</value></data>
+  <data name="UserSearchPlaceholder" xml:space="preserve"><value>Ім’я, email або телефон</value></data>
+  <data name="SearchUsers" xml:space="preserve"><value>Пошук користувачів</value></data>
+  <data name="Clear" xml:space="preserve"><value>Скинути</value></data>
+  <data name="LoadingUsers" xml:space="preserve"><value>Завантаження користувачів...</value></data>
+  <data name="TryAgain" xml:space="preserve"><value>Повторити</value></data>
+  <data name="UsersNotFound" xml:space="preserve"><value>Користувачів не знайдено</value></data>
+  <data name="UsersNotFoundDesc" xml:space="preserve"><value>Спробуйте змінити пошуковий запит.</value></data>
+  <data name="User" xml:space="preserve"><value>Користувач</value></data>
+  <data name="Phone" xml:space="preserve"><value>Телефон</value></data>
+  <data name="RegisteredAt" xml:space="preserve"><value>Дата реєстрації</value></data>
+  <data name="LastLogin" xml:space="preserve"><value>Останній вхід</value></data>
+  <data name="Actions" xml:space="preserve"><value>Дії</value></data>
+  <data name="NotSpecified" xml:space="preserve"><value>Не вказано</value></data>
+  <data name="Never" xml:space="preserve"><value>Ніколи</value></data>
+  <data name="ViewUser" xml:space="preserve"><value>Переглянути користувача</value></data>
+  <data name="View" xml:space="preserve"><value>Відкрити</value></data>
+  <data name="UsersLoadError" xml:space="preserve"><value>Не вдалося завантажити користувачів. Перевірте підключення до API та повторіть спробу.</value></data>
+  <data name="UserStatusPendingActivation" xml:space="preserve"><value>Очікує активації</value></data>
+  <data name="UserStatusActive" xml:space="preserve"><value>Активний</value></data>
+  <data name="UserStatusBlocked" xml:space="preserve"><value>Заблокований</value></data>
+  <data name="UserStatusDeleted" xml:space="preserve"><value>Видалений</value></data>
+  <data name="UserDetails" xml:space="preserve"><value>Дані користувача</value></data>
+  <data name="BackToUsers" xml:space="preserve"><value>Назад до користувачів</value></data>
+  <data name="LoadingUser" xml:space="preserve"><value>Завантаження користувача...</value></data>
+  <data name="UserLoadError" xml:space="preserve"><value>Не вдалося завантажити користувача. Перевірте підключення до API та повторіть спробу.</value></data>
+  <data name="UserNotFound" xml:space="preserve"><value>Користувача не знайдено</value></data>
+  <data name="UserNotFoundDesc" xml:space="preserve"><value>Користувача могли видалити або посилання неправильне.</value></data>
+  <data name="ContactAndAccount" xml:space="preserve"><value>Контакти та обліковий запис</value></data>
+  <data name="EmailVerified" xml:space="preserve"><value>Email підтверджено</value></data>
+  <data name="PhoneVerified" xml:space="preserve"><value>Телефон підтверджено</value></data>
+  <data name="LastUpdated" xml:space="preserve"><value>Останнє оновлення</value></data>
+  <data name="Profile" xml:space="preserve"><value>Профіль</value></data>
+  <data name="ProfileNotCreated" xml:space="preserve"><value>Користувач ще не створив профіль.</value></data>
+  <data name="BirthDate" xml:space="preserve"><value>Дата народження</value></data>
+  <data name="Gender" xml:space="preserve"><value>Стать</value></data>
+  <data name="MarketingEmails" xml:space="preserve"><value>Маркетингові листи</value></data>
+  <data name="Addresses" xml:space="preserve"><value>Адреси</value></data>
+  <data name="AddressesNotAdded" xml:space="preserve"><value>Користувач ще не додав адреси.</value></data>
+  <data name="DefaultAddress" xml:space="preserve"><value>Основна</value></data>
+  <data name="Verified" xml:space="preserve"><value>Підтверджено</value></data>
+  <data name="NotVerified" xml:space="preserve"><value>Не підтверджено</value></data>
+  <data name="Yes" xml:space="preserve"><value>Так</value></data>
+  <data name="No" xml:space="preserve"><value>Ні</value></data>
+  <data name="Accessories" xml:space="preserve"><value>Аксесуари</value></data>
+  <data name="Active" xml:space="preserve"><value>Активні</value></data>
+  <data name="ActiveCategories" xml:space="preserve"><value>Активні категорії</value></data>
+  <data name="AdminEmail" xml:space="preserve"><value>Email адміністратора</value></data>
+  <data name="ApplicationReview" xml:space="preserve"><value>Перевірка заявки</value></data>
+  <data name="Applications" xml:space="preserve"><value>Заявки</value></data>
+  <data name="Approve" xml:space="preserve"><value>Схвалити</value></data>
+  <data name="Approved" xml:space="preserve"><value>Схвалено</value></data>
+  <data name="ApproveSeller" xml:space="preserve"><value>Схвалити продавця</value></data>
+  <data name="AreYouSure" xml:space="preserve"><value>Ви впевнені, що хочете продовжити?</value></data>
+  <data name="Audio" xml:space="preserve"><value>Аудіо</value></data>
+  <data name="AwaitingPayment" xml:space="preserve"><value>Очікують оплати</value></data>
+  <data name="AwaitingReview" xml:space="preserve"><value>Очікують перевірки</value></data>
+  <data name="BackToSellers" xml:space="preserve"><value>Назад до продавців</value></data>
+  <data name="BankDetails" xml:space="preserve"><value>Банківські реквізити</value></data>
+  <data name="BeautyAndHealth" xml:space="preserve"><value>Краса та здоров’я</value></data>
+  <data name="Cancel" xml:space="preserve"><value>Скасувати</value></data>
+  <data name="CashOnDelivery" xml:space="preserve"><value>Післяплата</value></data>
+  <data name="CatalogQuality" xml:space="preserve"><value>Якість каталогу</value></data>
+  <data name="CatalogStructure" xml:space="preserve"><value>Структура каталогу</value></data>
+  <data name="Category" xml:space="preserve"><value>Категорія</value></data>
+  <data name="CategoryFocus" xml:space="preserve"><value>Товарні категорії</value></data>
+  <data name="CategoryFocusDesc" xml:space="preserve"><value>Продавець планує почати роботу з цими категоріями товарів.</value></data>
+  <data name="CategorySearchPlaceholder" xml:space="preserve"><value>Знайти категорію</value></data>
+  <data name="CategoryTree" xml:space="preserve"><value>Дерево категорій</value></data>
+  <data name="ClothingAndShoes" xml:space="preserve"><value>Одяг та взуття</value></data>
+  <data name="CompanyRegistration" xml:space="preserve"><value>Реєстраційні документи</value></data>
+  <data name="ComparedYesterday" xml:space="preserve"><value>до вчора</value></data>
+  <data name="Completeness" xml:space="preserve"><value>Заповненість</value></data>
+  <data name="Confirm" xml:space="preserve"><value>Підтвердити</value></data>
+  <data name="Confirmation" xml:space="preserve"><value>Підтвердження</value></data>
+  <data name="ContactPerson" xml:space="preserve"><value>Контактна особа</value></data>
+  <data name="ContactSupport" xml:space="preserve"><value>Звернутися до підтримки</value></data>
+  <data name="Courier" xml:space="preserve"><value>Кур’єрська доставка</value></data>
+  <data name="CreateCategory" xml:space="preserve"><value>Створити категорію</value></data>
+  <data name="Decision" xml:space="preserve"><value>Рішення</value></data>
+  <data name="DecisionDesc" xml:space="preserve"><value>Перевірте документи та залиште коментар перед фінальним рішенням.</value></data>
+  <data name="DecisionRecorded" xml:space="preserve"><value>Рішення фіксується</value></data>
+  <data name="DecisionRecordedDesc" xml:space="preserve"><value>Ваше ім’я, час і рішення збережуться в журналі аудиту.</value></data>
+  <data name="Delivery" xml:space="preserve"><value>Доставка</value></data>
+  <data name="DemoData" xml:space="preserve"><value>Демо</value></data>
+  <data name="DirectorPassport" xml:space="preserve"><value>Паспорт директора</value></data>
+  <data name="Dnipro" xml:space="preserve"><value>Дніпро</value></data>
+  <data name="Documents" xml:space="preserve"><value>Документи</value></data>
+  <data name="DocumentsReady" xml:space="preserve"><value>Документи готові</value></data>
+  <data name="Edit" xml:space="preserve"><value>Редагувати</value></data>
+  <data name="Electronics" xml:space="preserve"><value>Електроніка</value></data>
+  <data name="Export" xml:space="preserve"><value>Експорт</value></data>
+  <data name="Files" xml:space="preserve"><value>файли</value></data>
+  <data name="Filters" xml:space="preserve"><value>Фільтри</value></data>
+  <data name="FinalStep" xml:space="preserve"><value>Фінальний етап</value></data>
+  <data name="Fitness" xml:space="preserve"><value>Фітнес</value></data>
+  <data name="ForgotPassword" xml:space="preserve"><value>Забули пароль?</value></data>
+  <data name="HiddenCategories" xml:space="preserve"><value>Приховані категорії</value></data>
+  <data name="HomeAndGarden" xml:space="preserve"><value>Дім та сад</value></data>
+  <data name="InDelivery" xml:space="preserve"><value>У доставці</value></data>
+  <data name="InviteSeller" xml:space="preserve"><value>Запросити продавця</value></data>
+  <data name="KeyMetrics" xml:space="preserve"><value>Ключові показники</value></data>
+  <data name="Kids" xml:space="preserve"><value>Дитячі товари</value></data>
+  <data name="Kyiv" xml:space="preserve"><value>Київ</value></data>
+  <data name="Laptops" xml:space="preserve"><value>Ноутбуки</value></data>
+  <data name="LegalName" xml:space="preserve"><value>Юридична назва</value></data>
+  <data name="LoginBrandCopy" xml:space="preserve"><value>Єдиний простір для замовлень, якості каталогу, партнерів і розвитку маркетплейсу.</value></data>
+  <data name="LoginHelp" xml:space="preserve"><value>Не вдається увійти?</value></data>
+  <data name="LoginIntro" xml:space="preserve"><value>Використовуйте корпоративний обліковий запис.</value></data>
+  <data name="LowRisk" xml:space="preserve"><value>Низький ризик</value></data>
+  <data name="Lviv" xml:space="preserve"><value>Львів</value></data>
+  <data name="MinutesAgo" xml:space="preserve"><value>хв тому</value></data>
+  <data name="MonthlyGmv" xml:space="preserve"><value>Оборот за місяць</value></data>
+  <data name="NeedChanges" xml:space="preserve"><value>Потрібні зміни</value></data>
+  <data name="NewStatus" xml:space="preserve"><value>Нове</value></data>
+  <data name="Next" xml:space="preserve"><value>Далі</value></data>
+  <data name="NextInQueue" xml:space="preserve"><value>Наступний у черзі</value></data>
+  <data name="Nutrition" xml:space="preserve"><value>Спортивне харчування</value></data>
+  <data name="Odesa" xml:space="preserve"><value>Одеса</value></data>
+  <data name="Of" xml:space="preserve"><value>з</value></data>
+  <data name="OnTheWay" xml:space="preserve"><value>замовлень у дорозі</value></data>
+  <data name="OpenProfile" xml:space="preserve"><value>Відкрити профіль</value></data>
+  <data name="OperateWithClarity" xml:space="preserve"><value>Керуйте впевнено.</value></data>
+  <data name="Operations" xml:space="preserve"><value>Операції</value></data>
+  <data name="OrderItems" xml:space="preserve"><value>Склад</value></data>
+  <data name="OrderSearchPlaceholder" xml:space="preserve"><value>Замовлення, клієнт або телефон</value></data>
+  <data name="OrderStatuses" xml:space="preserve"><value>Статуси замовлень</value></data>
+  <data name="OrdersToday" xml:space="preserve"><value>Замовлення сьогодні</value></data>
+  <data name="Outdoor" xml:space="preserve"><value>Активний відпочинок</value></data>
+  <data name="Page" xml:space="preserve"><value>Сторінка</value></data>
+  <data name="Paid" xml:space="preserve"><value>Оплачено</value></data>
+  <data name="PartnerNetwork" xml:space="preserve"><value>Партнерська мережа</value></data>
+  <data name="Password" xml:space="preserve"><value>Пароль</value></data>
+  <data name="Payment" xml:space="preserve"><value>Оплата</value></data>
+  <data name="PendingReview" xml:space="preserve"><value>Очікують перевірки</value></data>
+  <data name="Previous" xml:space="preserve"><value>Назад</value></data>
+  <data name="Price" xml:space="preserve"><value>Ціна</value></data>
+  <data name="Processing" xml:space="preserve"><value>В обробці</value></data>
+  <data name="Product" xml:space="preserve"><value>товар</value></data>
+  <data name="ProductCoverage" xml:space="preserve"><value>Покриття товарів</value></data>
+  <data name="Products" xml:space="preserve"><value>товарів</value></data>
+  <data name="ProductsCategorized" xml:space="preserve"><value>товарів розподілено</value></data>
+  <data name="ProtectedAccess" xml:space="preserve"><value>Захищений доступ</value></data>
+  <data name="ProtectedAccessDesc" xml:space="preserve"><value>Сеанси адміністраторів захищені та журналюються.</value></data>
+  <data name="Queue" xml:space="preserve"><value>Черга</value></data>
+  <data name="QueueHealth" xml:space="preserve"><value>Стан черги</value></data>
+  <data name="Rating" xml:space="preserve"><value>Рейтинг</value></data>
+  <data name="Refunded" xml:space="preserve"><value>Повернено</value></data>
+  <data name="Reject" xml:space="preserve"><value>Відхилити</value></data>
+  <data name="RejectApplication" xml:space="preserve"><value>Відхилити заявку</value></data>
+  <data name="RememberMe" xml:space="preserve"><value>Запам’ятати мене</value></data>
+  <data name="RequestChanges" xml:space="preserve"><value>Запросити зміни</value></data>
+  <data name="RequireAttention" xml:space="preserve"><value>потребують уваги</value></data>
+  <data name="Returned" xml:space="preserve"><value>Повернення</value></data>
+  <data name="Returns" xml:space="preserve"><value>Повернення</value></data>
+  <data name="ReviewNote" xml:space="preserve"><value>Коментар перевірки</value></data>
+  <data name="ReviewNotePlaceholder" xml:space="preserve"><value>Додайте короткий коментар для журналу</value></data>
+  <data name="Risk" xml:space="preserve"><value>Ризик</value></data>
+  <data name="SecureWorkspace" xml:space="preserve"><value>Безпечний простір</value></data>
+  <data name="SelectedCategory" xml:space="preserve"><value>Вибрана категорія</value></data>
+  <data name="SellerReview" xml:space="preserve"><value>Перевірка продавця</value></data>
+  <data name="SellerSearchPlaceholder" xml:space="preserve"><value>Назва магазину або категорія</value></data>
+  <data name="Shipped" xml:space="preserve"><value>Відправлено</value></data>
+  <data name="ShowingOrders" xml:space="preserve"><value>Показано 1–4 з 1 284 замовлень</value></data>
+  <data name="ShowPassword" xml:space="preserve"><value>Показати пароль</value></data>
+  <data name="SignIn" xml:space="preserve"><value>Увійти</value></data>
+  <data name="Since" xml:space="preserve"><value>З</value></data>
+  <data name="SmartHome" xml:space="preserve"><value>Розумний дім</value></data>
+  <data name="Smartphones" xml:space="preserve"><value>Смартфони</value></data>
+  <data name="SportsAndHobby" xml:space="preserve"><value>Спорт та хобі</value></data>
+  <data name="Sportswear" xml:space="preserve"><value>Спортивний одяг</value></data>
+  <data name="StoreDetails" xml:space="preserve"><value>Дані магазину</value></data>
+  <data name="Subcategories" xml:space="preserve"><value>підкатегорій</value></data>
+  <data name="Submitted" xml:space="preserve"><value>Подано</value></data>
+  <data name="Suspended" xml:space="preserve"><value>Призупинені</value></data>
+  <data name="TaxCertificate" xml:space="preserve"><value>Податкова довідка</value></data>
+  <data name="TaxId" xml:space="preserve"><value>Код ЄДРПОУ</value></data>
+  <data name="Televisions" xml:space="preserve"><value>Телевізори</value></data>
+  <data name="ThisWeek" xml:space="preserve"><value>за цей тиждень</value></data>
+  <data name="TodayAt" xml:space="preserve"><value>Сьогодні о</value></data>
+  <data name="UnderReview" xml:space="preserve"><value>На перевірці</value></data>
+  <data name="UpNext" xml:space="preserve"><value>Далі</value></data>
+  <data name="VerifiedSellers" xml:space="preserve"><value>Перевірені продавці</value></data>
+  <data name="ViewFullQueue" xml:space="preserve"><value>Відкрити всю чергу</value></data>
+  <data name="Website" xml:space="preserve"><value>Сайт</value></data>
+  <data name="WelcomeBack" xml:space="preserve"><value>З поверненням</value></data>
+  <data name="YesterdayAt" xml:space="preserve"><value>Учора о</value></data>
+  <data name="CreateUser" xml:space="preserve"><value>Створити користувача</value></data>
+  <data name="CreateUserTitle" xml:space="preserve"><value>Новий користувач</value></data>
+  <data name="CreateUserSubtitle" xml:space="preserve"><value>Додайте реального користувача до бази даних.</value></data>
+  <data name="PersonalInformation" xml:space="preserve"><value>Особисті дані</value></data>
+  <data name="PersonalInformationDesc" xml:space="preserve"><value>Вкажіть ім’я користувача так, як воно відображатиметься в системі.</value></data>
+  <data name="ContactInformation" xml:space="preserve"><value>Контактні дані</value></data>
+  <data name="ContactInformationDesc" xml:space="preserve"><value>Email має бути унікальним для кожного користувача.</value></data>
+  <data name="FirstName" xml:space="preserve"><value>Ім’я</value></data>
+  <data name="LastName" xml:space="preserve"><value>Прізвище</value></data>
+  <data name="MiddleName" xml:space="preserve"><value>По батькові</value></data>
+  <data name="Email" xml:space="preserve"><value>Email</value></data>
+  <data name="Optional" xml:space="preserve"><value>необов’язково</value></data>
+  <data name="Creating" xml:space="preserve"><value>Створення...</value></data>
+  <data name="RequiredField" xml:space="preserve"><value>Заповніть це поле.</value></data>
+  <data name="InvalidEmail" xml:space="preserve"><value>Введіть коректний email.</value></data>
+  <data name="EmailAlreadyExists" xml:space="preserve"><value>Користувач із таким email вже існує.</value></data>
+  <data name="CreateUserError" xml:space="preserve"><value>Не вдалося створити користувача. Перевірте підключення до API та повторіть спробу.</value></data>
+  <data name="AccountWillAwaitActivation" xml:space="preserve"><value>Очікування активації</value></data>
+  <data name="AccountWillAwaitActivationDesc" xml:space="preserve"><value>Новий запис буде створено без пароля зі статусом очікування активації. Вхід стане доступним після підключення реєстрації або запрошень.</value></data>
+  <data name="Growth" xml:space="preserve"><value>Зростання</value></data><data name="Catalog" xml:space="preserve"><value>Каталог</value></data><data name="Seller" xml:space="preserve"><value>Продавець</value></data><data name="Stock" xml:space="preserve"><value>Залишок</value></data><data name="Items" xml:space="preserve"><value>шт.</value></data>
+  <data name="ProductManagement" xml:space="preserve"><value>Керування товарами</value></data><data name="ProductManagementDesc" xml:space="preserve"><value>Контролюйте асортимент, ціни, залишки та відображення товарів на вітрині.</value></data><data name="AddProduct" xml:space="preserve"><value>Додати товар</value></data><data name="AllProducts" xml:space="preserve"><value>Усі товари</value></data><data name="Published" xml:space="preserve"><value>Опубліковано</value></data><data name="LowStock" xml:space="preserve"><value>Мало на складі</value></data><data name="OnPromotion" xml:space="preserve"><value>В акції</value></data><data name="ActiveNow" xml:space="preserve"><value>Активно зараз</value></data><data name="Drafts" xml:space="preserve"><value>Чернетки</value></data><data name="OutOfStock" xml:space="preserve"><value>Немає в наявності</value></data><data name="ProductSearchPlaceholder" xml:space="preserve"><value>Назва, SKU або продавець...</value></data>
+  <data name="Storefront" xml:space="preserve"><value>Вітрина</value></data><data name="StorefrontContent" xml:space="preserve"><value>Контент магазину</value></data><data name="StorefrontManagement" xml:space="preserve"><value>Керування вітриною</value></data><data name="StorefrontManagementDesc" xml:space="preserve"><value>Налаштовуйте банери, добірки та сервісні переваги головної сторінки.</value></data><data name="PreviewStorefront" xml:space="preserve"><value>Відкрити перегляд</value></data><data name="MainBanner" xml:space="preserve"><value>Головний банер</value></data><data name="MainBannerDesc" xml:space="preserve"><value>Перший екран магазину та ключова рекламна кампанія.</value></data><data name="FeaturedCampaign" xml:space="preserve"><value>Спеціальна пропозиція</value></data><data name="DreamAndOwn" xml:space="preserve"><value>Не мрійте. А майте.</value></data><data name="InstallmentOffer" xml:space="preserve"><value>До 15 платежів без переплат</value></data><data name="ProductShelves" xml:space="preserve"><value>Добірки товарів</value></data><data name="HomepageCollections" xml:space="preserve"><value>Колекції головної сторінки</value></data><data name="HomepageCollectionsDesc" xml:space="preserve"><value>Порядок блоків і товари, які побачить покупець.</value></data><data name="AddCollection" xml:space="preserve"><value>Додати добірку</value></data><data name="BestOffers" xml:space="preserve"><value>Найкращі пропозиції для вас</value></data><data name="Recommendations" xml:space="preserve"><value>Рекомендації</value></data><data name="TotalSale" xml:space="preserve"><value>Тотальний розпродаж</value></data><data name="Scheduled" xml:space="preserve"><value>Заплановано</value></data><data name="StorefrontStatus" xml:space="preserve"><value>Статус вітрини</value></data><data name="LastPublished" xml:space="preserve"><value>Остання публікація:</value></data><data name="ServiceBenefits" xml:space="preserve"><value>Сервісні переваги</value></data><data name="ServiceBenefitsDesc" xml:space="preserve"><value>Плашки під головним банером.</value></data><data name="Enabled" xml:space="preserve"><value>Увімкнено</value></data><data name="Warranty" xml:space="preserve"><value>Гарантія</value></data>
+  <data name="Reviews" xml:space="preserve"><value>Відгуки</value></data><data name="TrustAndQuality" xml:space="preserve"><value>Довіра та якість</value></data><data name="ReviewsManagement" xml:space="preserve"><value>Керування відгуками</value></data><data name="ReviewsManagementDesc" xml:space="preserve"><value>Модеруйте відгуки про товари й продавців, підтримуючи довіру покупців.</value></data><data name="ModerationRules" xml:space="preserve"><value>Правила модерації</value></data><data name="CustomerReviews" xml:space="preserve"><value>відгуків покупців</value></data><data name="Reported" xml:space="preserve"><value>Скарги</value></data><data name="SellerReviews" xml:space="preserve"><value>Відгуки про продавців</value></data><data name="SearchReviews" xml:space="preserve"><value>Пошук відгуків...</value></data><data name="VerifiedPurchase" xml:space="preserve"><value>Підтверджена покупка</value></data><data name="QualitySnapshot" xml:space="preserve"><value>Показник якості</value></data><data name="ReviewQuality" xml:space="preserve"><value>Якість відгуків</value></data><data name="ReviewQualityDesc" xml:space="preserve"><value>Більшість відгуків корисні та відповідають правилам майданчика.</value></data><data name="WithPhotos" xml:space="preserve"><value>З фотографіями</value></data><data name="SellerResponse" xml:space="preserve"><value>Відповідь продавця</value></data><data name="AverageResponse" xml:space="preserve"><value>Середній час відповіді</value></data>
+  <data name="SupportAndReturns" xml:space="preserve"><value>Підтримка</value></data><data name="CustomerCare" xml:space="preserve"><value>Турбота про клієнтів</value></data><data name="SupportCenter" xml:space="preserve"><value>Підтримка та повернення</value></data><data name="SupportCenterDesc" xml:space="preserve"><value>Опрацьовуйте звернення, повернення та гарантійні випадки в одному вікні.</value></data><data name="AssignAgent" xml:space="preserve"><value>Призначити оператора</value></data><data name="Messages" xml:space="preserve"><value>Повідомлення</value></data><data name="SearchRequests" xml:space="preserve"><value>Пошук звернень...</value></data><data name="Online" xml:space="preserve"><value>Онлайн</value></data><data name="OrderDetails" xml:space="preserve"><value>Деталі замовлення</value></data><data name="Today" xml:space="preserve"><value>Сьогодні</value></data><data name="WriteReply" xml:space="preserve"><value>Напишіть відповідь...</value></data><data name="TotalOrders" xml:space="preserve"><value>Усього замовлень</value></data><data name="CustomerValue" xml:space="preserve"><value>Цінність клієнта</value></data><data name="OpenRequests" xml:space="preserve"><value>Відкритих звернень</value></data>
+  <data name="PromotionsAndLoyalty" xml:space="preserve"><value>Акції та лояльність</value></data><data name="PromotionsAndLoyaltyDesc" xml:space="preserve"><value>Керуйте акціями, гаманцями, сертифікатами та підписками покупців.</value></data><data name="CreateCampaign" xml:space="preserve"><value>Створити кампанію</value></data><data name="WalletBalance" xml:space="preserve"><value>Баланс гаманців</value></data><data name="ActiveWallets" xml:space="preserve"><value>активних гаманців</value></data><data name="ActiveCampaigns" xml:space="preserve"><value>Активні кампанії</value></data><data name="IssuedCertificates" xml:space="preserve"><value>Випущено сертифікатів</value></data><data name="Subscriptions" xml:space="preserve"><value>Підписки</value></data><data name="SummerSale" xml:space="preserve"><value>Літній розпродаж</value></data><data name="SummerSaleDesc" xml:space="preserve"><value>Знижки до 30% на популярні категорії.</value></data><data name="Participants" xml:space="preserve"><value>учасників</value></data><data name="Manage" xml:space="preserve"><value>Керувати</value></data><data name="FreeFirstDelivery" xml:space="preserve"><value>Перша доставка за 0 ₴</value></data><data name="FreeFirstDeliveryDesc" xml:space="preserve"><value>Залучення нових покупців безкоштовною доставкою першого замовлення.</value></data><data name="GiftCertificates" xml:space="preserve"><value>Подарункові сертифікати</value></data><data name="GiftCertificatesDesc" xml:space="preserve"><value>Сезонна кампанія цифрових сертифікатів.</value></data><data name="StartsOn" xml:space="preserve"><value>Старт</value></data><data name="RecentActivity" xml:space="preserve"><value>Остання активність</value></data><data name="ViewAll" xml:space="preserve"><value>Показати все</value></data><data name="Activity" xml:space="preserve"><value>Операція</value></data><data name="Campaign" xml:space="preserve"><value>Кампанія</value></data><data name="Date" xml:space="preserve"><value>Дата</value></data><data name="WalletCredit" xml:space="preserve"><value>Поповнення гаманця</value></data><data name="CertificatePurchase" xml:space="preserve"><value>Купівля сертифіката</value></data>
+  <data name="NewProduct" xml:space="preserve"><value>Новий товар</value></data><data name="NewProductDesc" xml:space="preserve"><value>Заповніть картку товару для публікації на вітрині.</value></data><data name="BackToProducts" xml:space="preserve"><value>Назад до товарів</value></data><data name="SaveDraft" xml:space="preserve"><value>Зберегти чернетку</value></data><data name="PublishProduct" xml:space="preserve"><value>Опублікувати</value></data><data name="BasicInformation" xml:space="preserve"><value>Основна інформація</value></data><data name="BasicInformationDesc" xml:space="preserve"><value>Назва, категорія та продавець товару.</value></data><data name="ProductName" xml:space="preserve"><value>Назва товару</value></data><data name="ProductNamePlaceholder" xml:space="preserve"><value>Введіть повну назву товару</value></data><data name="SelectCategory" xml:space="preserve"><value>Оберіть категорію</value></data><data name="Brand" xml:space="preserve"><value>Бренд</value></data><data name="SelectSeller" xml:space="preserve"><value>Оберіть продавця</value></data><data name="Description" xml:space="preserve"><value>Опис</value></data><data name="ProductDescriptionPlaceholder" xml:space="preserve"><value>Розкажіть про переваги та особливості товару...</value></data><data name="Media" xml:space="preserve"><value>Медіа</value></data><data name="MediaDesc" xml:space="preserve"><value>Додайте головне зображення та галерею.</value></data><data name="DropProductImages" xml:space="preserve"><value>Перетягніть зображення товару сюди</value></data><data name="UpTo" xml:space="preserve"><value>до</value></data><data name="ChooseFiles" xml:space="preserve"><value>Обрати файли</value></data><data name="CharacteristicsAndVariants" xml:space="preserve"><value>Характеристики та варіанти</value></data><data name="CharacteristicsAndVariantsDesc" xml:space="preserve"><value>Параметри, кольори, комплектації та пов’язані пропозиції.</value></data><data name="Characteristics" xml:space="preserve"><value>Характеристики</value></data><data name="Variants" xml:space="preserve"><value>Варіанти</value></data><data name="Services" xml:space="preserve"><value>Сервіси</value></data><data name="AddCharacteristic" xml:space="preserve"><value>Додати характеристику</value></data><data name="PriceAndStock" xml:space="preserve"><value>Ціна та залишок</value></data><data name="OldPrice" xml:space="preserve"><value>Стара ціна</value></data><data name="MarkAsPromotion" xml:space="preserve"><value>Позначити як акційний товар</value></data><data name="StorefrontTip" xml:space="preserve"><value>Порада для вітрини</value></data><data name="StorefrontTipDesc" xml:space="preserve"><value>Картки з якісними фото та повними характеристиками отримують більше переходів.</value></data>
+  <data name="CustomerActivity" xml:space="preserve"><value>Активність клієнтів</value></data><data name="CustomerInsights" xml:space="preserve"><value>Поведінка покупців</value></data><data name="CustomerActivityDesc" xml:space="preserve"><value>Аналізуйте перегляди, порівняння, списки бажань, кошики та доставку.</value></data><data name="ViewedProducts" xml:space="preserve"><value>Перегляди товарів</value></data><data name="Comparisons" xml:space="preserve"><value>Порівняння</value></data><data name="Wishlists" xml:space="preserve"><value>Списки бажань</value></data><data name="ActiveCarts" xml:space="preserve"><value>Активні кошики</value></data><data name="ShoppingIntent" xml:space="preserve"><value>Купівельний інтерес</value></data><data name="ShoppingIntentDesc" xml:space="preserve"><value>Динаміка дій із високим наміром здійснити покупку.</value></data><data name="Last30Days" xml:space="preserve"><value>Останні 30 днів</value></data><data name="Parcels" xml:space="preserve"><value>Посилки</value></data><data name="InTransit" xml:space="preserve"><value>У дорозі</value></data><data name="Delivered" xml:space="preserve"><value>Доставлено</value></data><data name="Delayed" xml:space="preserve"><value>Затримується</value></data><data name="CustomerSegments" xml:space="preserve"><value>Сегменти клієнтів</value></data><data name="CreateSegment" xml:space="preserve"><value>Створити сегмент</value></data><data name="HighIntent" xml:space="preserve"><value>Високий інтерес</value></data><data name="HighIntentDesc" xml:space="preserve"><value>Порівнювали або додавали товари до бажань за 7 днів.</value></data><data name="AbandonedCarts" xml:space="preserve"><value>Покинуті кошики</value></data><data name="AbandonedCartsDesc" xml:space="preserve"><value>Товари залишаються в кошику понад 24 години.</value></data><data name="LoyalCustomers" xml:space="preserve"><value>Лояльні клієнти</value></data><data name="LoyalCustomersDesc" xml:space="preserve"><value>Три або більше виконаних замовлень.</value></data>
+  <data name="OpenMenu" xml:space="preserve"><value>Відкрити меню</value></data><data name="CloseMenu" xml:space="preserve"><value>Закрити меню</value></data><data name="ProductsNav" xml:space="preserve"><value>Товари</value></data><data name="CharacteristicName" xml:space="preserve"><value>Назва характеристики</value></data><data name="CharacteristicValue" xml:space="preserve"><value>Значення характеристики</value></data><data name="DeleteCharacteristic" xml:space="preserve"><value>Видалити характеристику</value></data><data name="AttachFile" xml:space="preserve"><value>Прикріпити файл</value></data><data name="SendMessage" xml:space="preserve"><value>Надіслати повідомлення</value></data><data name="Period" xml:space="preserve"><value>Період</value></data>
+  <data name="BlockUser" xml:space="preserve"><value>Заблокувати користувача</value></data>
+  <data name="UnblockUser" xml:space="preserve"><value>Розблокувати користувача</value></data>
+  <data name="UserStatusChangeError" xml:space="preserve"><value>Не вдалося змінити статус користувача. Спробуйте ще раз.</value></data>
+  <data name="FilterByStatus" xml:space="preserve"><value>Фільтр за статусом</value></data>
+  <data name="AllStatuses" xml:space="preserve"><value>Усі статуси</value></data>
+  <data name="ApplyFilters" xml:space="preserve"><value>Застосувати фільтри</value></data>
+  <data name="UsersPageSubtitle" xml:space="preserve"><value>Керуйте обліковими записами клієнтів, статусами активації та доступом в одному місці.</value></data>
+  <data name="ShowingUsers" xml:space="preserve"><value>Знайдено користувачів:</value></data>
+  <data name="ClearSearch" xml:space="preserve"><value>Очистити пошук</value></data>
+  <data name="ResetFilters" xml:space="preserve"><value>Скинути фільтри</value></data>
 </root>

@@ -1,0 +1,14 @@
+@page "/loyalty"
+
+<PageTitle>@L["PromotionsAndLoyalty"] — Treba Admin</PageTitle>
+<section class="page-hero storefront-blue-hero"><div><p class="eyebrow">@L["Growth"]</p><h1>@L["PromotionsAndLoyalty"]</h1></div><button class="storefront-action"><i class="bi bi-plus-lg"></i>@L["CreateCampaign"]</button></section>
+
+<section class="loyalty-metrics"><article class="loyalty-balance"><span><i class="bi bi-wallet2"></i></span><div><small>@L["WalletBalance"]</small><strong>₴ 1 284 620</strong><p>24 681 @L["ActiveWallets"]</p></div></article><article><small>@L["ActiveCampaigns"]</small><strong>8</strong><span class="metric-rise">+2</span></article><article><small>@L["IssuedCertificates"]</small><strong>1 246</strong><span>₴ 842K</span></article><article><small>@L["Subscriptions"]</small><strong>36 840</strong><span class="metric-rise">+8.4%</span></article></section>
+
+<section class="campaign-grid">
+    <article class="campaign-featured"><div class="campaign-art"><span>SALE</span><strong>-30%</strong><i class="bi bi-stars"></i></div><div class="campaign-copy"><span class="status-badge badge-paid">@L["Active"]</span><h2>@L["SummerSale"]</h2><p>@L["SummerSaleDesc"]</p><div class="campaign-progress"><span><i style="width:68%"></i></span><small>6 842 / 10 000 @L["Participants"]</small></div><footer><span><i class="bi bi-calendar3"></i> 01.09 — 30.09</span><button>@L["Manage"] <i class="bi bi-arrow-right"></i></button></footer></div></article>
+    <article class="campaign-card card-box"><span class="campaign-card-icon orange"><i class="bi bi-truck"></i></span><span class="status-badge badge-paid">@L["Active"]</span><h2>@L["FreeFirstDelivery"]</h2><p>@L["FreeFirstDeliveryDesc"]</p><footer><strong>4 128</strong><span>@L["Participants"]</span></footer></article>
+    <article class="campaign-card card-box"><span class="campaign-card-icon blue"><i class="bi bi-gift"></i></span><span class="status-badge badge-shipped">@L["Scheduled"]</span><h2>@L["GiftCertificates"]</h2><p>@L["GiftCertificatesDesc"]</p><footer><strong>18.09</strong><span>@L["StartsOn"]</span></footer></article>
+</section>
+
+<section class="card-box loyalty-table"><div class="card-box-header"><h2 class="card-box-title">@L["RecentActivity"]</h2><button class="btn-link-action">@L["ViewAll"] <i class="bi bi-arrow-right"></i></button></div><div class="table-wrap"><table class="custom-table"><thead><tr><th>@L["Customer"]</th><th>@L["Activity"]</th><th>@L["Campaign"]</th><th>@L["Amount"]</th><th>@L["Date"]</th></tr></thead><tbody><tr><td>Олена Мельник</td><td>@L["WalletCredit"]</td><td>@L["SummerSale"]</td><td class="positive-value">+ ₴250</td><td>@L["TodayAt"] 11:42</td></tr><tr><td>Максим Бондар</td><td>@L["CertificatePurchase"]</td><td>@L["GiftCertificates"]</td><td>₴1 000</td><td>@L["TodayAt"] 10:18</td></tr></tbody></table></div></section>

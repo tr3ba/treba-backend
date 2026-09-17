@@ -1,0 +1,36 @@
+@page "/storefront"
+
+<PageTitle>@L["Storefront"] — Treba Admin</PageTitle>
+
+<section class="page-hero storefront-blue-hero storefront-content-hero">
+    <div><p class="eyebrow">@L["StorefrontContent"]</p><h1>@L["StorefrontManagement"]</h1></div>
+    <button class="storefront-action"><i class="bi bi-eye"></i>@L["PreviewStorefront"]</button>
+</section>
+
+<section class="storefront-layout">
+    <div class="storefront-main-column">
+        <article class="card-box placement-card hero-placement">
+            <div class="placement-heading"><div><span class="placement-tag">HERO</span><h2>@L["MainBanner"]</h2><p>@L["MainBannerDesc"]</p></div><button class="secondary-button">@L["Edit"]</button></div>
+            <div class="banner-preview"><span class="banner-brand">TREBA</span><div><small>@L["FeaturedCampaign"]</small><strong>@L["DreamAndOwn"]</strong><p>@L["InstallmentOffer"]</p></div><span class="banner-device"><i class="bi bi-phone"></i></span></div>
+            <div class="slide-dots"><i class="active"></i><i></i><i></i><i></i></div>
+        </article>
+
+        <article class="card-box placement-card">
+            <div class="placement-heading"><div><span class="placement-tag orange">@L["ProductShelves"]</span><h2>@L["HomepageCollections"]</h2><p>@L["HomepageCollectionsDesc"]</p></div><button class="secondary-button"><i class="bi bi-plus"></i>@L["AddCollection"]</button></div>
+            <div class="collection-list">
+                <div><span class="collection-order">01</span><div><strong>@L["BestOffers"]</strong><small>12 @L["Products"].ToString().ToLower()</small></div><span class="status-badge badge-paid">@L["Published"]</span><i class="bi bi-grip-vertical"></i></div>
+                <div><span class="collection-order">02</span><div><strong>@L["Recommendations"]</strong><small>18 @L["Products"].ToString().ToLower()</small></div><span class="status-badge badge-paid">@L["Published"]</span><i class="bi bi-grip-vertical"></i></div>
+                <div><span class="collection-order">03</span><div><strong>@L["TotalSale"]</strong><small>8 @L["Products"].ToString().ToLower()</small></div><span class="status-badge badge-shipped">@L["Scheduled"]</span><i class="bi bi-grip-vertical"></i></div>
+            </div>
+        </article>
+    </div>
+
+    <aside class="storefront-side-column">
+        <article class="card-box storefront-health"><span class="store-kpi-icon green"><i class="bi bi-broadcast"></i></span><div><small>@L["StorefrontStatus"]</small><strong>@L["Published"]</strong><p>@L["LastPublished"] 14:32</p></div></article>
+        <article class="card-box info-strip-editor"><div class="placement-heading"><div><h2>@L["ServiceBenefits"]</h2><p>@L["ServiceBenefitsDesc"]</p></div></div>
+            <div class="benefit-row"><i class="bi bi-truck"></i><div><strong>@L["Delivery"]</strong><small>@L["Enabled"]</small></div><span class="toggle-on"></span></div>
+            <div class="benefit-row"><i class="bi bi-arrow-counterclockwise"></i><div><strong>@L["Returns"]</strong><small>@L["Enabled"]</small></div><span class="toggle-on"></span></div>
+            <div class="benefit-row"><i class="bi bi-shield-check"></i><div><strong>@L["Warranty"]</strong><small>@L["Enabled"]</small></div><span class="toggle-on"></span></div>
+        </article>
+    </aside>
+</section>

@@ -1,9 +1,50 @@
 @page "/sellers/review/{Id:guid}"
 
-<PageTitle>@L["SellerReview"]</PageTitle>
+<PageTitle>@L["SellerReview"] — Treba Admin</PageTitle>
 
-<h3>@L["ReviewSellerApplication"]: @Id</h3>
+<a class="users-back-link" href="/sellers"><i class="bi bi-arrow-left"></i>@L["BackToSellers"]</a>
+
+<section class="seller-review-hero">
+    <div class="seller-review-identity"><div class="seller-logo green large">SP</div><div><p class="eyebrow">@L["ApplicationReview"]</p><h1>Sport Pro</h1><span>@L["SportsAndHobby"] · @L["Submitted"] 18.08.2026</span></div></div>
+    <span class="review-progress"><i></i>@L["DocumentsReady"] · 4/4</span>
+</section>
+
+<div class="seller-review-layout">
+    <div class="seller-dossier">
+        <section class="card-box dossier-section">
+            <div class="card-box-header"><div><p class="eyebrow">01</p><h2 class="card-box-title">@L["StoreDetails"]</h2></div><span class="check-seal"><i class="bi bi-check-lg"></i></span></div>
+            <dl class="dossier-grid">
+                <div><dt>@L["LegalName"]</dt><dd>ТОВ «СПОРТ ПРО УКРАЇНА»</dd></div><div><dt>@L["TaxId"]</dt><dd>44920173</dd></div>
+                <div><dt>@L["ContactPerson"]</dt><dd>Олександр Савчук</dd></div><div><dt>@L["Phone"]</dt><dd>+380 67 481 22 90</dd></div>
+                <div><dt>Email</dt><dd>office@sportpro.ua</dd></div><div><dt>@L["Website"]</dt><dd>sportpro.ua</dd></div>
+            </dl>
+        </section>
+
+        <section class="card-box dossier-section">
+            <div class="card-box-header"><div><p class="eyebrow">02</p><h2 class="card-box-title">@L["Documents"]</h2></div><span class="document-summary">4 @L["Files"]</span></div>
+            <div class="document-list">
+                @foreach (var document in Documents)
+                {
+                    <article><span class="document-icon"><i class="bi bi-file-earmark-text"></i></span><div><strong>@document.Name</strong><small>@document.Meta</small></div><span class="document-ok"><i class="bi bi-check-circle-fill"></i>@L["Verified"]</span><button class="row-menu" type="button" aria-label="@L["View"]"><i class="bi bi-eye"></i></button></article>
+                }
+            </div>
+        </section>
+
+        <section class="card-box dossier-section"><div class="card-box-header"><div><p class="eyebrow">03</p><h2 class="card-box-title">@L["CategoryFocus"]</h2></div></div><div class="focus-tags"><span>@L["Fitness"]</span><span>@L["Outdoor"]</span><span>@L["Sportswear"]</span><span>@L["Nutrition"]</span></div><p class="dossier-note">@L["CategoryFocusDesc"]</p></section>
+    </div>
+
+    <aside class="decision-panel">
+        <section class="card-box decision-card"><p class="eyebrow">@L["FinalStep"]</p><h2>@L["Decision"]</h2><p>@L["DecisionDesc"]</p><label><span>@L["ReviewNote"]</span><textarea rows="5" placeholder="@L["ReviewNotePlaceholder"]"></textarea></label><button class="primary-button wide" type="button"><i class="bi bi-check2-circle"></i>@L["ApproveSeller"]</button><button class="secondary-button wide" type="button"><i class="bi bi-chat-left-text"></i>@L["RequestChanges"]</button><button class="text-danger-button" type="button">@L["RejectApplication"]</button></section>
+        <section class="review-audit"><i class="bi bi-shield-lock"></i><div><strong>@L["DecisionRecorded"]</strong><span>@L["DecisionRecordedDesc"]</span></div></section>
+    </aside>
+</div>
 
 @code {
     [Parameter] public Guid Id { get; set; }
+    private IReadOnlyList<DocumentRow> Documents =>
+    [
+        new(L["CompanyRegistration"], "PDF · 1.8 MB"), new(L["TaxCertificate"], "PDF · 842 KB"),
+        new(L["BankDetails"], "PDF · 420 KB"), new(L["DirectorPassport"], "PDF · 2.1 MB")
+    ];
+    private sealed record DocumentRow(string Name, string Meta);
 }

@@ -1,6 +1,262 @@
 @page "/users"
+@rendermode InteractiveServer
+@using System.Globalization
+@inject IUsersApiClient UsersApiClient
+@inject IConfiguration Configuration
 
 <PageTitle>@L["Users"]</PageTitle>
 
-<h3>@L["UsersManagement"]</h3>
-<p>@L["ManageUsersDesc"]</p>
+<section class="dashboard-header users-page-header">
+    <div>
+        <p class="eyebrow">@L["People"]</p>
+        <h1>@L["UsersManagement"]</h1>
+    </div>
+    <div class="users-header-actions">
+        @if (!_isLoading && _result is not null)
+        {
+            <div class="users-total">
+                <span class="users-total-icon"><i class="bi bi-people"></i></span>
+                <span class="users-total-label">@L["TotalUsers"] @if (_usingDemoData) { <em>@L["DemoData"]</em> }</span>
+                <strong>@_result.TotalElements</strong>
+            </div>
+        }
+        <a class="primary-button users-create-button" href="/users/create"><i class="bi bi-person-plus"></i> @L["CreateUser"]</a>
+    </div>
+</section>
+
+<section class="card-box users-list-card">
+    <div class="users-toolbar">
+        <div class="users-toolbar-main">
+            <div class="users-search">
+                <i class="bi bi-search" aria-hidden="true"></i>
+                <input id="user-search"
+                       type="search"
+                       @bind="_searchQuery"
+                       @bind:event="oninput"
+                       @bind:after="OnSearchChangedAsync"
+                       placeholder="@L["UserSearchPlaceholder"]"
+                       aria-label="@L["SearchUsers"]" />
+                @if (!string.IsNullOrWhiteSpace(_searchQuery))
+                {
+                    <button class="users-search-clear" type="button" @onclick="ClearSearchTextAsync" aria-label="@L["ClearSearch"]">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                }
+            </div>
+            @if (_result is not null && !_isLoading)
+            {
+                <span class="users-results-count">@L["ShowingUsers"] <strong>@_result.TotalElements</strong></span>
+            }
+        </div>
+        <div class="users-status-filter" role="group" aria-label="@L["FilterByStatus"]">
+            <span class="users-status-filter-label"><i class="bi bi-funnel"></i> @L["Status"]</span>
+            <button type="button" class="users-filter-pill @FilterClass(string.Empty)" @onclick="() => SetStatusAsync(string.Empty)">@L["AllStatuses"]</button>
+            <button type="button" class="users-filter-pill @FilterClass("Active")" @onclick='() => SetStatusAsync("Active")'>@L["UserStatusActive"]</button>
+            <button type="button" class="users-filter-pill @FilterClass("PendingActivation")" @onclick='() => SetStatusAsync("PendingActivation")'>@L["UserStatusPendingActivation"]</button>
+            <button type="button" class="users-filter-pill @FilterClass("Blocked")" @onclick='() => SetStatusAsync("Blocked")'>@L["UserStatusBlocked"]</button>
+            @if (!string.IsNullOrWhiteSpace(_appliedSearch) || !string.IsNullOrWhiteSpace(_appliedStatus))
+            {
+                <button class="users-reset-filters" type="button" @onclick="ResetFiltersAsync" disabled="@_isLoading">
+                    <i class="bi bi-arrow-counterclockwise"></i> @L["ResetFilters"]
+                </button>
+            }
+        </div>
+    </div>
+
+    @if (_isLoading)
+    {
+        <div class="users-state" role="status">
+            <div class="spinner-border text-warning" aria-hidden="true"></div>
+            <span>@L["LoadingUsers"]</span>
+        </div>
+    }
+    else if (_errorMessage is not null)
+    {
+        <div class="users-state users-state-error" role="alert">
+            <i class="bi bi-exclamation-triangle"></i>
+            <span>@_errorMessage</span>
+            <button class="btn-action-sm btn-orange" type="button" @onclick="RetryAsync">@L["TryAgain"]</button>
+        </div>
+    }
+    else if (_result is null || _result.Content.Count == 0)
+    {
+        <div class="users-state">
+            <i class="bi bi-people users-state-icon"></i>
+            <strong>@L["UsersNotFound"]</strong>
+            <span>@L["UsersNotFoundDesc"]</span>
+        </div>
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table class="custom-table users-table">
+                <thead>
+                    <tr>
+                        <th>@L["User"]</th>
+                        <th>@L["Phone"]</th>
+                        <th>@L["Status"]</th>
+                        <th>@L["RegisteredAt"]</th>
+                        <th>@L["LastLogin"]</th>
+                        <th><span class="visually-hidden">@L["Actions"]</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in _result.Content)
+                    {
+                        <tr>
+                            <td>
+                                <a class="user-cell" href="@($"/users/{user.Id}")">
+                                    <span class="user-list-avatar">@GetInitials(user)</span>
+                                    <span>
+                                        <strong>@user.FirstName @user.LastName</strong>
+                                        <span class="table-muted">@user.Email</span>
+                                    </span>
+                                </a>
+                            </td>
+                            <td>@(user.Phone ?? L["NotSpecified"])</td>
+                            <td><span class="status-badge @GetStatusClass(user.Status)">@GetStatusLabel(user.Status)</span></td>
+                            <td>@FormatDate(user.CreatedAt)</td>
+                            <td>@(user.LastLoginAt is null ? L["Never"] : FormatDate(user.LastLoginAt.Value))</td>
+                            <td class="users-row-action">
+                                <a class="btn-link-action" href="@($"/users/{user.Id}")" aria-label="@L["ViewUser"]">
+                                    @L["View"] <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (_result.TotalPages > 1)
+        {
+            <div class="users-pagination">
+                <PaginationControl CurrentPage="_result.Page"
+                                   TotalPages="_result.TotalPages"
+                                   OnPageChanged="LoadPageAsync" />
+            </div>
+        }
+    }
+</section>
+
+@code {
+    private const int PageSize = 20;
+
+    private PagedResponse<UserListItemResponse>? _result;
+    private string _searchQuery = string.Empty;
+    private string _appliedSearch = string.Empty;
+    private string _statusFilter = string.Empty;
+    private string _appliedStatus = string.Empty;
+    private string? _errorMessage;
+    private bool _isLoading = true;
+    private bool _usingDemoData;
+    private CancellationTokenSource? _searchDebounce;
+
+    protected override Task OnInitializedAsync() => LoadPageAsync(1);
+
+    private async Task LoadPageAsync(int page)
+    {
+        _isLoading = true;
+        _errorMessage = null;
+
+        try
+        {
+            if (Configuration.GetValue<bool>("UseDemoData"))
+            {
+                _usingDemoData = true;
+                var matchingUsers = DemoUsers
+                    .Where(user => string.IsNullOrWhiteSpace(_appliedSearch) ||
+                        $"{user.FirstName} {user.LastName} {user.Email} {user.Phone}"
+                            .Contains(_appliedSearch, StringComparison.OrdinalIgnoreCase))
+                    .Where(user => string.IsNullOrWhiteSpace(_appliedStatus) || user.Status == _appliedStatus)
+                    .ToList();
+                _result = new PagedResponse<UserListItemResponse>(matchingUsers, 1, PageSize, matchingUsers.Count, 1);
+                return;
+            }
+
+            _usingDemoData = false;
+            _result = await UsersApiClient.GetUsersAsync(page, PageSize, _appliedSearch, _appliedStatus);
+        }
+        catch (HttpRequestException)
+        {
+            _errorMessage = L["UsersLoadError"];
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task OnSearchChangedAsync()
+    {
+        _searchDebounce?.Cancel();
+        _searchDebounce?.Dispose();
+        _searchDebounce = new CancellationTokenSource();
+
+        try
+        {
+            await Task.Delay(350, _searchDebounce.Token);
+            _appliedSearch = _searchQuery.Trim();
+            await LoadPageAsync(1);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private Task SetStatusAsync(string status)
+    {
+        _statusFilter = status;
+        _appliedStatus = status;
+        return LoadPageAsync(1);
+    }
+
+    private Task ClearSearchTextAsync()
+    {
+        _searchQuery = string.Empty;
+        _appliedSearch = string.Empty;
+        return LoadPageAsync(1);
+    }
+
+    private Task ResetFiltersAsync()
+    {
+        _searchQuery = string.Empty;
+        _appliedSearch = string.Empty;
+        _statusFilter = string.Empty;
+        _appliedStatus = string.Empty;
+        return LoadPageAsync(1);
+    }
+
+    private string FilterClass(string status) => _statusFilter == status ? "active" : string.Empty;
+
+    private Task RetryAsync() => LoadPageAsync(_result?.Page ?? 1);
+
+    private string GetStatusLabel(string status) => L[$"UserStatus{status}"];
+
+    private static string GetStatusClass(string status) => status switch
+    {
+        "Active" => "badge-active",
+        "Blocked" => "badge-blocked",
+        "Deleted" => "badge-deleted",
+        _ => "badge-pending"
+    };
+
+    private static string GetInitials(UserListItemResponse user)
+    {
+        var first = string.IsNullOrWhiteSpace(user.FirstName) ? string.Empty : user.FirstName[..1];
+        var last = string.IsNullOrWhiteSpace(user.LastName) ? string.Empty : user.LastName[..1];
+        return (first + last).ToUpperInvariant();
+    }
+
+    private static string FormatDate(DateTimeOffset value) =>
+        value.ToLocalTime().ToString("g", CultureInfo.CurrentCulture);
+
+    private static readonly IReadOnlyList<UserListItemResponse> DemoUsers =
+    [
+        new(Guid.Parse("a92c6542-dde4-44c8-97e5-8c61ce600001"), "anna.demo@treba.local", "+380 50 111 00 01", "Анна", "Коваль", "Active", DateTimeOffset.Now.AddDays(-18), DateTimeOffset.Now.AddHours(-2)),
+        new(Guid.Parse("a92c6542-dde4-44c8-97e5-8c61ce600002"), "bohdan.demo@treba.local", "+380 50 111 00 02", "Богдан", "Мельник", "Active", DateTimeOffset.Now.AddDays(-14), DateTimeOffset.Now.AddDays(-1)),
+        new(Guid.Parse("a92c6542-dde4-44c8-97e5-8c61ce600003"), "iryna.demo@treba.local", "+380 50 111 00 03", "Ірина", "Шевченко", "PendingActivation", DateTimeOffset.Now.AddDays(-6), null),
+        new(Guid.Parse("a92c6542-dde4-44c8-97e5-8c61ce600004"), "maksym.demo@treba.local", "+380 50 111 00 04", "Максим", "Бондар", "Blocked", DateTimeOffset.Now.AddDays(-31), DateTimeOffset.Now.AddDays(-8)),
+        new(Guid.Parse("a92c6542-dde4-44c8-97e5-8c61ce600005"), "olena.demo@treba.local", "+380 50 111 00 05", "Олена", "Ткаченко", "Active", DateTimeOffset.Now.AddDays(-2), DateTimeOffset.Now.AddMinutes(-36))
+    ];
+}

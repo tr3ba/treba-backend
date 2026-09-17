@@ -1,23 +1,30 @@
-using AdminPanel.Infrastructure;
+using Contracts.Admin.Users;
+using Contracts.Common;
 
 namespace AdminPanel.Services.Abstractions;
 
 public interface IUsersApiClient
 {
-    Task<PagedResult<UserDto>> GetUsersAsync(int page = 1, int size = 20, string? search = null);
-    Task<ApiResponse<UserDto>> GetUserByIdAsync(Guid id);
-    Task<ApiResponse<bool>> BlockUserAsync(Guid id);
-    Task<ApiResponse<bool>> UnblockUserAsync(Guid id);
-}
+    Task<UserDetailsResponse> CreateUserAsync(
+        CreateUserRequest request,
+        CancellationToken cancellationToken = default);
 
-public record UserDto(
-    Guid Id, 
-    string Email, 
-    string Phone, 
-    string FirstName, 
-    string LastName, 
-    string Status, 
-    List<string> Roles, 
-    DateTime CreatedAt, 
-    DateTime? LastLoginAt
-);
+    Task<PagedResponse<UserListItemResponse>> GetUsersAsync(
+        int page = 1,
+        int size = 20,
+        string? search = null,
+        string? status = null,
+        CancellationToken cancellationToken = default);
+
+    Task<UserDetailsResponse?> GetUserByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken = default);
+
+    Task<UserStatusResponse> BlockUserAsync(
+        Guid id,
+        CancellationToken cancellationToken = default);
+
+    Task<UserStatusResponse> UnblockUserAsync(
+        Guid id,
+        CancellationToken cancellationToken = default);
+}
