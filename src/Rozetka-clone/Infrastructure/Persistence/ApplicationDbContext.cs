@@ -3,6 +3,9 @@ using Domain.Entities.Product;
 using Domain.Entities.ProductTag;
 using Domain.Entities.Users;
 using Microsoft.EntityFrameworkCore;
+using Domain.Entities;
+using Domain.Entities.Attribute;
+using DomainAttribute = Domain.Entities.Attribute.Attribute;
 
 namespace Infrastructure.Persistence
 {
@@ -34,6 +37,17 @@ namespace Infrastructure.Persistence
         public DbSet<ProductImage> ProductImages => Set<ProductImage>();
 
         public DbSet<ProductTag> ProductTags => Set<ProductTag>();
+
+        public DbSet<Category> Categories => Set<Category>();
+
+        public DbSet<Brand> Brands => Set<Brand>();
+
+        public DbSet<DomainAttribute> Attributes => Set<DomainAttribute>();
+
+        public DbSet<AttributeOption> AttributeOptions => Set<AttributeOption>();
+
+        public DbSet<ProductAttributeValue> ProductAttributeValues =>
+            Set<ProductAttributeValue>();
 
         public DbSet<ProductTagRelation> ProductTagRelations =>
             Set<ProductTagRelation>();
