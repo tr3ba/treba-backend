@@ -10,7 +10,7 @@ public class ProductDtoTests
     {
         var product = new ProductDto();
 
-        Assert.Null(product);
+        Assert.NotNull(product);
     }
 }
 
