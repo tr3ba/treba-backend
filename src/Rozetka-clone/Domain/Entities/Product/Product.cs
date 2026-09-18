@@ -17,7 +17,7 @@ public class Product
     public double AverageRating { get; set; }
     public int ReviewCount { get; set; }
     public int SalesCount { get; set; }
-    public int WarrantyMonth { get; set; }
+    public int WarrantyMonths { get; set; }
     public string CountryOfOrigin { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }

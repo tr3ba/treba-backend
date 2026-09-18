@@ -57,7 +57,7 @@ namespace Infrastructure.Persistence.Configurations
             builder.Property(x => x.SalesCount)
                 .HasDefaultValue(0);
 
-            builder.Property(x => x.WarrantyMonth)
+            builder.Property(x => x.WarrantyMonths)
                 .HasDefaultValue(0);
 
             builder.Property(x => x.CountryOfOrigin)
@@ -68,6 +68,16 @@ namespace Infrastructure.Persistence.Configurations
 
             builder.Property(x => x.UpdatedAt)
                 .IsRequired();
+
+            builder.HasOne<Domain.Entities.Category>()
+                .WithMany()
+                .HasForeignKey(x => x.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne<Domain.Entities.Brand>()
+                .WithMany()
+                .HasForeignKey(x => x.BrandId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasIndex(x => x.CategoryId);
             builder.HasIndex(x => x.BrandId);

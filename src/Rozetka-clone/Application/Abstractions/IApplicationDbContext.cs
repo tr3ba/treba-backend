@@ -1,7 +1,10 @@
-﻿using Domain.Entities.Product;
+﻿using Domain.Entities;
+using Domain.Entities.Attribute;
+using Domain.Entities.Product;
 using Domain.Entities.ProductTag;
 using Domain.Entities.Users;
 using Microsoft.EntityFrameworkCore;
+using DomainAttribute = Domain.Entities.Attribute.Attribute;
 
 namespace Application.Abstractions
 {
@@ -26,6 +29,16 @@ namespace Application.Abstractions
         DbSet<ProductTag> ProductTags { get; }
 
         DbSet<ProductTagRelation> ProductTagRelations { get; }
+
+        DbSet<Category> Categories { get; }
+
+        DbSet<Brand> Brands { get; }
+
+        DbSet<DomainAttribute> Attributes { get; }
+
+        DbSet<AttributeOption> AttributeOptions { get; }
+
+        DbSet<ProductAttributeValue> ProductAttributeValues { get; }
 
         Task<int> SaveChangesAsync(
             CancellationToken cancellationToken = default);

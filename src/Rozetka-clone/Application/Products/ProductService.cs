@@ -78,7 +78,7 @@ namespace Application.Products
                 ReviewCount = 0,
                 SalesCount = 0,
 
-                WarrantyMonth = request.WarrantyMonth,
+                WarrantyMonths = request.WarrantyMonth,
                 CountryOfOrigin = request.CountryOfOrigin.Trim(),
 
                 CreatedAt = DateTime.UtcNow,
@@ -139,7 +139,7 @@ namespace Application.Products
                 product.Description = request.Description.Trim();
 
             if (request.WarrantyMonth.HasValue)
-                product.WarrantyMonth = request.WarrantyMonth.Value;
+                product.WarrantyMonths = request.WarrantyMonth.Value;
 
             if (request.CountryOfOrigin is not null)
                 product.CountryOfOrigin = request.CountryOfOrigin.Trim();
@@ -252,7 +252,7 @@ namespace Application.Products
                 ReviewCount = product.ReviewCount,
                 SalesCount = product.SalesCount,
 
-                WarrantyMonth = product.WarrantyMonth,
+                WarrantyMonth = product.WarrantyMonths,
                 CountryOfOrigin = product.CountryOfOrigin,
 
                 CreatedAt = product.CreatedAt,
