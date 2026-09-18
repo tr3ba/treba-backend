@@ -1,6 +1,7 @@
 using Application.Attributes;
 using Application.Brands;
 using Application.Categories;
+using Application.ProductAttributeValues;
 using Application.ProductImages;
 using Application.Products;
 using Application.ProductVariants;
@@ -27,6 +28,7 @@ builder.Services.AddScoped<IBrandService, BrandService>();
 builder.Services.AddScoped<IAttributeService, AttributeService>();
 builder.Services.AddScoped<IProductVariantService, ProductVariantService>();
 builder.Services.AddScoped<IProductImageService, ProductImageService>();
+builder.Services.AddScoped<IProductAttributeValueService, ProductAttributeValueService>();
 
 var app = builder.Build();
 
