@@ -46,8 +46,13 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           RELEASE_TAG: ${{ github.ref_name }}
+          COMMIT_SHA: ${{ github.sha }}
         run: |
           docker build -f docker/Dockerfile.backend \
-            -t $ECR_REGISTRY/$ECR_REPOSITORY:$RELEASE_TAG .
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$RELEASE_TAG \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:commit-$COMMIT_SHA .
 
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$RELEASE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:commit-$COMMIT_SHA
