@@ -1,3 +1,4 @@
+using Application.Attributes;
 using Application.Brands;
 using Application.Categories;
 using Application.Products;
@@ -21,6 +22,7 @@ builder.Services.AddInfrastructure(
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IBrandService, BrandService>();
+builder.Services.AddScoped<IAttributeService, AttributeService>();
 
 var app = builder.Build();
 
