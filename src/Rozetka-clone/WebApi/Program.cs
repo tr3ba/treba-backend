@@ -4,6 +4,7 @@ using Application.Categories;
 using Application.ProductAttributeValues;
 using Application.ProductImages;
 using Application.Products;
+using Application.ProductTags;
 using Application.ProductVariants;
 using Infrastructure;
 using Infrastructure.Persistence;
@@ -30,6 +31,7 @@ builder.Services.AddScoped<IAttributeService, AttributeService>();
 builder.Services.AddScoped<IProductVariantService, ProductVariantService>();
 builder.Services.AddScoped<IProductImageService, ProductImageService>();
 builder.Services.AddScoped<IProductAttributeValueService, ProductAttributeValueService>();
+builder.Services.AddScoped<IProductTagService, ProductTagService>();
 
 var app = builder.Build();
 
