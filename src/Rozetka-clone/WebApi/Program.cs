@@ -1,10 +1,18 @@
 using System.Text;
+using Application.Attributes;
+using Application.Brands;
+using Application.Categories;
+using Application.ProductAttributeValues;
+using Application.ProductImages;
 using Application.Products;
+using Application.ProductTags;
+using Application.ProductVariants;
 using Infrastructure;
 using Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using WebApi.Extensions;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,6 +23,13 @@ builder.Services.AddSwaggerDocumentation();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<IBrandService, BrandService>();
+builder.Services.AddScoped<IAttributeService, AttributeService>();
+builder.Services.AddScoped<IProductVariantService, ProductVariantService>();
+builder.Services.AddScoped<IProductImageService, ProductImageService>();
+builder.Services.AddScoped<IProductAttributeValueService, ProductAttributeValueService>();
+builder.Services.AddScoped<IProductTagService, ProductTagService>();
 
 var jwtSection = builder.Configuration.GetSection("Jwt");
 var secretKey = jwtSection["SecretKey"] 
@@ -64,6 +79,7 @@ if (app.Environment.IsDevelopment() &&
     try
     {
         var createdUsers = await app.Services.SeedDemoUsersAsync();
+
         app.Logger.LogInformation(
             "Demo user seed completed. Created entities: {CreatedUsers}.",
             createdUsers);
@@ -85,6 +101,23 @@ app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapGet("/health", async (
+    ApplicationDbContext dbContext,
+    CancellationToken cancellationToken) =>
+{
+    var databaseOk = await dbContext.Database.CanConnectAsync(cancellationToken);
+
+    return databaseOk
+        ? Results.Ok(new
+        {
+            status = "ok",
+            database = "ok"
+        })
+        : Results.Problem(
+            statusCode: StatusCodes.Status503ServiceUnavailable,
+            title: "Database unavailable");
+});
 
 app.MapControllers();
 
