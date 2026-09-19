@@ -1,3 +1,4 @@
+using System;
 using Domain.Enums;
 
 namespace Domain.Entities.Product;
