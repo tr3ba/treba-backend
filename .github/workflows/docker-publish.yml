@@ -51,7 +51,7 @@ jobs:
           docker logs treba-backend-test
 
           echo "=== Smoke test ==="
-          curl -fsS http://localhost:5050/WeatherForecast >/dev/null
+          curl -fsS http://localhost:5050/ping >/dev/null
 
           docker rm -f treba-backend-test
 
