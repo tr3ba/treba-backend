@@ -60,6 +60,20 @@ namespace Infrastructure.Persistence.Configurations
                 .WithOne()
                 .HasForeignKey(x => x.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+            
+            builder.Property(x => x.PasswordHash)
+                .HasMaxLength(500)
+                .IsRequired();
+
+            builder.Property(x => x.RefreshToken)
+                .HasMaxLength(500);
+
+            builder.Property(x => x.RefreshTokenExpiryTime);
+
+            builder.HasOne(x => x.Role)
+                .WithMany()
+                .HasForeignKey(x => x.RoleId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

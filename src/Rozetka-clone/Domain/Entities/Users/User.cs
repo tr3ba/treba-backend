@@ -59,6 +59,16 @@ namespace Domain.Entities.Users
         private readonly List<Address> _addresses = [];
 
         public IReadOnlyCollection<Address> Addresses => _addresses.AsReadOnly();
+        
+        public string PasswordHash { get; private set; } = string.Empty;
+        
+        public Guid RoleId { get; private set; }
+        
+        public Role? Role { get; private set; }
+        
+        public string? RefreshToken { get; private set; }
+        
+        public DateTimeOffset? RefreshTokenExpiryTime { get; private set; }
 
         public static User Create(
             Guid id,
@@ -393,6 +403,35 @@ namespace Domain.Entities.Users
             return string.IsNullOrWhiteSpace(value)
                 ? null
                 : value.Trim();
+        }
+        
+        public void SetPasswordHash(string passwordHash)
+        {
+            EnsureCanBeModified();
+            ArgumentException.ThrowIfNullOrWhiteSpace(passwordHash);
+            PasswordHash = passwordHash;
+            UpdatedAt = DateTimeOffset.UtcNow;
+        }
+
+        public void AssignRole(Guid roleId)
+        {
+            EnsureCanBeModified();
+            RoleId = roleId;
+            UpdatedAt = DateTimeOffset.UtcNow;
+        }
+
+        public void SetRefreshToken(string token, DateTimeOffset expiryTime)
+        {
+            RefreshToken = token;
+            RefreshTokenExpiryTime = expiryTime;
+            UpdatedAt = DateTimeOffset.UtcNow;
+        }
+
+        public void RevokeRefreshToken()
+        {
+            RefreshToken = null;
+            RefreshTokenExpiryTime = null;
+            UpdatedAt = DateTimeOffset.UtcNow;
         }
     }
 }

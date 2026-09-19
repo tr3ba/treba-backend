@@ -1,4 +1,5 @@
 ﻿using Application.Abstractions;
+using Infrastructure.Authentication;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -25,6 +26,9 @@ namespace Infrastructure
             services.AddScoped<IApplicationDbContext>(
                 provider =>
                     provider.GetRequiredService<ApplicationDbContext>());
+            
+            services.AddScoped<ITokenService, TokenService>();
+            services.AddScoped<IIdentityService, IdentityService>();
 
             return services;
         }
