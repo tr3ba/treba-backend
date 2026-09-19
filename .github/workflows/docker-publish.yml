@@ -42,7 +42,16 @@ jobs:
             $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
           sleep 5
+
+          echo "=== Docker containers ==="
+          docker ps -a
+
+          echo "=== Backend container logs ==="
+          docker logs treba-backend-test
+
+          echo "=== Smoke test ==="
           curl -fsS http://localhost:5050/WeatherForecast >/dev/null
+
           docker rm -f treba-backend-test
 
           docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
