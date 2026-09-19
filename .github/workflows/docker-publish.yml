@@ -39,6 +39,7 @@ jobs:
           docker run -d --name treba-backend-test \
             -p 5050:5000 \
             -e ConnectionStrings__DefaultConnection="Host=localhost;Port=5432;Database=test;Username=test;Password=test" \
+            -e Jwt__SecretKey="${{ secrets.JWT_SECRET_KEY }}" \
             $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
           sleep 5
