@@ -32,7 +32,7 @@ builder.Services.AddScoped<IProductAttributeValueService, ProductAttributeValueS
 builder.Services.AddScoped<IProductTagService, ProductTagService>();
 
 var jwtSection = builder.Configuration.GetSection("Jwt");
-var secretKey = jwtSection["SecretKey"] 
+var secretKey = jwtSection["SecretKey"]
     ?? throw new InvalidOperationException("JWT SecretKey is missing from configuration.");
 
 builder.Services.AddAuthentication(options =>
@@ -118,6 +118,13 @@ app.MapGet("/health", async (
             statusCode: StatusCodes.Status503ServiceUnavailable,
             title: "Database unavailable");
 });
+
+// Lightweight endpoint for Docker/CI smoke tests.
+// Does not require a database connection.
+app.MapGet("/ping", () => Results.Ok(new
+{
+    status = "ok"
+}));
 
 app.MapControllers();
 
