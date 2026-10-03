@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Domain.Entities;
 using Domain.Entities.Attribute;
 using Domain.Entities.Inventory;
+using Domain.Entities.Orders;
 using DomainAttribute = Domain.Entities.Attribute.Attribute;
 
 namespace Infrastructure.Persistence
@@ -63,7 +64,15 @@ namespace Infrastructure.Persistence
         public DbSet<StockMovement> StockMovements => Set<StockMovement>();
         
         public DbSet<InventoryReservation> InventoryReservations => Set<InventoryReservation>();
-
+        
+        public DbSet<Order> Orders => Set<Order>();
+        
+        public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+        
+        public DbSet<OrderAddress> OrderAddresses => Set<OrderAddress>();
+        
+        public DbSet<OrderStatusHistory> OrderStatusHistories => Set<OrderStatusHistory>();
+        
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

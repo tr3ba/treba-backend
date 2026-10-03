@@ -259,11 +259,11 @@ namespace Domain.Entities.Users
         }
 
         public void CreateProfile(
-    DateOnly? birthDate = null,
-    string? gender = null,
-    string? avatarUrl = null,
-    string language = "uk",
-    bool marketingEmailsEnabled = false)
+            DateOnly? birthDate = null,
+            string? gender = null,
+            string? avatarUrl = null,
+            string language = "uk",
+            bool marketingEmailsEnabled = false)
         {
             EnsureCanBeModified();
 
