@@ -9,7 +9,7 @@ Backend API and application services for the **Treba Marketplace**.
 <br>
 
 [![Organization](https://img.shields.io/badge/TREBA-002AFF?style=for-the-badge&logo=github&logoColor=white)](https://github.com/tr3ba)
-[![Live Demo](https://img.shields.io/badge/LIVE_DEMO-FF6E2A?style=for-the-badge&logo=googlechrome&logoColor=white)](http://52.209.28.30/)
+[![Live Demo](https://img.shields.io/badge/LIVE_DEMO-FF6E2A?style=for-the-badge&logo=googlechrome&logoColor=white)](https://treba.duckdns.org)
 [![Frontend](https://img.shields.io/badge/FRONTEND-002AFF?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://github.com/tr3ba/treba-frontend)
 
 <br><br>
