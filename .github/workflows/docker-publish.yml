@@ -6,6 +6,9 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 env:
   AWS_REGION: eu-west-1
   ECR_REPOSITORY: treba-backend
@@ -34,27 +37,56 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build -f docker/Dockerfile.backend -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker build \
+            -f docker/Dockerfile.backend \
+            -t "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" \
+            .
+
+          # Temporary values used only by this test container.
+          # Do not print them or reuse them in production.
+          JWT_TEST_KEY="$(openssl rand -hex 32)"
+          ENC_TEST_KEY="$(openssl rand -base64 32)"
+          OTP_TEST_KEY="$(openssl rand -base64 32)"
 
           docker run -d --name treba-backend-test \
             -p 5050:5000 \
             -e ConnectionStrings__DefaultConnection="Host=localhost;Port=5432;Database=test;Username=test;Password=test" \
-            -e Jwt__SecretKey="${{ secrets.JWT_SECRET_KEY }}" \
-            $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+            -e Jwt__SecretKey="$JWT_TEST_KEY" \
+            -e Security__EncryptionKey="$ENC_TEST_KEY" \
+            -e Security__OtpHashKey="$OTP_TEST_KEY" \
+            "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
 
-          sleep 5
+          trap 'docker rm -f treba-backend-test >/dev/null 2>&1 || true' EXIT
 
-          echo "=== Docker containers ==="
-          docker ps -a
+          echo "Waiting for backend /ping..."
+          ready=false
 
-          echo "=== Backend container logs ==="
-          docker logs treba-backend-test
+          for attempt in $(seq 1 15); do
+            if curl -fsS http://localhost:5050/ping >/dev/null 2>&1; then
+              ready=true
+              break
+            fi
 
-          echo "=== Smoke test ==="
-          curl -fsS http://localhost:5050/ping >/dev/null
+            if [ "$(docker inspect -f '{{.State.Running}}' treba-backend-test)" != "true" ]; then
+              echo "Test container stopped before /ping became available."
+              docker ps -a --filter name=treba-backend-test
+              exit 1
+            fi
 
-          docker rm -f treba-backend-test
+            sleep 2
+          done
 
-          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          if [ "$ready" != "true" ]; then
+            echo "Backend /ping did not become available."
+            docker ps -a --filter name=treba-backend-test
+            exit 1
+          fi
+
+          echo "Backend /ping passed."
+
+          docker tag \
+            "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" \
+            "$ECR_REGISTRY/$ECR_REPOSITORY:latest"
+
+          docker push "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+          docker push "$ECR_REGISTRY/$ECR_REPOSITORY:latest"
