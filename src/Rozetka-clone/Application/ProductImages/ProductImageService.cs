@@ -1,10 +1,10 @@
-using Application.Common;
-using Application.Abstractions;
-using Domain.Entities.Product;
-using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Application.Abstractions;
+using Application.Common;
+using Domain.Entities.Product;
+using Microsoft.EntityFrameworkCore;
 
 namespace Application.ProductImages
 {
@@ -12,83 +12,105 @@ namespace Application.ProductImages
     {
         private readonly IApplicationDbContext _dbContext;
 
-        public ProductImageService(IApplicationDbContext dbContext)
+        public ProductImageService(
+            IApplicationDbContext dbContext
+        )
         {
             _dbContext = dbContext;
         }
 
         public async Task<IReadOnlyList<ProductImageDto>> GetByProductIdAsync(
             Guid productId,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default
+        )
         {
-            return await _dbContext.ProductImages
+            return await _dbContext
+                .ProductImages
                 .AsNoTracking()
                 .Where(x => x.ProductId == productId)
                 .OrderByDescending(x => x.IsMain)
                 .ThenBy(x => x.SortOrder)
-                .Select(x => new ProductImageDto
-                {
-                    Id = x.Id,
-                    ProductId = x.ProductId,
-                    VariantId = x.VariantId,
-                    ImageUrl = x.ImageUrl,
-                    AltText = x.AltText,
-                    SortOrder = x.SortOrder,
-                    IsMain = x.IsMain
-                })
+                .Select(
+                    x =>
+                        new ProductImageDto
+                        {
+                            Id = x.Id,
+                            ProductId = x.ProductId,
+                            VariantId = x.VariantId,
+                            ImageUrl = x.ImageUrl,
+                            AltText = x.AltText,
+                            SortOrder = x.SortOrder,
+                            IsMain = x.IsMain,
+                        }
+                )
                 .ToListAsync(cancellationToken);
         }
 
         public async Task<ProductImageDto?> GetByIdAsync(
             Guid productId,
             Guid imageId,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default
+        )
         {
-            return await _dbContext.ProductImages
+            return await _dbContext
+                .ProductImages
                 .AsNoTracking()
-                .Where(x => x.Id == imageId &&
-                            x.ProductId == productId)
-                .Select(x => new ProductImageDto
-                {
-                    Id = x.Id,
-                    ProductId = x.ProductId,
-                    VariantId = x.VariantId,
-                    ImageUrl = x.ImageUrl,
-                    AltText = x.AltText,
-                    SortOrder = x.SortOrder,
-                    IsMain = x.IsMain
-                })
+                .Where(
+                    x =>
+                        x.Id == imageId
+                        && x.ProductId == productId
+                )
+                .Select(
+                    x =>
+                        new ProductImageDto
+                        {
+                            Id = x.Id,
+                            ProductId = x.ProductId,
+                            VariantId = x.VariantId,
+                            ImageUrl = x.ImageUrl,
+                            AltText = x.AltText,
+                            SortOrder = x.SortOrder,
+                            IsMain = x.IsMain,
+                        }
+                )
                 .FirstOrDefaultAsync(cancellationToken);
         }
 
         public async Task<ProductImageDto> CreateAsync(
             Guid productId,
             CreateProductImageRequest request,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default
+        )
         {
-            var productExists = await _dbContext.Products
-                .AnyAsync(
-                    x => x.Id == productId,
-                    cancellationToken);
+            var productExists = await _dbContext.Products.AnyAsync(
+                x => x.Id == productId,
+                cancellationToken
+            );
 
             if (!productExists)
+            {
                 throw new BusinessRuleException("Product not found.");
+            }
 
             await ValidateVariantAsync(
                 productId,
                 request.VariantId,
-                cancellationToken);
+                cancellationToken
+            );
 
             var imageUrl = request.ImageUrl.Trim();
 
             if (string.IsNullOrWhiteSpace(imageUrl))
+            {
                 throw new ArgumentException("Image URL is required.");
+            }
 
             if (request.IsMain)
             {
                 await ResetMainImageAsync(
                     productId,
-                    cancellationToken);
+                    cancellationToken
+                );
             }
 
             var image = new ProductImage
@@ -99,7 +121,7 @@ namespace Application.ProductImages
                 ImageUrl = imageUrl,
                 AltText = NormalizeOptional(request.AltText),
                 SortOrder = request.SortOrder,
-                IsMain = request.IsMain
+                IsMain = request.IsMain,
             };
 
             _dbContext.ProductImages.Add(image);
@@ -113,23 +135,28 @@ namespace Application.ProductImages
             Guid productId,
             Guid imageId,
             UpdateProductImageRequest request,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default
+        )
         {
-            var image = await _dbContext.ProductImages
-                .FirstOrDefaultAsync(
-                    x => x.Id == imageId &&
-                         x.ProductId == productId,
-                    cancellationToken);
+            var image = await _dbContext.ProductImages.FirstOrDefaultAsync(
+                x =>
+                    x.Id == imageId
+                    && x.ProductId == productId,
+                cancellationToken
+            );
 
             if (image is null)
+            {
                 return null;
+            }
 
             if (request.VariantId.HasValue)
             {
                 await ValidateVariantAsync(
                     productId,
                     request.VariantId,
-                    cancellationToken);
+                    cancellationToken
+                );
 
                 image.VariantId = request.VariantId;
             }
@@ -139,17 +166,22 @@ namespace Application.ProductImages
                 var imageUrl = request.ImageUrl.Trim();
 
                 if (string.IsNullOrWhiteSpace(imageUrl))
-                    throw new ArgumentException(
-                        "Image URL cannot be empty.");
+                {
+                    throw new ArgumentException("Image URL cannot be empty.");
+                }
 
                 image.ImageUrl = imageUrl;
             }
 
             if (request.AltText is not null)
+            {
                 image.AltText = NormalizeOptional(request.AltText);
+            }
 
             if (request.SortOrder.HasValue)
+            {
                 image.SortOrder = request.SortOrder.Value;
+            }
 
             if (request.IsMain.HasValue)
             {
@@ -158,7 +190,8 @@ namespace Application.ProductImages
                     await ResetMainImageAsync(
                         productId,
                         cancellationToken,
-                        imageId);
+                        imageId
+                    );
                 }
 
                 image.IsMain = request.IsMain.Value;
@@ -172,16 +205,20 @@ namespace Application.ProductImages
         public async Task<bool> DeleteAsync(
             Guid productId,
             Guid imageId,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default
+        )
         {
-            var image = await _dbContext.ProductImages
-                .FirstOrDefaultAsync(
-                    x => x.Id == imageId &&
-                         x.ProductId == productId,
-                    cancellationToken);
+            var image = await _dbContext.ProductImages.FirstOrDefaultAsync(
+                x =>
+                    x.Id == imageId
+                    && x.ProductId == productId,
+                cancellationToken
+            );
 
             if (image is null)
+            {
                 return false;
+            }
 
             _dbContext.ProductImages.Remove(image);
 
@@ -193,42 +230,55 @@ namespace Application.ProductImages
         private async Task ValidateVariantAsync(
             Guid productId,
             Guid? variantId,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken
+        )
         {
             if (!variantId.HasValue)
+            {
                 return;
+            }
 
-            var variantExists = await _dbContext.ProductVariants
-                .AnyAsync(
-                    x => x.Id == variantId.Value &&
-                         x.ProductId == productId,
-                    cancellationToken);
+            var variantExists = await _dbContext.ProductVariants.AnyAsync(
+                x =>
+                    x.Id == variantId.Value
+                    && x.ProductId == productId,
+                cancellationToken
+            );
 
             if (!variantExists)
             {
-                throw new BusinessRuleException(
-                    "Product variant not found or does not belong to this product.");
+                throw new BusinessRuleException("Product variant not found or does not belong to this product.");
             }
         }
 
         private async Task ResetMainImageAsync(
             Guid productId,
             CancellationToken cancellationToken,
-            Guid? exceptImageId = null)
+            Guid? exceptImageId = null
+        )
         {
-            var mainImages = await _dbContext.ProductImages
-                .Where(x =>
-                    x.ProductId == productId &&
-                    x.IsMain &&
-                    (!exceptImageId.HasValue ||
-                     x.Id != exceptImageId.Value))
+            var mainImages = await _dbContext
+                .ProductImages
+                .Where(
+                    x =>
+                        x.ProductId == productId
+                        && x.IsMain
+                        && (
+                            !exceptImageId.HasValue
+                            || x.Id != exceptImageId.Value
+                        )
+                )
                 .ToListAsync(cancellationToken);
 
             foreach (var image in mainImages)
+            {
                 image.IsMain = false;
+            }
         }
 
-        private static ProductImageDto ToDto(ProductImage image)
+        private static ProductImageDto ToDto(
+            ProductImage image
+        )
         {
             return new ProductImageDto
             {
@@ -238,11 +288,13 @@ namespace Application.ProductImages
                 ImageUrl = image.ImageUrl,
                 AltText = image.AltText,
                 SortOrder = image.SortOrder,
-                IsMain = image.IsMain
+                IsMain = image.IsMain,
             };
         }
 
-        private static string? NormalizeOptional(string? value)
+        private static string? NormalizeOptional(
+            string? value
+        )
         {
             return string.IsNullOrWhiteSpace(value)
                 ? null

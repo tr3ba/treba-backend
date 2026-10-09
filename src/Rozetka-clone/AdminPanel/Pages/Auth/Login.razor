@@ -19,11 +19,11 @@
     <div class="login-form-panel"><div class="login-form-wrap">
         @if (_stage == LoginStage.Credentials)
         {
-            <p class="eyebrow">@L["WelcomeBack"]</p><h2>@L["AdminSignIn"]</h2><p class="login-intro">@L["LoginIntro"]</p>
+            <p class="eyebrow">@L["WelcomeBack"]</p><h2>@L["StaffSignIn"]</h2><p class="login-intro">@L["LoginIntro"]</p>
             @if (_error is not null) { <p class="feedback-error" role="alert">@_error</p> }
             <EditForm Model="_credentials" OnValidSubmit="SignInAsync" FormName="admin-login" class="login-form">
                 <DataAnnotationsValidator /><ValidationSummary />
-                <label><span>@L["AdminEmail"]</span><div class="login-input"><i class="bi bi-envelope"></i><InputText type="email" autocomplete="username" @bind-Value="_credentials.Email" /></div></label>
+                <label><span>@L["StaffEmail"]</span><div class="login-input"><i class="bi bi-envelope"></i><InputText type="email" autocomplete="username" @bind-Value="_credentials.Email" /></div></label>
                 <label><span>@L["Password"]</span><div class="login-input"><i class="bi bi-lock"></i><InputText type="password" autocomplete="current-password" @bind-Value="_credentials.Password" /></div></label>
                 <button class="primary-button wide login-submit" type="submit" disabled="@_busy">@(_busy ? L["LoginInProgress"] : L["SignIn"])<i class="bi bi-arrow-right"></i></button>
             </EditForm>
@@ -130,7 +130,7 @@
 
     private async Task CompleteLoginAsync(AuthResponse auth)
     {
-        if (auth.Role != "Administrator") { _error = L["AdminAccountRequired"]; return; }
+        if (!AdminAccess.IsStaff(auth.Role)) { _error = L["StaffAccountRequired"]; return; }
         await Tokens.SetRefreshTokenAsync(auth.RefreshToken);
         await Auth.NotifyUserAuthenticationAsync(auth.AccessToken);
         Navigation.NavigateTo("/");

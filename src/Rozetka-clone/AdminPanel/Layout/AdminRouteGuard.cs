@@ -9,7 +9,7 @@ public class AdminRouteGuard : ComponentBase
     [Inject] public AuthenticationStateProvider AuthStateProvider { get; set; } = default!;
     [Inject] public NavigationManager NavigationManager { get; set; } = default!;
     [Parameter] public RenderFragment? ChildContent { get; set; }
-    [Parameter] public string[] AllowedRoles { get; set; } = new[] { "ADMIN", "Administrator", "MODERATOR", "MANAGER" };
+    [Parameter] public string[] AllowedRoles { get; set; } = ["Administrator", "Manager", "Moderator", "Seller"];
 
     protected override async Task OnInitializedAsync()
     {

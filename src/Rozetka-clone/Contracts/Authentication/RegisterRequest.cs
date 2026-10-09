@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+
 namespace Contracts.Authentication;
 
 public sealed record RegisterRequest(
@@ -7,4 +8,5 @@ public sealed record RegisterRequest(
     [Required, StringLength(100)] string FirstName,
     [Required, StringLength(100)] string LastName,
     [StringLength(30)] string? PhoneNumber,
-    string? RoleName = null);
+    string? RoleName = null
+);

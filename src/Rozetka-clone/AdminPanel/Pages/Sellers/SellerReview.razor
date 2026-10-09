@@ -1,50 +1,100 @@
 @page "/sellers/review/{Id:guid}"
+@rendermode InteractiveServer
+@using System.Globalization
+@using System.Text.Json
+@inject ISellersApiClient SellersApi
 
-<PageTitle>@L["SellerReview"] — Treba Admin</PageTitle>
+<PageTitle>@L["SellerProfile"] — Treba Admin</PageTitle>
 
 <a class="users-back-link" href="/sellers"><i class="bi bi-arrow-left"></i>@L["BackToSellers"]</a>
 
-<section class="seller-review-hero">
-    <div class="seller-review-identity"><div class="seller-logo green large">SP</div><div><p class="eyebrow">@L["ApplicationReview"]</p><h1>Sport Pro</h1><span>@L["SportsAndHobby"] · @L["Submitted"] 18.08.2026</span></div></div>
-    <span class="review-progress"><i></i>@L["DocumentsReady"] · 4/4</span>
-</section>
-
-<div class="seller-review-layout">
-    <div class="seller-dossier">
-        <section class="card-box dossier-section">
-            <div class="card-box-header"><div><p class="eyebrow">01</p><h2 class="card-box-title">@L["StoreDetails"]</h2></div><span class="check-seal"><i class="bi bi-check-lg"></i></span></div>
-            <dl class="dossier-grid">
-                <div><dt>@L["LegalName"]</dt><dd>ТОВ «СПОРТ ПРО УКРАЇНА»</dd></div><div><dt>@L["TaxId"]</dt><dd>44920173</dd></div>
-                <div><dt>@L["ContactPerson"]</dt><dd>Олександр Савчук</dd></div><div><dt>@L["Phone"]</dt><dd>+380 67 481 22 90</dd></div>
-                <div><dt>Email</dt><dd>office@sportpro.ua</dd></div><div><dt>@L["Website"]</dt><dd>sportpro.ua</dd></div>
-            </dl>
-        </section>
-
-        <section class="card-box dossier-section">
-            <div class="card-box-header"><div><p class="eyebrow">02</p><h2 class="card-box-title">@L["Documents"]</h2></div><span class="document-summary">4 @L["Files"]</span></div>
-            <div class="document-list">
-                @foreach (var document in Documents)
-                {
-                    <article><span class="document-icon"><i class="bi bi-file-earmark-text"></i></span><div><strong>@document.Name</strong><small>@document.Meta</small></div><span class="document-ok"><i class="bi bi-check-circle-fill"></i>@L["Verified"]</span><button class="row-menu" type="button" aria-label="@L["View"]"><i class="bi bi-eye"></i></button></article>
-                }
+@if (_loading)
+{
+    <section class="card-box workspace-empty" role="status"><div class="spinner-border text-warning" aria-hidden="true"></div><p>@L["Loading"]</p></section>
+}
+else if (_loadFailed)
+{
+    <section class="card-box workspace-empty" role="alert">
+        <span class="workspace-empty-icon"><i class="bi bi-exclamation-triangle"></i></span>
+        <h2>@L["SellerLoadFailed"]</h2>
+        <button class="secondary-button" type="button" @onclick="LoadAsync">@L["TryAgain"]</button>
+    </section>
+}
+else if (_seller is null)
+{
+    <section class="card-box workspace-empty" role="status">
+        <span class="workspace-empty-icon"><i class="bi bi-shop"></i></span>
+        <h2>@L["SellerNotFound"]</h2>
+    </section>
+}
+else
+{
+    <section class="seller-review-hero">
+        <div class="seller-review-identity">
+            <div class="seller-logo orange large">@Initials(_seller.CompanyName)</div>
+            <div>
+                <p class="eyebrow">@L["SellerProfile"]</p>
+                <h1>@_seller.CompanyName</h1>
+                <span>@L["Since"] @_seller.CreatedAt.ToString("d", CultureInfo.CurrentCulture)</span>
             </div>
-        </section>
+        </div>
+        <span class="status-badge @StatusClass(_seller.Status)">@StatusLabel(_seller.Status)</span>
+    </section>
 
-        <section class="card-box dossier-section"><div class="card-box-header"><div><p class="eyebrow">03</p><h2 class="card-box-title">@L["CategoryFocus"]</h2></div></div><div class="focus-tags"><span>@L["Fitness"]</span><span>@L["Outdoor"]</span><span>@L["Sportswear"]</span><span>@L["Nutrition"]</span></div><p class="dossier-note">@L["CategoryFocusDesc"]</p></section>
+    <div class="seller-review-layout">
+        <div class="seller-dossier">
+            <section class="card-box dossier-section">
+                <div class="card-box-header"><h2 class="card-box-title">@L["StoreDetails"]</h2></div>
+                <dl class="dossier-grid">
+                    <div><dt>@L["TaxId"]</dt><dd>@_seller.TaxNumber</dd></div>
+                    <div><dt>@L["Phone"]</dt><dd>@(_seller.Phone ?? L["NotSpecified"].Value)</dd></div>
+                    <div><dt>Email</dt><dd>@(_seller.Email ?? L["NotSpecified"].Value)</dd></div>
+                    <div><dt>@L["SellerCreatedAt"]</dt><dd>@_seller.CreatedAt.ToString("g", CultureInfo.CurrentCulture)</dd></div>
+                    <div><dt>@L["SellerUpdatedAt"]</dt><dd>@_seller.UpdatedAt.ToString("g", CultureInfo.CurrentCulture)</dd></div>
+                </dl>
+            </section>
+            <section class="card-box dossier-section">
+                <div class="card-box-header"><h2 class="card-box-title">@L["Description"]</h2></div>
+                <p class="dossier-note">@(string.IsNullOrWhiteSpace(_seller.Description) ? L["SellerDescriptionMissing"].Value : _seller.Description)</p>
+            </section>
+        </div>
+        <aside class="card-box decision-card seller-status-card">
+            <p class="eyebrow">@L["Status"]</p>
+            <h2>@StatusLabel(_seller.Status)</h2>
+            <p>@L["SellerStatusSource"]</p>
+        </aside>
     </div>
-
-    <aside class="decision-panel">
-        <section class="card-box decision-card"><p class="eyebrow">@L["FinalStep"]</p><h2>@L["Decision"]</h2><p>@L["DecisionDesc"]</p><label><span>@L["ReviewNote"]</span><textarea rows="5" placeholder="@L["ReviewNotePlaceholder"]"></textarea></label><button class="primary-button wide" type="button"><i class="bi bi-check2-circle"></i>@L["ApproveSeller"]</button><button class="secondary-button wide" type="button"><i class="bi bi-chat-left-text"></i>@L["RequestChanges"]</button><button class="text-danger-button" type="button">@L["RejectApplication"]</button></section>
-        <section class="review-audit"><i class="bi bi-shield-lock"></i><div><strong>@L["DecisionRecorded"]</strong><span>@L["DecisionRecordedDesc"]</span></div></section>
-    </aside>
-</div>
+}
 
 @code {
     [Parameter] public Guid Id { get; set; }
-    private IReadOnlyList<DocumentRow> Documents =>
-    [
-        new(L["CompanyRegistration"], "PDF · 1.8 MB"), new(L["TaxCertificate"], "PDF · 842 KB"),
-        new(L["BankDetails"], "PDF · 420 KB"), new(L["DirectorPassport"], "PDF · 2.1 MB")
-    ];
-    private sealed record DocumentRow(string Name, string Meta);
+
+    private SellerDto? _seller;
+    private bool _loading = true;
+    private bool _loadFailed;
+
+    protected override Task OnParametersSetAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _loadFailed = false;
+        try { _seller = await SellersApi.GetSellerByIdAsync(Id); }
+        catch (Exception exception) when (exception is HttpRequestException or JsonException or TaskCanceledException)
+        {
+            _loadFailed = true;
+            _seller = null;
+        }
+        finally { _loading = false; }
+    }
+
+    private string StatusLabel(int status) => status switch
+    {
+        0 => L["PendingReview"], 1 => L["Verified"], 2 => L["Suspended"], 3 => L["Rejected"], _ => L["NotSpecified"]
+    };
+    private static string StatusClass(int status) => status switch
+    {
+        1 => "badge-active", 2 or 3 => "badge-deleted", _ => "badge-pending"
+    };
+    private static string Initials(string name) => string.Concat(name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(part => char.ToUpperInvariant(part[0])));
 }

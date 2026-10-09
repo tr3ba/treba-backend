@@ -8,7 +8,8 @@ public sealed record UserListItemResponse(
     string LastName,
     string Status,
     DateTimeOffset CreatedAt,
-    DateTimeOffset? LastLoginAt);
+    DateTimeOffset? LastLoginAt
+);
 
 public sealed record UserDetailsResponse(
     Guid Id,
@@ -24,18 +25,21 @@ public sealed record UserDetailsResponse(
     DateTimeOffset? UpdatedAt,
     DateTimeOffset? LastLoginAt,
     UserProfileResponse? Profile,
-    IReadOnlyList<UserAddressResponse> Addresses);
+    IReadOnlyList<UserAddressResponse> Addresses
+);
 
 public sealed record UserStatusResponse(
     Guid Id,
-    string Status);
+    string Status
+);
 
 public sealed record UserProfileResponse(
     DateOnly? BirthDate,
     string? Gender,
     string? AvatarUrl,
     string Language,
-    bool MarketingEmailsEnabled);
+    bool MarketingEmailsEnabled
+);
 
 public sealed record UserAddressResponse(
     Guid Id,
@@ -48,4 +52,5 @@ public sealed record UserAddressResponse(
     string? PostalCode,
     string RecipientName,
     string RecipientPhone,
-    bool DefaultAddress);
+    bool DefaultAddress
+);

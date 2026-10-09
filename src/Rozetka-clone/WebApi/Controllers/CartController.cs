@@ -1,8 +1,8 @@
-﻿using Application.Carts;
+﻿using System.Security.Claims;
+using Application.Carts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace WebApi.Controllers
 {
@@ -13,20 +13,24 @@ namespace WebApi.Controllers
     {
         private readonly ICartService _cartService;
 
-        public CartController(ICartService cartService)
+        public CartController(
+            ICartService cartService
+        )
         {
             _cartService = cartService;
         }
 
         [HttpGet]
         public async Task<ActionResult<CartDto>> Get(
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken
+        )
         {
             var userId = GetCurrentUserId();
 
             var cart = await _cartService.GetAsync(
                 userId,
-                cancellationToken);
+                cancellationToken
+            );
 
             return Ok(cart);
         }
@@ -34,14 +38,16 @@ namespace WebApi.Controllers
         [HttpPost("items")]
         public async Task<ActionResult<CartDto>> AddItem(
             AddCartItemRequest request,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken
+        )
         {
             var userId = GetCurrentUserId();
 
             var cart = await _cartService.AddItemAsync(
                 userId,
                 request,
-                cancellationToken);
+                cancellationToken
+            );
 
             return Ok(cart);
         }
@@ -50,7 +56,8 @@ namespace WebApi.Controllers
         public async Task<ActionResult<CartDto>> UpdateItem(
             Guid cartItemId,
             UpdateCartItemRequest request,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken
+        )
         {
             var userId = GetCurrentUserId();
 
@@ -58,7 +65,8 @@ namespace WebApi.Controllers
                 userId,
                 cartItemId,
                 request,
-                cancellationToken);
+                cancellationToken
+            );
 
             return Ok(cart);
         }
@@ -66,41 +74,45 @@ namespace WebApi.Controllers
         [HttpDelete("items/{cartItemId:guid}")]
         public async Task<ActionResult<CartDto>> RemoveItem(
             Guid cartItemId,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken
+        )
         {
             var userId = GetCurrentUserId();
 
             var cart = await _cartService.RemoveItemAsync(
                 userId,
                 cartItemId,
-                cancellationToken);
+                cancellationToken
+            );
 
             return Ok(cart);
         }
 
         [HttpDelete]
         public async Task<IActionResult> Clear(
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken
+        )
         {
             var userId = GetCurrentUserId();
 
             await _cartService.ClearAsync(
                 userId,
-                cancellationToken);
+                cancellationToken
+            );
 
             return NoContent();
         }
 
         private Guid GetCurrentUserId()
         {
-            var value =
-                User.FindFirstValue("sub") ??
-                User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var value = User.FindFirstValue("sub") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            if (!Guid.TryParse(value, out var userId))
+            if (!Guid.TryParse(
+                value,
+                out var userId
+            ))
             {
-                throw new UnauthorizedAccessException(
-                    "User identifier is missing from access token.");
+                throw new UnauthorizedAccessException("User identifier is missing from access token.");
             }
 
             return userId;

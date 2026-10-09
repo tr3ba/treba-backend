@@ -6,31 +6,39 @@ namespace Infrastructure.Persistence.Configurations;
 
 public sealed class InventoryReservationConfiguration : IEntityTypeConfiguration<InventoryReservation>
 {
-    public void Configure(EntityTypeBuilder<InventoryReservation> builder)
+    public void Configure(
+        EntityTypeBuilder<InventoryReservation> builder
+    )
     {
         builder.ToTable("inventory_reservations");
 
         builder.HasKey(x => x.Id);
 
-        builder.Property(x => x.OrderId)
+        builder
+            .Property(x => x.OrderId)
             .IsRequired();
 
-        builder.Property(x => x.VariantId)
+        builder
+            .Property(x => x.VariantId)
             .IsRequired();
 
-        builder.Property(x => x.WarehouseId)
+        builder
+            .Property(x => x.WarehouseId)
             .IsRequired();
 
-        builder.Property(x => x.Quantity)
+        builder
+            .Property(x => x.Quantity)
             .IsRequired();
 
         // Храним enum в виде строкового значения (ACTIVE, CONFIRMED, etc.)
-        builder.Property(x => x.Status)
+        builder
+            .Property(x => x.Status)
             .HasConversion<string>()
             .HasMaxLength(32)
             .IsRequired();
 
-        builder.Property(x => x.ExpiresAt)
+        builder
+            .Property(x => x.ExpiresAt)
             .IsRequired();
 
         builder.HasIndex(x => x.OrderId);

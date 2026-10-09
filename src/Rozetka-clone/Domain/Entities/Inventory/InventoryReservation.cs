@@ -5,7 +5,7 @@ namespace Domain.Entities.Inventory;
 public class InventoryReservation
 {
     public Guid Id { get; set; }
-    
+
     public Guid OrderId { get; set; }
 
     public Guid VariantId { get; set; }

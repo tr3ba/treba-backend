@@ -1,8 +1,8 @@
-﻿using Domain.Entities.Common;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Security;
 using System.Text;
+using Domain.Entities.Common;
 
 namespace Domain.Entities.Users
 {
@@ -12,11 +12,13 @@ namespace Domain.Entities.Users
 
         private Role()
         {
+
         }
 
         private Role(
             string name,
-            string? description)
+            string? description
+        )
         {
             Name = NormalizeRequired(name);
             Description = NormalizeOptional(description);
@@ -26,27 +28,37 @@ namespace Domain.Entities.Users
 
         public string? Description { get; private set; }
 
-        public IReadOnlyCollection<Permission> Permissions =>
-            _permissions.AsReadOnly();
+        public IReadOnlyCollection<Permission> Permissions
+        {
+            get
+            {
+                return _permissions.AsReadOnly();
+            }
+        }
 
         public static Role Create(
             string name,
-            string? description = null)
+            string? description = null
+        )
         {
             return new Role(
                 name,
-                description);
+                description
+            );
         }
 
         public void Update(
             string name,
-            string? description)
+            string? description
+        )
         {
             Name = NormalizeRequired(name);
             Description = NormalizeOptional(description);
         }
 
-        public void AddPermission(Permission permission)
+        public void AddPermission(
+            Permission permission
+        )
         {
             ArgumentNullException.ThrowIfNull(permission);
 
@@ -58,10 +70,11 @@ namespace Domain.Entities.Users
             _permissions.Add(permission);
         }
 
-        public void RemovePermission(Guid permissionId)
+        public void RemovePermission(
+            Guid permissionId
+        )
         {
-            var permission = _permissions
-                .FirstOrDefault(x => x.Id == permissionId);
+            var permission = _permissions.FirstOrDefault(x => x.Id == permissionId);
 
             if (permission is null)
             {
@@ -71,14 +84,18 @@ namespace Domain.Entities.Users
             _permissions.Remove(permission);
         }
 
-        private static string NormalizeRequired(string value)
+        private static string NormalizeRequired(
+            string value
+        )
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(value);
 
             return value.Trim();
         }
 
-        private static string? NormalizeOptional(string? value)
+        private static string? NormalizeOptional(
+            string? value
+        )
         {
             return string.IsNullOrWhiteSpace(value)
                 ? null

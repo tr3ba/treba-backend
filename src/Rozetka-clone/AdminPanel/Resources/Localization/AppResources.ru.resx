@@ -448,4 +448,34 @@
   <data name="SecurityApiNeedsRestart" xml:space="preserve"><value>API безопасности недоступен. Пересоберите и перезапустите backend.</value></data>
   <data name="SmtpNotConfigured" xml:space="preserve"><value>Отправка почты не настроена. Сначала заполните секцию Email:Smtp.</value></data>
   <data name="SecurityOperationFailed" xml:space="preserve"><value>Не удалось выполнить операцию безопасности.</value></data>
+  <data name="SectionUnavailable" xml:space="preserve"><value>Раздел пока недоступен</value></data>
+  <data name="OrdersUnavailable" xml:space="preserve"><value>Данные заказов ещё не подключены. Когда они станут доступны, заказы появятся здесь.</value></data>
+  <data name="ReviewsUnavailable" xml:space="preserve"><value>Отзывы ещё не подключены к панели управления.</value></data>
+  <data name="SupportUnavailable" xml:space="preserve"><value>Обращения в поддержку ещё не подключены к панели управления.</value></data>
+  <data name="CustomerActivityUnavailable" xml:space="preserve"><value>Данные активности клиентов ещё не подключены.</value></data>
+  <data name="StorefrontUnavailable" xml:space="preserve"><value>Управление витриной ещё не подключено.</value></data>
+  <data name="LoyaltyUnavailable" xml:space="preserve"><value>Данные акций и лояльности ещё не подключены.</value></data>
+  <data name="SettingsUnavailable" xml:space="preserve"><value>Системные настройки ещё не подключены. Настройки личного профиля доступны через меню пользователя.</value></data>
+  <data name="AllSellers" xml:space="preserve"><value>Всего продавцов</value></data>
+  <data name="Rejected" xml:space="preserve"><value>Отклонено</value></data>
+  <data name="SellerSearchByName" xml:space="preserve"><value>Название, email или налоговый номер</value></data>
+  <data name="SellersNotFound" xml:space="preserve"><value>Продавцы не найдены</value></data>
+  <data name="SellersNotFoundDesc" xml:space="preserve"><value>Попробуйте другой запрос или измените фильтр статуса.</value></data>
+  <data name="SellerLoadFailed" xml:space="preserve"><value>Не удалось загрузить продавцов.</value></data>
+  <data name="SellerDescriptionMissing" xml:space="preserve"><value>Описание не добавлено</value></data>
+  <data name="SellerProfile" xml:space="preserve"><value>Профиль продавца</value></data>
+  <data name="SellerNotFound" xml:space="preserve"><value>Продавец не найден</value></data>
+  <data name="SellerCreatedAt" xml:space="preserve"><value>Создано</value></data>
+  <data name="SellerUpdatedAt" xml:space="preserve"><value>Обновлено</value></data>
+  <data name="SellerStatusSource" xml:space="preserve"><value>Актуальный статус учётной записи продавца.</value></data>
+  <data name="CatalogStatsUnavailable" xml:space="preserve"><value>Не удалось загрузить показатели каталога.</value></data>
+  <data name="StaffSignIn" xml:space="preserve"><value>Вход в рабочую панель</value></data>
+  <data name="StaffEmail" xml:space="preserve"><value>Email учётной записи</value></data>
+  <data name="StaffAccountRequired" xml:space="preserve"><value>Панель доступна администратору, менеджеру, модератору и продавцу.</value></data>
+  <data name="AccessDenied" xml:space="preserve"><value>У вас нет доступа к этому разделу.</value></data>
+  <data name="Manager" xml:space="preserve"><value>Менеджер</value></data>
+  <data name="Moderator" xml:space="preserve"><value>Модератор</value></data>
+  <data name="Store" xml:space="preserve"><value>Магазин</value></data>
+  <data name="SelectStore" xml:space="preserve"><value>Выберите магазин</value></data>
+  <data name="NoAvailableStores" xml:space="preserve"><value>Для аккаунта нет доступного активного магазина. Сначала создайте и одобрите магазин продавца.</value></data>
 </root>

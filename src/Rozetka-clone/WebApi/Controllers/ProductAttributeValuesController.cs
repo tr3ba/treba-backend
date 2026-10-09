@@ -1,5 +1,5 @@
-using Microsoft.AspNetCore.Authorization;
 using Application.ProductAttributeValues;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,7 +13,8 @@ namespace WebApi.Controllers
         private readonly IProductAttributeValueService _service;
 
         public ProductAttributeValuesController(
-            IProductAttributeValueService service)
+            IProductAttributeValueService service
+        )
         {
             _service = service;
         }
@@ -21,11 +22,13 @@ namespace WebApi.Controllers
         [HttpGet]
         public async Task<ActionResult<IReadOnlyList<ProductAttributeValueDto>>> GetAll(
             Guid productId,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken
+        )
         {
             var values = await _service.GetByProductIdAsync(
                 productId,
-                cancellationToken);
+                cancellationToken
+            );
 
             return Ok(values);
         }
@@ -34,15 +37,19 @@ namespace WebApi.Controllers
         public async Task<ActionResult<ProductAttributeValueDto>> GetById(
             Guid productId,
             Guid valueId,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken
+        )
         {
             var value = await _service.GetByIdAsync(
                 productId,
                 valueId,
-                cancellationToken);
+                cancellationToken
+            );
 
             if (value is null)
+            {
                 return NotFound();
+            }
 
             return Ok(value);
         }
@@ -51,12 +58,14 @@ namespace WebApi.Controllers
         public async Task<ActionResult<ProductAttributeValueDto>> Create(
             Guid productId,
             [FromBody] CreateProductAttributeValueRequest request,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken
+        )
         {
             var value = await _service.CreateAsync(
                 productId,
                 request,
-                cancellationToken);
+                cancellationToken
+            );
 
             return CreatedAtAction(
                 nameof(GetById),
@@ -65,7 +74,8 @@ namespace WebApi.Controllers
                     productId,
                     valueId = value.Id
                 },
-                value);
+                value
+            );
         }
 
         [HttpPatch("{valueId:guid}")]
@@ -73,16 +83,20 @@ namespace WebApi.Controllers
             Guid productId,
             Guid valueId,
             [FromBody] UpdateProductAttributeValueRequest request,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken
+        )
         {
             var value = await _service.UpdateAsync(
                 productId,
                 valueId,
                 request,
-                cancellationToken);
+                cancellationToken
+            );
 
             if (value is null)
+            {
                 return NotFound();
+            }
 
             return Ok(value);
         }
@@ -91,15 +105,19 @@ namespace WebApi.Controllers
         public async Task<IActionResult> Delete(
             Guid productId,
             Guid valueId,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken
+        )
         {
             var deleted = await _service.DeleteAsync(
                 productId,
                 valueId,
-                cancellationToken);
+                cancellationToken
+            );
 
             if (!deleted)
+            {
                 return NotFound();
+            }
 
             return NoContent();
         }
