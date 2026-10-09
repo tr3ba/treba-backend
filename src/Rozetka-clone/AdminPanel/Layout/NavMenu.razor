@@ -1,4 +1,6 @@
 @inject CatalogModerationState ModerationState
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@using System.Security.Claims
 @implements IDisposable
 
 <div class="sidebar-header"><div class="brand-badge">T</div><div><div class="brand-title">TREBA</div><div class="brand-caption">@L["AdminPanel"]</div></div><label class="mobile-nav-close" for="admin-nav-toggle" aria-label="@L["CloseMenu"]"><i class="bi bi-x-lg"></i></label></div>
@@ -7,21 +9,30 @@
     <p class="nav-section-label">@L["Management"]</p>
     <nav class="flex-column">
         <div class="nav-item"><NavLink class="nav-link" href="" Match="NavLinkMatch.All"><i class="bi bi-grid-1x2-fill"></i> @L["Dashboard"]</NavLink></div>
-        <div class="nav-item"><NavLink class="nav-link" href="orders"><i class="bi bi-bag-check"></i> @L["Orders"]</NavLink></div>
-        <div class="nav-item"><NavLink class="nav-link" href="products"><i class="bi bi-box2"></i> @L["ProductsNav"]</NavLink></div>
-        <div class="nav-item"><NavLink class="nav-link" href="moderation"><i class="bi bi-box-seam"></i> @L["Moderation"]@if (ModerationState.PendingCount > 0) { <span class="menu-counter">@ModerationState.PendingCount</span> }</NavLink></div>
-        <div class="nav-item"><NavLink class="nav-link" href="categories"><i class="bi bi-grid"></i> @L["Categories"]</NavLink></div>
-        <p class="nav-section-label nav-section-label-spaced">@L["People"]</p>
-        <div class="nav-item"><NavLink class="nav-link" href="users"><i class="bi bi-people"></i> @L["Users"]</NavLink></div>
-        <div class="nav-item"><NavLink class="nav-link" href="sellers"><i class="bi bi-shop"></i> @L["Sellers"]</NavLink></div>
-        <div class="nav-item"><NavLink class="nav-link" href="reviews"><i class="bi bi-star"></i> @L["Reviews"]</NavLink></div>
-        <div class="nav-item"><NavLink class="nav-link" href="support"><i class="bi bi-chat-dots"></i> @L["SupportAndReturns"]</NavLink></div>
-        <div class="nav-item"><NavLink class="nav-link" href="customer-activity"><i class="bi bi-activity"></i> @L["CustomerActivity"]</NavLink></div>
-        <p class="nav-section-label nav-section-label-spaced">@L["Growth"]</p>
-        <div class="nav-item"><NavLink class="nav-link" href="storefront"><i class="bi bi-window-stack"></i> @L["Storefront"]</NavLink></div>
-        <div class="nav-item"><NavLink class="nav-link" href="loyalty"><i class="bi bi-gift"></i> @L["PromotionsAndLoyalty"]</NavLink></div>
-        <p class="nav-section-label nav-section-label-spaced">@L["System"]</p>
-        <div class="nav-item"><NavLink class="nav-link" href="settings"><i class="bi bi-gear"></i> @L["Settings"]</NavLink></div>
+        @if (Can("/orders")) { <div class="nav-item"><NavLink class="nav-link" href="orders"><i class="bi bi-bag-check"></i> @L["Orders"]</NavLink></div> }
+        @if (Can("/products")) { <div class="nav-item"><NavLink class="nav-link" href="products"><i class="bi bi-box2"></i> @L["ProductsNav"]</NavLink></div> }
+        @if (Can("/moderation")) { <div class="nav-item"><NavLink class="nav-link" href="moderation"><i class="bi bi-box-seam"></i> @L["Moderation"]@if (ModerationState.PendingCount > 0) { <span class="menu-counter">@ModerationState.PendingCount</span> }</NavLink></div> }
+        @if (Can("/categories")) { <div class="nav-item"><NavLink class="nav-link" href="categories"><i class="bi bi-grid"></i> @L["Categories"]</NavLink></div> }
+        @if (Can("/users") || Can("/sellers") || Can("/reviews") || Can("/support") || Can("/customer-activity"))
+        {
+            <p class="nav-section-label nav-section-label-spaced">@L["People"]</p>
+            @if (Can("/users")) { <div class="nav-item"><NavLink class="nav-link" href="users"><i class="bi bi-people"></i> @L["Users"]</NavLink></div> }
+            @if (Can("/sellers")) { <div class="nav-item"><NavLink class="nav-link" href="sellers"><i class="bi bi-shop"></i> @L["Sellers"]</NavLink></div> }
+            @if (Can("/reviews")) { <div class="nav-item"><NavLink class="nav-link" href="reviews"><i class="bi bi-star"></i> @L["Reviews"]</NavLink></div> }
+            @if (Can("/support")) { <div class="nav-item"><NavLink class="nav-link" href="support"><i class="bi bi-chat-dots"></i> @L["SupportAndReturns"]</NavLink></div> }
+            @if (Can("/customer-activity")) { <div class="nav-item"><NavLink class="nav-link" href="customer-activity"><i class="bi bi-activity"></i> @L["CustomerActivity"]</NavLink></div> }
+        }
+        @if (Can("/storefront") || Can("/loyalty"))
+        {
+            <p class="nav-section-label nav-section-label-spaced">@L["Growth"]</p>
+            @if (Can("/storefront")) { <div class="nav-item"><NavLink class="nav-link" href="storefront"><i class="bi bi-window-stack"></i> @L["Storefront"]</NavLink></div> }
+            @if (Can("/loyalty")) { <div class="nav-item"><NavLink class="nav-link" href="loyalty"><i class="bi bi-gift"></i> @L["PromotionsAndLoyalty"]</NavLink></div> }
+        }
+        @if (Can("/settings"))
+        {
+            <p class="nav-section-label nav-section-label-spaced">@L["System"]</p>
+            <div class="nav-item"><NavLink class="nav-link" href="settings"><i class="bi bi-gear"></i> @L["Settings"]</NavLink></div>
+        }
     </nav>
 </div>
 
@@ -30,10 +41,14 @@
 @code {
     private readonly CancellationTokenSource _refreshCancellation = new();
     private Task? _refreshLoop;
+    private string? _role;
+    private bool Can(string path) => AdminAccess.CanAccess(_role, path);
 
     protected override async Task OnInitializedAsync()
     {
+        _role = (await AuthenticationStateProvider.GetAuthenticationStateAsync()).User.FindFirst(ClaimTypes.Role)?.Value;
         ModerationState.Changed += OnModerationChanged;
+        if (!Can("/moderation")) return;
         try
         {
             await ModerationState.RefreshAsync();

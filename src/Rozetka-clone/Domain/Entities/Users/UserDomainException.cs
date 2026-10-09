@@ -6,9 +6,12 @@ namespace Domain.Entities.Users
 {
     public sealed class UserDomainException : Exception
     {
-        public UserDomainException(string message)
+        public UserDomainException(
+            string message
+        )
             : base(message)
         {
+
         }
     }
 }

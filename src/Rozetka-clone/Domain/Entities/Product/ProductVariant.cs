@@ -23,14 +23,24 @@ public class ProductVariant
     public bool IsActive { get; private set; }
     public int StockQuantity { get; private set; }
 
-    public void SetStock(int quantity)
+    public void SetStock(
+        int quantity
+    )
     {
-        if (quantity < 0) throw new ArgumentOutOfRangeException(nameof(quantity), "Stock cannot be negative.");
+        if (quantity < 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(quantity),
+                "Stock cannot be negative."
+            );
+        }
+
         StockQuantity = quantity;
     }
 
     private ProductVariant()
     {
+
     }
 
     public ProductVariant(
@@ -46,7 +56,8 @@ public class ProductVariant
         double? length,
         double? width,
         double? height,
-        bool isActive)
+        bool isActive
+    )
     {
         Id = id;
         ProductId = productId;
@@ -74,7 +85,8 @@ public class ProductVariant
         double? length,
         double? width,
         double? height,
-        bool isActive)
+        bool isActive
+    )
     {
         Sku = sku;
         Barcode = barcode;

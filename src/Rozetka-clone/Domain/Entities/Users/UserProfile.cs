@@ -1,7 +1,7 @@
-﻿using Domain.Entities.Common;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Domain.Entities.Common;
 
 namespace Domain.Entities.Users
 {
@@ -9,6 +9,7 @@ namespace Domain.Entities.Users
     {
         private UserProfile()
         {
+
         }
 
         private UserProfile(
@@ -17,7 +18,8 @@ namespace Domain.Entities.Users
             string? gender,
             string? avatarUrl,
             string language,
-            bool marketingEmailsEnabled)
+            bool marketingEmailsEnabled
+        )
         {
             UserId = userId;
             BirthDate = birthDate;
@@ -45,13 +47,15 @@ namespace Domain.Entities.Users
             string? gender = null,
             string? avatarUrl = null,
             string language = "uk",
-            bool marketingEmailsEnabled = false)
+            bool marketingEmailsEnabled = false
+        )
         {
             if (userId == Guid.Empty)
             {
                 throw new ArgumentException(
                     "User id cannot be empty.",
-                    nameof(userId));
+                    nameof(userId)
+                );
             }
 
             ValidateBirthDate(birthDate);
@@ -62,7 +66,8 @@ namespace Domain.Entities.Users
                 gender,
                 avatarUrl,
                 language,
-                marketingEmailsEnabled);
+                marketingEmailsEnabled
+            );
         }
 
         public void Update(
@@ -70,7 +75,8 @@ namespace Domain.Entities.Users
             string? gender,
             string? avatarUrl,
             string language,
-            bool marketingEmailsEnabled)
+            bool marketingEmailsEnabled
+        )
         {
             ValidateBirthDate(birthDate);
 
@@ -81,22 +87,30 @@ namespace Domain.Entities.Users
             MarketingEmailsEnabled = marketingEmailsEnabled;
         }
 
-        public void ChangeAvatar(string? avatarUrl)
+        public void ChangeAvatar(
+            string? avatarUrl
+        )
         {
             AvatarUrl = NormalizeOptional(avatarUrl);
         }
 
-        public void ChangeLanguage(string language)
+        public void ChangeLanguage(
+            string language
+        )
         {
             Language = NormalizeLanguage(language);
         }
 
-        public void SetMarketingEmails(bool enabled)
+        public void SetMarketingEmails(
+            bool enabled
+        )
         {
             MarketingEmailsEnabled = enabled;
         }
 
-        private static void ValidateBirthDate(DateOnly? birthDate)
+        private static void ValidateBirthDate(
+            DateOnly? birthDate
+        )
         {
             if (birthDate is null)
             {
@@ -109,18 +123,25 @@ namespace Domain.Entities.Users
             {
                 throw new ArgumentException(
                     "Birth date cannot be in the future.",
-                    nameof(birthDate));
+                    nameof(birthDate)
+                );
             }
         }
 
-        private static string NormalizeLanguage(string language)
+        private static string NormalizeLanguage(
+            string language
+        )
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(language);
 
-            return language.Trim().ToLowerInvariant();
+            return language
+                .Trim()
+                .ToLowerInvariant();
         }
 
-        private static string? NormalizeOptional(string? value)
+        private static string? NormalizeOptional(
+            string? value
+        )
         {
             return string.IsNullOrWhiteSpace(value)
                 ? null

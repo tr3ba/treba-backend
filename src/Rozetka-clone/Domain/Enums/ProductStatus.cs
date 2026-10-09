@@ -1,9 +1,10 @@
 namespace Domain.Enums;
 
-public enum ProductStatus {
+public enum ProductStatus
+{
     DRAFT,
     PENDING_MODERATION,
     ACTIVE,
     REJECTED,
-    ARCHIVED
+    ARCHIVED,
 }

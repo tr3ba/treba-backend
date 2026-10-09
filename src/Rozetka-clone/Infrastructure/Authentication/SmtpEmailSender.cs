@@ -5,47 +5,83 @@ using Microsoft.Extensions.Options;
 
 namespace Infrastructure.Authentication;
 
-public sealed class SmtpEmailSender(IOptions<SmtpEmailOptions> options) : IEmailSender
+public sealed class SmtpEmailSender(
+    IOptions<SmtpEmailOptions> options
+) : IEmailSender
 {
     public async Task SendSecurityCodeAsync(
         string recipient,
         string displayName,
         string code,
         TimeSpan validFor,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         var settings = options.Value;
-        if (!settings.Enabled || string.IsNullOrWhiteSpace(settings.Host) || string.IsNullOrWhiteSpace(settings.FromAddress))
-            throw new InvalidOperationException("Email delivery is not configured. Fill the Email:Smtp section in appsettings.");
+        if (
+            !settings.Enabled
+            || string.IsNullOrWhiteSpace(settings.Host)
+            || string.IsNullOrWhiteSpace(settings.FromAddress)
+        )
+        {
+            throw new InvalidOperationException(
+                "Email delivery is not configured. Fill the Email:Smtp section in appsettings."
+            );
+        }
 
         using var message = new MailMessage
         {
-            From = new MailAddress(settings.FromAddress, settings.FromName),
+            From = new MailAddress(
+                settings.FromAddress,
+                settings.FromName
+            ),
             Subject = "TREBA — security code",
-            Body = BuildBody(displayName, code, validFor),
-            IsBodyHtml = true
+            Body = BuildBody(
+                displayName,
+                code,
+                validFor
+            ),
+            IsBodyHtml = true,
         };
         message.To.Add(new MailAddress(recipient));
 
-        using var client = new SmtpClient(settings.Host, settings.Port)
+        using var client = new SmtpClient(
+            settings.Host,
+            settings.Port
+        )
         {
             EnableSsl = settings.UseSsl,
             DeliveryMethod = SmtpDeliveryMethod.Network,
             UseDefaultCredentials = false,
             Credentials = string.IsNullOrWhiteSpace(settings.Username)
                 ? CredentialCache.DefaultNetworkCredentials
-                : new NetworkCredential(settings.Username, settings.Password)
+                : new NetworkCredential(
+                    settings.Username,
+                    settings.Password
+                ),
         };
 
         cancellationToken.ThrowIfCancellationRequested();
-        await client.SendMailAsync(message, cancellationToken);
+        await client.SendMailAsync(
+            message,
+            cancellationToken
+        );
     }
 
-    private static string BuildBody(string displayName, string code, TimeSpan validFor)
+    private static string BuildBody(
+        string displayName,
+        string code,
+        TimeSpan validFor
+    )
     {
         var safeName = WebUtility.HtmlEncode(displayName);
         var safeCode = WebUtility.HtmlEncode(code);
-        var minutes = Math.Ceiling(validFor.TotalMinutes).ToString("0", System.Globalization.CultureInfo.InvariantCulture);
+        var minutes = Math
+            .Ceiling(validFor.TotalMinutes)
+            .ToString(
+                "0",
+                System.Globalization.CultureInfo.InvariantCulture
+            );
         return $$"""
             <!doctype html>
             <html lang="en">

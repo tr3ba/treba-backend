@@ -42,7 +42,7 @@ else if (result is not null)
             <i class="bi bi-check2-circle"></i>
             <h2>@L["AllProductsReviewed"]</h2>
             <p>@L["ModerationEmptyDesc"]</p>
-            <a href="/products/new" class="primary-button">@L["AddProduct"]</a>
+            <AuthorizeView Roles="Administrator,Manager,Seller"><a href="/products/new" class="primary-button">@L["AddProduct"]</a></AuthorizeView>
         </section>
     }
 

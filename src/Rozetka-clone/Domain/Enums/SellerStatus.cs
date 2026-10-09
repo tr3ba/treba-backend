@@ -9,6 +9,6 @@ namespace Domain.Enums
         PENDING,
         ACTIVE,
         SUSPENDED,
-        REJECTED
+        REJECTED,
     }
 }

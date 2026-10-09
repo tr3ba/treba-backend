@@ -15,6 +15,7 @@ public sealed class CatalogApiClient(HttpClient http)
     public Task<CatalogProductDto> GetProduct(Guid id) => Get<CatalogProductDto>($"api/v1/admin/catalog/products/{id}");
     public Task<List<CatalogLookupDto>> Categories() => Get<List<CatalogLookupDto>>("api/v1/admin/catalog/categories");
     public Task<List<CatalogLookupDto>> Brands() => Get<List<CatalogLookupDto>>("api/v1/admin/catalog/brands");
+    public Task<List<CatalogLookupDto>> Stores() => Get<List<CatalogLookupDto>>("api/v1/admin/catalog/stores");
     public Task<List<CatalogProductImageDto>> Images(Guid productId) =>
         Get<List<CatalogProductImageDto>>($"api/v1/products/{productId}/images");
 

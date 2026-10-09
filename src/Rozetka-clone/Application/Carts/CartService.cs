@@ -1,9 +1,9 @@
-﻿using Application.Abstractions;
-using Domain.Entities;
-using Microsoft.EntityFrameworkCore;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Application.Abstractions;
+using Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace Application.Carts
 {
@@ -11,20 +11,25 @@ namespace Application.Carts
     {
         private readonly IApplicationDbContext _dbContext;
 
-        public CartService(IApplicationDbContext dbContext)
+        public CartService(
+            IApplicationDbContext dbContext
+        )
         {
             _dbContext = dbContext;
         }
 
         public async Task<CartDto> GetAsync(
             Guid userId,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default
+        )
         {
-            var cart = await _dbContext.Carts
+            var cart = await _dbContext
+                .Carts
                 .AsNoTracking()
                 .FirstOrDefaultAsync(
                     x => x.UserId == userId,
-                    cancellationToken);
+                    cancellationToken
+                );
 
             if (cart is null)
             {
@@ -34,50 +39,55 @@ namespace Application.Carts
                 };
             }
 
-            return await BuildCartDtoAsync(cart, cancellationToken);
+            return await BuildCartDtoAsync(
+                cart,
+                cancellationToken
+            );
         }
 
         public async Task<CartDto> AddItemAsync(
             Guid userId,
             AddCartItemRequest request,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default
+        )
         {
             if (request.Quantity <= 0)
             {
-                throw new ArgumentException(
-                    "Quantity must be greater than zero.");
+                throw new ArgumentException("Quantity must be greater than zero.");
             }
 
-            var userExists = await _dbContext.Users
-                .AnyAsync(x => x.Id == userId, cancellationToken);
+            var userExists = await _dbContext.Users.AnyAsync(
+                x => x.Id == userId,
+                cancellationToken
+            );
 
             if (!userExists)
             {
                 throw new KeyNotFoundException("User not found.");
             }
 
-            var variant = await _dbContext.ProductVariants
+            var variant = await _dbContext
+                .ProductVariants
                 .AsNoTracking()
                 .FirstOrDefaultAsync(
                     x => x.Id == request.ProductVariantId,
-                    cancellationToken);
+                    cancellationToken
+                );
 
             if (variant is null)
             {
-                throw new KeyNotFoundException(
-                    "Product variant not found.");
+                throw new KeyNotFoundException("Product variant not found.");
             }
 
             if (!variant.IsActive)
             {
-                throw new InvalidOperationException(
-                    "Product variant is not active.");
+                throw new InvalidOperationException("Product variant is not active.");
             }
 
-            var cart = await _dbContext.Carts
-                .FirstOrDefaultAsync(
-                    x => x.UserId == userId,
-                    cancellationToken);
+            var cart = await _dbContext.Carts.FirstOrDefaultAsync(
+                x => x.UserId == userId,
+                cancellationToken
+            );
 
             var now = DateTime.UtcNow;
 
@@ -88,17 +98,18 @@ namespace Application.Carts
                     Id = Guid.NewGuid(),
                     UserId = userId,
                     CreatedAt = now,
-                    UpdatedAt = now
+                    UpdatedAt = now,
                 };
 
                 _dbContext.Carts.Add(cart);
             }
 
-            var existingItem = await _dbContext.CartItems
-                .FirstOrDefaultAsync(
-                    x => x.CartId == cart.Id &&
-                         x.ProductVariantId == request.ProductVariantId,
-                    cancellationToken);
+            var existingItem = await _dbContext.CartItems.FirstOrDefaultAsync(
+                x =>
+                    x.CartId == cart.Id
+                    && x.ProductVariantId == request.ProductVariantId,
+                cancellationToken
+            );
 
             if (existingItem is null)
             {
@@ -109,7 +120,7 @@ namespace Application.Carts
                     ProductVariantId = request.ProductVariantId,
                     Quantity = request.Quantity,
                     CreatedAt = now,
-                    UpdatedAt = now
+                    UpdatedAt = now,
                 };
 
                 _dbContext.CartItems.Add(item);
@@ -124,41 +135,44 @@ namespace Application.Carts
 
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-            return await BuildCartDtoAsync(cart, cancellationToken);
+            return await BuildCartDtoAsync(
+                cart,
+                cancellationToken
+            );
         }
 
         public async Task<CartDto> UpdateItemAsync(
             Guid userId,
             Guid cartItemId,
             UpdateCartItemRequest request,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default
+        )
         {
             if (request.Quantity <= 0)
             {
-                throw new ArgumentException(
-                    "Quantity must be greater than zero.");
+                throw new ArgumentException("Quantity must be greater than zero.");
             }
 
-            var cart = await _dbContext.Carts
-                .FirstOrDefaultAsync(
-                    x => x.UserId == userId,
-                    cancellationToken);
+            var cart = await _dbContext.Carts.FirstOrDefaultAsync(
+                x => x.UserId == userId,
+                cancellationToken
+            );
 
             if (cart is null)
             {
                 throw new KeyNotFoundException("Cart not found.");
             }
 
-            var item = await _dbContext.CartItems
-                .FirstOrDefaultAsync(
-                    x => x.Id == cartItemId &&
-                         x.CartId == cart.Id,
-                    cancellationToken);
+            var item = await _dbContext.CartItems.FirstOrDefaultAsync(
+                x =>
+                    x.Id == cartItemId
+                    && x.CartId == cart.Id,
+                cancellationToken
+            );
 
             if (item is null)
             {
-                throw new KeyNotFoundException(
-                    "Cart item not found.");
+                throw new KeyNotFoundException("Cart item not found.");
             }
 
             item.Quantity = request.Quantity;
@@ -167,34 +181,38 @@ namespace Application.Carts
 
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-            return await BuildCartDtoAsync(cart, cancellationToken);
+            return await BuildCartDtoAsync(
+                cart,
+                cancellationToken
+            );
         }
 
         public async Task<CartDto> RemoveItemAsync(
             Guid userId,
             Guid cartItemId,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default
+        )
         {
-            var cart = await _dbContext.Carts
-                .FirstOrDefaultAsync(
-                    x => x.UserId == userId,
-                    cancellationToken);
+            var cart = await _dbContext.Carts.FirstOrDefaultAsync(
+                x => x.UserId == userId,
+                cancellationToken
+            );
 
             if (cart is null)
             {
                 throw new KeyNotFoundException("Cart not found.");
             }
 
-            var item = await _dbContext.CartItems
-                .FirstOrDefaultAsync(
-                    x => x.Id == cartItemId &&
-                         x.CartId == cart.Id,
-                    cancellationToken);
+            var item = await _dbContext.CartItems.FirstOrDefaultAsync(
+                x =>
+                    x.Id == cartItemId
+                    && x.CartId == cart.Id,
+                cancellationToken
+            );
 
             if (item is null)
             {
-                throw new KeyNotFoundException(
-                    "Cart item not found.");
+                throw new KeyNotFoundException("Cart item not found.");
             }
 
             _dbContext.CartItems.Remove(item);
@@ -203,17 +221,21 @@ namespace Application.Carts
 
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-            return await BuildCartDtoAsync(cart, cancellationToken);
+            return await BuildCartDtoAsync(
+                cart,
+                cancellationToken
+            );
         }
 
         public async Task ClearAsync(
             Guid userId,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default
+        )
         {
-            var cart = await _dbContext.Carts
-                .FirstOrDefaultAsync(
-                    x => x.UserId == userId,
-                    cancellationToken);
+            var cart = await _dbContext.Carts.FirstOrDefaultAsync(
+                x => x.UserId == userId,
+                cancellationToken
+            );
 
             if (cart is null)
             {
@@ -233,14 +255,13 @@ namespace Application.Carts
 
         private async Task<CartDto> BuildCartDtoAsync(
             Cart cart,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken
+        )
         {
             var items = await (
                 from cartItem in _dbContext.CartItems.AsNoTracking()
-                join variant in _dbContext.ProductVariants.AsNoTracking()
-                    on cartItem.ProductVariantId equals variant.Id
-                join product in _dbContext.Products.AsNoTracking()
-                    on variant.ProductId equals product.Id
+                join variant in _dbContext.ProductVariants.AsNoTracking() on cartItem.ProductVariantId equals variant.Id
+                join product in _dbContext.Products.AsNoTracking() on variant.ProductId equals product.Id
                 where cartItem.CartId == cart.Id
                 select new CartItemDto
                 {
@@ -253,9 +274,9 @@ namespace Application.Carts
                     OldPrice = variant.OldPrice,
                     Quantity = cartItem.Quantity,
                     TotalPrice = variant.Price * cartItem.Quantity,
-                    IsAvailable = variant.IsActive
-                })
-                .ToListAsync(cancellationToken);
+                    IsAvailable = variant.IsActive,
+                }
+            ).ToListAsync(cancellationToken);
 
             return new CartDto
             {
@@ -263,7 +284,7 @@ namespace Application.Carts
                 UserId = cart.UserId,
                 Items = items,
                 TotalQuantity = items.Sum(x => x.Quantity),
-                TotalPrice = items.Sum(x => x.TotalPrice)
+                TotalPrice = items.Sum(x => x.TotalPrice),
             };
         }
     }
