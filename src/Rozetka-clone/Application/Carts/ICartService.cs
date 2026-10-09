@@ -8,26 +8,31 @@ namespace Application.Carts
     {
         Task<CartDto> GetAsync(
             Guid userId,
-            CancellationToken cancellationToken = default);
+            CancellationToken cancellationToken = default
+        );
 
         Task<CartDto> AddItemAsync(
             Guid userId,
             AddCartItemRequest request,
-            CancellationToken cancellationToken = default);
+            CancellationToken cancellationToken = default
+        );
 
         Task<CartDto> UpdateItemAsync(
             Guid userId,
             Guid cartItemId,
             UpdateCartItemRequest request,
-            CancellationToken cancellationToken = default);
+            CancellationToken cancellationToken = default
+        );
 
         Task<CartDto> RemoveItemAsync(
             Guid userId,
             Guid cartItemId,
-            CancellationToken cancellationToken = default);
+            CancellationToken cancellationToken = default
+        );
 
         Task ClearAsync(
             Guid userId,
-            CancellationToken cancellationToken = default);
+            CancellationToken cancellationToken = default
+        );
     }
 }

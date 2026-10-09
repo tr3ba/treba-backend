@@ -448,4 +448,34 @@
   <data name="SecurityApiNeedsRestart" xml:space="preserve"><value>The security API is unavailable. Rebuild and restart the backend.</value></data>
   <data name="SmtpNotConfigured" xml:space="preserve"><value>Email sending is not configured. Fill in the Email:Smtp settings first.</value></data>
   <data name="SecurityOperationFailed" xml:space="preserve"><value>The security operation could not be completed.</value></data>
+  <data name="SectionUnavailable" xml:space="preserve"><value>This section is not available yet</value></data>
+  <data name="OrdersUnavailable" xml:space="preserve"><value>Order data is not connected yet. Orders will appear here when it becomes available.</value></data>
+  <data name="ReviewsUnavailable" xml:space="preserve"><value>Reviews are not connected to the admin panel yet.</value></data>
+  <data name="SupportUnavailable" xml:space="preserve"><value>Support requests are not connected to the admin panel yet.</value></data>
+  <data name="CustomerActivityUnavailable" xml:space="preserve"><value>Customer activity data is not connected yet.</value></data>
+  <data name="StorefrontUnavailable" xml:space="preserve"><value>Storefront management is not connected yet.</value></data>
+  <data name="LoyaltyUnavailable" xml:space="preserve"><value>Promotions and loyalty data are not connected yet.</value></data>
+  <data name="SettingsUnavailable" xml:space="preserve"><value>System settings are not connected yet. Personal profile settings are available from the user menu.</value></data>
+  <data name="AllSellers" xml:space="preserve"><value>Total sellers</value></data>
+  <data name="Rejected" xml:space="preserve"><value>Rejected</value></data>
+  <data name="SellerSearchByName" xml:space="preserve"><value>Name, email or tax number</value></data>
+  <data name="SellersNotFound" xml:space="preserve"><value>No sellers found</value></data>
+  <data name="SellersNotFoundDesc" xml:space="preserve"><value>Try another search or change the status filter.</value></data>
+  <data name="SellerLoadFailed" xml:space="preserve"><value>Could not load sellers.</value></data>
+  <data name="SellerDescriptionMissing" xml:space="preserve"><value>No description added</value></data>
+  <data name="SellerProfile" xml:space="preserve"><value>Seller profile</value></data>
+  <data name="SellerNotFound" xml:space="preserve"><value>Seller not found</value></data>
+  <data name="SellerCreatedAt" xml:space="preserve"><value>Created</value></data>
+  <data name="SellerUpdatedAt" xml:space="preserve"><value>Updated</value></data>
+  <data name="SellerStatusSource" xml:space="preserve"><value>The seller account's current status.</value></data>
+  <data name="CatalogStatsUnavailable" xml:space="preserve"><value>Could not load catalog statistics.</value></data>
+  <data name="StaffSignIn" xml:space="preserve"><value>Team sign in</value></data>
+  <data name="StaffEmail" xml:space="preserve"><value>Account email</value></data>
+  <data name="StaffAccountRequired" xml:space="preserve"><value>This workspace is available to administrators, managers, moderators and sellers.</value></data>
+  <data name="AccessDenied" xml:space="preserve"><value>You do not have access to this section.</value></data>
+  <data name="Manager" xml:space="preserve"><value>Manager</value></data>
+  <data name="Moderator" xml:space="preserve"><value>Moderator</value></data>
+  <data name="Store" xml:space="preserve"><value>Store</value></data>
+  <data name="SelectStore" xml:space="preserve"><value>Select a store</value></data>
+  <data name="NoAvailableStores" xml:space="preserve"><value>No active store is available for this account. Create and approve a seller store first.</value></data>
 </root>

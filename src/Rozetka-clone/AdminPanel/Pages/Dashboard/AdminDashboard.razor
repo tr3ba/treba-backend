@@ -1,73 +1,54 @@
 @page "/"
 @inject AdminPanel.Services.Implementations.CatalogApiClient CatalogApi
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@using Contracts.Catalog
+@using System.Security.Claims
 
 <PageTitle>@L["Dashboard"] — Treba Admin</PageTitle>
 
 <section class="dashboard-header">
-    <div>
-        <p class="eyebrow">@L["StoreOverview"]</p>
-        <h1>@L["Dashboard"]</h1>
-    </div>
-    <a class="dashboard-primary-action" href="moderation">
-        <i class="bi bi-box-seam"></i>
-        @L["GoToModeration"]
-    </a>
+    <div><p class="eyebrow">@L["CatalogWorkspace"]</p><h1>@L["Dashboard"]</h1></div>
+    @if (CanModerate) { <a class="dashboard-primary-action" href="/moderation"><i class="bi bi-box-seam"></i>@L["GoToModeration"]</a> }
 </section>
 
+@if (_loadFailed)
+{
+    <p class="feedback-error" role="alert">@L["CatalogStatsUnavailable"]</p>
+}
+
 <section class="stats-grid" aria-label="@L["KeyMetrics"]">
-    <article class="stat-card">
-        <div class="stat-info"><p class="stat-title">@L["Orders"]</p><p class="stat-value">1 284</p><p class="stat-trend trend-up"><i class="bi bi-arrow-up-right"></i> @L["WeeklyGrowth"]</p></div>
-        <div class="stat-icon icon-orange"><i class="bi bi-bag-check"></i></div>
+    <article class="stat-card"><div class="stat-info"><p class="stat-title">@L["AllProducts"]</p><p class="stat-value">@(_stats?.Total.ToString() ?? "—")</p></div><div class="stat-icon icon-blue"><i class="bi bi-box2"></i></div></article>
+    <article class="stat-card"><div class="stat-info"><p class="stat-title">@L["Published"]</p><p class="stat-value">@(_stats?.Active.ToString() ?? "—")</p></div><div class="stat-icon icon-green"><i class="bi bi-check-circle"></i></div></article>
+    <article class="stat-card"><div class="stat-info"><p class="stat-title">@L["Drafts"]</p><p class="stat-value">@(_stats?.Drafts.ToString() ?? "—")</p></div><div class="stat-icon icon-orange"><i class="bi bi-pencil-square"></i></div></article>
+    <article class="stat-card"><div class="stat-info"><p class="stat-title">@L["InModeration"]</p><p class="stat-value">@(_stats?.Pending.ToString() ?? "—")</p></div><div class="stat-icon icon-amber"><i class="bi bi-shield-check"></i></div></article>
+</section>
+
+<section class="section-grid dashboard-shortcuts">
+    <article class="card-box">
+        <div class="card-box-header"><h2 class="card-box-title">@L["ProductManagement"]</h2></div>
+        <p>@L["ProductsSubtitle"]</p>
+        <a class="btn-link-action" href="/products">@L["AllProducts"] <i class="bi bi-arrow-right"></i></a>
     </article>
-    <article class="stat-card">
-        <div class="stat-info"><p class="stat-title">@L["Revenue"]</p><p class="stat-value">₴ 684 250</p><p class="stat-trend trend-up"><i class="bi bi-arrow-up-right"></i> @L["WeeklyRevenueGrowth"]</p></div>
-        <div class="stat-icon icon-blue"><i class="bi bi-graph-up-arrow"></i></div>
-    </article>
-    <article class="stat-card">
-        <div class="stat-info"><p class="stat-title">@L["NewUsers"]</p><p class="stat-value">356</p><p class="stat-trend trend-up"><i class="bi bi-arrow-up-right"></i> @L["WeeklyUsersGrowth"]</p></div>
-        <div class="stat-icon icon-green"><i class="bi bi-people"></i></div>
-    </article>
-    <article class="stat-card">
-        <div class="stat-info"><p class="stat-title">@L["InModeration"]</p><p class="stat-value">@(_stats?.Pending.ToString() ?? "—")</p><p class="stat-trend trend-warning"><i class="bi bi-clock"></i> @L["NeedsAttention"]</p></div>
-        <div class="stat-icon icon-amber"><i class="bi bi-shield-check"></i></div>
-    </article>
+    @if (CanModerate)
+    {
+        <article class="card-box">
+            <div class="card-box-header"><h2 class="card-box-title">@L["ModerationQueue"]</h2></div>
+            <p>@L["ModerationSubtitle"]</p>
+            <a class="btn-link-action" href="/moderation">@L["GoToModeration"] <i class="bi bi-arrow-right"></i></a>
+        </article>
+    }
 </section>
 
 @code {
-    private Contracts.Catalog.CatalogStatsDto? _stats;
+    private CatalogStatsDto? _stats;
+    private bool _loadFailed;
+    private string? _role;
+    private bool CanModerate => AdminAccess.CanAccess(_role, "/moderation");
 
     protected override async Task OnInitializedAsync()
     {
-        try
-        {
-            _stats = await CatalogApi.Stats();
-        }
-        catch (HttpRequestException)
-        {
-            _stats = null;
-        }
+        _role = (await AuthenticationStateProvider.GetAuthenticationStateAsync()).User.FindFirst(ClaimTypes.Role)?.Value;
+        try { _stats = await CatalogApi.Stats(); }
+        catch (HttpRequestException) { _loadFailed = true; }
     }
 }
-
-<section class="section-grid">
-    <article class="card-box">
-        <div class="card-box-header"><h2 class="card-box-title">@L["RecentOrders"]</h2><a class="btn-link-action" href="orders">@L["AllOrders"] <i class="bi bi-arrow-right"></i></a></div>
-        <div class="table-wrap">
-            <table class="custom-table"><thead><tr><th>@L["Order"]</th><th>@L["Customer"]</th><th>@L["Amount"]</th><th>@L["Status"]</th></tr></thead>
-                <tbody>
-                    <tr><td><strong>#RZ-10482</strong><span class="table-muted">@L["TodayAt"] 10:48</span></td><td>Олена Мельник</td><td>₴ 2 499</td><td><span class="status-badge badge-paid"><i class="bi bi-check-circle-fill"></i> @L["Paid"]</span></td></tr>
-                    <tr><td><strong>#RZ-10481</strong><span class="table-muted">@L["TodayAt"] 10:31</span></td><td>Максим Бондар</td><td>₴ 8 750</td><td><span class="status-badge badge-shipped"><i class="bi bi-truck"></i> @L["Shipped"]</span></td></tr>
-                    <tr><td><strong>#RZ-10480</strong><span class="table-muted">@L["TodayAt"] 10:04</span></td><td>Ірина Коваль</td><td>₴ 1 280</td><td><span class="status-badge badge-pending"><i class="bi bi-clock-fill"></i> @L["Processing"]</span></td></tr>
-                </tbody>
-            </table>
-        </div>
-    </article>
-    <article class="card-box">
-        <div class="card-box-header"><h2 class="card-box-title">@L["SellerApplications"]</h2><a class="btn-link-action" href="sellers">@L["All"] <i class="bi bi-arrow-right"></i></a></div>
-        <div class="request-list">
-            <div class="request-item"><div class="request-item-info"><strong>TechPoint UA</strong><span>@L["Electronics"] · 18 @L["Products"]</span></div><a class="btn-action-sm btn-orange" href="sellers">@L["View"]</a></div>
-            <div class="request-item"><div class="request-item-info"><strong>Home &amp; Style</strong><span>@L["HomeAndGarden"] · 42 @L["Products"]</span></div><a class="btn-action-sm btn-orange" href="sellers">@L["View"]</a></div>
-            <div class="request-item"><div class="request-item-info"><strong>Sport Pro</strong><span>@L["SportsAndHobby"] · 11 @L["Products"]</span></div><a class="btn-action-sm btn-orange" href="sellers">@L["View"]</a></div>
-        </div>
-    </article>
-</section>

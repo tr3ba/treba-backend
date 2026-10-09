@@ -77,6 +77,19 @@ else if (ready)
                                 }
                             </InputSelect>
                         </label>
+                        @if (!Id.HasValue)
+                        {
+                            <label class="field-group">
+                                <span>@L["Store"] *</span>
+                                <InputSelect class="form-control" @bind-Value="model.StoreId">
+                                    <option value="@Guid.Empty">@L["SelectStore"]</option>
+                                    @foreach (var store in stores)
+                                    {
+                                        <option value="@store.Id">@store.Name</option>
+                                    }
+                                </InputSelect>
+                            </label>
+                        }
                         <label class="field-group editor-full">
                             <span>@L["ShortDescription"]</span>
                             <InputText class="form-control" @bind-Value="model.ShortDescription" />
@@ -169,8 +182,8 @@ else if (ready)
                         <InputNumber class="form-control" @bind-Value="model.StockQuantity" />
                     </label>
                     <div class="editor-save-actions">
-                        <button type="submit" class="secondary-button" disabled="@busy" @onclick="Draft">@L["SaveDraft"]</button>
-                        <button type="submit" class="primary-button" disabled="@busy" @onclick="Submit">@L["SendToModeration"]</button>
+                        <button type="submit" class="secondary-button" disabled="@(busy || (!Id.HasValue && stores.Count == 0))" @onclick="Draft">@L["SaveDraft"]</button>
+                        <button type="submit" class="primary-button" disabled="@(busy || (!Id.HasValue && stores.Count == 0))" @onclick="Submit">@L["SendToModeration"]</button>
                     </div>
                 </section>
                 <section class="card-box editor-tip">
@@ -193,6 +206,7 @@ else if (ready)
     private SaveCatalogProductRequest model = new();
     private List<CatalogLookupDto> categories = [];
     private List<CatalogLookupDto> brands = [];
+    private List<CatalogLookupDto> stores = [];
     private readonly List<ProductImageView> images = [];
     private readonly List<PendingImage> pendingImages = [];
     private bool loading = true;
@@ -214,6 +228,12 @@ else if (ready)
         {
             categories = await Api.Categories();
             brands = await Api.Brands();
+            if (!Id.HasValue)
+            {
+                stores = await Api.Stores();
+                if (stores.Count == 1) model.StoreId = stores[0].Id;
+                if (stores.Count == 0) error = L["NoAvailableStores"];
+            }
             if (Id.HasValue)
             {
                 var product = await Api.GetProduct(Id.Value);
@@ -224,6 +244,7 @@ else if (ready)
                     Sku = product.Sku,
                     CategoryId = product.CategoryId,
                     BrandId = product.BrandId,
+                    StoreId = product.StoreId,
                     Price = product.Price,
                     StockQuantity = product.StockQuantity,
                     Description = product.Description,

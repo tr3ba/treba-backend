@@ -6,17 +6,21 @@ public enum AuthenticationChallengePurpose
 {
     Login,
     EnableEmailTwoFactor,
-    DisableEmailTwoFactor
+    DisableEmailTwoFactor,
 }
 
 public sealed class AuthenticationChallenge : BaseEntity
 {
-    private AuthenticationChallenge() { }
+    private AuthenticationChallenge()
+    {
+
+    }
 
     private AuthenticationChallenge(
         Guid userId,
         AuthenticationChallengePurpose purpose,
-        DateTimeOffset expiresAt)
+        DateTimeOffset expiresAt
+    )
     {
         Id = Guid.NewGuid();
         UserId = userId;
@@ -34,18 +38,44 @@ public sealed class AuthenticationChallenge : BaseEntity
     public DateTimeOffset? ConsumedAt { get; private set; }
     public int FailedAttempts { get; private set; }
 
-    public bool IsActive(DateTimeOffset now) =>
-        ConsumedAt is null && ExpiresAt > now && FailedAttempts < 5;
+    public bool IsActive(
+        DateTimeOffset now
+    )
+    {
+        return ConsumedAt is null
+            && ExpiresAt > now
+            && FailedAttempts < 5;
+    }
 
-    public bool CanSendCode(DateTimeOffset now) =>
-        IsActive(now) && (LastCodeSentAt is null || LastCodeSentAt <= now.AddSeconds(-30));
+    public bool CanSendCode(
+        DateTimeOffset now
+    )
+    {
+        return IsActive(now)
+            && (
+                LastCodeSentAt is null
+                || LastCodeSentAt <= now.AddSeconds(-30)
+            );
+    }
 
     public static AuthenticationChallenge Create(
         Guid userId,
         AuthenticationChallengePurpose purpose,
-        DateTimeOffset expiresAt) => new(userId, purpose, expiresAt);
+        DateTimeOffset expiresAt
+    )
+    {
+        return new(
+            userId,
+            purpose,
+            expiresAt
+        );
+    }
 
-    public void SetCode(string codeHash, DateTimeOffset expiresAt, DateTimeOffset now)
+    public void SetCode(
+        string codeHash,
+        DateTimeOffset expiresAt,
+        DateTimeOffset now
+    )
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(codeHash);
         CodeHash = codeHash;
@@ -58,8 +88,13 @@ public sealed class AuthenticationChallenge : BaseEntity
     {
         FailedAttempts++;
         if (FailedAttempts >= 5)
+        {
             ConsumedAt = DateTimeOffset.UtcNow;
+        }
     }
 
-    public void Consume() => ConsumedAt = DateTimeOffset.UtcNow;
+    public void Consume()
+    {
+        ConsumedAt = DateTimeOffset.UtcNow;
+    }
 }

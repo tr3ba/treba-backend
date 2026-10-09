@@ -1,5 +1,5 @@
-using Microsoft.AspNetCore.Authorization;
 using Application.ProductVariants;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,7 +13,8 @@ namespace WebApi.Controllers
         private readonly IProductVariantService _productVariantService;
 
         public ProductVariantsController(
-            IProductVariantService productVariantService)
+            IProductVariantService productVariantService
+        )
         {
             _productVariantService = productVariantService;
         }
@@ -21,11 +22,13 @@ namespace WebApi.Controllers
         [HttpGet]
         public async Task<ActionResult<IReadOnlyList<ProductVariantDto>>> GetAll(
             Guid productId,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken
+        )
         {
             var variants = await _productVariantService.GetByProductIdAsync(
                 productId,
-                cancellationToken);
+                cancellationToken
+            );
 
             return Ok(variants);
         }
@@ -34,15 +37,19 @@ namespace WebApi.Controllers
         public async Task<ActionResult<ProductVariantDto>> GetById(
             Guid productId,
             Guid variantId,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken
+        )
         {
             var variant = await _productVariantService.GetByIdAsync(
                 productId,
                 variantId,
-                cancellationToken);
+                cancellationToken
+            );
 
             if (variant is null)
+            {
                 return NotFound();
+            }
 
             return Ok(variant);
         }
@@ -51,12 +58,14 @@ namespace WebApi.Controllers
         public async Task<ActionResult<ProductVariantDto>> Create(
             Guid productId,
             [FromBody] CreateProductVariantRequest request,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken
+        )
         {
             var variant = await _productVariantService.CreateAsync(
                 productId,
                 request,
-                cancellationToken);
+                cancellationToken
+            );
 
             return CreatedAtAction(
                 nameof(GetById),
@@ -65,7 +74,8 @@ namespace WebApi.Controllers
                     productId,
                     variantId = variant.Id
                 },
-                variant);
+                variant
+            );
         }
 
         [HttpPatch("{variantId:guid}")]
@@ -73,16 +83,20 @@ namespace WebApi.Controllers
             Guid productId,
             Guid variantId,
             [FromBody] UpdateProductVariantRequest request,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken
+        )
         {
             var variant = await _productVariantService.UpdateAsync(
                 productId,
                 variantId,
                 request,
-                cancellationToken);
+                cancellationToken
+            );
 
             if (variant is null)
+            {
                 return NotFound();
+            }
 
             return Ok(variant);
         }

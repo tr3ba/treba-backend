@@ -21,14 +21,12 @@
     <main>
         <header class="top-header">
             <label class="mobile-menu-button" for="admin-nav-toggle" aria-label="@L["OpenMenu"]"><i class="bi bi-list"></i></label>
-            <label class="search-box"><i class="bi bi-search" aria-hidden="true"></i><input type="search" placeholder="@L["SearchPlaceholder"]" aria-label="@L["Search"]" /></label>
             <div class="header-actions">
                 <div class="lang-selector" aria-label="@L["Language"]">
                     <a class="lang-btn @(currentCulture == "uk" ? "active" : "")" data-enhance-nav="false" href="/culture/set?culture=uk&redirectUri=@returnPath">UA</a>
                     <a class="lang-btn @(currentCulture == "en" ? "active" : "")" data-enhance-nav="false" href="/culture/set?culture=en&redirectUri=@returnPath">EN</a>
                     <a class="lang-btn @(currentCulture == "ru" ? "active" : "")" data-enhance-nav="false" href="/culture/set?culture=ru&redirectUri=@returnPath">RU</a>
                 </div>
-                <button class="header-icon-button" type="button" aria-label="@L["Notifications"]"><i class="bi bi-bell"></i><span></span></button>
                 <div class="profile-menu-container">
                     <button class="user-profile-badge" type="button" @onclick="ToggleProfileMenu" aria-expanded="@_menuOpen" aria-haspopup="menu">
                         @if (!string.IsNullOrWhiteSpace(AvatarUrl))

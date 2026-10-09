@@ -1,81 +1,103 @@
-﻿using Domain.Entities.Users;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Domain.Entities.Users;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Infrastructure.Persistence.Configurations
 {
-    public sealed class UserConfiguration
-    : IEntityTypeConfiguration<User>
+    public sealed class UserConfiguration : IEntityTypeConfiguration<User>
     {
-        public void Configure(EntityTypeBuilder<User> builder)
+        public void Configure(
+            EntityTypeBuilder<User> builder
+        )
         {
             builder.ToTable("users");
 
             builder.HasKey(x => x.Id);
 
-            builder.Property(x => x.Email)
+            builder
+                .Property(x => x.Email)
                 .HasMaxLength(320)
                 .IsRequired();
 
-            builder.HasIndex(x => x.Email)
+            builder
+                .HasIndex(x => x.Email)
                 .IsUnique();
 
-            builder.Property(x => x.Phone)
+            builder
+                .Property(x => x.Phone)
                 .HasMaxLength(30);
 
-            builder.Property(x => x.FirstName)
+            builder
+                .Property(x => x.FirstName)
                 .HasMaxLength(100)
                 .IsRequired();
 
-            builder.Property(x => x.LastName)
+            builder
+                .Property(x => x.LastName)
                 .HasMaxLength(100)
                 .IsRequired();
 
-            builder.Property(x => x.MiddleName)
+            builder
+                .Property(x => x.MiddleName)
                 .HasMaxLength(100);
 
-            builder.Property(x => x.Status)
+            builder
+                .Property(x => x.Status)
                 .HasConversion<string>()
                 .HasMaxLength(50)
                 .IsRequired();
 
-            builder.Property(x => x.EmailVerified)
+            builder
+                .Property(x => x.EmailVerified)
                 .IsRequired();
 
-            builder.Property(x => x.PhoneVerified)
+            builder
+                .Property(x => x.PhoneVerified)
                 .IsRequired();
 
-            builder.Property(x => x.CreatedAt)
+            builder
+                .Property(x => x.CreatedAt)
                 .IsRequired();
 
-            builder.HasOne(x => x.Profile)
+            builder
+                .HasOne(x => x.Profile)
                 .WithOne()
                 .HasForeignKey<UserProfile>(x => x.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            builder.HasMany(x => x.Addresses)
+            builder
+                .HasMany(x => x.Addresses)
                 .WithOne()
                 .HasForeignKey(x => x.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
-            
-            builder.Property(x => x.PasswordHash)
+
+            builder
+                .Property(x => x.PasswordHash)
                 .HasMaxLength(500)
                 .IsRequired();
 
-            builder.Property(x => x.RefreshToken)
+            builder
+                .Property(x => x.RefreshToken)
                 .HasMaxLength(500);
 
             builder.Property(x => x.RefreshTokenExpiryTime);
 
-            builder.Property(x => x.AuthenticatorEnabled).IsRequired();
-            builder.Property(x => x.AuthenticatorSecretProtected).HasMaxLength(1000);
+            builder
+                .Property(x => x.AuthenticatorEnabled)
+                .IsRequired();
+            builder
+                .Property(x => x.AuthenticatorSecretProtected)
+                .HasMaxLength(1000);
             builder.Property(x => x.AuthenticatorEnabledAt);
-            builder.Property(x => x.EmailTwoFactorEnabled).IsRequired();
+            builder
+                .Property(x => x.EmailTwoFactorEnabled)
+                .IsRequired();
 
-            builder.HasOne(x => x.Role)
+            builder
+                .HasOne(x => x.Role)
                 .WithMany()
                 .HasForeignKey(x => x.RoleId)
                 .OnDelete(DeleteBehavior.Restrict);

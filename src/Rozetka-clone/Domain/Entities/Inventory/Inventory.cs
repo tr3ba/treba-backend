@@ -9,5 +9,14 @@ public class Inventory
     public int ReservedQuantity { get; set; }
     public int MinimumQuantity { get; set; }
     public byte[] Version { get; private set; } = [];
-    public int AvailableForSale => Math.Max(0, AvailableQuantity - ReservedQuantity);
+    public int AvailableForSale
+    {
+        get
+        {
+            return Math.Max(
+                0,
+                AvailableQuantity - ReservedQuantity
+            );
+        }
+    }
 }

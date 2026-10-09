@@ -21,6 +21,7 @@ public class Attribute
 
     private Attribute()
     {
+
     }
 
     public Attribute(
@@ -33,7 +34,8 @@ public class Attribute
         bool isFilterable,
         bool isComparable,
         string? unit,
-        int sortOrder)
+        int sortOrder
+    )
     {
         Id = id;
         CategoryId = categoryId;
@@ -55,7 +57,8 @@ public class Attribute
         bool isFilterable,
         bool isComparable,
         string? unit,
-        int sortOrder)
+        int sortOrder
+    )
     {
         Name = name;
         Code = code;

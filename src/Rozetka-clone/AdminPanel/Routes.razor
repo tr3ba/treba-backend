@@ -1,4 +1,6 @@
 @using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@inject NavigationManager Navigation
 <CascadingAuthenticationState>
     <Router AppAssembly="@typeof(App).Assembly">
         <Found Context="routeData">
@@ -8,8 +10,23 @@
             }
             else
             {
-                <AuthorizeView Roles="Administrator">
-                    <Authorized><RouteView RouteData="@routeData" DefaultLayout="@typeof(Layout.MainLayout)" /></Authorized>
+                <AuthorizeView Roles="@AdminAccess.StaffRoles" Context="access">
+                    <Authorized>
+                        @if (AdminAccess.CanAccess(access.User.FindFirst(ClaimTypes.Role)?.Value, new Uri(Navigation.Uri).AbsolutePath))
+                        {
+                            <RouteView RouteData="@routeData" DefaultLayout="@typeof(Layout.MainLayout)" />
+                        }
+                        else
+                        {
+                            <LayoutView Layout="@typeof(Layout.MainLayout)">
+                                <section class="card-box workspace-empty" role="alert">
+                                    <span class="workspace-empty-icon"><i class="bi bi-shield-lock"></i></span>
+                                    <h1>@L["AccessDenied"]</h1>
+                                    <a class="secondary-button" href="/">@L["Dashboard"]</a>
+                                </section>
+                            </LayoutView>
+                        }
+                    </Authorized>
                     <NotAuthorized><LayoutView Layout="@typeof(Layout.AuthLayout)"><AdminPanel.Pages.Auth.Login /></LayoutView></NotAuthorized>
                     <Authorizing><p role="status">@L["CheckingAccess"]</p></Authorizing>
                 </AuthorizeView>

@@ -1,3 +1,4 @@
+using System.Text;
 using Application.Attributes;
 using Application.Brands;
 using Application.Carts;
@@ -14,7 +15,6 @@ using Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
 using WebApi.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -43,44 +43,75 @@ builder.Services.AddScoped<ICartService, CartService>();
 
 var jwtSection = builder.Configuration.GetSection("Jwt");
 
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    var secretKey = jwtSection["SecretKey"]
-        ?? throw new InvalidOperationException("JWT SecretKey is missing from configuration.");
-    if (Encoding.UTF8.GetByteCount(secretKey) < 32)
-        throw new InvalidOperationException("JWT SecretKey must be at least 32 bytes.");
-    options.RequireHttpsMetadata = false;
-    options.SaveToken = true;
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = jwtSection["Issuer"],
-        ValidAudience = jwtSection["Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
-        ClockSkew = TimeSpan.Zero
-    };
-    options.Events = new JwtBearerEvents
-    {
-        OnTokenValidated = async context =>
+builder
+    .Services
+    .AddAuthentication(
+        options =>
         {
-            var idClaim = context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            if (!Guid.TryParse(idClaim, out var id)) { context.Fail("Invalid user."); return; }
-            var db = context.HttpContext.RequestServices.GetRequiredService<ApplicationDbContext>();
-            var user = await db.Users.AsNoTracking().Include(u => u.Role).SingleOrDefaultAsync(u => u.Id == id, context.HttpContext.RequestAborted);
-            if (user is null || user.Status is Domain.Entities.Users.UserStatus.Blocked or Domain.Entities.Users.UserStatus.Deleted
-                || user.Role?.Name != context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value)
-                context.Fail("Account is unavailable or role has changed.");
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
         }
-    };
-});
+    )
+    .AddJwtBearer(
+        options =>
+        {
+            var secretKey =
+                jwtSection["SecretKey"]
+                ?? throw new InvalidOperationException("JWT SecretKey is missing from configuration.");
+            if (Encoding.UTF8.GetByteCount(secretKey) < 32)
+            {
+                throw new InvalidOperationException("JWT SecretKey must be at least 32 bytes.");
+            }
+
+            options.RequireHttpsMetadata = false;
+            options.SaveToken = true;
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = jwtSection["Issuer"],
+                ValidAudience = jwtSection["Audience"],
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+                ClockSkew = TimeSpan.Zero,
+            };
+            options.Events = new JwtBearerEvents
+            {
+                OnTokenValidated = async context =>
+                {
+                    var idClaim = context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                    if (!Guid.TryParse(
+                        idClaim,
+                        out var id
+                    ))
+                    {
+                        context.Fail("Invalid user.");
+                        return;
+                    }
+                    var db = context.HttpContext.RequestServices.GetRequiredService<ApplicationDbContext>();
+                    var user = await db
+                        .Users
+                        .AsNoTracking()
+                        .Include(u => u.Role)
+                        .SingleOrDefaultAsync(
+                            u => u.Id == id,
+                            context.HttpContext.RequestAborted
+                        );
+                    if (
+                        user is null
+                        || user.Status
+                            is Domain.Entities.Users.UserStatus.Blocked
+                                or Domain.Entities.Users.UserStatus.Deleted
+                        || user.Role?.Name != context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value
+                    )
+                    {
+                        context.Fail("Account is unavailable or role has changed.");
+                    }
+                },
+            };
+        }
+    );
 
 builder.Services.AddAuthorization();
 
@@ -102,7 +133,8 @@ catch (Exception exception)
 {
     app.Logger.LogWarning(
         exception,
-        "Roles could not be seeded because the database is unavailable.");
+        "Roles could not be seeded because the database is unavailable."
+    );
 }
 
 await app.Services.SeedAdministratorAsync(builder.Configuration);
@@ -113,35 +145,50 @@ if (app.Environment.IsDevelopment())
 }
 
 if (!app.Environment.IsDevelopment())
+{
     app.UseHttpsRedirection();
+}
 
 app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapGet("/health", async (
-    ApplicationDbContext dbContext,
-    CancellationToken cancellationToken) =>
-{
-    var databaseOk = await dbContext.Database.CanConnectAsync(cancellationToken);
+app.MapGet(
+    "/health",
+    async (
+        ApplicationDbContext dbContext,
+        CancellationToken cancellationToken
+    ) =>
+    {
+        var databaseOk = await dbContext.Database.CanConnectAsync(cancellationToken);
 
-    return databaseOk
-        ? Results.Ok(new
-        {
-            status = "ok",
-            database = "ok"
-        })
-        : Results.Problem(
-            statusCode: StatusCodes.Status503ServiceUnavailable,
-            title: "Database unavailable");
-});
+        return databaseOk
+            ? Results.Ok(
+                new
+                {
+                    status = "ok",
+                    database = "ok"
+                }
+            )
+            : Results.Problem(
+                statusCode: StatusCodes.Status503ServiceUnavailable,
+                title: "Database unavailable"
+            );
+    }
+);
 
 // Lightweight endpoint for Docker/CI smoke tests.
 // Does not require a database connection.
-app.MapGet("/ping", () => Results.Ok(new
-{
-    status = "ok"
-}));
+app.MapGet(
+    "/ping",
+    () =>
+        Results.Ok(
+            new
+            {
+                status = "ok"
+            }
+        )
+);
 
 app.MapControllers();
 

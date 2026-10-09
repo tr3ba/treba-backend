@@ -1,11 +1,13 @@
 @page "/products"
 @inject AdminPanel.Services.Implementations.CatalogApiClient Api
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @using Contracts.Catalog
+@using System.Security.Claims
 
 <PageTitle>@L["Products"] — Treba Admin</PageTitle>
 <section class="page-hero storefront-blue-hero">
     <div><p class="eyebrow">@L["CatalogWorkspace"]</p><h1>@L["ProductManagement"]</h1><p>@L["ProductsSubtitle"]</p></div>
-    <a class="storefront-action" href="/products/new"><i class="bi bi-plus-lg"></i>@L["AddProduct"]</a>
+    @if (_canEdit) { <a class="storefront-action" href="/products/new"><i class="bi bi-plus-lg"></i>@L["AddProduct"]</a> }
 </section>
 @if (stats is not null)
 {
@@ -32,7 +34,7 @@
             <tr><td><div class="catalog-product"><span class="product-thumb blue"><i class="bi bi-box-seam"></i></span><div><strong>@product.Name</strong><small>@product.Sku · @product.Slug</small></div></div></td>
                 <td>@product.CategoryName</td><td>@product.BrandName</td><td><strong>₴ @product.Price.ToString("N2")</strong></td><td>@product.StockQuantity</td>
                 <td><span class="status-badge @(product.Status == "ACTIVE" ? "badge-paid" : "badge-pending")">@StatusLabel(product.Status)</span></td>
-                <td>@if (product.Status is "DRAFT" or "REJECTED" or "ACTIVE") { <a class="btn-link-action" href="@($"/products/{product.Id}/edit")">@L["Edit"]</a> } else { <a class="btn-link-action" href="/moderation">@L["View"]</a> }</td></tr>
+                <td>@if (_canEdit && product.Status is ("DRAFT" or "REJECTED" or "ACTIVE")) { <a class="btn-link-action" href="@($"/products/{product.Id}/edit")">@L["Edit"]</a> } else if (_canModerate) { <a class="btn-link-action" href="/moderation">@L["View"]</a> } else { <span>—</span> }</td></tr>
         }
         </tbody></table></div>
         @if (result.Content.Count == 0) { <div class="empty-state"><i class="bi bi-search"></i><h2>@L["ProductsNotFound"]</h2><p>@L["ProductsNotFoundDesc"]</p></div> }
@@ -45,7 +47,14 @@
     private string search = "", status = "";
     private string? error;
     private bool loading;
-    protected override Task OnInitializedAsync() => Load(1);
+    private bool _canEdit, _canModerate;
+    protected override async Task OnInitializedAsync()
+    {
+        var role = (await AuthenticationStateProvider.GetAuthenticationStateAsync()).User.FindFirst(ClaimTypes.Role)?.Value;
+        _canEdit = AdminAccess.CanAccess(role, "/products/new");
+        _canModerate = AdminAccess.CanAccess(role, "/moderation");
+        await Load(1);
+    }
     private Task Search() => Load(1);
     private async Task Load(int page)
     {

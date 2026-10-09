@@ -5,4 +5,5 @@ public sealed record PagedResponse<T>(
     int Page,
     int Size,
     long TotalElements,
-    int TotalPages);
+    int TotalPages
+);

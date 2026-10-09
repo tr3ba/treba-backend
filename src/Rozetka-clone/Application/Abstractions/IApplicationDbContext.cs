@@ -49,17 +49,17 @@ namespace Application.Abstractions
         DbSet<Cart> Carts { get; }
 
         DbSet<CartItem> CartItems { get; }
-        
-        public DbSet<Warehouse> Warehouses { get; } 
-        
-        public DbSet<Domain.Entities.Inventory.Inventory> Inventory { get; } 
-        
-        public DbSet<StockMovement> StockMovements { get; } 
-        
-        public DbSet<InventoryReservation> InventoryReservations { get; } 
+
+        public DbSet<Warehouse> Warehouses { get; }
+
+        public DbSet<Domain.Entities.Inventory.Inventory> Inventory { get; }
+
+        public DbSet<StockMovement> StockMovements { get; }
+
+        public DbSet<InventoryReservation> InventoryReservations { get; }
 
         Task<int> SaveChangesAsync(
-            CancellationToken cancellationToken = default);
-
+            CancellationToken cancellationToken = default
+        );
     }
 }
