@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Application.ProductImages;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using WebApi.Requests;
 
 namespace WebApi.Controllers
 {
@@ -75,12 +76,16 @@ namespace WebApi.Controllers
         [HttpPost("upload")]
         [RequestSizeLimit(MaxImageBytes + 1024 * 1024)]
         public async Task<ActionResult<ProductImageDto>> Upload(
-            Guid productId,
-            [FromForm] IFormFile file,
-            [FromForm] bool isMain,
-            [FromForm] int sortOrder,
-            CancellationToken cancellationToken)
+                Guid productId,
+                [FromForm] UploadProductImageRequest request,
+                CancellationToken cancellationToken)
         {
+            var file = request.File;
+
+
+
+
+
             if (file.Length is <= 0 or > MaxImageBytes)
                 return BadRequest("Image size must be between 1 byte and 5 MB.");
 
@@ -109,8 +114,8 @@ namespace WebApi.Controllers
                     {
                         ImageUrl = imageUrl,
                         AltText = Path.GetFileNameWithoutExtension(file.FileName),
-                        IsMain = isMain,
-                        SortOrder = Math.Max(0, sortOrder)
+                        IsMain = request.IsMain,
+                        SortOrder = Math.Max(0, request.SortOrder)
                     },
                     cancellationToken);
 

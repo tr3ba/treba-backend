@@ -25,10 +25,26 @@ public sealed class SaveCatalogProductRequest : IValidatableObject
     }
 }
 
-public sealed record CatalogProductDto(Guid Id, Guid StoreId, Guid CategoryId, Guid BrandId,
-    string Name, string Slug, string CategoryName, string BrandName, string Status,
-    string ShortDescription, string Description, string Sku, decimal Price,
-    int StockQuantity, int WarrantyMonths, string CountryOfOrigin, DateTime CreatedAt,
+public sealed record CatalogProductDto(
+    Guid Id,
+    Guid StoreId,
+    Guid CategoryId,
+    Guid BrandId,
+    Guid? ProductVariantId,
+    string Name,
+    string Slug,
+    string CategoryName,
+    string BrandName,
+    string Status,
+    string ShortDescription,
+    string Description,
+    string Sku,
+    decimal Price,
+    decimal? OldPrice,
+    int StockQuantity,
+    int WarrantyMonths,
+    string CountryOfOrigin,
+    DateTime CreatedAt,
     IReadOnlyList<CatalogProductImageDto> Images);
 public sealed record CatalogLookupDto(Guid Id, string Name);
 public sealed record CatalogStatsDto(int Total, int Active, int Pending, int Drafts, int Rejected, int OutOfStock);

@@ -10,7 +10,15 @@ namespace Application.Catalog;
 
 public sealed class CatalogService(IApplicationDbContext db)
 {
-    public async Task<PagedResponse<CatalogProductDto>> ListAsync(int page, int size, string? search, string? status, bool publicOnly, CancellationToken ct)
+    public async Task<PagedResponse<CatalogProductDto>> ListAsync(
+    int page,
+    int size,
+    string? search,
+    string? status,
+    bool publicOnly,
+    Guid? categoryId,
+    string? sort,
+    CancellationToken ct)
     {
         page = Math.Max(1, page);
         size = Math.Clamp(size, 1, 100);
@@ -30,9 +38,41 @@ public sealed class CatalogService(IApplicationDbContext db)
             query = query.Where(p => p.Name.ToLower().Contains(term) || p.Slug.Contains(term)
                 || db.ProductVariants.Any(v => v.ProductId == p.Id && v.Sku.ToLower().Contains(term)));
         }
+
+        if (categoryId.HasValue)
+        {
+            query = query.Where(p => p.CategoryId == categoryId.Value);
+        }
         var count = await query.CountAsync(ct);
-        var products = await query.OrderByDescending(p => p.CreatedAt).ThenBy(p => p.Id)
-            .Skip((page - 1) * size).Take(size).ToListAsync(ct);
+
+        query = sort?.Trim().ToLowerInvariant() switch
+        {
+            "priceasc" => query
+                .OrderBy(p => db.ProductVariants
+                    .Where(v => v.ProductId == p.Id && v.IsActive)
+                    .Select(v => (decimal?)v.Price)
+                    .Min() ?? decimal.MaxValue)
+                .ThenBy(p => p.Id),
+
+            "pricedesc" => query
+                .OrderByDescending(p => db.ProductVariants
+                    .Where(v => v.ProductId == p.Id && v.IsActive)
+                    .Select(v => (decimal?)v.Price)
+                    .Min() ?? 0)
+                .ThenBy(p => p.Id),
+
+            _ => query
+                .OrderByDescending(p => p.CreatedAt)
+                .ThenBy(p => p.Id)
+        };
+
+        var products = await query
+            .Skip((page - 1) * size)
+            .Take(size)
+            .ToListAsync(ct);
+
+
+
         return new(await MapAsync(products, ct), page, size, count, (int)Math.Ceiling(count / (double)size));
     }
 
@@ -40,6 +80,27 @@ public sealed class CatalogService(IApplicationDbContext db)
     {
         var product = await db.Products.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id, ct);
         return product is null ? null : (await MapAsync([product], ct))[0];
+    }
+
+    public async Task<CatalogProductDto?> GetBySlugAsync(string slug, bool publicOnly, CancellationToken ct)
+    {
+        var query = db.Products
+            .AsNoTracking()
+            .Where(p => p.Slug == slug);
+
+        if (publicOnly)
+        {
+            query = query.Where(p =>
+                p.Status == ProductStatus.ACTIVE &&
+                db.Categories.Any(c => c.Id == p.CategoryId && c.IsActive) &&
+                db.Brands.Any(b => b.Id == p.BrandId && b.IsActive));
+        }
+
+        var product = await query.FirstOrDefaultAsync(ct);
+
+        return product is null
+            ? null
+            : (await MapAsync([product], ct))[0];
     }
 
     public async Task<CatalogStatsDto> StatsAsync(CancellationToken ct) => new(
@@ -125,10 +186,27 @@ public sealed class CatalogService(IApplicationDbContext db)
                     image.SortOrder,
                     image.IsMain))
                 .ToList();
-            return new CatalogProductDto(p.Id, p.StoreId, p.CategoryId, p.BrandId, p.Name, p.Slug,
-                categories.GetValueOrDefault(p.CategoryId, "—"), brands.GetValueOrDefault(p.BrandId, "—"),
-                p.Status.ToString(), p.ShortDescription, p.Description, variant?.Sku ?? "", variant?.Price ?? 0,
-                variant?.StockQuantity ?? 0, p.WarrantyMonths, p.CountryOfOrigin, p.CreatedAt, productImages);
+            return new CatalogProductDto(
+                p.Id,
+                p.StoreId,
+                p.CategoryId,
+                p.BrandId,
+                variant?.Id,
+                p.Name,
+                p.Slug,
+                categories.GetValueOrDefault(p.CategoryId, "—"),
+                brands.GetValueOrDefault(p.BrandId, "—"),
+                p.Status.ToString(),
+                p.ShortDescription,
+                p.Description,
+                variant?.Sku ?? "",
+                variant?.Price ?? 0,
+                variant?.OldPrice,
+                variant?.StockQuantity ?? 0,
+                p.WarrantyMonths,
+                p.CountryOfOrigin,
+                p.CreatedAt,
+                productImages);
         }).ToList();
     }
 }
