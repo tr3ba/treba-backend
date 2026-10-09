@@ -18,20 +18,16 @@ public sealed class CatalogService(
         string? search,
         string? status,
         bool publicOnly,
+        Guid? categoryId,
+        string? sort,
         CancellationToken ct,
-        Guid? sellerUserId = null
-    )
+        Guid? sellerUserId = null)
     {
-        page = Math.Max(
-            1,
-            page
-        );
-        size = Math.Clamp(
-            size,
-            1,
-            100
-        );
+        page = Math.Max(1, page);
+        size = Math.Clamp(size, 1, 100);
+
         var query = db.Products.AsNoTracking();
+
         if (sellerUserId.HasValue)
         {
             query = query.Where(
@@ -68,9 +64,9 @@ public sealed class CatalogService(
         else if (!string.IsNullOrWhiteSpace(status))
         {
             if (!Enum.TryParse<ProductStatus>(
-                status,
-                out var parsed
-            )
+                    status,
+                    out var parsed
+                )
                 || !Enum.IsDefined(parsed))
             {
                 throw new ArgumentException("Unknown product status.");
@@ -78,11 +74,13 @@ public sealed class CatalogService(
 
             query = query.Where(p => p.Status == parsed);
         }
+
         if (!string.IsNullOrWhiteSpace(search))
         {
             var term = search
                 .Trim()
                 .ToLowerInvariant();
+
             query = query.Where(
                 p =>
                     p.Name
@@ -98,18 +96,42 @@ public sealed class CatalogService(
                     )
             );
         }
+
+        if (categoryId.HasValue)
+        {
+            query = query.Where(p => p.CategoryId == categoryId.Value);
+        }
+
         var count = await query.CountAsync(ct);
+
+        query = sort?.Trim().ToLowerInvariant() switch
+        {
+            "priceasc" => query
+                .OrderBy(p => db.ProductVariants
+                    .Where(v => v.ProductId == p.Id && v.IsActive)
+                    .Select(v => (decimal?)v.Price)
+                    .Min() ?? decimal.MaxValue)
+                .ThenBy(p => p.Id),
+
+            "pricedesc" => query
+                .OrderByDescending(p => db.ProductVariants
+                    .Where(v => v.ProductId == p.Id && v.IsActive)
+                    .Select(v => (decimal?)v.Price)
+                    .Min() ?? 0)
+                .ThenBy(p => p.Id),
+
+            _ => query
+                .OrderByDescending(p => p.CreatedAt)
+                .ThenBy(p => p.Id)
+        };
+
         var products = await query
-            .OrderByDescending(p => p.CreatedAt)
-            .ThenBy(p => p.Id)
             .Skip((page - 1) * size)
             .Take(size)
             .ToListAsync(ct);
+
         return new(
-            await MapAsync(
-                products,
-                ct
-            ),
+            await MapAsync(products, ct),
             page,
             size,
             count,
@@ -120,8 +142,7 @@ public sealed class CatalogService(
     public async Task<CatalogProductDto?> GetAsync(
         Guid id,
         CancellationToken ct,
-        Guid? sellerUserId = null
-    )
+        Guid? sellerUserId = null)
     {
         var product = await db
             .Products
@@ -143,22 +164,52 @@ public sealed class CatalogService(
                     ),
                 ct
             );
+
         return product is null
             ? null
-            : (
-                await MapAsync(
-                    [product],
-                    ct
-                )
-            )[0];
+            : (await MapAsync([product], ct))[0];
+    }
+
+    public async Task<CatalogProductDto?> GetBySlugAsync(
+        string slug,
+        bool publicOnly,
+        CancellationToken ct)
+    {
+        var query = db.Products
+            .AsNoTracking()
+            .Where(p => p.Slug == slug);
+
+        if (publicOnly)
+        {
+            query = query.Where(
+                p =>
+                    p.Status == ProductStatus.ACTIVE
+                    && db.Categories.Any(
+                        c =>
+                            c.Id == p.CategoryId
+                            && c.IsActive
+                    )
+                    && db.Brands.Any(
+                        b =>
+                            b.Id == p.BrandId
+                            && b.IsActive
+                    )
+            );
+        }
+
+        var product = await query.FirstOrDefaultAsync(ct);
+
+        return product is null
+            ? null
+            : (await MapAsync([product], ct))[0];
     }
 
     public async Task<CatalogStatsDto> StatsAsync(
         CancellationToken ct,
-        Guid? sellerUserId = null
-    )
+        Guid? sellerUserId = null)
     {
         var query = db.Products.AsNoTracking();
+
         if (sellerUserId.HasValue)
         {
             query = query.Where(
@@ -207,8 +258,7 @@ public sealed class CatalogService(
     }
 
     public Task<int> PendingCountAsync(
-        CancellationToken ct
-    )
+        CancellationToken ct)
     {
         return db.Products.CountAsync(
             product => product.Status == ProductStatus.PENDING_MODERATION,
@@ -220,16 +270,16 @@ public sealed class CatalogService(
         Guid? id,
         Guid storeId,
         SaveCatalogProductRequest request,
-        CancellationToken ct
-    )
+        CancellationToken ct)
     {
-        var validation = new List<System.ComponentModel.DataAnnotations.ValidationResult>();
+        var validation =
+            new List<System.ComponentModel.DataAnnotations.ValidationResult>();
+
         if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(
-            request,
-            new(request),
-            validation,
-            true
-        ))
+                request,
+                new(request),
+                validation,
+                true))
         {
             throw new ArgumentException(
                 string.Join(
@@ -242,9 +292,11 @@ public sealed class CatalogService(
         var slug = request.Slug
             .Trim()
             .ToLowerInvariant();
+
         var sku = request.Sku
             .Trim()
             .ToUpperInvariant();
+
         if (string.IsNullOrWhiteSpace(request.Name)
             || string.IsNullOrWhiteSpace(sku))
         {
@@ -252,51 +304,49 @@ public sealed class CatalogService(
         }
 
         if (!await db.Categories.AnyAsync(
-            c =>
-                c.Id == request.CategoryId
-                && c.IsActive,
-            ct
-        ))
+                c =>
+                    c.Id == request.CategoryId
+                    && c.IsActive,
+                ct))
         {
             throw new ArgumentException("Select an active category.");
         }
 
         if (!await db.Brands.AnyAsync(
-            b =>
-                b.Id == request.BrandId
-                && b.IsActive,
-            ct
-        ))
+                b =>
+                    b.Id == request.BrandId
+                    && b.IsActive,
+                ct))
         {
             throw new ArgumentException("Select an active brand.");
         }
 
         if (await db.Products.AnyAsync(
-            p =>
-                p.Slug == slug
-                && (
-                    !id.HasValue
-                    || p.Id != id.Value
-                ),
-            ct
-        ))
+                p =>
+                    p.Slug == slug
+                    && (
+                        !id.HasValue
+                        || p.Id != id.Value
+                    ),
+                ct))
         {
-            throw new BusinessRuleException("Product slug is already in use.");
+            throw new BusinessRuleException(
+                "Product slug is already in use."
+            );
         }
 
-        if (
-            await db.ProductVariants.AnyAsync(
+        if (await db.ProductVariants.AnyAsync(
                 v =>
                     v.Sku.ToUpper() == sku
                     && (
                         !id.HasValue
                         || v.ProductId != id.Value
                     ),
-                ct
-            )
-        )
+                ct))
         {
-            throw new BusinessRuleException("SKU is already in use.");
+            throw new BusinessRuleException(
+                "SKU is already in use."
+            );
         }
 
         var product = id.HasValue
@@ -310,6 +360,7 @@ public sealed class CatalogService(
                 StoreId = storeId,
                 CreatedAt = DateTime.UtcNow,
             };
+
         if (product is null)
         {
             return null;
@@ -318,7 +369,9 @@ public sealed class CatalogService(
         if (product.Status == ProductStatus.PENDING_MODERATION
             || product.Status == ProductStatus.ARCHIVED)
         {
-            throw new BusinessRuleException("A product under review or archived cannot be edited.");
+            throw new BusinessRuleException(
+                "A product under review or archived cannot be edited."
+            );
         }
 
         var variant = id.HasValue
@@ -329,6 +382,7 @@ public sealed class CatalogService(
                     ct
                 )
             : null;
+
         product.Name = request.Name.Trim();
         product.Slug = slug;
         product.CategoryId = request.CategoryId;
@@ -339,6 +393,7 @@ public sealed class CatalogService(
         product.CountryOfOrigin = request.CountryOfOrigin.Trim();
         product.Status = ProductStatus.DRAFT;
         product.UpdatedAt = DateTime.UtcNow;
+
         if (!id.HasValue)
         {
             db.Products.Add(product);
@@ -361,6 +416,7 @@ public sealed class CatalogService(
                 null,
                 true
             );
+
             db.ProductVariants.Add(variant);
         }
         else
@@ -381,8 +437,10 @@ public sealed class CatalogService(
         }
 
         variant.SetStock(request.StockQuantity);
+
         // Product and variant are committed together by EF's SaveChanges transaction.
         await db.SaveChangesAsync(ct);
+
         return await GetAsync(
             product.Id,
             ct
@@ -391,20 +449,22 @@ public sealed class CatalogService(
 
     private async Task<List<CatalogProductDto>> MapAsync(
         List<Product> products,
-        CancellationToken ct
-    )
+        CancellationToken ct)
     {
         var ids = products
             .Select(p => p.Id)
             .ToArray();
+
         var categoryIds = products
             .Select(p => p.CategoryId)
             .Distinct()
             .ToArray();
+
         var brandIds = products
             .Select(p => p.BrandId)
             .Distinct()
             .ToArray();
+
         var categories = await db
             .Categories
             .Where(c => categoryIds.Contains(c.Id))
@@ -413,19 +473,23 @@ public sealed class CatalogService(
                 c => c.Name,
                 ct
             );
-        var brands = await db.Brands
+
+        var brands = await db
+            .Brands
             .Where(b => brandIds.Contains(b.Id))
             .ToDictionaryAsync(
                 b => b.Id,
                 b => b.Name,
                 ct
             );
+
         var variants = await db
             .ProductVariants
             .AsNoTracking()
             .Where(v => ids.Contains(v.ProductId))
             .OrderBy(v => v.Sku)
             .ToListAsync(ct);
+
         var images = await db
             .ProductImages
             .AsNoTracking()
@@ -434,11 +498,15 @@ public sealed class CatalogService(
             .ThenBy(image => image.SortOrder)
             .ThenBy(image => image.Id)
             .ToListAsync(ct);
+
         return products
             .Select(
                 p =>
                 {
-                    var variant = variants.FirstOrDefault(v => v.ProductId == p.Id);
+                    var variant = variants.FirstOrDefault(
+                        v => v.ProductId == p.Id
+                    );
+
                     var productImages = images
                         .Where(image => image.ProductId == p.Id)
                         .Select(
@@ -454,11 +522,13 @@ public sealed class CatalogService(
                                 )
                         )
                         .ToList();
+
                     return new CatalogProductDto(
                         p.Id,
                         p.StoreId,
                         p.CategoryId,
                         p.BrandId,
+                        variant?.Id,
                         p.Name,
                         p.Slug,
                         categories.GetValueOrDefault(
@@ -474,6 +544,7 @@ public sealed class CatalogService(
                         p.Description,
                         variant?.Sku ?? "",
                         variant?.Price ?? 0,
+                        variant?.OldPrice,
                         variant?.StockQuantity ?? 0,
                         p.WarrantyMonths,
                         p.CountryOfOrigin,

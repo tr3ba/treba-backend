@@ -19,7 +19,9 @@ namespace WebApi.Controllers
             _service = service;
         }
 
+
         [HttpGet]
+        [AllowAnonymous]
         public async Task<ActionResult<IReadOnlyList<ProductAttributeValueDto>>> GetAll(
             Guid productId,
             CancellationToken cancellationToken

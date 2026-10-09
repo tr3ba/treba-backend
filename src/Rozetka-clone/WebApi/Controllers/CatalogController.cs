@@ -33,6 +33,8 @@ public sealed class CatalogController(
             search,
             status,
             false,
+            null,
+            null,
             ct,
             SellerUserScope()
         );
@@ -120,6 +122,7 @@ public sealed class CatalogController(
     )
     {
         var sellerUserId = SellerUserScope();
+
         return await db
             .Stores
             .AsNoTracking()
@@ -154,6 +157,7 @@ public sealed class CatalogController(
     )
     {
         var sellerUserId = SellerUserScope();
+
         var storeIsAllowed =
             request.StoreId != Guid.Empty
             && await db.Stores.AnyAsync(
@@ -170,6 +174,7 @@ public sealed class CatalogController(
                     ),
                 ct
             );
+
         if (!storeIsAllowed)
         {
             return BadRequest(
@@ -186,6 +191,7 @@ public sealed class CatalogController(
             request,
             ct
         );
+
         return CreatedAtAction(
             nameof(Get),
             new
@@ -230,6 +236,8 @@ public sealed class CatalogController(
         int page = 1,
         int size = 20,
         string? search = null,
+        Guid? categoryId = null,
+        string? sort = null,
         CancellationToken ct = default
     )
     {
@@ -239,8 +247,28 @@ public sealed class CatalogController(
             search,
             null,
             true,
+            categoryId,
+            sort,
             ct
         );
+    }
+
+    [HttpGet("/api/v1/catalog/{slug}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> PublicBySlug(
+        string slug,
+        CancellationToken ct
+    )
+    {
+        var product = await catalog.GetBySlugAsync(
+            slug,
+            true,
+            ct
+        );
+
+        return product is not null
+            ? Ok(product)
+            : NotFound();
     }
 
     private Guid? SellerUserScope()

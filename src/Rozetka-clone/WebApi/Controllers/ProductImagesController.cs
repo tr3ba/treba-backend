@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using WebApi.Requests;
 
 namespace WebApi.Controllers
 {
@@ -15,6 +16,7 @@ namespace WebApi.Controllers
     public sealed class ProductImagesController : ControllerBase
     {
         private const long MaxImageBytes = 5 * 1024 * 1024;
+
         private readonly IProductImageService _productImageService;
         private readonly IWebHostEnvironment _environment;
         private readonly IApplicationDbContext _dbContext;
@@ -37,9 +39,9 @@ namespace WebApi.Controllers
         )
         {
             if (!await CanReadProductAsync(
-                productId,
-                cancellationToken
-            ))
+                    productId,
+                    cancellationToken
+                ))
             {
                 return NotFound();
             }
@@ -60,9 +62,9 @@ namespace WebApi.Controllers
         )
         {
             if (!await CanReadProductAsync(
-                productId,
-                cancellationToken
-            ))
+                    productId,
+                    cancellationToken
+                ))
             {
                 return NotFound();
             }
@@ -90,9 +92,9 @@ namespace WebApi.Controllers
         )
         {
             if (!await CanWriteProductAsync(
-                productId,
-                cancellationToken
-            ))
+                    productId,
+                    cancellationToken
+                ))
             {
                 return NotFound();
             }
@@ -119,57 +121,71 @@ namespace WebApi.Controllers
         [RequestSizeLimit(MaxImageBytes + 1024 * 1024)]
         public async Task<ActionResult<ProductImageDto>> Upload(
             Guid productId,
-            [FromForm] IFormFile file,
-            [FromForm] bool isMain,
-            [FromForm] int sortOrder,
+            [FromForm] UploadProductImageRequest request,
             CancellationToken cancellationToken
         )
         {
             if (!await CanWriteProductAsync(
-                productId,
-                cancellationToken
-            ))
+                    productId,
+                    cancellationToken
+                ))
             {
                 return NotFound();
             }
 
+            var file = request.File;
+
             if (file.Length is <= 0 or > MaxImageBytes)
             {
-                return BadRequest("Image size must be between 1 byte and 5 MB.");
+                return BadRequest(
+                    "Image size must be between 1 byte and 5 MB."
+                );
             }
 
             await using var source = file.OpenReadStream();
             using var buffer = new MemoryStream();
+
             await source.CopyToAsync(
                 buffer,
                 cancellationToken
             );
+
             var bytes = buffer.ToArray();
             var imageType = DetectImageType(bytes);
+
             if (imageType is null)
             {
-                return BadRequest("Only JPG, PNG, WEBP and GIF images are supported.");
+                return BadRequest(
+                    "Only JPG, PNG, WEBP and GIF images are supported."
+                );
             }
 
             var webRoot = _environment.WebRootPath ?? Path.Combine(
                 _environment.ContentRootPath,
                 "wwwroot"
             );
+
             var relativeDirectory = Path.Combine(
                 "uploads",
                 "products",
                 productId.ToString("N")
             );
+
             var directory = Path.Combine(
                 webRoot,
                 relativeDirectory
             );
+
             Directory.CreateDirectory(directory);
-            var fileName = $"{Guid.NewGuid():N}{imageType.Value.Extension}";
+
+            var fileName =
+                $"{Guid.NewGuid():N}{imageType.Value.Extension}";
+
             var absolutePath = Path.Combine(
                 directory,
                 fileName
             );
+
             await System.IO.File.WriteAllBytesAsync(
                 absolutePath,
                 bytes,
@@ -178,18 +194,22 @@ namespace WebApi.Controllers
 
             try
             {
-                var imageUrl = $"/uploads/products/{productId:N}/{fileName}";
+                var imageUrl =
+                    $"/uploads/products/{productId:N}/{fileName}";
+
                 var image = await _productImageService.CreateAsync(
                     productId,
                     new CreateProductImageRequest
                     {
                         ImageUrl = imageUrl,
-                        AltText = Path.GetFileNameWithoutExtension(file.FileName),
-                        IsMain = isMain,
+                        AltText = Path.GetFileNameWithoutExtension(
+                            file.FileName
+                        ),
+                        IsMain = request.IsMain,
                         SortOrder = Math.Max(
                             0,
-                            sortOrder
-                        ),
+                            request.SortOrder
+                        )
                     },
                     cancellationToken
                 );
@@ -221,9 +241,9 @@ namespace WebApi.Controllers
         )
         {
             if (!await CanWriteProductAsync(
-                productId,
-                cancellationToken
-            ))
+                    productId,
+                    cancellationToken
+                ))
             {
                 return NotFound();
             }
@@ -252,9 +272,9 @@ namespace WebApi.Controllers
         )
         {
             if (!await CanWriteProductAsync(
-                productId,
-                cancellationToken
-            ))
+                    productId,
+                    cancellationToken
+                ))
             {
                 return NotFound();
             }
@@ -264,6 +284,7 @@ namespace WebApi.Controllers
                 imageId,
                 cancellationToken
             );
+
             var deleted = await _productImageService.DeleteAsync(
                 productId,
                 imageId,
@@ -318,9 +339,9 @@ namespace WebApi.Controllers
         )
         {
             if (!Guid.TryParse(
-                User.FindFirstValue(ClaimTypes.NameIdentifier),
-                out var userId
-            ))
+                    User.FindFirstValue(ClaimTypes.NameIdentifier),
+                    out var userId
+                ))
             {
                 return false;
             }
@@ -346,11 +367,13 @@ namespace WebApi.Controllers
             string imageUrl
         )
         {
-            var expectedPrefix = $"/uploads/products/{productId:N}/";
+            var expectedPrefix =
+                $"/uploads/products/{productId:N}/";
+
             if (!imageUrl.StartsWith(
-                expectedPrefix,
-                StringComparison.OrdinalIgnoreCase
-            ))
+                    expectedPrefix,
+                    StringComparison.OrdinalIgnoreCase
+                ))
             {
                 return;
             }
@@ -359,6 +382,7 @@ namespace WebApi.Controllers
                 _environment.ContentRootPath,
                 "wwwroot"
             );
+
             var productRoot = Path.GetFullPath(
                 Path.Combine(
                     webRoot,
@@ -367,6 +391,7 @@ namespace WebApi.Controllers
                     productId.ToString("N")
                 )
             );
+
             var absolutePath = Path.GetFullPath(
                 Path.Combine(
                     webRoot,
@@ -378,10 +403,11 @@ namespace WebApi.Controllers
                         )
                 )
             );
+
             if (absolutePath.StartsWith(
-                productRoot + Path.DirectorySeparatorChar,
-                StringComparison.OrdinalIgnoreCase
-            ))
+                    productRoot + Path.DirectorySeparatorChar,
+                    StringComparison.OrdinalIgnoreCase
+                ))
             {
                 System.IO.File.Delete(absolutePath);
             }
@@ -394,20 +420,25 @@ namespace WebApi.Controllers
             if (
                 bytes.Length >= 8
                 && bytes
-                    .AsSpan(
-                        0,
-                        8
+                    .AsSpan(0, 8)
+                    .SequenceEqual(
+                        new byte[]
+                        {
+                            0x89, 0x50, 0x4E, 0x47,
+                            0x0D, 0x0A, 0x1A, 0x0A
+                        }
                     )
-                    .SequenceEqual(new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A })
             )
             {
                 return (".png", "image/png");
             }
 
-            if (bytes.Length >= 3
+            if (
+                bytes.Length >= 3
                 && bytes[0] == 0xFF
                 && bytes[1] == 0xD8
-                && bytes[2] == 0xFF)
+                && bytes[2] == 0xFF
+            )
             {
                 return (".jpg", "image/jpeg");
             }
@@ -415,16 +446,10 @@ namespace WebApi.Controllers
             if (
                 bytes.Length >= 12
                 && bytes
-                    .AsSpan(
-                        0,
-                        4
-                    )
+                    .AsSpan(0, 4)
                     .SequenceEqual("RIFF"u8)
                 && bytes
-                    .AsSpan(
-                        8,
-                        4
-                    )
+                    .AsSpan(8, 4)
                     .SequenceEqual("WEBP"u8)
             )
             {
@@ -435,16 +460,10 @@ namespace WebApi.Controllers
                 bytes.Length >= 6
                 && (
                     bytes
-                        .AsSpan(
-                            0,
-                            6
-                        )
+                        .AsSpan(0, 6)
                         .SequenceEqual("GIF87a"u8)
                     || bytes
-                        .AsSpan(
-                            0,
-                            6
-                        )
+                        .AsSpan(0, 6)
                         .SequenceEqual("GIF89a"u8)
                 )
             )

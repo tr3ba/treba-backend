@@ -12,8 +12,11 @@ public sealed class SaveCatalogProductRequest : IValidatableObject
     [StringLength(300)]
     [RegularExpression(@"^[a-z0-9]+(?:-[a-z0-9]+)*$")]
     public string Slug { get; set; } = "";
+
     public Guid CategoryId { get; set; }
+
     public Guid BrandId { get; set; }
+
     public Guid StoreId { get; set; }
 
     [StringLength(500)]
@@ -65,9 +68,9 @@ public sealed class SaveCatalogProductRequest : IValidatableObject
         }
 
         if (decimal.Round(
-            Price,
-            2
-        ) != Price)
+                Price,
+                2
+            ) != Price)
         {
             yield return new(
                 "Price can have at most two decimal places.",
@@ -82,6 +85,7 @@ public sealed record CatalogProductDto(
     Guid StoreId,
     Guid CategoryId,
     Guid BrandId,
+    Guid? ProductVariantId,
     string Name,
     string Slug,
     string CategoryName,
@@ -91,6 +95,7 @@ public sealed record CatalogProductDto(
     string Description,
     string Sku,
     decimal Price,
+    decimal? OldPrice,
     int StockQuantity,
     int WarrantyMonths,
     string CountryOfOrigin,
