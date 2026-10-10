@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: treba-stage5
+  labels:
+    app.kubernetes.io/part-of: treba-stage5
+    environment: isolated-local-demo
