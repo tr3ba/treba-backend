@@ -1,4 +1,3 @@
-using System.Text;
 using Application.Attributes;
 using Application.Brands;
 using Application.Carts;
@@ -10,11 +9,13 @@ using Application.ProductTags;
 using Application.ProductVariants;
 using Application.Sellers;
 using Application.Stores;
+using Application.Wishlists;
 using Infrastructure;
 using Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using WebApi.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -51,6 +52,7 @@ builder.Services.AddScoped<IProductTagService, ProductTagService>();
 builder.Services.AddScoped<ISellerService, SellerService>();
 builder.Services.AddScoped<IStoreService, StoreService>();
 builder.Services.AddScoped<ICartService, CartService>();
+builder.Services.AddScoped<IWishlistService, WishlistService>();
 
 var jwtSection = builder.Configuration.GetSection("Jwt");
 

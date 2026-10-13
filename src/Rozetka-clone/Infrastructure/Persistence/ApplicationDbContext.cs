@@ -163,6 +163,22 @@ namespace Infrastructure.Persistence
             }
         }
 
+        public DbSet<Wishlist> Wishlists
+        {
+            get
+            {
+                return Set<Wishlist>();
+            }
+        }
+
+        public DbSet<WishlistItem> WishlistItems
+        {
+            get
+            {
+                return Set<WishlistItem>();
+            }
+        }
+
         public DbSet<ProductAttributeValue> ProductAttributeValues
         {
             get
