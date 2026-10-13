@@ -53,6 +53,16 @@ namespace Application.Abstractions
 
         DbSet<SellerReviewResponse> SellerReviewResponses { get; }
 
+        DbSet<Promotion> Promotions { get; }
+
+        DbSet<PromotionRule> PromotionRules { get; }
+
+        DbSet<PromotionAction> PromotionActions { get; }
+
+        DbSet<Coupon> Coupons { get; }
+
+        DbSet<CouponUsage> CouponUsages { get; }
+
         DbSet<WishlistItem> WishlistItems { get; }
 
         DbSet<Seller> Sellers { get; }

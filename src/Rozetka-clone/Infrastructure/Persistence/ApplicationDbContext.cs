@@ -68,6 +68,46 @@ namespace Infrastructure.Persistence
             }
         }
 
+        public DbSet<Promotion> Promotions
+        {
+            get
+            {
+                return Set<Promotion>();
+            }
+        }
+
+        public DbSet<PromotionRule> PromotionRules
+        {
+            get
+            {
+                return Set<PromotionRule>();
+            }
+        }
+
+        public DbSet<PromotionAction> PromotionActions
+        {
+            get
+            {
+                return Set<PromotionAction>();
+            }
+        }
+
+        public DbSet<Coupon> Coupons
+        {
+            get
+            {
+                return Set<Coupon>();
+            }
+        }
+
+        public DbSet<CouponUsage> CouponUsages
+        {
+            get
+            {
+                return Set<CouponUsage>();
+            }
+        }
+
         public DbSet<SellerReviewResponse> SellerReviewResponses
         {
             get
