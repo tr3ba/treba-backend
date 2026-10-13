@@ -57,7 +57,9 @@ namespace Infrastructure.Persistence.Configurations
 
             builder
                 .Property(x => x.Status)
-                .IsRequired();
+                .IsRequired()
+                .HasConversion<string>()
+                .HasMaxLength(50);
 
             builder
                 .Property(x => x.VerifiedPurchase)
@@ -90,6 +92,8 @@ namespace Infrastructure.Persistence.Configurations
             builder.HasIndex(x => x.ProductId);
 
             builder.HasIndex(x => x.UserId);
+
+            builder.HasIndex(x => x.Status);
 
             builder
                 .HasIndex(x => x.OrderItemId)
