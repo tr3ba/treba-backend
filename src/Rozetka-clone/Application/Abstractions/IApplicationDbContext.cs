@@ -44,6 +44,15 @@ namespace Application.Abstractions
         DbSet<ProductAttributeValue> ProductAttributeValues { get; }
 
         DbSet<Wishlist> Wishlists { get; }
+
+        DbSet<Review> Reviews { get; }
+
+        DbSet<ReviewImage> ReviewImages { get; }
+
+        DbSet<ReviewVote> ReviewVotes { get; }
+
+        DbSet<SellerReviewResponse> SellerReviewResponses { get; }
+
         DbSet<WishlistItem> WishlistItems { get; }
 
         DbSet<Seller> Sellers { get; }

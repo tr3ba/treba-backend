@@ -44,6 +44,38 @@ namespace Infrastructure.Persistence
             }
         }
 
+        public DbSet<Review> Reviews
+        {
+            get
+            {
+                return Set<Review>();
+            }
+        }
+
+        public DbSet<ReviewImage> ReviewImages
+        {
+            get
+            {
+                return Set<ReviewImage>();
+            }
+        }
+
+        public DbSet<ReviewVote> ReviewVotes
+        {
+            get
+            {
+                return Set<ReviewVote>();
+            }
+        }
+
+        public DbSet<SellerReviewResponse> SellerReviewResponses
+        {
+            get
+            {
+                return Set<SellerReviewResponse>();
+            }
+        }
+
         public DbSet<Role> Roles
         {
             get
