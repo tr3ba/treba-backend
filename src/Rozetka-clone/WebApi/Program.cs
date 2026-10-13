@@ -7,6 +7,7 @@ using Application.ProductImages;
 using Application.Products;
 using Application.ProductTags;
 using Application.ProductVariants;
+using Application.Reviews;
 using Application.Sellers;
 using Application.Stores;
 using Application.Wishlists;
@@ -53,6 +54,7 @@ builder.Services.AddScoped<ISellerService, SellerService>();
 builder.Services.AddScoped<IStoreService, StoreService>();
 builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<IWishlistService, WishlistService>();
+builder.Services.AddScoped<IReviewService, ReviewService>();
 
 var jwtSection = builder.Configuration.GetSection("Jwt");
 
