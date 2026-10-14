@@ -1,7 +1,8 @@
-﻿using Application.Abstractions;
+using Application.Abstractions;
 using Domain.Entities;
 using Domain.Entities.Attribute;
 using Domain.Entities.Inventory;
+using Domain.Entities.Orders;
 using Domain.Entities.Product;
 using Domain.Entities.ProductTag;
 using Domain.Entities.Users;
@@ -17,247 +18,75 @@ namespace Infrastructure.Persistence
         )
             : base(options)
         {
-
         }
 
-        public DbSet<User> Users
-        {
-            get
-            {
-                return Set<User>();
-            }
-        }
+        public DbSet<User> Users => Set<User>();
 
-        public DbSet<UserProfile> UserProfiles
-        {
-            get
-            {
-                return Set<UserProfile>();
-            }
-        }
+        public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
 
-        public DbSet<Address> Addresses
-        {
-            get
-            {
-                return Set<Address>();
-            }
-        }
+        public DbSet<Address> Addresses => Set<Address>();
 
-        public DbSet<Review> Reviews
-        {
-            get
-            {
-                return Set<Review>();
-            }
-        }
+        public DbSet<Review> Reviews => Set<Review>();
 
-        public DbSet<ReviewImage> ReviewImages
-        {
-            get
-            {
-                return Set<ReviewImage>();
-            }
-        }
+        public DbSet<ReviewImage> ReviewImages => Set<ReviewImage>();
 
-        public DbSet<ReviewVote> ReviewVotes
-        {
-            get
-            {
-                return Set<ReviewVote>();
-            }
-        }
+        public DbSet<ReviewVote> ReviewVotes => Set<ReviewVote>();
 
-        public DbSet<SellerReviewResponse> SellerReviewResponses
-        {
-            get
-            {
-                return Set<SellerReviewResponse>();
-            }
-        }
+        public DbSet<SellerReviewResponse> SellerReviewResponses => Set<SellerReviewResponse>();
 
-        public DbSet<Role> Roles
-        {
-            get
-            {
-                return Set<Role>();
-            }
-        }
+        public DbSet<Role> Roles => Set<Role>();
 
-        public DbSet<AuthenticationChallenge> AuthenticationChallenges
-        {
-            get
-            {
-                return Set<AuthenticationChallenge>();
-            }
-        }
+        public DbSet<AuthenticationChallenge> AuthenticationChallenges => Set<AuthenticationChallenge>();
 
-        public DbSet<Permission> Permissions
-        {
-            get
-            {
-                return Set<Permission>();
-            }
-        }
+        public DbSet<Permission> Permissions => Set<Permission>();
 
-        public DbSet<Product> Products
-        {
-            get
-            {
-                return Set<Product>();
-            }
-        }
+        public DbSet<Product> Products => Set<Product>();
 
-        public DbSet<ProductVariant> ProductVariants
-        {
-            get
-            {
-                return Set<ProductVariant>();
-            }
-        }
+        public DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();
 
-        public DbSet<ProductImage> ProductImages
-        {
-            get
-            {
-                return Set<ProductImage>();
-            }
-        }
+        public DbSet<ProductImage> ProductImages => Set<ProductImage>();
 
-        public DbSet<ProductTag> ProductTags
-        {
-            get
-            {
-                return Set<ProductTag>();
-            }
-        }
+        public DbSet<ProductTag> ProductTags => Set<ProductTag>();
 
-        public DbSet<Category> Categories
-        {
-            get
-            {
-                return Set<Category>();
-            }
-        }
+        public DbSet<Category> Categories => Set<Category>();
 
-        public DbSet<Brand> Brands
-        {
-            get
-            {
-                return Set<Brand>();
-            }
-        }
+        public DbSet<Brand> Brands => Set<Brand>();
 
-        public DbSet<DomainAttribute> Attributes
-        {
-            get
-            {
-                return Set<DomainAttribute>();
-            }
-        }
+        public DbSet<DomainAttribute> Attributes => Set<DomainAttribute>();
 
-        public DbSet<AttributeOption> AttributeOptions
-        {
-            get
-            {
-                return Set<AttributeOption>();
-            }
-        }
+        public DbSet<AttributeOption> AttributeOptions => Set<AttributeOption>();
 
-        public DbSet<Seller> Sellers
-        {
-            get
-            {
-                return Set<Seller>();
-            }
-        }
-        public DbSet<Store> Stores
-        {
-            get
-            {
-                return Set<Store>();
-            }
-        }
+        public DbSet<Seller> Sellers => Set<Seller>();
 
-        public DbSet<Cart> Carts
-        {
-            get
-            {
-                return Set<Cart>();
-            }
-        }
+        public DbSet<Store> Stores => Set<Store>();
 
-        public DbSet<CartItem> CartItems
-        {
-            get
-            {
-                return Set<CartItem>();
-            }
-        }
+        public DbSet<Cart> Carts => Set<Cart>();
 
-        public DbSet<Wishlist> Wishlists
-        {
-            get
-            {
-                return Set<Wishlist>();
-            }
-        }
+        public DbSet<CartItem> CartItems => Set<CartItem>();
 
-        public DbSet<WishlistItem> WishlistItems
-        {
-            get
-            {
-                return Set<WishlistItem>();
-            }
-        }
+        public DbSet<Wishlist> Wishlists => Set<Wishlist>();
 
-        public DbSet<ProductAttributeValue> ProductAttributeValues
-        {
-            get
-            {
-                return Set<ProductAttributeValue>();
-            }
-        }
+        public DbSet<WishlistItem> WishlistItems => Set<WishlistItem>();
 
-        public DbSet<ProductTagRelation> ProductTagRelations
-        {
-            get
-            {
-                return Set<ProductTagRelation>();
-            }
-        }
+        public DbSet<ProductAttributeValue> ProductAttributeValues => Set<ProductAttributeValue>();
 
-        public DbSet<Warehouse> Warehouses
-        {
-            get
-            {
-                return Set<Warehouse>();
-            }
-        }
+        public DbSet<ProductTagRelation> ProductTagRelations => Set<ProductTagRelation>();
 
-        public DbSet<Domain.Entities.Inventory.Inventory> Inventory
-        {
-            get
-            {
-                return Set<Domain.Entities.Inventory.Inventory>();
-            }
-        }
+        public DbSet<Warehouse> Warehouses => Set<Warehouse>();
 
-        public DbSet<StockMovement> StockMovements
-        {
-            get
-            {
-                return Set<StockMovement>();
-            }
-        }
+        public DbSet<Domain.Entities.Inventory.Inventory> Inventory => Set<Domain.Entities.Inventory.Inventory>();
 
-        public DbSet<InventoryReservation> InventoryReservations
-        {
-            get
-            {
-                return Set<InventoryReservation>();
-            }
-        }
+        public DbSet<StockMovement> StockMovements => Set<StockMovement>();
+
+        public DbSet<InventoryReservation> InventoryReservations => Set<InventoryReservation>();
+
+        public DbSet<Order> Orders => Set<Order>();
+
+        public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+
+        public DbSet<OrderAddress> OrderAddresses => Set<OrderAddress>();
+
+        public DbSet<OrderStatusHistory> OrderStatusHistories => Set<OrderStatusHistory>();
 
         protected override void OnModelCreating(
             ModelBuilder modelBuilder

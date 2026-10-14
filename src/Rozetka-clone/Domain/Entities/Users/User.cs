@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using Domain.Entities.Common;
 
 namespace Domain.Entities.Users

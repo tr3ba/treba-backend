@@ -1,6 +1,7 @@
-﻿using Domain.Entities;
+using Domain.Entities;
 using Domain.Entities.Attribute;
 using Domain.Entities.Inventory;
+using Domain.Entities.Orders;
 using Domain.Entities.Product;
 using Domain.Entities.ProductTag;
 using Domain.Entities.Users;
@@ -56,6 +57,7 @@ namespace Application.Abstractions
         DbSet<WishlistItem> WishlistItems { get; }
 
         DbSet<Seller> Sellers { get; }
+      
         DbSet<Store> Stores { get; }
 
         DbSet<Cart> Carts { get; }
@@ -69,6 +71,14 @@ namespace Application.Abstractions
         public DbSet<StockMovement> StockMovements { get; }
 
         public DbSet<InventoryReservation> InventoryReservations { get; }
+
+        DbSet<Order> Orders { get; }
+
+        DbSet<OrderItem> OrderItems { get; }
+
+        DbSet<OrderAddress> OrderAddresses { get; }
+
+        DbSet<OrderStatusHistory> OrderStatusHistories { get; }
 
         Task<int> SaveChangesAsync(
             CancellationToken cancellationToken = default
