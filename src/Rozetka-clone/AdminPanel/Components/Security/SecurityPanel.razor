@@ -1,0 +1,173 @@
+@using Contracts.Authentication
+@inject SecurityApiClient SecurityApi
+
+<section class="card-box security-panel" aria-labelledby="security-panel-title">
+    <div class="security-panel-heading">
+        <span><i class="bi bi-shield-lock"></i></span>
+        <div><h2 id="security-panel-title">@L["AccountProtection"]</h2><p>@L["AccountProtectionDesc"]</p></div>
+    </div>
+
+    @if (_loading)
+    {
+        <div class="security-loading"><span class="spinner-border spinner-border-sm"></span> @L["Loading"]</div>
+    }
+    else if (_settings is not null)
+    {
+        <div class="security-score @(_settings.AuthenticatorEnabled || _settings.EmailTwoFactorEnabled ? "is-protected" : "")">
+            <i class="bi @(_settings.AuthenticatorEnabled || _settings.EmailTwoFactorEnabled ? "bi-shield-check" : "bi-shield-exclamation")"></i>
+            <div><strong>@(_settings.AuthenticatorEnabled || _settings.EmailTwoFactorEnabled ? L["TwoFactorEnabled"] : L["BasicProtection"])</strong><small>@(_settings.AuthenticatorEnabled || _settings.EmailTwoFactorEnabled ? L["TwoFactorEnabledDesc"] : L["BasicProtectionDesc"])</small></div>
+        </div>
+
+        <div class="security-method-list">
+            <div class="security-method-row">
+                <span class="security-method-icon authenticator"><i class="bi bi-phone"></i></span>
+                <div><strong>Google Authenticator</strong><small>@L["AuthenticatorMethodDesc"]</small></div>
+                <span class="security-status @(_settings.AuthenticatorEnabled ? "enabled" : "")">@(_settings.AuthenticatorEnabled ? L["Enabled"] : L["Disabled"])</span>
+                <button type="button" class="security-action" @onclick="AuthenticatorActionAsync" disabled="@_busy">@(_settings.AuthenticatorEnabled ? L["Disable"] : L["Configure"])</button>
+            </div>
+            <div class="security-method-row">
+                <span class="security-method-icon email"><i class="bi bi-envelope-check"></i></span>
+                <div><strong>@L["EmailCode"]</strong><small>@_settings.MaskedEmail</small></div>
+                <span class="security-status @(_settings.EmailTwoFactorEnabled ? "enabled" : "")">@(_settings.EmailTwoFactorEnabled ? L["Enabled"] : L["Disabled"])</span>
+                <button type="button" class="security-action" @onclick="EmailActionAsync" disabled="@_busy">@(_settings.EmailTwoFactorEnabled ? L["Disable"] : L["Enable"])</button>
+            </div>
+        </div>
+    }
+
+    @if (_flow == SecurityFlow.None && _error is not null) { <div class="feedback-error security-feedback" role="alert">@_error</div> }
+    @if (_success is not null) { <div class="feedback-success security-feedback" role="status"><i class="bi bi-check-circle"></i> @_success</div> }
+</section>
+
+@if (_flow != SecurityFlow.None)
+{
+    <div class="security-modal-backdrop" role="presentation" @onclick="Cancel">
+        <section class="security-modal" role="dialog" aria-modal="true" aria-labelledby="security-modal-title" @onclick:stopPropagation="true">
+            <header class="security-modal-header">
+                <span class="security-modal-icon"><i class="bi @ModalIcon"></i></span>
+                <div><p class="eyebrow">@ModalEyebrow</p><h2 id="security-modal-title">@ModalTitle</h2></div>
+                <button class="security-modal-close" type="button" @onclick="Cancel" aria-label="@L["Close"]"><i class="bi bi-x-lg"></i></button>
+            </header>
+
+            @if (_flow == SecurityFlow.AuthenticatorSetup && _authenticatorSetup is not null)
+            {
+                <div class="security-modal-body authenticator-setup-layout">
+                    <div class="security-qr-wrap">
+                        <img class="security-qr" src="@_authenticatorSetup.QrCodeDataUrl" alt="@L["AuthenticatorQrCode"]" />
+                        <span><i class="bi bi-qr-code-scan"></i> @L["ScanWithApp"]</span>
+                    </div>
+                    <div class="security-setup-content">
+                        <div class="security-step"><b>1</b><p>@L["ScanQrCodeDesc"]</p></div>
+                        <details><summary>@L["EnterKeyManually"]</summary><code>@_authenticatorSetup.ManualKey</code></details>
+                        <div class="security-step"><b>2</b><p>@L["EnterGeneratedCode"]</p></div>
+                        <label class="security-code-field"><span>@L["CodeFromApp"]</span><input class="security-code-input" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" placeholder="000000" @bind="_code" /></label>
+                    </div>
+                </div>
+                <footer class="security-modal-footer"><button type="button" class="secondary-button" @onclick="Cancel">@L["Cancel"]</button><button type="button" class="primary-button" @onclick="ConfirmAuthenticatorAsync" disabled="@CodeActionDisabled">@L["ConfirmAndEnable"]</button></footer>
+            }
+            else if (_flow == SecurityFlow.EmailSetup && _emailSetup is not null)
+            {
+                <div class="security-modal-body security-code-flow">
+                    <div class="security-code-illustration"><i class="bi bi-envelope-check"></i></div>
+                    <p>@string.Format(L["EmailSetupCodeSent"], _emailSetup.MaskedEmail)</p>
+                    <label class="security-code-field"><span>@L["SecurityCode"]</span><input class="security-code-input" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" placeholder="000000" @bind="_code" /></label>
+                    <small><i class="bi bi-clock"></i> @L["CodeValidFiveMinutes"]</small>
+                </div>
+                <footer class="security-modal-footer"><button type="button" class="secondary-button" @onclick="Cancel">@L["Cancel"]</button><button type="button" class="primary-button" @onclick="ConfirmEmailAsync" disabled="@CodeActionDisabled">@L["ConfirmAndEnable"]</button></footer>
+            }
+            else if (_flow == SecurityFlow.DisableAuthenticator)
+            {
+                <div class="security-modal-body security-code-flow security-disable-flow">
+                    <div class="security-code-illustration danger"><i class="bi bi-phone"></i></div>
+                    <p>@L["DisableAuthenticatorCodeDesc"]</p>
+                    <label class="security-code-field"><span>@L["CodeFromApp"]</span><input class="security-code-input" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" placeholder="000000" @bind="_code" /></label>
+                    <small><i class="bi bi-info-circle"></i> @L["DisableCodeSafetyHint"]</small>
+                </div>
+                <footer class="security-modal-footer"><button type="button" class="secondary-button" @onclick="Cancel">@L["Cancel"]</button><button type="button" class="danger-button" @onclick="DisableAuthenticatorAsync" disabled="@CodeActionDisabled">@L["ConfirmDisable"]</button></footer>
+            }
+            else if (_flow == SecurityFlow.DisableEmail && _emailDisable is not null)
+            {
+                <div class="security-modal-body security-code-flow security-disable-flow">
+                    <div class="security-code-illustration danger"><i class="bi bi-envelope-x"></i></div>
+                    <p>@string.Format(L["DisableEmailCodeDesc"], _emailDisable.MaskedEmail)</p>
+                    <label class="security-code-field"><span>@L["SecurityCode"]</span><input class="security-code-input" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" placeholder="000000" @bind="_code" /></label>
+                    <small><i class="bi bi-clock"></i> @L["CodeValidFiveMinutes"]</small>
+                </div>
+                <footer class="security-modal-footer"><button type="button" class="secondary-button" @onclick="Cancel">@L["Cancel"]</button><button type="button" class="danger-button" @onclick="DisableEmailAsync" disabled="@CodeActionDisabled">@L["ConfirmDisable"]</button></footer>
+            }
+
+            @if (_error is not null) { <div class="feedback-error security-modal-feedback" role="alert">@_error</div> }
+        </section>
+    </div>
+}
+
+@code {
+    private AccountSecuritySettingsResponse? _settings;
+    private AuthenticatorSetupResponse? _authenticatorSetup;
+    private StartEmailTwoFactorResponse? _emailSetup;
+    private StartEmailTwoFactorResponse? _emailDisable;
+    private SecurityFlow _flow;
+    private string _code = string.Empty;
+    private string? _error;
+    private string? _success;
+    private bool _loading = true;
+    private bool _busy;
+
+    private bool CodeActionDisabled => _busy || _code.Length != 6 || !_code.All(char.IsAsciiDigit);
+    private string ModalIcon => _flow switch { SecurityFlow.AuthenticatorSetup => "bi-qr-code-scan", SecurityFlow.EmailSetup => "bi-envelope-check", SecurityFlow.DisableAuthenticator => "bi-phone", _ => "bi-envelope-x" };
+    private string ModalEyebrow => _flow is SecurityFlow.AuthenticatorSetup or SecurityFlow.EmailSetup ? L["ProtectionSetup"] : L["ProtectionDisabling"];
+    private string ModalTitle => _flow switch { SecurityFlow.AuthenticatorSetup => L["ConnectGoogleAuthenticator"], SecurityFlow.EmailSetup => L["ConnectEmailCodes"], SecurityFlow.DisableAuthenticator => L["DisableGoogleAuthenticator"], _ => L["DisableEmailCodes"] };
+
+    protected override async Task OnInitializedAsync()
+    {
+        try { _settings = await SecurityApi.GetAsync(); }
+        catch (Exception ex) when (ex is HttpRequestException or AdminPanel.Infrastructure.ApiException) { _error = FriendlyError(ex); }
+        finally { _loading = false; }
+    }
+
+    private async Task AuthenticatorActionAsync()
+    {
+        if (_settings?.AuthenticatorEnabled == true) { StartFlow(SecurityFlow.DisableAuthenticator); return; }
+        await RunAsync(async () => { _authenticatorSetup = await SecurityApi.BeginAuthenticatorAsync(); StartFlow(SecurityFlow.AuthenticatorSetup); });
+    }
+
+    private async Task EmailActionAsync()
+    {
+        if (_settings?.EmailTwoFactorEnabled == true)
+        {
+            await RunAsync(async () => { _emailDisable = await SecurityApi.BeginEmailDisableAsync(); StartFlow(SecurityFlow.DisableEmail); });
+            return;
+        }
+        await RunAsync(async () => { _emailSetup = await SecurityApi.BeginEmailAsync(); StartFlow(SecurityFlow.EmailSetup); });
+    }
+
+    private Task ConfirmAuthenticatorAsync() => RunAsync(async () => { _settings = await SecurityApi.ConfirmAuthenticatorAsync(_code); Finish(L["AuthenticatorEnabledSuccess"]); });
+    private Task ConfirmEmailAsync() => RunAsync(async () => { _settings = await SecurityApi.ConfirmEmailAsync(_emailSetup!.ChallengeId, _code); Finish(L["EmailTwoFactorEnabledSuccess"]); });
+    private Task DisableAuthenticatorAsync() => RunAsync(async () => { _settings = await SecurityApi.DisableAuthenticatorAsync(_code); Finish(L["ProtectionMethodDisabled"]); });
+    private Task DisableEmailAsync() => RunAsync(async () => { _settings = await SecurityApi.ConfirmEmailDisableAsync(_emailDisable!.ChallengeId, _code); Finish(L["ProtectionMethodDisabled"]); });
+
+    private async Task RunAsync(Func<Task> action)
+    {
+        _busy = true; _error = null; _success = null;
+        try { await action(); }
+        catch (Exception ex) when (ex is HttpRequestException or AdminPanel.Infrastructure.ApiException) { _error = FriendlyError(ex); }
+        finally { _busy = false; }
+    }
+
+    private string FriendlyError(Exception exception)
+    {
+        if (exception is AdminPanel.Infrastructure.ApiException api)
+        {
+            if (api.Message.Contains("Invalid", StringComparison.OrdinalIgnoreCase)
+                && api.Message.Contains("code", StringComparison.OrdinalIgnoreCase)) return L["InvalidSecurityCode"];
+            if (api.StatusCode == 401) return L["SecuritySessionExpired"];
+            if (api.StatusCode == 404) return L["SecurityApiNeedsRestart"];
+            if (api.Message.Contains("Email delivery is not configured", StringComparison.OrdinalIgnoreCase)) return L["SmtpNotConfigured"];
+        }
+        return string.IsNullOrWhiteSpace(exception.Message) ? L["SecurityOperationFailed"] : exception.Message;
+    }
+
+    private void StartFlow(SecurityFlow flow) { _flow = flow; _code = string.Empty; _error = null; _success = null; }
+    private void Finish(string message) { Cancel(); _success = message; }
+    private void Cancel() { _flow = SecurityFlow.None; _authenticatorSetup = null; _emailSetup = null; _emailDisable = null; _code = string.Empty; _error = null; }
+    private enum SecurityFlow { None, AuthenticatorSetup, EmailSetup, DisableAuthenticator, DisableEmail }
+}

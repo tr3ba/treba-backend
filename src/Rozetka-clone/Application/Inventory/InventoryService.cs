@@ -9,16 +9,25 @@ public sealed class InventoryService : IInventoryService
 {
     private readonly IApplicationDbContext _context;
 
-    public InventoryService(IApplicationDbContext context)
+    public InventoryService(
+        IApplicationDbContext context
+    )
     {
         _context = context;
     }
 
-    public async Task<InventoryDto?> GetInventoryAsync(Guid variantId, CancellationToken cancellationToken = default)
+    public async Task<InventoryDto?> GetInventoryAsync(
+        Guid variantId,
+        CancellationToken cancellationToken = default
+    )
     {
-        var inventory = await _context.Inventory
+        var inventory = await _context
+            .Inventory
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.VariantId == variantId, cancellationToken);
+            .FirstOrDefaultAsync(
+                x => x.VariantId == variantId,
+                cancellationToken
+            );
 
         if (inventory is null)
         {
@@ -32,20 +41,31 @@ public sealed class InventoryService : IInventoryService
             inventory.AvailableQuantity,
             inventory.ReservedQuantity,
             inventory.AvailableForSale,
-            inventory.MinimumQuantity);
+            inventory.MinimumQuantity
+        );
     }
 
-    public async Task<bool> IsAvailableAsync(Guid variantId, int quantity, CancellationToken cancellationToken = default)
+    public async Task<bool> IsAvailableAsync(
+        Guid variantId,
+        int quantity,
+        CancellationToken cancellationToken = default
+    )
     {
         if (quantity <= 0)
         {
             return false;
         }
 
-        var totalAvailable = await _context.Inventory
-            .AsNoTracking()
-            .Where(x => x.VariantId == variantId)
-            .SumAsync(x => (int?)(x.AvailableQuantity - x.ReservedQuantity), cancellationToken) ?? 0;
+        var totalAvailable =
+            await _context
+                .Inventory
+                .AsNoTracking()
+                .Where(x => x.VariantId == variantId)
+                .SumAsync(
+                    x => (int?)(x.AvailableQuantity - x.ReservedQuantity),
+                    cancellationToken
+                )
+            ?? 0;
 
         return totalAvailable >= quantity;
     }
@@ -54,15 +74,23 @@ public sealed class InventoryService : IInventoryService
         Guid variantId,
         Guid warehouseId,
         int quantity,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         if (quantity <= 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(quantity), "Количество пополнения должно быть больше нуля.");
+            throw new ArgumentOutOfRangeException(
+                nameof(quantity),
+                "Количество пополнения должно быть больше нуля."
+            );
         }
 
-        var inventory = await _context.Inventory
-            .FirstOrDefaultAsync(x => x.VariantId == variantId && x.WarehouseId == warehouseId, cancellationToken);
+        var inventory = await _context.Inventory.FirstOrDefaultAsync(
+            x =>
+                x.VariantId == variantId
+                && x.WarehouseId == warehouseId,
+            cancellationToken
+        );
 
         if (inventory is null)
         {
@@ -73,7 +101,7 @@ public sealed class InventoryService : IInventoryService
                 VariantId = variantId,
                 AvailableQuantity = quantity,
                 ReservedQuantity = 0,
-                MinimumQuantity = 0
+                MinimumQuantity = 0,
             };
 
             _context.Inventory.Add(inventory);
@@ -90,7 +118,7 @@ public sealed class InventoryService : IInventoryService
             Type = StockMovementType.RECEIPT,
             Quantity = quantity,
             Reason = "Пополнение остатка на складе",
-            CreatedAt = DateTimeOffset.UtcNow
+            CreatedAt = DateTimeOffset.UtcNow,
         };
 
         _context.StockMovements.Add(movement);
@@ -102,21 +130,31 @@ public sealed class InventoryService : IInventoryService
         Guid variantId,
         Guid warehouseId,
         int quantity,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         if (quantity <= 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(quantity), "Количество списания должно быть больше нуля.");
+            throw new ArgumentOutOfRangeException(
+                nameof(quantity),
+                "Количество списания должно быть больше нуля."
+            );
         }
 
-        var inventory = await _context.Inventory
-            .FirstOrDefaultAsync(x => x.VariantId == variantId && x.WarehouseId == warehouseId, cancellationToken)
+        var inventory =
+            await _context.Inventory.FirstOrDefaultAsync(
+                x =>
+                    x.VariantId == variantId
+                    && x.WarehouseId == warehouseId,
+                cancellationToken
+            )
             ?? throw new InvalidOperationException($"Товар с вариантом {variantId} не найден на складе {warehouseId}.");
 
         if (inventory.AvailableForSale < quantity)
         {
             throw new InvalidOperationException(
-                $"Недостаточно товара на складе. Доступно к списанию: {inventory.AvailableForSale}, запрошено: {quantity}.");
+                $"Недостаточно товара на складе. Доступно к списанию: {inventory.AvailableForSale}, запрошено: {quantity}."
+            );
         }
 
         inventory.AvailableQuantity -= quantity;
@@ -128,7 +166,7 @@ public sealed class InventoryService : IInventoryService
             Type = StockMovementType.WRITE_OFF,
             Quantity = quantity,
             Reason = "Ручное списание со склада",
-            CreatedAt = DateTimeOffset.UtcNow
+            CreatedAt = DateTimeOffset.UtcNow,
         };
 
         _context.StockMovements.Add(movement);
@@ -139,26 +177,37 @@ public sealed class InventoryService : IInventoryService
     public async Task<List<InventoryReservation>> ReserveItemsAsync(
         Guid orderId,
         List<OrderItemRequest> items,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
-        if (items is null || items.Count == 0)
+        if (items is null
+            || items.Count == 0)
         {
-            throw new ArgumentException("Список позиций для резервирования не может быть пустым.", nameof(items));
+            throw new ArgumentException(
+                "Список позиций для резервирования не может быть пустым.",
+                nameof(items)
+            );
         }
 
         var reservations = new List<InventoryReservation>();
 
         foreach (var item in items)
         {
-            var inventory = await _context.Inventory
-                .Where(x => x.VariantId == item.VariantId && (x.AvailableQuantity - x.ReservedQuantity) >= item.Quantity)
+            var inventory = await _context
+                .Inventory
+                .Where(
+                    x =>
+                        x.VariantId == item.VariantId
+                        && (x.AvailableQuantity - x.ReservedQuantity) >= item.Quantity
+                )
                 .OrderByDescending(x => x.AvailableQuantity - x.ReservedQuantity)
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (inventory is null)
             {
                 throw new InvalidOperationException(
-                    $"Недостаточно товара для варианта {item.VariantId} в количестве {item.Quantity}.");
+                    $"Недостаточно товара для варианта {item.VariantId} в количестве {item.Quantity}."
+                );
             }
 
             inventory.ReservedQuantity += item.Quantity;
@@ -171,7 +220,7 @@ public sealed class InventoryService : IInventoryService
                 WarehouseId = inventory.WarehouseId,
                 Quantity = item.Quantity,
                 Status = ReservationStatus.ACTIVE,
-                ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(30)
+                ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(30),
             };
 
             reservations.Add(reservation);
@@ -186,7 +235,7 @@ public sealed class InventoryService : IInventoryService
                 Reason = $"Резерв под заказ {orderId}",
                 ReferenceType = "Order",
                 ReferenceId = orderId,
-                CreatedAt = DateTimeOffset.UtcNow
+                CreatedAt = DateTimeOffset.UtcNow,
             };
 
             _context.StockMovements.Add(movement);
@@ -197,10 +246,18 @@ public sealed class InventoryService : IInventoryService
         return reservations;
     }
 
-    public async Task ConfirmReservationAsync(Guid orderId, CancellationToken cancellationToken = default)
+    public async Task ConfirmReservationAsync(
+        Guid orderId,
+        CancellationToken cancellationToken = default
+    )
     {
-        var reservations = await _context.InventoryReservations
-            .Where(r => r.OrderId == orderId && r.Status == ReservationStatus.ACTIVE)
+        var reservations = await _context
+            .InventoryReservations
+            .Where(
+                r =>
+                    r.OrderId == orderId
+                    && r.Status == ReservationStatus.ACTIVE
+            )
             .ToListAsync(cancellationToken);
 
         if (reservations.Count == 0)
@@ -210,13 +267,23 @@ public sealed class InventoryService : IInventoryService
 
         foreach (var reservation in reservations)
         {
-            var inventory = await _context.Inventory
-                .FirstOrDefaultAsync(x => x.VariantId == reservation.VariantId && x.WarehouseId == reservation.WarehouseId, cancellationToken);
+            var inventory = await _context.Inventory.FirstOrDefaultAsync(
+                x =>
+                    x.VariantId == reservation.VariantId
+                    && x.WarehouseId == reservation.WarehouseId,
+                cancellationToken
+            );
 
             if (inventory is not null)
             {
-                inventory.ReservedQuantity = Math.Max(0, inventory.ReservedQuantity - reservation.Quantity);
-                inventory.AvailableQuantity = Math.Max(0, inventory.AvailableQuantity - reservation.Quantity);
+                inventory.ReservedQuantity = Math.Max(
+                    0,
+                    inventory.ReservedQuantity - reservation.Quantity
+                );
+                inventory.AvailableQuantity = Math.Max(
+                    0,
+                    inventory.AvailableQuantity - reservation.Quantity
+                );
 
                 var movement = new StockMovement
                 {
@@ -227,7 +294,7 @@ public sealed class InventoryService : IInventoryService
                     Reason = $"Списание и продажа по заказу {orderId}",
                     ReferenceType = "Order",
                     ReferenceId = orderId,
-                    CreatedAt = DateTimeOffset.UtcNow
+                    CreatedAt = DateTimeOffset.UtcNow,
                 };
 
                 _context.StockMovements.Add(movement);
@@ -239,10 +306,18 @@ public sealed class InventoryService : IInventoryService
         await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task ReleaseReservationAsync(Guid orderId, CancellationToken cancellationToken = default)
+    public async Task ReleaseReservationAsync(
+        Guid orderId,
+        CancellationToken cancellationToken = default
+    )
     {
-        var reservations = await _context.InventoryReservations
-            .Where(r => r.OrderId == orderId && r.Status == ReservationStatus.ACTIVE)
+        var reservations = await _context
+            .InventoryReservations
+            .Where(
+                r =>
+                    r.OrderId == orderId
+                    && r.Status == ReservationStatus.ACTIVE
+            )
             .ToListAsync(cancellationToken);
 
         if (reservations.Count == 0)
@@ -252,12 +327,19 @@ public sealed class InventoryService : IInventoryService
 
         foreach (var reservation in reservations)
         {
-            var inventory = await _context.Inventory
-                .FirstOrDefaultAsync(x => x.VariantId == reservation.VariantId && x.WarehouseId == reservation.WarehouseId, cancellationToken);
+            var inventory = await _context.Inventory.FirstOrDefaultAsync(
+                x =>
+                    x.VariantId == reservation.VariantId
+                    && x.WarehouseId == reservation.WarehouseId,
+                cancellationToken
+            );
 
             if (inventory is not null)
             {
-                inventory.ReservedQuantity = Math.Max(0, inventory.ReservedQuantity - reservation.Quantity);
+                inventory.ReservedQuantity = Math.Max(
+                    0,
+                    inventory.ReservedQuantity - reservation.Quantity
+                );
 
                 var movement = new StockMovement
                 {
@@ -268,7 +350,7 @@ public sealed class InventoryService : IInventoryService
                     Reason = $"Освобождение резерва для заказа {orderId}",
                     ReferenceType = "Order",
                     ReferenceId = orderId,
-                    CreatedAt = DateTimeOffset.UtcNow
+                    CreatedAt = DateTimeOffset.UtcNow,
                 };
 
                 _context.StockMovements.Add(movement);

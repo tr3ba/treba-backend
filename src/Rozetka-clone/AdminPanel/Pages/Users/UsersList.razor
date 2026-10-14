@@ -2,7 +2,6 @@
 @rendermode InteractiveServer
 @using System.Globalization
 @inject IUsersApiClient UsersApiClient
-@inject IConfiguration Configuration
 
 <PageTitle>@L["Users"]</PageTitle>
 
@@ -12,14 +11,6 @@
         <h1>@L["UsersManagement"]</h1>
     </div>
     <div class="users-header-actions">
-        @if (!_isLoading && _result is not null)
-        {
-            <div class="users-total">
-                <span class="users-total-icon"><i class="bi bi-people"></i></span>
-                <span class="users-total-label">@L["TotalUsers"] @if (_usingDemoData) { <em>@L["DemoData"]</em> }</span>
-                <strong>@_result.TotalElements</strong>
-            </div>
-        }
         <a class="primary-button users-create-button" href="/users/create"><i class="bi bi-person-plus"></i> @L["CreateUser"]</a>
     </div>
 </section>
@@ -149,7 +140,6 @@
     private string _appliedStatus = string.Empty;
     private string? _errorMessage;
     private bool _isLoading = true;
-    private bool _usingDemoData;
     private CancellationTokenSource? _searchDebounce;
 
     protected override Task OnInitializedAsync() => LoadPageAsync(1);
@@ -161,20 +151,6 @@
 
         try
         {
-            if (Configuration.GetValue<bool>("UseDemoData"))
-            {
-                _usingDemoData = true;
-                var matchingUsers = DemoUsers
-                    .Where(user => string.IsNullOrWhiteSpace(_appliedSearch) ||
-                        $"{user.FirstName} {user.LastName} {user.Email} {user.Phone}"
-                            .Contains(_appliedSearch, StringComparison.OrdinalIgnoreCase))
-                    .Where(user => string.IsNullOrWhiteSpace(_appliedStatus) || user.Status == _appliedStatus)
-                    .ToList();
-                _result = new PagedResponse<UserListItemResponse>(matchingUsers, 1, PageSize, matchingUsers.Count, 1);
-                return;
-            }
-
-            _usingDemoData = false;
             _result = await UsersApiClient.GetUsersAsync(page, PageSize, _appliedSearch, _appliedStatus);
         }
         catch (HttpRequestException)
@@ -251,12 +227,4 @@
     private static string FormatDate(DateTimeOffset value) =>
         value.ToLocalTime().ToString("g", CultureInfo.CurrentCulture);
 
-    private static readonly IReadOnlyList<UserListItemResponse> DemoUsers =
-    [
-        new(Guid.Parse("a92c6542-dde4-44c8-97e5-8c61ce600001"), "anna.demo@treba.local", "+380 50 111 00 01", "Анна", "Коваль", "Active", DateTimeOffset.Now.AddDays(-18), DateTimeOffset.Now.AddHours(-2)),
-        new(Guid.Parse("a92c6542-dde4-44c8-97e5-8c61ce600002"), "bohdan.demo@treba.local", "+380 50 111 00 02", "Богдан", "Мельник", "Active", DateTimeOffset.Now.AddDays(-14), DateTimeOffset.Now.AddDays(-1)),
-        new(Guid.Parse("a92c6542-dde4-44c8-97e5-8c61ce600003"), "iryna.demo@treba.local", "+380 50 111 00 03", "Ірина", "Шевченко", "PendingActivation", DateTimeOffset.Now.AddDays(-6), null),
-        new(Guid.Parse("a92c6542-dde4-44c8-97e5-8c61ce600004"), "maksym.demo@treba.local", "+380 50 111 00 04", "Максим", "Бондар", "Blocked", DateTimeOffset.Now.AddDays(-31), DateTimeOffset.Now.AddDays(-8)),
-        new(Guid.Parse("a92c6542-dde4-44c8-97e5-8c61ce600005"), "olena.demo@treba.local", "+380 50 111 00 05", "Олена", "Ткаченко", "Active", DateTimeOffset.Now.AddDays(-2), DateTimeOffset.Now.AddMinutes(-36))
-    ];
 }

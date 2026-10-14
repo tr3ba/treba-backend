@@ -8,30 +8,37 @@ namespace Application.Sellers
     {
         Task<SellerDto> CreateAsync(
             CreateSellerRequest request,
-            CancellationToken cancellationToken = default);
+            CancellationToken cancellationToken = default
+        );
 
         Task<SellerDto?> GetByIdAsync(
             Guid sellerId,
-            CancellationToken cancellationToken = default);
+            CancellationToken cancellationToken = default
+        );
 
         Task<SellerDto?> GetByUserIdAsync(
             Guid userId,
-            CancellationToken cancellationToken = default);
+            CancellationToken cancellationToken = default
+        );
 
         Task<IReadOnlyList<SellerDto>> GetAllAsync(
-            CancellationToken cancellationToken = default);
+            CancellationToken cancellationToken = default
+        );
 
         Task<SellerDto?> UpdateAsync(
             Guid sellerId,
             UpdateSellerRequest request,
-            CancellationToken cancellationToken = default);
+            CancellationToken cancellationToken = default
+        );
 
         Task<SellerDto?> ApproveAsync(
             Guid sellerId,
-            CancellationToken cancellationToken = default);
+            CancellationToken cancellationToken = default
+        );
 
         Task<SellerDto?> SuspendAsync(
             Guid sellerId,
-            CancellationToken cancellationToken = default);
+            CancellationToken cancellationToken = default
+        );
     }
 }

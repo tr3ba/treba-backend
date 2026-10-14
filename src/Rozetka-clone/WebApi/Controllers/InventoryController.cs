@@ -12,7 +12,9 @@ public sealed class InventoryController : ControllerBase
 {
     private readonly IInventoryService _inventoryService;
 
-    public InventoryController(IInventoryService inventoryService)
+    public InventoryController(
+        IInventoryService inventoryService
+    )
     {
         _inventoryService = inventoryService;
     }
@@ -21,12 +23,23 @@ public sealed class InventoryController : ControllerBase
     [AllowAnonymous]
     [ProducesResponseType(typeof(InventoryDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetInventory(Guid variantId, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetInventory(
+        Guid variantId,
+        CancellationToken cancellationToken
+    )
     {
-        var inventory = await _inventoryService.GetInventoryAsync(variantId, cancellationToken);
+        var inventory = await _inventoryService.GetInventoryAsync(
+            variantId,
+            cancellationToken
+        );
         if (inventory is null)
         {
-            return NotFound(new { message = $"Остатки для варианта товара {variantId} не найдены." });
+            return NotFound(
+                new
+                {
+                    message = $"Остатки для варианта товара {variantId} не найдены."
+                }
+            );
         }
 
         return Ok(inventory);
@@ -38,10 +51,22 @@ public sealed class InventoryController : ControllerBase
     public async Task<IActionResult> CheckAvailability(
         Guid variantId,
         [FromQuery] int quantity = 1,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
-        var isAvailable = await _inventoryService.IsAvailableAsync(variantId, quantity, cancellationToken);
-        return Ok(new { variantId, requestedQuantity = quantity, isAvailable });
+        var isAvailable = await _inventoryService.IsAvailableAsync(
+            variantId,
+            quantity,
+            cancellationToken
+        );
+        return Ok(
+            new
+            {
+                variantId,
+                requestedQuantity = quantity,
+                isAvailable,
+            }
+        );
     }
 
     [HttpPost("increase")]
@@ -50,7 +75,8 @@ public sealed class InventoryController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> IncreaseStock(
         [FromBody] AdjustStockRequest request,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         try
         {
@@ -58,13 +84,19 @@ public sealed class InventoryController : ControllerBase
                 request.VariantId,
                 request.WarehouseId,
                 request.Quantity,
-                cancellationToken);
+                cancellationToken
+            );
 
             return NoContent();
         }
         catch (ArgumentOutOfRangeException ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(
+                new
+                {
+                    message = ex.Message
+                }
+            );
         }
     }
 
@@ -75,7 +107,8 @@ public sealed class InventoryController : ControllerBase
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> DecreaseStock(
         [FromBody] AdjustStockRequest request,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         try
         {
@@ -83,17 +116,28 @@ public sealed class InventoryController : ControllerBase
                 request.VariantId,
                 request.WarehouseId,
                 request.Quantity,
-                cancellationToken);
+                cancellationToken
+            );
 
             return NoContent();
         }
         catch (ArgumentOutOfRangeException ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(
+                new
+                {
+                    message = ex.Message
+                }
+            );
         }
         catch (InvalidOperationException ex)
         {
-            return Conflict(new { message = ex.Message });
+            return Conflict(
+                new
+                {
+                    message = ex.Message
+                }
+            );
         }
     }
 
@@ -104,42 +148,66 @@ public sealed class InventoryController : ControllerBase
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> ReserveItems(
         [FromBody] ReserveItemsRequest request,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         try
         {
             var reservations = await _inventoryService.ReserveItemsAsync(
                 request.OrderId,
                 request.Items,
-                cancellationToken);
+                cancellationToken
+            );
 
             return Ok(reservations);
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(
+                new
+                {
+                    message = ex.Message
+                }
+            );
         }
         catch (InvalidOperationException ex)
         {
-            return Conflict(new { message = ex.Message });
+            return Conflict(
+                new
+                {
+                    message = ex.Message
+                }
+            );
         }
     }
 
     [HttpPost("reservations/{orderId:guid}/confirm")]
     [Authorize(Roles = $"{Roles.Manager},{Roles.Administrator}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> ConfirmReservation(Guid orderId, CancellationToken cancellationToken)
+    public async Task<IActionResult> ConfirmReservation(
+        Guid orderId,
+        CancellationToken cancellationToken
+    )
     {
-        await _inventoryService.ConfirmReservationAsync(orderId, cancellationToken);
+        await _inventoryService.ConfirmReservationAsync(
+            orderId,
+            cancellationToken
+        );
         return NoContent();
     }
 
     [HttpPost("reservations/{orderId:guid}/release")]
     [Authorize(Roles = $"{Roles.Manager},{Roles.Administrator}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> ReleaseReservation(Guid orderId, CancellationToken cancellationToken)
+    public async Task<IActionResult> ReleaseReservation(
+        Guid orderId,
+        CancellationToken cancellationToken
+    )
     {
-        await _inventoryService.ReleaseReservationAsync(orderId, cancellationToken);
+        await _inventoryService.ReleaseReservationAsync(
+            orderId,
+            cancellationToken
+        );
         return NoContent();
     }
 }

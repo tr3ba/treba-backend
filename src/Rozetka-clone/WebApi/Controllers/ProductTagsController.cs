@@ -1,22 +1,28 @@
-﻿using Application.ProductTags;
+using Application.ProductTags;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebApi.Controllers
 {
     [ApiController]
+    [Authorize(Roles = Domain.Entities.Users.Roles.Administrator)]
     [Route("api/v1/product-tags")]
     public sealed class ProductTagsController : ControllerBase
     {
         private readonly IProductTagService _service;
 
-        public ProductTagsController(IProductTagService service)
+        public ProductTagsController(
+            IProductTagService service
+        )
         {
             _service = service;
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public async Task<ActionResult<IReadOnlyList<ProductTagDto>>> GetAll(
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken
+        )
         {
             var tags = await _service.GetAllAsync(cancellationToken);
 
@@ -24,16 +30,21 @@ namespace WebApi.Controllers
         }
 
         [HttpGet("{tagId:guid}")]
+        [AllowAnonymous]
         public async Task<ActionResult<ProductTagDto>> GetById(
             Guid tagId,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken
+        )
         {
             var tag = await _service.GetByIdAsync(
                 tagId,
-                cancellationToken);
+                cancellationToken
+            );
 
             if (tag is null)
+            {
                 return NotFound();
+            }
 
             return Ok(tag);
         }
@@ -41,31 +52,41 @@ namespace WebApi.Controllers
         [HttpPost]
         public async Task<ActionResult<ProductTagDto>> Create(
             [FromBody] CreateProductTagRequest request,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken
+        )
         {
             var tag = await _service.CreateAsync(
                 request,
-                cancellationToken);
+                cancellationToken
+            );
 
             return CreatedAtAction(
                 nameof(GetById),
-                new { tagId = tag.Id },
-                tag);
+                new
+                {
+                    tagId = tag.Id
+                },
+                tag
+            );
         }
 
         [HttpPatch("{tagId:guid}")]
         public async Task<ActionResult<ProductTagDto>> Update(
             Guid tagId,
             [FromBody] UpdateProductTagRequest request,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken
+        )
         {
             var tag = await _service.UpdateAsync(
                 tagId,
                 request,
-                cancellationToken);
+                cancellationToken
+            );
 
             if (tag is null)
+            {
                 return NotFound();
+            }
 
             return Ok(tag);
         }
@@ -73,26 +94,33 @@ namespace WebApi.Controllers
         [HttpDelete("{tagId:guid}")]
         public async Task<IActionResult> Delete(
             Guid tagId,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken
+        )
         {
             var deleted = await _service.DeleteAsync(
                 tagId,
-                cancellationToken);
+                cancellationToken
+            );
 
             if (!deleted)
+            {
                 return NotFound();
+            }
 
             return NoContent();
         }
 
         [HttpGet("/api/v1/products/{productId:guid}/tags")]
+        [AllowAnonymous]
         public async Task<ActionResult<IReadOnlyList<ProductTagDto>>> GetProductTags(
             Guid productId,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken
+        )
         {
             var tags = await _service.GetProductTagsAsync(
                 productId,
-                cancellationToken);
+                cancellationToken
+            );
 
             return Ok(tags);
         }
@@ -101,15 +129,19 @@ namespace WebApi.Controllers
         public async Task<IActionResult> AddTagToProduct(
             Guid productId,
             Guid tagId,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken
+        )
         {
             var added = await _service.AddTagToProductAsync(
                 productId,
                 tagId,
-                cancellationToken);
+                cancellationToken
+            );
 
             if (!added)
+            {
                 return NoContent();
+            }
 
             return NoContent();
         }
@@ -118,15 +150,19 @@ namespace WebApi.Controllers
         public async Task<IActionResult> RemoveTagFromProduct(
             Guid productId,
             Guid tagId,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken
+        )
         {
             var removed = await _service.RemoveTagFromProductAsync(
                 productId,
                 tagId,
-                cancellationToken);
+                cancellationToken
+            );
 
             if (!removed)
+            {
                 return NotFound();
+            }
 
             return NoContent();
         }

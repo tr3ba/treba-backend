@@ -1,4 +1,4 @@
-﻿using Domain.Entities;
+using Domain.Entities;
 using Domain.Entities.Attribute;
 using Domain.Entities.Inventory;
 using Domain.Entities.Orders;
@@ -19,6 +19,8 @@ namespace Application.Abstractions
         DbSet<Address> Addresses { get; }
 
         DbSet<Role> Roles { get; }
+
+        DbSet<AuthenticationChallenge> AuthenticationChallenges { get; }
 
         DbSet<Permission> Permissions { get; }
 
@@ -42,31 +44,44 @@ namespace Application.Abstractions
 
         DbSet<ProductAttributeValue> ProductAttributeValues { get; }
 
+        DbSet<Wishlist> Wishlists { get; }
+
+        DbSet<Review> Reviews { get; }
+
+        DbSet<ReviewImage> ReviewImages { get; }
+
+        DbSet<ReviewVote> ReviewVotes { get; }
+
+        DbSet<SellerReviewResponse> SellerReviewResponses { get; }
+
+        DbSet<WishlistItem> WishlistItems { get; }
+
         DbSet<Seller> Sellers { get; }
+      
         DbSet<Store> Stores { get; }
 
         DbSet<Cart> Carts { get; }
 
         DbSet<CartItem> CartItems { get; }
-        
-        public DbSet<Warehouse> Warehouses { get; } 
-        
-        public DbSet<Domain.Entities.Inventory.Inventory> Inventory { get; } 
-        
-        public DbSet<StockMovement> StockMovements { get; } 
-        
-        public DbSet<InventoryReservation> InventoryReservations { get; } 
-        
+
+        public DbSet<Warehouse> Warehouses { get; }
+
+        public DbSet<Domain.Entities.Inventory.Inventory> Inventory { get; }
+
+        public DbSet<StockMovement> StockMovements { get; }
+
+        public DbSet<InventoryReservation> InventoryReservations { get; }
+
         DbSet<Order> Orders { get; }
-        
+
         DbSet<OrderItem> OrderItems { get; }
-        
+
         DbSet<OrderAddress> OrderAddresses { get; }
-        
+
         DbSet<OrderStatusHistory> OrderStatusHistories { get; }
 
         Task<int> SaveChangesAsync(
-            CancellationToken cancellationToken = default);
-
+            CancellationToken cancellationToken = default
+        );
     }
 }

@@ -1,4 +1,7 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Contracts.Authentication;
 
 public sealed record RefreshTokenRequest(
-    string RefreshToken);
+    [Required, StringLength(500)] string RefreshToken
+);

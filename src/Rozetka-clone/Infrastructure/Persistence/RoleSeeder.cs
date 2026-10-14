@@ -12,10 +12,12 @@ public static class RoleSeeder
         (Roles.Seller, "Продавец маркетплейса"),
         (Roles.Manager, "Менеджер магазина"),
         (Roles.Moderator, "Модератор контента"),
-        (Roles.Administrator, "Администратор платформы")
+        (Roles.Administrator, "Администратор платформы"),
     ];
 
-    public static async Task SeedRolesAsync(this IServiceProvider serviceProvider)
+    public static async Task SeedRolesAsync(
+        this IServiceProvider serviceProvider
+    )
     {
         using var scope = serviceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -25,8 +27,20 @@ public static class RoleSeeder
             .ToListAsync();
 
         var missingRoles = DefaultRoles
-            .Where(r => !existingRoles.Contains(r.Name, StringComparer.OrdinalIgnoreCase))
-            .Select(r => Role.Create(r.Name, r.Description))
+            .Where(
+                r =>
+                    !existingRoles.Contains(
+                        r.Name,
+                        StringComparer.OrdinalIgnoreCase
+                    )
+            )
+            .Select(
+                r =>
+                    Role.Create(
+                        r.Name,
+                        r.Description
+                    )
+            )
             .ToList();
 
         if (missingRoles.Count > 0)

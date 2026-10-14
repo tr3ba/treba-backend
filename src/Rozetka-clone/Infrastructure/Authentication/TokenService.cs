@@ -13,38 +13,69 @@ public sealed class TokenService : ITokenService
 {
     private readonly IConfiguration _configuration;
 
-    public TokenService(IConfiguration configuration)
+    public TokenService(
+        IConfiguration configuration
+    )
     {
         _configuration = configuration;
     }
 
-    public string GenerateAccessToken(User user, string roleName)
+    public string GenerateAccessToken(
+        User user,
+        string roleName
+    )
     {
-        var secretKey = _configuration["Jwt:SecretKey"] 
-                        ?? throw new InvalidOperationException("JWT SecretKey is missing from configuration.");
+        var secretKey =
+            _configuration["Jwt:SecretKey"]
+            ?? throw new InvalidOperationException("JWT SecretKey is missing from configuration.");
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
-        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        var credentials = new SigningCredentials(
+            key,
+            SecurityAlgorithms.HmacSha256
+        );
 
         var claims = new List<Claim>
         {
-            new("sub", user.Id.ToString()),
-            new("email", user.Email),
-            new("role", roleName),
-            new("firstName", user.FirstName),
-            new("lastName", user.LastName),
-            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            new(
+                "sub",
+                user.Id.ToString()
+            ),
+            new(
+                "email",
+                user.Email
+            ),
+            new(
+                "role",
+                roleName
+            ),
+            new(
+                "firstName",
+                user.FirstName
+            ),
+            new(
+                "lastName",
+                user.LastName
+            ),
+            new(
+                JwtRegisteredClaimNames.Jti,
+                Guid
+                    .NewGuid()
+                    .ToString()
+            ),
         };
 
         var expirationMinutes = double.Parse(
-            _configuration["Jwt:ExpirationMinutes"] ?? _configuration["Jwt:ExpiryMinutes"] ?? "60");
+            _configuration["Jwt:ExpirationMinutes"] ?? _configuration["Jwt:ExpiryMinutes"] ?? "60"
+        );
 
         var token = new JwtSecurityToken(
             issuer: _configuration["Jwt:Issuer"],
             audience: _configuration["Jwt:Audience"],
             claims: claims,
             expires: DateTime.UtcNow.AddMinutes(expirationMinutes),
-            signingCredentials: credentials);
+            signingCredentials: credentials
+        );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
@@ -60,7 +91,8 @@ public sealed class TokenService : ITokenService
     public DateTimeOffset GetAccessTokenExpiration()
     {
         var expirationMinutes = double.Parse(
-            _configuration["Jwt:ExpirationMinutes"] ?? _configuration["Jwt:ExpiryMinutes"] ?? "60");
+            _configuration["Jwt:ExpirationMinutes"] ?? _configuration["Jwt:ExpiryMinutes"] ?? "60"
+        );
         return DateTimeOffset.UtcNow.AddMinutes(expirationMinutes);
     }
 }

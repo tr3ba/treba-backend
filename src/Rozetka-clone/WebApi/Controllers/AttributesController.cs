@@ -1,43 +1,55 @@
-﻿using Application.Attributes;
+using Application.Attributes;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebApi.Controllers
 {
     [ApiController]
+    [Authorize(Roles = Domain.Entities.Users.Roles.Administrator)]
     [Route("api/v1/attributes")]
     public sealed class AttributesController : ControllerBase
     {
         private readonly IAttributeService _attributeService;
 
-        public AttributesController(IAttributeService attributeService)
+        public AttributesController(
+            IAttributeService attributeService
+        )
         {
             _attributeService = attributeService;
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public async Task<ActionResult<IReadOnlyList<AttributeDto>>> GetByCategory(
             [FromQuery] Guid categoryId,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken
+        )
         {
             var attributes = await _attributeService.GetByCategoryAsync(
                 categoryId,
-                cancellationToken);
+                cancellationToken
+            );
 
             return Ok(attributes);
         }
 
         [HttpGet("{id:guid}")]
+        [AllowAnonymous]
         public async Task<ActionResult<AttributeDto>> GetById(
             Guid id,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken
+        )
         {
             var attribute = await _attributeService.GetByIdAsync(
                 id,
-                cancellationToken);
+                cancellationToken
+            );
 
             if (attribute is null)
+            {
                 return NotFound();
+            }
 
             return Ok(attribute);
         }
@@ -45,43 +57,56 @@ namespace WebApi.Controllers
         [HttpPost]
         public async Task<ActionResult<AttributeDto>> Create(
             [FromBody] CreateAttributeRequest request,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken
+        )
         {
             var attribute = await _attributeService.CreateAsync(
                 request,
-                cancellationToken);
+                cancellationToken
+            );
 
             return CreatedAtAction(
                 nameof(GetById),
-                new { id = attribute.Id },
-                attribute);
+                new
+                {
+                    id = attribute.Id
+                },
+                attribute
+            );
         }
 
         [HttpPatch("{id:guid}")]
         public async Task<ActionResult<AttributeDto>> Update(
             Guid id,
             [FromBody] UpdateAttributeRequest request,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken
+        )
         {
             var attribute = await _attributeService.UpdateAsync(
                 id,
                 request,
-                cancellationToken);
+                cancellationToken
+            );
 
             if (attribute is null)
+            {
                 return NotFound();
+            }
 
             return Ok(attribute);
         }
 
         [HttpGet("{attributeId:guid}/options")]
+        [AllowAnonymous]
         public async Task<ActionResult<IReadOnlyList<AttributeOptionDto>>> GetOptions(
             Guid attributeId,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken
+        )
         {
             var options = await _attributeService.GetOptionsAsync(
                 attributeId,
-                cancellationToken);
+                cancellationToken
+            );
 
             return Ok(options);
         }
@@ -90,16 +115,19 @@ namespace WebApi.Controllers
         public async Task<ActionResult<AttributeOptionDto>> CreateOption(
             Guid attributeId,
             [FromBody] CreateAttributeOptionRequest request,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken
+        )
         {
             var option = await _attributeService.CreateOptionAsync(
                 attributeId,
                 request,
-                cancellationToken);
+                cancellationToken
+            );
 
             return Created(
                 $"/api/v1/attributes/{attributeId}/options/{option.Id}",
-                option);
+                option
+            );
         }
 
         [HttpPatch("{attributeId:guid}/options/{optionId:guid}")]
@@ -107,16 +135,20 @@ namespace WebApi.Controllers
             Guid attributeId,
             Guid optionId,
             [FromBody] UpdateAttributeOptionRequest request,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken
+        )
         {
             var option = await _attributeService.UpdateOptionAsync(
                 attributeId,
                 optionId,
                 request,
-                cancellationToken);
+                cancellationToken
+            );
 
             if (option is null)
+            {
                 return NotFound();
+            }
 
             return Ok(option);
         }

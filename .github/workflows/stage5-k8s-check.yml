@@ -1,0 +1,22 @@
+
+name: Stage 5 Kubernetes Check
+
+on:
+  pull_request:
+    paths:
+      - 'k8s/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate Kubernetes YAML
+        run: |
+          pip install PyYAML==6.0.2
+          python -c "import glob,yaml; [list(yaml.safe_load_all(open(f,encoding='utf-8-sig'))) for f in glob.glob('k8s/**/*.yaml',recursive=True)]"

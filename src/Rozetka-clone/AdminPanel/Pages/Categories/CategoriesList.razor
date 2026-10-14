@@ -1,69 +1,83 @@
 @page "/categories"
+@inject ICategoriesApiClient Api
+@using System.ComponentModel.DataAnnotations
 
 <PageTitle>@L["Categories"] — Treba Admin</PageTitle>
-
-<section class="page-hero categories-hero">
-    <div>
-        <p class="eyebrow">@L["CatalogStructure"]</p>
-        <h1>@L["CategoriesManagement"]</h1>
-    </div>
-    <button class="primary-button" type="button"><i class="bi bi-plus-lg"></i>@L["CreateCategory"]</button>
-</section>
-
-<section class="category-overview">
-    <article class="category-overview-main">
-        <span>@L["ProductCoverage"]</span><strong>98.4%</strong><div class="coverage-track"><i style="width:98.4%"></i></div><small>24 860 @L["ProductsCategorized"]</small>
-    </article>
-    <article><i class="bi bi-grid-fill"></i><div><strong>148</strong><span>@L["ActiveCategories"]</span></div></article>
-    <article><i class="bi bi-eye-slash"></i><div><strong>7</strong><span>@L["HiddenCategories"]</span></div></article>
-</section>
-
+<section class="page-hero categories-hero"><div><p class="eyebrow">@L["CatalogStructure"]</p><h1>@L["CategoriesManagement"]</h1><p>@L["CategoriesSubtitle"]</p></div><button class="primary-button" @onclick="New">@L["CreateCategory"]</button></section>
+@if (error is not null) { <p class="feedback-error" role="alert">@error</p> }
+@if (message is not null) { <p class="feedback-success" role="status">@message</p> }
 <section class="categories-workspace">
-    <div class="category-tree-panel card-box">
-        <div class="card-box-header"><h2 class="card-box-title">@L["CategoryTree"]</h2><button class="row-menu" type="button" aria-label="@L["Actions"]"><i class="bi bi-three-dots"></i></button></div>
-        <label class="workspace-search"><i class="bi bi-search"></i><input type="search" placeholder="@L["CategorySearchPlaceholder"]" /></label>
+    <div class="category-tree-panel card-box"><div class="card-box-header"><h2>@L["CategoryTree"]</h2><span>@L["CategoriesCount", Flatten(tree).Count()]</span></div>
+        @if (loading){ <p>@L["Loading"]</p> }
         <nav class="category-tree">
-            @foreach (var branch in CategoryBranches)
-            {
-                <button class="category-tree-row @(branch.Selected ? "selected" : "")" type="button"><span class="category-tree-icon @branch.Color"><i class="bi @branch.Icon"></i></span><span><strong>@branch.Name</strong><small>@branch.Count @L["Products"]</small></span><i class="bi bi-chevron-right"></i></button>
-            }
+        @foreach(var category in Flatten(tree))
+        {
+            <button class="category-tree-row @(editingId == category.Id ? "selected" : "")" @onclick="() => Edit(category)"><span class="category-tree-icon blue"><i class="bi bi-folder"></i></span><span style="padding-left:@(category.Level * 12)px"><strong>@category.Name</strong><small>@category.Slug · @(category.Active ? L["Active"] : L["Hidden"])</small></span></button>
+        }
         </nav>
+        @if (!loading && tree.Count == 0){<p class="empty-state">@L["CreateFirstCategory"]</p>}
     </div>
-
-    <div class="category-content-panel">
-        <div class="category-content-heading"><div><span class="category-hero-icon blue"><i class="bi bi-phone"></i></span><div><p class="eyebrow">@L["SelectedCategory"]</p><h2>@L["Electronics"]</h2><span>8 @L["Subcategories"] · 6 842 @L["Products"]</span></div></div><button class="secondary-button" type="button"><i class="bi bi-pencil"></i>@L["Edit"]</button></div>
-        <div class="subcategory-grid">
-            @foreach (var item in Subcategories)
+    <section class="card-box editor-section category-editor-card"><h2>@(editingId.HasValue ? L["EditCategory"] : L["NewCategory"])</h2>
+        <EditForm Model="model" OnValidSubmit="Save" FormName="category-editor" @key="model">
+            <DataAnnotationsValidator/><ValidationSummary/>
+            <label class="field-group"><span>@L["Name"] *</span><InputText class="form-control" @bind-Value="model.Name" /></label>
+            <label class="field-group"><span>@L["Slug"] *</span><InputText class="form-control" @bind-Value="model.Slug" /></label>
+            @if (!editingId.HasValue)
             {
-                <article class="subcategory-card">
-                    <div class="subcategory-icon"><i class="bi @item.Icon"></i></div>
-                    <div><strong>@item.Name</strong><span>@item.Count @L["Products"]</span></div>
-                    <span class="category-status">@L["Active"]</span>
-                    <button class="row-menu" type="button" aria-label="@L["Actions"]"><i class="bi bi-three-dots-vertical"></i></button>
-                </article>
+                <label class="field-group"><span>@L["ParentCategory"]</span><InputSelect class="form-control" @bind-Value="model.ParentId"><option value="">@L["RootCategory"]</option>@foreach(var c in Flatten(tree)){<option value="@c.Id">@c.Name</option>}</InputSelect></label>
             }
-        </div>
-    </div>
+            <label class="field-group"><span>@L["Description"]</span><InputTextArea class="form-control" rows="3" @bind-Value="model.Description" /></label>
+            <label class="field-group"><span>@L["SortOrder"]</span><InputNumber class="form-control" @bind-Value="model.SortOrder" /></label>
+            <div class="category-editor-actions">
+                <label class="editor-check"><InputCheckbox @bind-Value="model.Active" /><span>@L["ActiveCategory"]</span></label>
+                <button class="primary-button" type="submit" disabled="@busy">@(busy ? L["Saving"] : L["Save"])</button>
+            </div>
+        </EditForm>
+    </section>
 </section>
-
 @code {
-    private IReadOnlyList<CategoryBranch> CategoryBranches =>
-    [
-        new(L["Electronics"], "6 842", "bi-phone", "blue", true),
-        new(L["HomeAndGarden"], "5 106", "bi-house", "green", false),
-        new(L["ClothingAndShoes"], "4 221", "bi-bag", "pink", false),
-        new(L["BeautyAndHealth"], "3 018", "bi-heart-pulse", "red", false),
-        new(L["SportsAndHobby"], "2 795", "bi-bicycle", "amber", false),
-        new(L["Kids"], "2 878", "bi-balloon", "purple", false)
-    ];
-
-    private IReadOnlyList<Subcategory> Subcategories =>
-    [
-        new(L["Smartphones"], "1 248", "bi-phone"), new(L["Laptops"], "846", "bi-laptop"),
-        new(L["Televisions"], "624", "bi-tv"), new(L["Audio"], "1 106", "bi-headphones"),
-        new(L["SmartHome"], "798", "bi-house-gear"), new(L["Accessories"], "2 220", "bi-usb-plug")
-    ];
-
-    private sealed record CategoryBranch(string Name, string Count, string Icon, string Color, bool Selected);
-    private sealed record Subcategory(string Name, string Count, string Icon);
+    private List<CategoryTreeDto> tree=[];
+    private CategoryModel model=new();
+    private Guid? editingId;
+    private bool loading, busy;
+    private string? error, message;
+    protected override Task OnInitializedAsync() => Load();
+    private async Task Load()
+    {
+        loading=true;
+        try { tree=await Api.GetCategoryTreeAsync(); }
+        catch(HttpRequestException ex){error=ex.Message;}
+        finally{loading=false;}
+    }
+    private void New(){editingId=null;model=new();error=null;message=null;}
+    private void Edit(CategoryTreeDto c){editingId=c.Id;model=new(){Name=c.Name,Slug=c.Slug,Active=c.Active,SortOrder=c.SortOrder,Description=c.Description ?? ""};error=null;message=null;}
+    private static IEnumerable<CategoryTreeDto> Flatten(IEnumerable<CategoryTreeDto> nodes)
+    {
+        foreach(var node in nodes){yield return node;foreach(var child in Flatten(node.Children))yield return child;}
+    }
+    private async Task Save()
+    {
+        busy=true;error=null;message=null;
+        try
+        {
+            if(editingId.HasValue)await Api.UpdateCategoryAsync(editingId.Value,new(model.Name,model.Slug,model.Description,null,model.Active,model.SortOrder));
+            else
+            {
+                var created = await Api.CreateCategoryAsync(new(model.ParentId,model.Name,model.Slug,model.Description,null,model.Active,model.SortOrder));
+                editingId = created.Data?.Id;
+            }
+            await Load();message=L["CategorySaved"];
+        }
+        catch(HttpRequestException ex){error=ex.Message;}
+        finally{busy=false;}
+    }
+    private sealed class CategoryModel
+    {
+        [Required,StringLength(200)] public string Name{get;set;}="";
+        [Required,StringLength(200),RegularExpression(@"^[a-z0-9]+(?:-[a-z0-9]+)*$")] public string Slug{get;set;}="";
+        public string Description{get;set;}="";
+        public Guid? ParentId{get;set;}
+        public bool Active{get;set;}=true;
+        public int SortOrder{get;set;}
+    }
 }

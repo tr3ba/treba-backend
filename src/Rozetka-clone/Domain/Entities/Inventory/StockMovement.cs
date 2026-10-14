@@ -5,7 +5,7 @@ namespace Domain.Entities.Inventory;
 public class StockMovement
 {
     public Guid Id { get; set; }
-    
+
     public Guid InventoryId { get; set; }
 
     public StockMovementType Type { get; set; }

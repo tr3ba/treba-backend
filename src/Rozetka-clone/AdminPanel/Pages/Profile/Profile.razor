@@ -1,0 +1,241 @@
+@page "/profile"
+@rendermode InteractiveServer
+@using System.Globalization
+@using System.Security.Claims
+@inject CurrentUserState CurrentUser
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager Navigation
+
+<PageTitle>@L["MyProfile"] — Treba Admin</PageTitle>
+
+<section class="page-hero profile-page-hero">
+    <div>
+        <p class="eyebrow">@L["Account"]</p>
+        <h1>@L["MyProfile"]</h1>
+        <p>@L["ProfileSubtitle"]</p>
+    </div>
+</section>
+
+@if (_loading)
+{
+    <section class="card-box profile-loading" aria-live="polite"><span class="spinner-border spinner-border-sm"></span> @L["LoadingProfile"]</section>
+}
+else if (_loadError is not null)
+{
+    <div class="feedback-error" role="alert">@_loadError</div>
+}
+else
+{
+    <div class="profile-layout">
+        <div class="profile-sidebar">
+        <aside class="card-box profile-preview-card">
+            @if (!string.IsNullOrWhiteSpace(AvatarPreview))
+            {
+                <img class="profile-avatar-preview" src="@AvatarPreview" alt="@L["UserAvatar"]" />
+            }
+            else
+            {
+                <div class="profile-avatar-preview profile-avatar-fallback" aria-hidden="true">@AvatarInitial</div>
+            }
+            <h2>@DisplayName</h2>
+            <p>@_model.Email</p>
+            <span class="profile-role-badge"><i class="bi bi-shield-check"></i> @RoleLabel</span>
+            <label class="avatar-upload-button">
+                <InputFile OnChange="SelectAvatarAsync" accept="image/jpeg,image/png,image/webp,image/gif" />
+                <i class="bi bi-camera"></i>
+                <span>@(_avatarFile is null ? L["UploadPhoto"] : L["ChooseAnotherPhoto"])</span>
+            </label>
+            <small class="avatar-upload-hint">@L["ImageUploadHint"]</small>
+            @if (_avatarFile is not null)
+            {
+                <span class="avatar-file-name" title="@_avatarFile.Name">@_avatarFile.Name</span>
+            }
+            @if (_avatarFile is not null || (!_removeAvatar && CurrentUser.User?.Profile?.AvatarUrl is not null))
+            {
+                <button class="avatar-remove-button" type="button" @onclick="RemoveAvatar"><i class="bi bi-trash3"></i> @L["DeletePhoto"]</button>
+            }
+        </aside>
+        <SecurityPanel />
+        </div>
+
+        <section class="card-box profile-form-card">
+            <EditForm Model="_model" OnValidSubmit="SaveAsync" FormName="profile-editor">
+                <DataAnnotationsValidator />
+
+                <div class="form-section-heading">
+                    <span class="form-section-icon"><i class="bi bi-person"></i></span>
+                    <div><h2>@L["PersonalData"]</h2><p>@L["PersonalDataDesc"]</p></div>
+                </div>
+                <div class="profile-form-grid">
+                    <label class="field-group"><span>@L["FirstName"] <b>*</b></span><InputText class="form-control" @bind-Value="_model.FirstName" autocomplete="given-name" /><ValidationMessage For="@(() => _model.FirstName)" /></label>
+                    <label class="field-group"><span>@L["LastName"] <b>*</b></span><InputText class="form-control" @bind-Value="_model.LastName" autocomplete="family-name" /><ValidationMessage For="@(() => _model.LastName)" /></label>
+                    <label class="field-group"><span>@L["MiddleName"] <em>@L["Optional"]</em></span><InputText class="form-control" @bind-Value="_model.MiddleName" autocomplete="additional-name" /></label>
+                    <label class="field-group"><span>@L["BirthDate"]</span><InputDate class="form-control" @bind-Value="_model.BirthDate" /></label>
+                    <label class="field-group"><span>@L["Gender"]</span><InputSelect class="form-control" @bind-Value="_model.Gender"><option value="">@L["NotSpecified"]</option><option value="female">@L["Female"]</option><option value="male">@L["Male"]</option><option value="other">@L["Other"]</option></InputSelect></label>
+                    <label class="field-group"><span>@L["Role"]</span><input class="form-control profile-readonly" value="@RoleLabel" readonly aria-readonly="true" /></label>
+                </div>
+
+                <div class="form-section-heading form-section-divider">
+                    <span class="form-section-icon"><i class="bi bi-envelope"></i></span>
+                    <div><h2>@L["ContactsAndSettings"]</h2><p>@L["ContactsAndSettingsDesc"]</p></div>
+                </div>
+                <div class="profile-form-grid">
+                    <label class="field-group"><span>@L["Email"] <b>*</b></span><InputText class="form-control" type="email" @bind-Value="_model.Email" autocomplete="email" /><ValidationMessage For="@(() => _model.Email)" /></label>
+                    <label class="field-group"><span>@L["Phone"]</span><InputText class="form-control" type="tel" @bind-Value="_model.Phone" autocomplete="tel" /><ValidationMessage For="@(() => _model.Phone)" /></label>
+                    <label class="field-group"><span>@L["ProfileLanguage"]</span><InputSelect class="form-control" @bind-Value="_model.Language"><option value="uk">@L["Ukrainian"]</option><option value="en">@L["English"]</option><option value="ru">@L["Russian"]</option></InputSelect></label>
+                    <label class="profile-checkbox"><InputCheckbox @bind-Value="_model.MarketingEmailsEnabled" /><span><strong>@L["MarketingEmails"]</strong><small>@L["MarketingEmailsDesc"]</small></span></label>
+                </div>
+
+                <ValidationSummary />
+                @if (_error is not null) { <div class="feedback-error" role="alert">@_error</div> }
+                @if (_saved) { <div class="feedback-success" role="status"><i class="bi bi-check-circle"></i> @L["ProfileSaved"]</div> }
+
+                <div class="profile-form-actions">
+                    <button class="primary-button" type="submit" disabled="@_saving">
+                        @if (_saving) { <span class="spinner-border spinner-border-sm"></span> <span>@L["Saving"]</span> }
+                        else { <i class="bi bi-check2"></i> <span>@L["SaveChanges"]</span> }
+                    </button>
+                </div>
+            </EditForm>
+        </section>
+    </div>
+}
+
+@code {
+    private readonly UpdateCurrentUserRequest _model = new();
+    private bool _loading = true;
+    private bool _saving;
+    private bool _saved;
+    private string? _loadError;
+    private string? _error;
+    private string _role = string.Empty;
+    private string _loadedLanguage = "uk";
+    private IBrowserFile? _avatarFile;
+    private string? _pendingAvatarPreview;
+    private bool _removeAvatar;
+    private const long MaxAvatarBytes = 5 * 1024 * 1024;
+
+    private string? AvatarPreview => _removeAvatar ? null : _pendingAvatarPreview ?? CurrentUser.AvatarDataUrl;
+
+    private string DisplayName
+    {
+        get
+        {
+            var name = $"{_model.FirstName} {_model.LastName}".Trim();
+            return !string.IsNullOrWhiteSpace(name) ? name : (_model.Email.Split('@').FirstOrDefault() ?? L["User"]);
+        }
+    }
+    private string AvatarInitial => DisplayName.Trim()[..1].ToUpper(CultureInfo.CurrentCulture);
+    private string RoleLabel => string.IsNullOrWhiteSpace(_role) ? L["User"] : L[_role];
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            _role = authState.User.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
+            var user = await CurrentUser.LoadAsync();
+            if (user is null) throw new InvalidOperationException(L["ProfileNotFound"]);
+
+            _model.Email = user.Email;
+            _model.FirstName = user.FirstName;
+            _model.LastName = user.LastName;
+            _model.MiddleName = user.MiddleName;
+            _model.Phone = user.Phone;
+            _model.BirthDate = user.Profile?.BirthDate;
+            _model.Gender = user.Profile?.Gender;
+            _model.Language = user.Profile?.Language ?? "uk";
+            _loadedLanguage = _model.Language;
+            _model.MarketingEmailsEnabled = user.Profile?.MarketingEmailsEnabled ?? false;
+        }
+        catch (Exception exception) when (exception is HttpRequestException or InvalidOperationException)
+        {
+            _loadError = L["ProfileLoadError"];
+        }
+        finally { _loading = false; }
+    }
+
+    private async Task SaveAsync()
+    {
+        _saving = true;
+        _saved = false;
+        _error = null;
+        try
+        {
+            await CurrentUser.UpdateAsync(_model);
+            try
+            {
+                if (_removeAvatar)
+                    await CurrentUser.DeleteAvatarAsync();
+                else if (_avatarFile is not null)
+                    await CurrentUser.UploadAvatarAsync(_avatarFile);
+            }
+            catch (Exception exception) when (exception is HttpRequestException or InvalidOperationException or IOException)
+            {
+                _saved = true;
+                _error = $"{L["ProfileAvatarPartialError"]} {exception.Message}";
+                return;
+            }
+
+            _avatarFile = null;
+            _pendingAvatarPreview = null;
+            _removeAvatar = false;
+            _saved = true;
+
+            var selectedLanguage = _model.Language.ToLowerInvariant();
+            var currentLanguage = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+            if (selectedLanguage != _loadedLanguage || selectedLanguage != currentLanguage)
+            {
+                _loadedLanguage = selectedLanguage;
+                var redirectUri = Uri.EscapeDataString("/profile");
+                Navigation.NavigateTo($"/culture/set?culture={selectedLanguage}&redirectUri={redirectUri}", forceLoad: true);
+            }
+        }
+        catch (Exception exception) when (exception is HttpRequestException or InvalidOperationException or IOException)
+        {
+            _error = exception.Message;
+        }
+        finally { _saving = false; }
+    }
+
+    private async Task SelectAvatarAsync(InputFileChangeEventArgs args)
+    {
+        _saved = false;
+        _error = null;
+        var file = args.File;
+        var allowedTypes = new[] { "image/jpeg", "image/png", "image/webp", "image/gif" };
+        if (!allowedTypes.Contains(file.ContentType, StringComparer.OrdinalIgnoreCase))
+        {
+            _error = L["InvalidAvatarType"];
+            return;
+        }
+        if (file.Size == 0 || file.Size > MaxAvatarBytes)
+        {
+            _error = L["InvalidAvatarSize"];
+            return;
+        }
+
+        try
+        {
+            await using var stream = file.OpenReadStream(MaxAvatarBytes);
+            using var memory = new MemoryStream((int)file.Size);
+            await stream.CopyToAsync(memory);
+            _pendingAvatarPreview = $"data:{file.ContentType};base64,{Convert.ToBase64String(memory.ToArray())}";
+            _avatarFile = file;
+            _removeAvatar = false;
+        }
+        catch (IOException)
+        {
+            _error = L["AvatarReadError"];
+        }
+    }
+
+    private void RemoveAvatar()
+    {
+        _avatarFile = null;
+        _pendingAvatarPreview = null;
+        _removeAvatar = CurrentUser.User?.Profile?.AvatarUrl is not null;
+        _saved = false;
+        _error = null;
+    }
+}

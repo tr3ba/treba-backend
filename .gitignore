@@ -38,3 +38,10 @@ appsettings.Local.json
 # macOS
 .DS_Store
 **/.DS_Store
+# Security: local environment secrets
+.env
+.env.*
+!.env.example
+
+# Security: local .NET development configuration
+appsettings.Development.json

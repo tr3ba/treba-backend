@@ -44,6 +44,19 @@ namespace Infrastructure.Migrations
                 nullable: false,
                 defaultValue: new Guid("00000000-0000-0000-0000-000000000000"));
 
+            // Older databases can already contain users while the roles table is empty.
+            // Create the baseline role and backfill those users before adding the FK.
+            migrationBuilder.Sql("""
+                INSERT INTO roles ("Id", "Name", "Description")
+                SELECT '00000000-0000-0000-0000-000000000001', 'Customer', 'Покупатель маркетплейса'
+                WHERE EXISTS (SELECT 1 FROM users)
+                  AND NOT EXISTS (SELECT 1 FROM roles WHERE "Name" = 'Customer');
+
+                UPDATE users
+                SET "RoleId" = (SELECT "Id" FROM roles WHERE "Name" = 'Customer' LIMIT 1)
+                WHERE "RoleId" = '00000000-0000-0000-0000-000000000000';
+                """);
+
             migrationBuilder.CreateTable(
                 name: "brands",
                 columns: table => new

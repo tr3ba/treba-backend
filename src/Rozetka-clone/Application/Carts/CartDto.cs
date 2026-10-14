@@ -10,8 +10,7 @@ namespace Application.Carts
 
         public Guid UserId { get; init; }
 
-        public IReadOnlyList<CartItemDto> Items { get; init; }
-            = Array.Empty<CartItemDto>();
+        public IReadOnlyList<CartItemDto> Items { get; init; } = Array.Empty<CartItemDto>();
 
         public int TotalQuantity { get; init; }
 

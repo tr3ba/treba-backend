@@ -7,4 +7,5 @@ public sealed record InventoryDto(
     int AvailableQuantity,
     int ReservedQuantity,
     int AvailableForSale,
-    int MinimumQuantity);
+    int MinimumQuantity
+);

@@ -1,10 +1,11 @@
-﻿using Application.Abstractions;
-using Domain.Entities.Product;
-using Domain.Enums;
-using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Application.Abstractions;
+using Application.Common;
+using Domain.Entities.Product;
+using Domain.Enums;
+using Microsoft.EntityFrameworkCore;
 
 namespace Application.Products
 {
@@ -12,17 +13,34 @@ namespace Application.Products
     {
         private readonly IApplicationDbContext _dbContext;
 
-        public ProductService(IApplicationDbContext dbContext)
+        public ProductService(
+            IApplicationDbContext dbContext
+        )
         {
             _dbContext = dbContext;
         }
 
         public async Task<IReadOnlyList<ProductDto>> GetAllAsync(
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default
+        )
         {
-            return await _dbContext.Products
+            return await _dbContext
+                .Products
                 .AsNoTracking()
-                .Where(x => x.Status == ProductStatus.ACTIVE)
+                .Where(
+                    x =>
+                        x.Status == ProductStatus.ACTIVE
+                        && _dbContext.Categories.Any(
+                            c =>
+                                c.Id == x.CategoryId
+                                && c.IsActive
+                        )
+                        && _dbContext.Brands.Any(
+                            b =>
+                                b.Id == x.BrandId
+                                && b.IsActive
+                        )
+                )
                 .OrderByDescending(x => x.CreatedAt)
                 .Select(x => ToDto(x))
                 .ToListAsync(cancellationToken);
@@ -30,14 +48,28 @@ namespace Application.Products
 
         public async Task<ProductDto?> GetBySlugAsync(
             string slug,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default
+        )
         {
-            var product = await _dbContext.Products
+            var product = await _dbContext
+                .Products
                 .AsNoTracking()
                 .FirstOrDefaultAsync(
-                    x => x.Slug == slug &&
-                         x.Status == ProductStatus.ACTIVE,
-                    cancellationToken);
+                    x =>
+                        x.Slug == slug
+                        && x.Status == ProductStatus.ACTIVE
+                        && _dbContext.Categories.Any(
+                            c =>
+                                c.Id == x.CategoryId
+                                && c.IsActive
+                        )
+                        && _dbContext.Brands.Any(
+                            b =>
+                                b.Id == x.BrandId
+                                && b.IsActive
+                        ),
+                    cancellationToken
+                );
 
             return product is null
                 ? null
@@ -46,17 +78,20 @@ namespace Application.Products
 
         public async Task<ProductDto> CreateAsync(
             CreateProductRequest request,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default
+        )
         {
-            var slugExists = await _dbContext.Products
-                .AnyAsync(
-                    x => x.Slug == request.Slug,
-                    cancellationToken);
+            var slugExists = await _dbContext.Products.AnyAsync(
+                x =>
+                    x.Slug == request.Slug
+                        .Trim()
+                        .ToLowerInvariant(),
+                cancellationToken
+            );
 
             if (slugExists)
             {
-                throw new InvalidOperationException(
-                    $"Product with slug '{request.Slug}' already exists.");
+                throw new BusinessRuleException($"Product with slug '{request.Slug}' already exists.");
             }
 
             var product = new Product
@@ -67,7 +102,9 @@ namespace Application.Products
                 BrandId = request.BrandId,
 
                 Name = request.Name.Trim(),
-                Slug = request.Slug.Trim().ToLowerInvariant(),
+                Slug = request.Slug
+                    .Trim()
+                    .ToLowerInvariant(),
 
                 ShortDescription = request.ShortDescription.Trim(),
                 Description = request.Description.Trim(),
@@ -82,7 +119,7 @@ namespace Application.Products
                 CountryOfOrigin = request.CountryOfOrigin.Trim(),
 
                 CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                UpdatedAt = DateTime.UtcNow,
             };
 
             _dbContext.Products.Add(product);
@@ -95,55 +132,81 @@ namespace Application.Products
         public async Task<ProductDto?> UpdateAsync(
             Guid id,
             UpdateProductRequest request,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default
+        )
         {
-            var product = await _dbContext.Products
-                .FirstOrDefaultAsync(
-                    x => x.Id == id,
-                    cancellationToken);
+            var product = await _dbContext.Products.FirstOrDefaultAsync(
+                x => x.Id == id,
+                cancellationToken
+            );
 
             if (product is null)
+            {
                 return null;
+            }
+
+            if (product.Status is ProductStatus.PENDING_MODERATION or ProductStatus.ARCHIVED)
+            {
+                throw new BusinessRuleException("A product under review or archived cannot be edited.");
+            }
 
             if (request.CategoryId.HasValue)
+            {
                 product.CategoryId = request.CategoryId.Value;
+            }
 
             if (request.BrandId.HasValue)
+            {
                 product.BrandId = request.BrandId.Value;
+            }
 
             if (request.Name is not null)
+            {
                 product.Name = request.Name.Trim();
+            }
 
             if (request.Slug is not null)
             {
-                var slug = request.Slug.Trim().ToLowerInvariant();
+                var slug = request.Slug
+                    .Trim()
+                    .ToLowerInvariant();
 
-                var exists = await _dbContext.Products
-                    .AnyAsync(
-                        x => x.Id != id && x.Slug == slug,
-                        cancellationToken);
+                var exists = await _dbContext.Products.AnyAsync(
+                    x =>
+                        x.Id != id
+                        && x.Slug == slug,
+                    cancellationToken
+                );
 
                 if (exists)
                 {
-                    throw new InvalidOperationException(
-                        $"Product with slug '{slug}' already exists.");
+                    throw new BusinessRuleException($"Product with slug '{slug}' already exists.");
                 }
 
                 product.Slug = slug;
             }
 
             if (request.ShortDescription is not null)
+            {
                 product.ShortDescription = request.ShortDescription.Trim();
+            }
 
             if (request.Description is not null)
+            {
                 product.Description = request.Description.Trim();
+            }
 
             if (request.WarrantyMonth.HasValue)
+            {
                 product.WarrantyMonths = request.WarrantyMonth.Value;
+            }
 
             if (request.CountryOfOrigin is not null)
+            {
                 product.CountryOfOrigin = request.CountryOfOrigin.Trim();
+            }
 
+            product.Status = ProductStatus.DRAFT;
             product.UpdatedAt = DateTime.UtcNow;
 
             await _dbContext.SaveChangesAsync(cancellationToken);
@@ -153,18 +216,58 @@ namespace Application.Products
 
         public async Task<bool> SubmitForModerationAsync(
             Guid id,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default
+        )
         {
-            var product = await FindProductAsync(id, cancellationToken);
+            var product = await FindProductAsync(
+                id,
+                cancellationToken
+            );
 
             if (product is null)
-                return false;
-
-            if (product.Status != ProductStatus.DRAFT &&
-                product.Status != ProductStatus.REJECTED)
             {
-                throw new InvalidOperationException(
-                    "Only draft or rejected product can be submitted for moderation.");
+                return false;
+            }
+
+            if (product.Status != ProductStatus.DRAFT
+                && product.Status != ProductStatus.REJECTED)
+            {
+                throw new BusinessRuleException("Only draft or rejected product can be submitted for moderation.");
+            }
+
+            var variants = await _dbContext
+                .ProductVariants
+                .AsNoTracking()
+                .Where(
+                    v =>
+                        v.ProductId == id
+                        && v.IsActive
+                )
+                .Select(v => v.Price)
+                .ToListAsync(cancellationToken);
+            if (!variants.Any(price => price > 0))
+            {
+                throw new BusinessRuleException("Add an active variant with a positive price before submitting.");
+            }
+
+            if (!await _dbContext.Categories.AnyAsync(
+                c =>
+                    c.Id == product.CategoryId
+                    && c.IsActive,
+                cancellationToken
+            ))
+            {
+                throw new BusinessRuleException("Product category must be active.");
+            }
+
+            if (!await _dbContext.Brands.AnyAsync(
+                b =>
+                    b.Id == product.BrandId
+                    && b.IsActive,
+                cancellationToken
+            ))
+            {
+                throw new BusinessRuleException("Product brand must be active.");
             }
 
             product.Status = ProductStatus.PENDING_MODERATION;
@@ -177,17 +280,22 @@ namespace Application.Products
 
         public async Task<bool> ApproveAsync(
             Guid id,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default
+        )
         {
-            var product = await FindProductAsync(id, cancellationToken);
+            var product = await FindProductAsync(
+                id,
+                cancellationToken
+            );
 
             if (product is null)
+            {
                 return false;
+            }
 
             if (product.Status != ProductStatus.PENDING_MODERATION)
             {
-                throw new InvalidOperationException(
-                    "Product must be pending moderation.");
+                throw new BusinessRuleException("Product must be pending moderation.");
             }
 
             product.Status = ProductStatus.ACTIVE;
@@ -200,17 +308,22 @@ namespace Application.Products
 
         public async Task<bool> RejectAsync(
             Guid id,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default
+        )
         {
-            var product = await FindProductAsync(id, cancellationToken);
+            var product = await FindProductAsync(
+                id,
+                cancellationToken
+            );
 
             if (product is null)
+            {
                 return false;
+            }
 
             if (product.Status != ProductStatus.PENDING_MODERATION)
             {
-                throw new InvalidOperationException(
-                    "Product must be pending moderation.");
+                throw new BusinessRuleException("Product must be pending moderation.");
             }
 
             product.Status = ProductStatus.REJECTED;
@@ -223,15 +336,18 @@ namespace Application.Products
 
         private Task<Product?> FindProductAsync(
             Guid id,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken
+        )
         {
-            return _dbContext.Products
-                .FirstOrDefaultAsync(
-                    x => x.Id == id,
-                    cancellationToken);
+            return _dbContext.Products.FirstOrDefaultAsync(
+                x => x.Id == id,
+                cancellationToken
+            );
         }
 
-        private static ProductDto ToDto(Product product)
+        private static ProductDto ToDto(
+            Product product
+        )
         {
             return new ProductDto
             {
@@ -256,7 +372,7 @@ namespace Application.Products
                 CountryOfOrigin = product.CountryOfOrigin,
 
                 CreatedAt = product.CreatedAt,
-                UpdatedAt = product.UpdatedAt
+                UpdatedAt = product.UpdatedAt,
             };
         }
     }

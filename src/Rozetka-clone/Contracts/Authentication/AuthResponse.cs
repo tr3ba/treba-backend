@@ -8,4 +8,5 @@ public sealed record AuthResponse(
     string Role,
     string AccessToken,
     string RefreshToken,
-    DateTimeOffset ExpiresAt);
+    DateTimeOffset ExpiresAt
+);

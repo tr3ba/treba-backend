@@ -1,13 +1,390 @@
 @page "/products/new"
+@page "/products/{Id:guid}/edit"
+@inject AdminPanel.Services.Implementations.CatalogApiClient Api
+@inject CatalogModerationState ModerationState
+@inject NavigationManager Navigation
+@using Contracts.Catalog
 
-<PageTitle>@L["NewProduct"] — Treba Admin</PageTitle>
-<section class="page-hero"><div><a class="back-link" href="/products"><i class="bi bi-arrow-left"></i>@L["BackToProducts"]</a><p class="eyebrow">@L["Catalog"]</p><h1>@L["NewProduct"]</h1></div><div class="editor-top-actions"><button class="secondary-button" type="button">@L["SaveDraft"]</button><button class="primary-button" type="button">@L["PublishProduct"]</button></div></section>
+<PageTitle>@(Id.HasValue ? L["EditProduct"] : L["NewProduct"]) — Treba Admin</PageTitle>
 
-<div class="product-editor-layout">
-    <main class="product-editor-main">
-        <section class="card-box editor-section"><div class="editor-section-heading"><span>01</span><div><h2>@L["BasicInformation"]</h2><p>@L["BasicInformationDesc"]</p></div></div><div class="editor-form-grid"><label class="field-group editor-full"><span>@L["ProductName"] *</span><input class="form-control" placeholder="@L["ProductNamePlaceholder"]" /></label><label class="field-group"><span>@L["Category"] *</span><select class="form-control"><option>@L["SelectCategory"]</option></select></label><label class="field-group"><span>@L["Brand"]</span><input class="form-control" placeholder="Apple, Samsung..." /></label><label class="field-group"><span>SKU *</span><input class="form-control" placeholder="TRB-000001" /></label><label class="field-group"><span>@L["Seller"] *</span><select class="form-control"><option>@L["SelectSeller"]</option></select></label><label class="field-group editor-full"><span>@L["Description"]</span><textarea class="form-control" rows="5" placeholder="@L["ProductDescriptionPlaceholder"]"></textarea></label></div></section>
-        <section class="card-box editor-section"><div class="editor-section-heading"><span>02</span><div><h2>@L["Media"]</h2><p>@L["MediaDesc"]</p></div></div><div class="media-uploader"><i class="bi bi-cloud-arrow-up"></i><strong>@L["DropProductImages"]</strong><p>PNG, JPG, WEBP · @L["UpTo"] 10 MB</p><button class="secondary-button" type="button">@L["ChooseFiles"]</button></div></section>
-        <section class="card-box editor-section"><div class="editor-section-heading"><span>03</span><div><h2>@L["CharacteristicsAndVariants"]</h2><p>@L["CharacteristicsAndVariantsDesc"]</p></div></div><div class="editor-tabs"><button class="active" type="button">@L["Characteristics"]</button><button type="button">@L["Variants"]</button><button type="button">@L["Accessories"]</button><button type="button">@L["Services"]</button></div><div class="attribute-row"><input class="form-control" aria-label="@L["CharacteristicName"]" value="Матеріал"/><input class="form-control" aria-label="@L["CharacteristicValue"]" value="Алюміній"/><button type="button" aria-label="@L["DeleteCharacteristic"]"><i class="bi bi-trash"></i></button></div><div class="attribute-row"><input class="form-control" aria-label="@L["CharacteristicName"]" value="Гарантія"/><input class="form-control" aria-label="@L["CharacteristicValue"]" value="24 місяці"/><button type="button" aria-label="@L["DeleteCharacteristic"]"><i class="bi bi-trash"></i></button></div><button class="add-attribute" type="button"><i class="bi bi-plus"></i>@L["AddCharacteristic"]</button></section>
-    </main>
-    <aside class="product-editor-side"><section class="card-box editor-section"><div class="editor-section-heading compact"><span>₴</span><div><h2>@L["PriceAndStock"]</h2></div></div><label class="field-group"><span>@L["Price"] *</span><div class="money-input"><input class="form-control" value="0"/><b>₴</b></div></label><label class="field-group"><span>@L["OldPrice"]</span><div class="money-input"><input class="form-control" value="0"/><b>₴</b></div></label><label class="field-group"><span>@L["Stock"] *</span><input class="form-control" value="0"/></label><label class="editor-check"><input type="checkbox"/>@L["MarkAsPromotion"]</label></section><section class="card-box editor-tip"><i class="bi bi-lightbulb"></i><div><strong>@L["StorefrontTip"]</strong><p>@L["StorefrontTipDesc"]</p></div></section></aside>
-</div>
+<a class="users-back-link product-back-link" href="/products">
+    <i class="bi bi-arrow-left"></i> @L["BackToProducts"]
+</a>
+
+<section class="page-hero product-editor-hero">
+    <div>
+        <p class="eyebrow">@L["CatalogWorkspace"]</p>
+        <h1>@(Id.HasValue ? L["EditProduct"] : L["NewProduct"])</h1>
+        <p>@L["ProductEditorSubtitle"]</p>
+    </div>
+</section>
+
+@if (error is not null)
+{
+    <p class="feedback-error" role="alert">@error</p>
+}
+
+@if (loading)
+{
+    <p class="page-loading" role="status">@L["Loading"]</p>
+}
+else if (ready)
+{
+    <EditForm Model="model" OnValidSubmit="Save" FormName="product-editor">
+        <DataAnnotationsValidator />
+        <div class="product-editor-layout">
+            <main class="product-editor-main">
+                <section class="card-box editor-section">
+                    <div class="editor-section-heading">
+                        <span>01</span>
+                        <div>
+                            <h2>@L["BasicInformation"]</h2>
+                            <p>@L["BasicInformationDesc"]</p>
+                        </div>
+                    </div>
+                    <ValidationSummary />
+                    <div class="editor-form-grid">
+                        <label class="field-group editor-full">
+                            <span>@L["ProductName"] *</span>
+                            <InputText class="form-control" @bind-Value="model.Name" />
+                        </label>
+                        <label class="field-group">
+                            <span>@L["Slug"] *</span>
+                            <InputText class="form-control" @bind-Value="model.Slug" placeholder="treba-air-pro" />
+                            <small>@L["SlugHint"]</small>
+                        </label>
+                        <label class="field-group">
+                            <span>@L["Sku"] *</span>
+                            <InputText class="form-control" @bind-Value="model.Sku" placeholder="TRB-00001" />
+                        </label>
+                        <label class="field-group">
+                            <span>@L["Category"] *</span>
+                            <InputSelect class="form-control" @bind-Value="model.CategoryId">
+                                <option value="@Guid.Empty">@L["SelectCategory"]</option>
+                                @foreach (var item in categories)
+                                {
+                                    <option value="@item.Id">@item.Name</option>
+                                }
+                            </InputSelect>
+                        </label>
+                        <label class="field-group">
+                            <span>@L["Brand"] *</span>
+                            <InputSelect class="form-control" @bind-Value="model.BrandId">
+                                <option value="@Guid.Empty">@L["SelectBrand"]</option>
+                                @foreach (var item in brands)
+                                {
+                                    <option value="@item.Id">@item.Name</option>
+                                }
+                            </InputSelect>
+                        </label>
+                        @if (!Id.HasValue)
+                        {
+                            <label class="field-group">
+                                <span>@L["Store"] *</span>
+                                <InputSelect class="form-control" @bind-Value="model.StoreId">
+                                    <option value="@Guid.Empty">@L["SelectStore"]</option>
+                                    @foreach (var store in stores)
+                                    {
+                                        <option value="@store.Id">@store.Name</option>
+                                    }
+                                </InputSelect>
+                            </label>
+                        }
+                        <label class="field-group editor-full">
+                            <span>@L["ShortDescription"]</span>
+                            <InputText class="form-control" @bind-Value="model.ShortDescription" />
+                        </label>
+                        <label class="field-group editor-full">
+                            <span>@L["Description"]</span>
+                            <InputTextArea class="form-control" rows="5" @bind-Value="model.Description" />
+                        </label>
+                        <label class="field-group">
+                            <span>@L["WarrantyMonths"]</span>
+                            <InputNumber class="form-control" @bind-Value="model.WarrantyMonths" />
+                        </label>
+                        <label class="field-group">
+                            <span>@L["CountryOfOrigin"]</span>
+                            <InputText class="form-control" @bind-Value="model.CountryOfOrigin" />
+                        </label>
+                    </div>
+                </section>
+
+                <section class="card-box editor-section">
+                    <div class="editor-section-heading">
+                        <span>02</span>
+                        <div>
+                            <h2>@L["ProductImages"]</h2>
+                            <p>@L["ProductImagesDesc"]</p>
+                        </div>
+                    </div>
+
+                    <label class="media-uploader @(busy ? "disabled" : "")">
+                        <i class="bi bi-cloud-arrow-up"></i>
+                        <strong>@L["DropProductImages"]</strong>
+                        <p>@L["ProductImagesHint"]</p>
+                        <span class="secondary-button">@L["ChooseFiles"]</span>
+                        <InputFile OnChange="SelectImagesAsync"
+                                   accept="image/jpeg,image/png,image/webp,image/gif"
+                                   multiple
+                                   disabled="@busy" />
+                    </label>
+
+                    @if (images.Count > 0 || pendingImages.Count > 0)
+                    {
+                        <div class="product-image-grid">
+                            @foreach (var image in images)
+                            {
+                                <article class="product-image-card">
+                                    <img src="@image.Preview" alt="@image.AltText" />
+                                    @if (image.IsMain)
+                                    {
+                                        <span class="product-image-main">@L["MainImage"]</span>
+                                    }
+                                    <button type="button"
+                                            class="product-image-remove"
+                                            title="@L["DeleteImage"]"
+                                            aria-label="@L["DeleteImage"]"
+                                            disabled="@busy"
+                                            @onclick="() => DeleteImageAsync(image)">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                </article>
+                            }
+                            @foreach (var image in pendingImages)
+                            {
+                                <article class="product-image-card pending">
+                                    <img src="@image.Preview" alt="@image.Name" />
+                                    <span class="product-image-pending">@L["WillUploadOnSave"]</span>
+                                    <button type="button"
+                                            class="product-image-remove"
+                                            title="@L["RemoveSelectedImage"]"
+                                            aria-label="@L["RemoveSelectedImage"]"
+                                            disabled="@busy"
+                                            @onclick="() => pendingImages.Remove(image)">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                </article>
+                            }
+                        </div>
+                    }
+                </section>
+            </main>
+
+            <aside class="product-editor-side">
+                <section class="card-box editor-section">
+                    <div class="editor-section-heading compact"><span>₴</span><h2>@L["PriceAndStock"]</h2></div>
+                    <label class="field-group">
+                        <span>@L["Price"] (₴) *</span>
+                        <InputNumber class="form-control" step="0.01" @bind-Value="model.Price" />
+                    </label>
+                    <label class="field-group">
+                        <span>@L["Stock"] *</span>
+                        <InputNumber class="form-control" @bind-Value="model.StockQuantity" />
+                    </label>
+                    <div class="editor-save-actions">
+                        <button type="submit" class="secondary-button" disabled="@(busy || (!Id.HasValue && stores.Count == 0))" @onclick="Draft">@L["SaveDraft"]</button>
+                        <button type="submit" class="primary-button" disabled="@(busy || (!Id.HasValue && stores.Count == 0))" @onclick="Submit">@L["SendToModeration"]</button>
+                    </div>
+                </section>
+                <section class="card-box editor-tip">
+                    <i class="bi bi-shield-check"></i>
+                    <div><strong>@L["PublishAfterReview"]</strong><p>@L["PublishAfterReviewDesc"]</p></div>
+                </section>
+            </aside>
+        </div>
+    </EditForm>
+}
+
+@code {
+    private const int MaxImageCount = 8;
+    private const long MaxImageBytes = 5 * 1024 * 1024;
+    private static readonly HashSet<string> AllowedImageTypes =
+        ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
+    [Parameter] public Guid? Id { get; set; }
+
+    private SaveCatalogProductRequest model = new();
+    private List<CatalogLookupDto> categories = [];
+    private List<CatalogLookupDto> brands = [];
+    private List<CatalogLookupDto> stores = [];
+    private readonly List<ProductImageView> images = [];
+    private readonly List<PendingImage> pendingImages = [];
+    private bool loading = true;
+    private bool busy;
+    private bool submit;
+    private bool ready;
+    private string? error;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        loading = true;
+        ready = false;
+        error = null;
+        model = new();
+        images.Clear();
+        pendingImages.Clear();
+
+        try
+        {
+            categories = await Api.Categories();
+            brands = await Api.Brands();
+            if (!Id.HasValue)
+            {
+                stores = await Api.Stores();
+                if (stores.Count == 1) model.StoreId = stores[0].Id;
+                if (stores.Count == 0) error = L["NoAvailableStores"];
+            }
+            if (Id.HasValue)
+            {
+                var product = await Api.GetProduct(Id.Value);
+                model = new()
+                {
+                    Name = product.Name,
+                    Slug = product.Slug,
+                    Sku = product.Sku,
+                    CategoryId = product.CategoryId,
+                    BrandId = product.BrandId,
+                    StoreId = product.StoreId,
+                    Price = product.Price,
+                    StockQuantity = product.StockQuantity,
+                    Description = product.Description,
+                    ShortDescription = product.ShortDescription,
+                    WarrantyMonths = product.WarrantyMonths,
+                    CountryOfOrigin = product.CountryOfOrigin
+                };
+
+                foreach (var image in await Api.Images(Id.Value))
+                {
+                    var preview = await Api.ImageDataUrl(image.ImageUrl);
+                    images.Add(new(image.Id, preview, image.AltText ?? product.Name, image.IsMain));
+                }
+            }
+            ready = true;
+        }
+        catch (HttpRequestException exception)
+        {
+            error = exception.Message;
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task SelectImagesAsync(InputFileChangeEventArgs args)
+    {
+        error = null;
+        IReadOnlyList<IBrowserFile> selected;
+        try
+        {
+            selected = args.GetMultipleFiles(MaxImageCount);
+        }
+        catch (InvalidOperationException)
+        {
+            error = L["TooManyProductImages"];
+            return;
+        }
+
+        if (images.Count + pendingImages.Count + selected.Count > MaxImageCount)
+        {
+            error = L["TooManyProductImages"];
+            return;
+        }
+
+        foreach (var file in selected)
+        {
+            if (!AllowedImageTypes.Contains(file.ContentType) || file.Size is <= 0 or > MaxImageBytes)
+            {
+                error = L["InvalidProductImage"];
+                continue;
+            }
+
+            try
+            {
+                await using var source = file.OpenReadStream(MaxImageBytes);
+                using var buffer = new MemoryStream();
+                await source.CopyToAsync(buffer);
+                var bytes = buffer.ToArray();
+                pendingImages.Add(new(
+                    file.Name,
+                    file.ContentType,
+                    bytes,
+                    $"data:{file.ContentType};base64,{Convert.ToBase64String(bytes)}"));
+            }
+            catch (IOException)
+            {
+                error = L["ProductImageReadError"];
+            }
+        }
+    }
+
+    private async Task DeleteImageAsync(ProductImageView image)
+    {
+        if (!Id.HasValue)
+            return;
+
+        busy = true;
+        error = null;
+        try
+        {
+            await Api.DeleteImage(Id.Value, image.Id);
+            images.Remove(image);
+        }
+        catch (HttpRequestException exception)
+        {
+            error = exception.Message;
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private void Draft() => submit = false;
+    private void Submit() => submit = true;
+
+    private async Task Save()
+    {
+        busy = true;
+        error = null;
+        try
+        {
+            var product = await Api.Save(Id, model);
+            Id = product.Id;
+
+            var nextSortOrder = images.Count;
+            foreach (var pending in pendingImages)
+            {
+                await using var content = new MemoryStream(pending.Bytes, writable: false);
+                var uploaded = await Api.UploadImage(
+                    product.Id,
+                    content,
+                    pending.Name,
+                    pending.ContentType,
+                    images.Count == 0 && nextSortOrder == 0,
+                    nextSortOrder++);
+                images.Add(new(uploaded.Id, pending.Preview, uploaded.AltText ?? product.Name, uploaded.IsMain));
+            }
+            pendingImages.Clear();
+
+            if (submit)
+            {
+                await Api.Action(product.Id, "submit");
+                await ModerationState.RefreshAsync();
+            }
+
+            Navigation.NavigateTo(submit ? "/moderation" : "/products");
+        }
+        catch (HttpRequestException exception)
+        {
+            error = exception.Message;
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private sealed record PendingImage(string Name, string ContentType, byte[] Bytes, string Preview);
+    private sealed record ProductImageView(Guid Id, string Preview, string AltText, bool IsMain);
+}

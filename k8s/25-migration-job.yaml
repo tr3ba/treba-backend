@@ -1,0 +1,58 @@
+# Execute explicitly once, BEFORE deploying or scaling the backend.
+# Source app runs Database.MigrateAsync at startup only with ApplyMigrations=true.
+# This one-off Job starts the API temporarily, waits for /ping after migrations,
+# and then terminates it. Test DB only; never run this on production RDS.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: backend-migrate
+  namespace: treba-stage5
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 300
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app: backend-migrate
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: __BACKEND_IMAGE__
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: backend-config
+            - secretRef:
+                name: backend-runtime
+          env:
+            - name: ApplyMigrations
+              value: "true"
+          command: ["/bin/sh", "-ec"]
+          args:
+            - |
+              dotnet WebApi.dll &
+              pid=$!
+              trap 'kill "$pid" 2>/dev/null || true' EXIT
+              for attempt in $(seq 1 90); do
+                if curl --max-time 2 -fsS http://127.0.0.1:5000/ping >/dev/null 2>&1; then
+                  echo "Migrations/startup completed and /ping returned success"
+                  exit 0
+                fi
+                if ! kill -0 "$pid" 2>/dev/null; then
+                  echo "API stopped before successful startup; migrations may have failed" >&2
+                  wait "$pid" || true
+                  exit 1
+                fi
+                sleep 2
+              done
+              echo "Timed out waiting for migration startup" >&2
+              exit 1
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 768Mi

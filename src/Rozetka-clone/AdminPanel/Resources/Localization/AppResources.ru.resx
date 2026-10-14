@@ -147,7 +147,6 @@
   <data name="DecisionRecorded" xml:space="preserve"><value>Решение фиксируется</value></data>
   <data name="DecisionRecordedDesc" xml:space="preserve"><value>Ваше имя, время и решение сохранятся в журнале аудита.</value></data>
   <data name="Delivery" xml:space="preserve"><value>Доставка</value></data>
-  <data name="DemoData" xml:space="preserve"><value>Демо</value></data>
   <data name="DirectorPassport" xml:space="preserve"><value>Паспорт директора</value></data>
   <data name="Dnipro" xml:space="preserve"><value>Днепр</value></data>
   <data name="Documents" xml:space="preserve"><value>Документы</value></data>
@@ -288,4 +287,195 @@
   <data name="ShowingUsers" xml:space="preserve"><value>Найдено пользователей:</value></data>
   <data name="ClearSearch" xml:space="preserve"><value>Очистить поиск</value></data>
   <data name="ResetFilters" xml:space="preserve"><value>Сбросить фильтры</value></data>
+  <data name="EditProduct" xml:space="preserve"><value>Редактирование товара</value></data>
+  <data name="CatalogWorkspace" xml:space="preserve"><value>Управление каталогом</value></data>
+  <data name="ProductEditorSubtitle" xml:space="preserve"><value>Заполните данные товара, добавьте фотографии, цену и остаток.</value></data>
+  <data name="Loading" xml:space="preserve"><value>Загрузка…</value></data>
+  <data name="Slug" xml:space="preserve"><value>Slug</value></data>
+  <data name="SlugHint" xml:space="preserve"><value>Латинские буквы, цифры и дефис.</value></data>
+  <data name="SelectBrand" xml:space="preserve"><value>Выберите бренд</value></data>
+  <data name="ShortDescription" xml:space="preserve"><value>Краткое описание</value></data>
+  <data name="WarrantyMonths" xml:space="preserve"><value>Гарантия, месяцев</value></data>
+  <data name="CountryOfOrigin" xml:space="preserve"><value>Страна производства</value></data>
+  <data name="ProductImages" xml:space="preserve"><value>Фотографии товара</value></data>
+  <data name="ProductImagesDesc" xml:space="preserve"><value>Добавьте главное фото и галерею товара.</value></data>
+  <data name="ProductImagesHint" xml:space="preserve"><value>JPG, PNG, WEBP или GIF · до 5 МБ · максимум 8 файлов</value></data>
+  <data name="MainImage" xml:space="preserve"><value>Главное фото</value></data>
+  <data name="DeleteImage" xml:space="preserve"><value>Удалить фото</value></data>
+  <data name="WillUploadOnSave" xml:space="preserve"><value>Загрузится после сохранения</value></data>
+  <data name="RemoveSelectedImage" xml:space="preserve"><value>Убрать выбранное фото</value></data>
+  <data name="SendToModeration" xml:space="preserve"><value>На модерацию</value></data>
+  <data name="PublishAfterReview" xml:space="preserve"><value>Публикация после проверки</value></data>
+  <data name="PublishAfterReviewDesc" xml:space="preserve"><value>Изменения сохраняются как черновик. После одобрения товар появится в публичном каталоге.</value></data>
+  <data name="TooManyProductImages" xml:space="preserve"><value>Можно добавить не более 8 фотографий.</value></data>
+  <data name="InvalidProductImage" xml:space="preserve"><value>Выберите JPG, PNG, WEBP или GIF размером до 5 МБ.</value></data>
+  <data name="ProductImageReadError" xml:space="preserve"><value>Не удалось прочитать выбранное изображение.</value></data>
+  <data name="CategoriesSubtitle" xml:space="preserve"><value>Структура каталога и видимость категорий.</value></data>
+  <data name="CategoriesCount" xml:space="preserve"><value>{0} категорий</value></data>
+  <data name="Hidden" xml:space="preserve"><value>Скрыта</value></data>
+  <data name="CreateFirstCategory" xml:space="preserve"><value>Создайте первую категорию.</value></data>
+  <data name="EditCategory" xml:space="preserve"><value>Редактирование категории</value></data>
+  <data name="NewCategory" xml:space="preserve"><value>Новая категория</value></data>
+  <data name="Name" xml:space="preserve"><value>Название</value></data>
+  <data name="ParentCategory" xml:space="preserve"><value>Родительская категория</value></data>
+  <data name="RootCategory" xml:space="preserve"><value>Корневая категория</value></data>
+  <data name="SortOrder" xml:space="preserve"><value>Порядок сортировки</value></data>
+  <data name="ActiveCategory" xml:space="preserve"><value>Активная категория</value></data>
+  <data name="Saving" xml:space="preserve"><value>Сохранение…</value></data>
+  <data name="Save" xml:space="preserve"><value>Сохранить</value></data>
+  <data name="CategorySaved" xml:space="preserve"><value>Категория сохранена.</value></data>
+  <data name="ModerationSubtitle" xml:space="preserve"><value>Проверьте данные товара перед публикацией.</value></data>
+  <data name="BackToCatalog" xml:space="preserve"><value>К каталогу</value></data>
+  <data name="LoadingModeration" xml:space="preserve"><value>Загрузка очереди…</value></data>
+  <data name="Refresh" xml:space="preserve"><value>Обновить</value></data>
+  <data name="AllProductsReviewed" xml:space="preserve"><value>Все товары проверены</value></data>
+  <data name="ModerationEmptyDesc" xml:space="preserve"><value>Новые заявки появятся после отправки товара на модерацию.</value></data>
+  <data name="MonthsShort" xml:space="preserve"><value>мес.</value></data>
+  <data name="ProductsSubtitle" xml:space="preserve"><value>Управляйте товарами, ценами и публикацией в одном месте.</value></data>
+  <data name="ProductSearchAria" xml:space="preserve"><value>Поиск товаров</value></data>
+  <data name="PublishedPlural" xml:space="preserve"><value>Опубликованные</value></data>
+  <data name="PendingModeration" xml:space="preserve"><value>На модерации</value></data>
+  <data name="RejectedPlural" xml:space="preserve"><value>Отклонённые</value></data>
+  <data name="Retry" xml:space="preserve"><value>Повторить</value></data>
+  <data name="LoadingCatalog" xml:space="preserve"><value>Загрузка каталога…</value></data>
+  <data name="ProductsNotFound" xml:space="preserve"><value>Товары не найдены</value></data>
+  <data name="ProductsNotFoundDesc" xml:space="preserve"><value>Измените фильтр или добавьте первый товар.</value></data>
+  <data name="Found" xml:space="preserve"><value>Найдено</value></data>
+  <data name="SigningOut" xml:space="preserve"><value>Выход…</value></data>
+  <data name="SignOut" xml:space="preserve"><value>Выйти</value></data>
+  <data name="Account" xml:space="preserve"><value>Учётная запись</value></data>
+  <data name="MyProfile" xml:space="preserve"><value>Мой профиль</value></data>
+  <data name="ProfileSubtitle" xml:space="preserve"><value>Обновите имя, контакты и аватар. Роль назначается системой и не редактируется.</value></data>
+  <data name="LoadingProfile" xml:space="preserve"><value>Загрузка профиля…</value></data>
+  <data name="UserAvatar" xml:space="preserve"><value>Аватар пользователя</value></data>
+  <data name="UploadPhoto" xml:space="preserve"><value>Загрузить фото</value></data>
+  <data name="ChooseAnotherPhoto" xml:space="preserve"><value>Выбрать другое фото</value></data>
+  <data name="ImageUploadHint" xml:space="preserve"><value>JPG, PNG, WEBP или GIF · до 5 МБ</value></data>
+  <data name="DeletePhoto" xml:space="preserve"><value>Удалить фото</value></data>
+  <data name="PersonalData" xml:space="preserve"><value>Личные данные</value></data>
+  <data name="PersonalDataDesc" xml:space="preserve"><value>Эти данные отображаются в вашей учётной записи.</value></data>
+  <data name="Female" xml:space="preserve"><value>Женский</value></data>
+  <data name="Male" xml:space="preserve"><value>Мужской</value></data>
+  <data name="Other" xml:space="preserve"><value>Другой</value></data>
+  <data name="Role" xml:space="preserve"><value>Роль</value></data>
+  <data name="ContactsAndSettings" xml:space="preserve"><value>Контакты и настройки</value></data>
+  <data name="ContactsAndSettingsDesc" xml:space="preserve"><value>Фото профиля загружается в блоке слева.</value></data>
+  <data name="ProfileLanguage" xml:space="preserve"><value>Язык профиля</value></data>
+  <data name="Ukrainian" xml:space="preserve"><value>Украинский</value></data>
+  <data name="Russian" xml:space="preserve"><value>Русский</value></data>
+  <data name="MarketingEmailsDesc" xml:space="preserve"><value>Получать новости и предложения по email</value></data>
+  <data name="ProfileSaved" xml:space="preserve"><value>Профиль сохранён. Данные в шапке уже обновлены.</value></data>
+  <data name="SaveChanges" xml:space="preserve"><value>Сохранить изменения</value></data>
+  <data name="ProfileNotFound" xml:space="preserve"><value>Профиль не найден.</value></data>
+  <data name="ProfileLoadError" xml:space="preserve"><value>Не удалось загрузить профиль. Проверьте подключение к API.</value></data>
+  <data name="ProfileAvatarPartialError" xml:space="preserve"><value>Данные профиля сохранены, но аватар не обновлён.</value></data>
+  <data name="InvalidAvatarType" xml:space="preserve"><value>Выберите изображение в формате JPG, PNG, WEBP или GIF.</value></data>
+  <data name="InvalidAvatarSize" xml:space="preserve"><value>Размер аватара должен быть от 1 байта до 5 МБ.</value></data>
+  <data name="AvatarReadError" xml:space="preserve"><value>Не удалось прочитать выбранное изображение.</value></data>
+  <data name="LoginInProgress" xml:space="preserve"><value>Вход…</value></data>
+  <data name="LoginFailed" xml:space="preserve"><value>Не удалось войти. Проверьте email и пароль.</value></data>
+  <data name="AdminAccountRequired" xml:space="preserve"><value>Требуется учётная запись администратора.</value></data>
+  <data name="ApiUnavailable" xml:space="preserve"><value>API недоступно. Проверьте, запущен ли backend.</value></data>
+  <data name="LoginAreas" xml:space="preserve"><value>Каталог · Категории · Модерация</value></data>
+  <data name="Error" xml:space="preserve"><value>Ошибка</value></data>
+  <data name="PageOpenError" xml:space="preserve"><value>Не удалось открыть страницу</value></data>
+  <data name="PageOpenErrorDesc" xml:space="preserve"><value>Обновите страницу и проверьте доступность API.</value></data>
+  <data name="Home" xml:space="preserve"><value>На главную</value></data>
+  <data name="CheckingAccess" xml:space="preserve"><value>Проверка доступа…</value></data>
+  <data name="PageNotFound" xml:space="preserve"><value>Страница не найдена</value></data>
+  <data name="Sku" xml:space="preserve"><value>Артикул (SKU)</value></data>
+  <data name="English" xml:space="preserve"><value>Английский</value></data>
+  <data name="NoProductImage" xml:space="preserve"><value>Фото товара ещё не добавлено</value></data>
+  <data name="PreviousImage" xml:space="preserve"><value>Предыдущее фото</value></data>
+  <data name="NextImage" xml:space="preserve"><value>Следующее фото</value></data>
+  <data name="ProductImagePosition" xml:space="preserve"><value>Фото {0} из {1}</value></data>
+  <data name="Back" xml:space="preserve"><value>Назад</value></data>
+  <data name="TwoFactorAuth" xml:space="preserve"><value>Двухфакторная защита</value></data>
+  <data name="ChooseVerificationMethod" xml:space="preserve"><value>Выберите способ подтверждения</value></data>
+  <data name="ChooseVerificationMethodDesc" xml:space="preserve"><value>Используйте один из способов защиты, привязанных к аккаунту.</value></data>
+  <data name="AuthenticatorMethodDesc" xml:space="preserve"><value>Код из приложения-аутентификатора</value></data>
+  <data name="EmailCode" xml:space="preserve"><value>Код на почту</value></data>
+  <data name="ChooseAnotherMethod" xml:space="preserve"><value>Выбрать другой способ</value></data>
+  <data name="IdentityVerification" xml:space="preserve"><value>Подтверждение личности</value></data>
+  <data name="EnterSecurityCode" xml:space="preserve"><value>Введите код безопасности</value></data>
+  <data name="EmailCodeSent" xml:space="preserve"><value>Мы отправили шестизначный код на {0}.</value></data>
+  <data name="AuthenticatorCodeHint" xml:space="preserve"><value>Откройте Google Authenticator и введите текущий шестизначный код.</value></data>
+  <data name="SecurityCode" xml:space="preserve"><value>Код безопасности</value></data>
+  <data name="Verifying" xml:space="preserve"><value>Проверяем…</value></data>
+  <data name="VerifyAndSignIn" xml:space="preserve"><value>Подтвердить и войти</value></data>
+  <data name="SendCodeAgain" xml:space="preserve"><value>Отправить код ещё раз</value></data>
+  <data name="EmailCodeSendFailed" xml:space="preserve"><value>Не удалось отправить код на почту.</value></data>
+  <data name="InvalidSecurityCode" xml:space="preserve"><value>Код неверный, истёк или исчерпан лимит попыток.</value></data>
+  <data name="AccountProtection" xml:space="preserve"><value>Защита аккаунта</value></data>
+  <data name="AccountProtectionDesc" xml:space="preserve"><value>Добавьте второй этап входа администратора.</value></data>
+  <data name="TwoFactorEnabled" xml:space="preserve"><value>Двухфакторная защита включена</value></data>
+  <data name="TwoFactorEnabledDesc" xml:space="preserve"><value>Для входа нужен дополнительный код подтверждения.</value></data>
+  <data name="BasicProtection" xml:space="preserve"><value>Базовая защита</value></data>
+  <data name="BasicProtectionDesc" xml:space="preserve"><value>Включите хотя бы один второй фактор для безопасного входа.</value></data>
+  <data name="Disabled" xml:space="preserve"><value>Выключено</value></data>
+  <data name="Configure" xml:space="preserve"><value>Настроить</value></data>
+  <data name="Disable" xml:space="preserve"><value>Выключить</value></data>
+  <data name="Enable" xml:space="preserve"><value>Включить</value></data>
+  <data name="StepOne" xml:space="preserve"><value>Настройка</value></data>
+  <data name="ScanQrCode" xml:space="preserve"><value>Отсканируйте QR-код</value></data>
+  <data name="ScanQrCodeDesc" xml:space="preserve"><value>Откройте Google Authenticator, добавьте аккаунт и отсканируйте код.</value></data>
+  <data name="AuthenticatorQrCode" xml:space="preserve"><value>QR-код настройки Google Authenticator</value></data>
+  <data name="EnterKeyManually" xml:space="preserve"><value>Не сканируется? Введите ключ вручную</value></data>
+  <data name="CodeFromApp" xml:space="preserve"><value>Код из приложения</value></data>
+  <data name="ConfirmAndEnable" xml:space="preserve"><value>Подтвердить и включить</value></data>
+  <data name="EmailVerification" xml:space="preserve"><value>Подтверждение почты</value></data>
+  <data name="CheckYourEmail" xml:space="preserve"><value>Проверьте почту</value></data>
+  <data name="EmailSetupCodeSent" xml:space="preserve"><value>Введите код, отправленный на {0}. Он действует пять минут.</value></data>
+  <data name="SecuritySettingsLoadFailed" xml:space="preserve"><value>Не удалось загрузить настройки безопасности.</value></data>
+  <data name="AuthenticatorEnabledSuccess" xml:space="preserve"><value>Google Authenticator подключён.</value></data>
+  <data name="EmailTwoFactorEnabledSuccess" xml:space="preserve"><value>Коды для входа по почте включены.</value></data>
+  <data name="ProtectionMethodDisabled" xml:space="preserve"><value>Способ защиты выключен.</value></data>
+  <data name="Close" xml:space="preserve"><value>Закрыть</value></data>
+  <data name="ScanWithApp" xml:space="preserve"><value>Сканировать приложением-аутентификатором</value></data>
+  <data name="EnterGeneratedCode" xml:space="preserve"><value>Введите шестизначный код, созданный приложением.</value></data>
+  <data name="CodeValidFiveMinutes" xml:space="preserve"><value>Код действует пять минут.</value></data>
+  <data name="DisableAuthenticatorCodeDesc" xml:space="preserve"><value>Введите текущий код из Google Authenticator, чтобы отключить этот способ входа.</value></data>
+  <data name="DisableCodeSafetyHint" xml:space="preserve"><value>Защиту можно отключить только действующим кодом подключённого способа.</value></data>
+  <data name="ConfirmDisable" xml:space="preserve"><value>Подтвердить отключение</value></data>
+  <data name="DisableEmailCodeDesc" xml:space="preserve"><value>Мы отправили код подтверждения на {0}. Введите его, чтобы отключить вход по почте.</value></data>
+  <data name="ProtectionSetup" xml:space="preserve"><value>Настройка защиты</value></data>
+  <data name="ProtectionDisabling" xml:space="preserve"><value>Изменение защиты</value></data>
+  <data name="ConnectGoogleAuthenticator" xml:space="preserve"><value>Подключить Google Authenticator</value></data>
+  <data name="ConnectEmailCodes" xml:space="preserve"><value>Подключить коды по почте</value></data>
+  <data name="DisableGoogleAuthenticator" xml:space="preserve"><value>Отключить Google Authenticator</value></data>
+  <data name="DisableEmailCodes" xml:space="preserve"><value>Отключить коды по почте</value></data>
+  <data name="SecuritySessionExpired" xml:space="preserve"><value>Сессия истекла. Войдите снова.</value></data>
+  <data name="SecurityApiNeedsRestart" xml:space="preserve"><value>API безопасности недоступен. Пересоберите и перезапустите backend.</value></data>
+  <data name="SmtpNotConfigured" xml:space="preserve"><value>Отправка почты не настроена. Сначала заполните секцию Email:Smtp.</value></data>
+  <data name="SecurityOperationFailed" xml:space="preserve"><value>Не удалось выполнить операцию безопасности.</value></data>
+  <data name="SectionUnavailable" xml:space="preserve"><value>Раздел пока недоступен</value></data>
+  <data name="OrdersUnavailable" xml:space="preserve"><value>Данные заказов ещё не подключены. Когда они станут доступны, заказы появятся здесь.</value></data>
+  <data name="ReviewsUnavailable" xml:space="preserve"><value>Отзывы ещё не подключены к панели управления.</value></data>
+  <data name="SupportUnavailable" xml:space="preserve"><value>Обращения в поддержку ещё не подключены к панели управления.</value></data>
+  <data name="CustomerActivityUnavailable" xml:space="preserve"><value>Данные активности клиентов ещё не подключены.</value></data>
+  <data name="StorefrontUnavailable" xml:space="preserve"><value>Управление витриной ещё не подключено.</value></data>
+  <data name="LoyaltyUnavailable" xml:space="preserve"><value>Данные акций и лояльности ещё не подключены.</value></data>
+  <data name="SettingsUnavailable" xml:space="preserve"><value>Системные настройки ещё не подключены. Настройки личного профиля доступны через меню пользователя.</value></data>
+  <data name="AllSellers" xml:space="preserve"><value>Всего продавцов</value></data>
+  <data name="Rejected" xml:space="preserve"><value>Отклонено</value></data>
+  <data name="SellerSearchByName" xml:space="preserve"><value>Название, email или налоговый номер</value></data>
+  <data name="SellersNotFound" xml:space="preserve"><value>Продавцы не найдены</value></data>
+  <data name="SellersNotFoundDesc" xml:space="preserve"><value>Попробуйте другой запрос или измените фильтр статуса.</value></data>
+  <data name="SellerLoadFailed" xml:space="preserve"><value>Не удалось загрузить продавцов.</value></data>
+  <data name="SellerDescriptionMissing" xml:space="preserve"><value>Описание не добавлено</value></data>
+  <data name="SellerProfile" xml:space="preserve"><value>Профиль продавца</value></data>
+  <data name="SellerNotFound" xml:space="preserve"><value>Продавец не найден</value></data>
+  <data name="SellerCreatedAt" xml:space="preserve"><value>Создано</value></data>
+  <data name="SellerUpdatedAt" xml:space="preserve"><value>Обновлено</value></data>
+  <data name="SellerStatusSource" xml:space="preserve"><value>Актуальный статус учётной записи продавца.</value></data>
+  <data name="CatalogStatsUnavailable" xml:space="preserve"><value>Не удалось загрузить показатели каталога.</value></data>
+  <data name="StaffSignIn" xml:space="preserve"><value>Вход в рабочую панель</value></data>
+  <data name="StaffEmail" xml:space="preserve"><value>Email учётной записи</value></data>
+  <data name="StaffAccountRequired" xml:space="preserve"><value>Панель доступна администратору, менеджеру, модератору и продавцу.</value></data>
+  <data name="AccessDenied" xml:space="preserve"><value>У вас нет доступа к этому разделу.</value></data>
+  <data name="Manager" xml:space="preserve"><value>Менеджер</value></data>
+  <data name="Moderator" xml:space="preserve"><value>Модератор</value></data>
+  <data name="Store" xml:space="preserve"><value>Магазин</value></data>
+  <data name="SelectStore" xml:space="preserve"><value>Выберите магазин</value></data>
+  <data name="NoAvailableStores" xml:space="preserve"><value>Для аккаунта нет доступного активного магазина. Сначала создайте и одобрите магазин продавца.</value></data>
 </root>

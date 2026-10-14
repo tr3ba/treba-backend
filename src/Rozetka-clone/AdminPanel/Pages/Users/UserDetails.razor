@@ -1,7 +1,6 @@
 @page "/users/{Id:guid}"
 @rendermode InteractiveServer
 @inject IUsersApiClient UsersApiClient
-@inject IConfiguration Configuration
 
 <PageTitle>@L["UserDetails"]</PageTitle>
 
@@ -152,12 +151,6 @@ else
 
         try
         {
-            if (Configuration.GetValue<bool>("UseDemoData"))
-            {
-                _user = BuildDemoUser(Id);
-                return;
-            }
-
             _user = await UsersApiClient.GetUserByIdAsync(Id);
         }
         catch (HttpRequestException)
@@ -238,26 +231,4 @@ else
             address.Apartment
         }.Where(value => !string.IsNullOrWhiteSpace(value)));
 
-    private static UserDetailsResponse? BuildDemoUser(Guid id)
-    {
-        var demoUsers = new Dictionary<Guid, (string FirstName, string LastName, string Email, string Status)>
-        {
-            [Guid.Parse("a92c6542-dde4-44c8-97e5-8c61ce600001")] = ("Анна", "Коваль", "anna.demo@treba.local", "Active"),
-            [Guid.Parse("a92c6542-dde4-44c8-97e5-8c61ce600002")] = ("Богдан", "Мельник", "bohdan.demo@treba.local", "Active"),
-            [Guid.Parse("a92c6542-dde4-44c8-97e5-8c61ce600003")] = ("Ірина", "Шевченко", "iryna.demo@treba.local", "PendingActivation"),
-            [Guid.Parse("a92c6542-dde4-44c8-97e5-8c61ce600004")] = ("Максим", "Бондар", "maksym.demo@treba.local", "Blocked"),
-            [Guid.Parse("a92c6542-dde4-44c8-97e5-8c61ce600005")] = ("Олена", "Ткаченко", "olena.demo@treba.local", "Active")
-        };
-
-        if (!demoUsers.TryGetValue(id, out var demo))
-        {
-            return null;
-        }
-
-        return new UserDetailsResponse(
-            id, demo.Email, "+380 50 111 00 " + id.ToString()[^2..], demo.FirstName, demo.LastName, null,
-            demo.Status, demo.Status != "PendingActivation", true, DateTimeOffset.Now.AddDays(-18), DateTimeOffset.Now.AddDays(-2), DateTimeOffset.Now.AddHours(-3),
-            new UserProfileResponse(new DateOnly(1994, 6, 14), null, null, "uk", true),
-            [new UserAddressResponse(Guid.NewGuid(), "Україна", "Київська область", "Київ", "Хрещатик", "24", "18", "01001", $"{demo.FirstName} {demo.LastName}", "+380 50 111 00 01", true)]);
-    }
 }

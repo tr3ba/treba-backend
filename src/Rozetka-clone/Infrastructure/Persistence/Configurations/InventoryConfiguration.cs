@@ -6,39 +6,56 @@ namespace Infrastructure.Persistence.Configurations;
 
 public sealed class InventoryConfiguration : IEntityTypeConfiguration<Domain.Entities.Inventory.Inventory>
 {
-    public void Configure(EntityTypeBuilder<Domain.Entities.Inventory.Inventory> builder)
+    public void Configure(
+        EntityTypeBuilder<Domain.Entities.Inventory.Inventory> builder
+    )
     {
         builder.ToTable("inventory");
 
         builder.HasKey(x => x.Id);
 
-        builder.Property(x => x.WarehouseId)
+        builder
+            .Property(x => x.WarehouseId)
             .IsRequired();
 
-        builder.Property(x => x.VariantId)
+        builder
+            .Property(x => x.VariantId)
             .IsRequired();
 
-        builder.Property(x => x.AvailableQuantity)
+        builder
+            .Property(x => x.AvailableQuantity)
             .IsRequired()
             .HasDefaultValue(0);
 
-        builder.Property(x => x.ReservedQuantity)
+        builder
+            .Property(x => x.ReservedQuantity)
             .IsRequired()
             .HasDefaultValue(0);
 
-        builder.Property(x => x.MinimumQuantity)
+        builder
+            .Property(x => x.MinimumQuantity)
             .IsRequired()
             .HasDefaultValue(0);
 
-        builder.Property(x => x.Version)
+        builder
+            .Property(x => x.Version)
             .IsRowVersion();
 
         builder.Ignore(x => x.AvailableForSale);
 
-        builder.HasIndex(x => new { x.WarehouseId, x.VariantId })
+        builder
+            .HasIndex(
+                x =>
+                    new
+                    {
+                        x.WarehouseId,
+                        x.VariantId
+                    }
+            )
             .IsUnique();
 
-        builder.HasOne<Warehouse>()
+        builder
+            .HasOne<Warehouse>()
             .WithMany()
             .HasForeignKey(x => x.WarehouseId)
             .OnDelete(DeleteBehavior.Restrict);

@@ -1,7 +1,7 @@
-﻿using Domain.Entities.Common;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Domain.Entities.Common;
 
 namespace Domain.Entities.Users
 {
@@ -9,12 +9,14 @@ namespace Domain.Entities.Users
     {
         private Permission()
         {
+
         }
 
         private Permission(
             string code,
             string name,
-            string? description)
+            string? description
+        )
         {
             Code = NormalizeCode(code);
             Name = NormalizeRequired(name);
@@ -30,23 +32,28 @@ namespace Domain.Entities.Users
         public static Permission Create(
             string code,
             string name,
-            string? description = null)
+            string? description = null
+        )
         {
             return new Permission(
                 code,
                 name,
-                description);
+                description
+            );
         }
 
         public void Update(
             string name,
-            string? description)
+            string? description
+        )
         {
             Name = NormalizeRequired(name);
             Description = NormalizeOptional(description);
         }
 
-        private static string NormalizeCode(string code)
+        private static string NormalizeCode(
+            string code
+        )
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(code);
 
@@ -55,14 +62,18 @@ namespace Domain.Entities.Users
                 .ToUpperInvariant();
         }
 
-        private static string NormalizeRequired(string value)
+        private static string NormalizeRequired(
+            string value
+        )
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(value);
 
             return value.Trim();
         }
 
-        private static string? NormalizeOptional(string? value)
+        private static string? NormalizeOptional(
+            string? value
+        )
         {
             return string.IsNullOrWhiteSpace(value)
                 ? null

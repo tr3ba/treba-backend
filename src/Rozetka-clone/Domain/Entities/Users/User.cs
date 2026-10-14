@@ -1,5 +1,5 @@
-﻿using Domain.Entities.Common;
 using System.Linq;
+using Domain.Entities.Common;
 
 namespace Domain.Entities.Users
 {
@@ -7,6 +7,7 @@ namespace Domain.Entities.Users
     {
         private User()
         {
+
         }
 
         private User(
@@ -15,7 +16,8 @@ namespace Domain.Entities.Users
             string? phone,
             string firstName,
             string lastName,
-            string? middleName)
+            string? middleName
+        )
         {
             Id = id;
             Email = email;
@@ -58,17 +60,31 @@ namespace Domain.Entities.Users
 
         private readonly List<Address> _addresses = [];
 
-        public IReadOnlyCollection<Address> Addresses => _addresses.AsReadOnly();
-        
+        public IReadOnlyCollection<Address> Addresses
+        {
+            get
+            {
+                return _addresses.AsReadOnly();
+            }
+        }
+
         public string PasswordHash { get; private set; } = string.Empty;
-        
+
         public Guid RoleId { get; private set; }
-        
+
         public Role? Role { get; private set; }
-        
+
         public string? RefreshToken { get; private set; }
-        
+
         public DateTimeOffset? RefreshTokenExpiryTime { get; private set; }
+
+        public bool AuthenticatorEnabled { get; private set; }
+
+        public string? AuthenticatorSecretProtected { get; private set; }
+
+        public DateTimeOffset? AuthenticatorEnabledAt { get; private set; }
+
+        public bool EmailTwoFactorEnabled { get; private set; }
 
         public static User Create(
             Guid id,
@@ -76,7 +92,8 @@ namespace Domain.Entities.Users
             string? phone,
             string firstName,
             string lastName,
-            string? middleName = null)
+            string? middleName = null
+        )
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(email);
             ArgumentException.ThrowIfNullOrWhiteSpace(firstName);
@@ -88,14 +105,16 @@ namespace Domain.Entities.Users
                 NormalizePhone(phone),
                 firstName.Trim(),
                 lastName.Trim(),
-                NormalizeOptionalText(middleName));
+                NormalizeOptionalText(middleName)
+            );
         }
 
         public void UpdateProfile(
             string firstName,
             string lastName,
             string? middleName,
-            string? phone)
+            string? phone
+        )
         {
             EnsureCanBeModified();
 
@@ -108,7 +127,11 @@ namespace Domain.Entities.Users
 
             var normalizedPhone = NormalizePhone(phone);
 
-            if (!string.Equals(Phone, normalizedPhone, StringComparison.Ordinal))
+            if (!string.Equals(
+                Phone,
+                normalizedPhone,
+                StringComparison.Ordinal
+            ))
             {
                 Phone = normalizedPhone;
                 PhoneVerified = false;
@@ -116,7 +139,6 @@ namespace Domain.Entities.Users
 
             UpdatedAt = DateTimeOffset.UtcNow;
         }
-
 
         public Address AddAddress(
             string country,
@@ -128,12 +150,13 @@ namespace Domain.Entities.Users
             string? postalCode,
             string recipientName,
             string recipientPhone,
-            bool setAsDefault = false)
+            bool setAsDefault = false
+        )
         {
             EnsureCanBeModified();
 
-            var shouldBeDefault =
-                setAsDefault || _addresses.Count == 0;
+            var shouldBeDefault = setAsDefault
+                || _addresses.Count == 0;
 
             if (shouldBeDefault)
             {
@@ -154,7 +177,8 @@ namespace Domain.Entities.Users
                 postalCode,
                 recipientName,
                 recipientPhone,
-                shouldBeDefault);
+                shouldBeDefault
+            );
 
             _addresses.Add(address);
 
@@ -163,7 +187,9 @@ namespace Domain.Entities.Users
             return address;
         }
 
-        public void SetDefaultAddress(Guid addressId)
+        public void SetDefaultAddress(
+            Guid addressId
+        )
         {
             EnsureCanBeModified();
 
@@ -171,8 +197,7 @@ namespace Domain.Entities.Users
 
             if (address is null)
             {
-                throw new UserDomainException(
-                    "Address was not found.");
+                throw new UserDomainException("Address was not found.");
             }
 
             foreach (var item in _addresses)
@@ -185,7 +210,9 @@ namespace Domain.Entities.Users
             UpdatedAt = DateTimeOffset.UtcNow;
         }
 
-        public void RemoveAddress(Guid addressId)
+        public void RemoveAddress(
+            Guid addressId
+        )
         {
             EnsureCanBeModified();
 
@@ -193,15 +220,15 @@ namespace Domain.Entities.Users
 
             if (address is null)
             {
-                throw new UserDomainException(
-                    "Address was not found.");
+                throw new UserDomainException("Address was not found.");
             }
 
             var wasDefault = address.DefaultAddress;
 
             _addresses.Remove(address);
 
-            if (wasDefault && _addresses.Count > 0)
+            if (wasDefault
+                && _addresses.Count > 0)
             {
                 _addresses[0].SetAsDefault();
             }
@@ -209,7 +236,9 @@ namespace Domain.Entities.Users
             UpdatedAt = DateTimeOffset.UtcNow;
         }
 
-        public void ChangeEmail(string email)
+        public void ChangeEmail(
+            string email
+        )
         {
             EnsureCanBeModified();
 
@@ -218,15 +247,18 @@ namespace Domain.Entities.Users
             var normalizedEmail = NormalizeEmail(email);
 
             if (string.Equals(
-                    Email,
-                    normalizedEmail,
-                    StringComparison.OrdinalIgnoreCase))
+                Email,
+                normalizedEmail,
+                StringComparison.OrdinalIgnoreCase
+            ))
             {
                 return;
             }
 
             Email = normalizedEmail;
             EmailVerified = false;
+            EmailTwoFactorEnabled = false;
+            RevokeRefreshToken();
             UpdatedAt = DateTimeOffset.UtcNow;
         }
 
@@ -250,8 +282,7 @@ namespace Domain.Entities.Users
 
             if (string.IsNullOrWhiteSpace(Phone))
             {
-                throw new UserDomainException(
-                    "Cannot verify phone because user does not have a phone number.");
+                throw new UserDomainException("Cannot verify phone because user does not have a phone number.");
             }
 
             PhoneVerified = true;
@@ -263,14 +294,14 @@ namespace Domain.Entities.Users
             string? gender = null,
             string? avatarUrl = null,
             string language = "uk",
-            bool marketingEmailsEnabled = false)
+            bool marketingEmailsEnabled = false
+        )
         {
             EnsureCanBeModified();
 
             if (Profile is not null)
             {
-                throw new UserDomainException(
-                    "User profile already exists.");
+                throw new UserDomainException("User profile already exists.");
             }
 
             Profile = UserProfile.Create(
@@ -279,7 +310,8 @@ namespace Domain.Entities.Users
                 gender,
                 avatarUrl,
                 language,
-                marketingEmailsEnabled);
+                marketingEmailsEnabled
+            );
 
             UpdatedAt = DateTimeOffset.UtcNow;
         }
@@ -289,14 +321,14 @@ namespace Domain.Entities.Users
             string? gender,
             string? avatarUrl,
             string language,
-            bool marketingEmailsEnabled)
+            bool marketingEmailsEnabled
+        )
         {
             EnsureCanBeModified();
 
             if (Profile is null)
             {
-                throw new UserDomainException(
-                    "User profile does not exist.");
+                throw new UserDomainException("User profile does not exist.");
             }
 
             Profile.Update(
@@ -304,7 +336,8 @@ namespace Domain.Entities.Users
                 gender,
                 avatarUrl,
                 language,
-                marketingEmailsEnabled);
+                marketingEmailsEnabled
+            );
 
             UpdatedAt = DateTimeOffset.UtcNow;
         }
@@ -320,8 +353,7 @@ namespace Domain.Entities.Users
         {
             if (Status == UserStatus.Deleted)
             {
-                throw new UserDomainException(
-                    "Deleted user cannot be blocked.");
+                throw new UserDomainException("Deleted user cannot be blocked.");
             }
 
             if (Status == UserStatus.Blocked)
@@ -337,8 +369,7 @@ namespace Domain.Entities.Users
         {
             if (Status != UserStatus.Blocked)
             {
-                throw new UserDomainException(
-                    "Only blocked user can be unblocked.");
+                throw new UserDomainException("Only blocked user can be unblocked.");
             }
 
             Status = EmailVerified
@@ -348,7 +379,9 @@ namespace Domain.Entities.Users
             UpdatedAt = DateTimeOffset.UtcNow;
         }
 
-        public void Delete(Guid? deletedBy)
+        public void Delete(
+            Guid? deletedBy
+        )
         {
             if (Status == UserStatus.Deleted)
             {
@@ -366,8 +399,7 @@ namespace Domain.Entities.Users
         {
             if (Status == UserStatus.Deleted)
             {
-                throw new UserDomainException(
-                    "Deleted user cannot be modified.");
+                throw new UserDomainException("Deleted user cannot be modified.");
             }
         }
 
@@ -375,37 +407,45 @@ namespace Domain.Entities.Users
         {
             if (Status == UserStatus.Blocked)
             {
-                throw new UserDomainException(
-                    "Blocked user cannot login.");
+                throw new UserDomainException("Blocked user cannot login.");
             }
 
             if (Status == UserStatus.Deleted)
             {
-                throw new UserDomainException(
-                    "Deleted user cannot login.");
+                throw new UserDomainException("Deleted user cannot login.");
             }
         }
 
-        private static string NormalizeEmail(string email)
+        private static string NormalizeEmail(
+            string email
+        )
         {
-            return email.Trim().ToLowerInvariant();
+            return email
+                .Trim()
+                .ToLowerInvariant();
         }
 
-        private static string? NormalizePhone(string? phone)
+        private static string? NormalizePhone(
+            string? phone
+        )
         {
             return string.IsNullOrWhiteSpace(phone)
                 ? null
                 : phone.Trim();
         }
 
-        private static string? NormalizeOptionalText(string? value)
+        private static string? NormalizeOptionalText(
+            string? value
+        )
         {
             return string.IsNullOrWhiteSpace(value)
                 ? null
                 : value.Trim();
         }
-        
-        public void SetPasswordHash(string passwordHash)
+
+        public void SetPasswordHash(
+            string passwordHash
+        )
         {
             EnsureCanBeModified();
             ArgumentException.ThrowIfNullOrWhiteSpace(passwordHash);
@@ -413,14 +453,19 @@ namespace Domain.Entities.Users
             UpdatedAt = DateTimeOffset.UtcNow;
         }
 
-        public void AssignRole(Guid roleId)
+        public void AssignRole(
+            Guid roleId
+        )
         {
             EnsureCanBeModified();
             RoleId = roleId;
             UpdatedAt = DateTimeOffset.UtcNow;
         }
 
-        public void SetRefreshToken(string token, DateTimeOffset expiryTime)
+        public void SetRefreshToken(
+            string token,
+            DateTimeOffset expiryTime
+        )
         {
             RefreshToken = token;
             RefreshTokenExpiryTime = expiryTime;
@@ -431,6 +476,59 @@ namespace Domain.Entities.Users
         {
             RefreshToken = null;
             RefreshTokenExpiryTime = null;
+            UpdatedAt = DateTimeOffset.UtcNow;
+        }
+
+        public void BeginAuthenticatorSetup(
+            string protectedSecret
+        )
+        {
+            EnsureCanBeModified();
+            ArgumentException.ThrowIfNullOrWhiteSpace(protectedSecret);
+            AuthenticatorSecretProtected = protectedSecret;
+            AuthenticatorEnabled = false;
+            AuthenticatorEnabledAt = null;
+            UpdatedAt = DateTimeOffset.UtcNow;
+        }
+
+        public void EnableAuthenticator()
+        {
+            EnsureCanBeModified();
+            if (string.IsNullOrWhiteSpace(AuthenticatorSecretProtected))
+            {
+                throw new UserDomainException("Authenticator setup has not been started.");
+            }
+
+            AuthenticatorEnabled = true;
+            AuthenticatorEnabledAt = DateTimeOffset.UtcNow;
+            RevokeRefreshToken();
+            UpdatedAt = DateTimeOffset.UtcNow;
+        }
+
+        public void DisableAuthenticator()
+        {
+            EnsureCanBeModified();
+            AuthenticatorEnabled = false;
+            AuthenticatorSecretProtected = null;
+            AuthenticatorEnabledAt = null;
+            RevokeRefreshToken();
+            UpdatedAt = DateTimeOffset.UtcNow;
+        }
+
+        public void EnableEmailTwoFactor()
+        {
+            EnsureCanBeModified();
+            VerifyEmail();
+            EmailTwoFactorEnabled = true;
+            RevokeRefreshToken();
+            UpdatedAt = DateTimeOffset.UtcNow;
+        }
+
+        public void DisableEmailTwoFactor()
+        {
+            EnsureCanBeModified();
+            EmailTwoFactorEnabled = false;
+            RevokeRefreshToken();
             UpdatedAt = DateTimeOffset.UtcNow;
         }
     }

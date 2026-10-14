@@ -1,60 +1,233 @@
 @page "/moderation"
+@inject AdminPanel.Services.Implementations.CatalogApiClient Api
+@inject CatalogModerationState ModerationState
+@using Contracts.Catalog
+@implements IDisposable
 
 <PageTitle>@L["Moderation"] — Treba Admin</PageTitle>
+
+<div class="moderation-topline">
+    <a class="moderation-back" href="/products"><i class="bi bi-arrow-left"></i>@L["BackToCatalog"]</a>
+    <div class="moderation-count">
+        <span class="moderation-count-icon"><i class="bi bi-inbox"></i></span>
+        <span><small>@L["AwaitingReview"]</small><strong>@ModerationState.PendingCount</strong></span>
+    </div>
+</div>
 
 <section class="page-hero moderation-hero">
     <div>
         <p class="eyebrow">@L["CatalogQuality"]</p>
         <h1>@L["ModerationQueue"]</h1>
+        <p>@L["ModerationSubtitle"]</p>
     </div>
-    <div class="moderation-score"><span>@L["QueueHealth"]</span><strong>82%</strong><small><i class="bi bi-arrow-up-right"></i> 6% @L["ThisWeek"]</small></div>
 </section>
 
-<section class="moderation-layout">
-    <div class="moderation-main">
-        <div class="moderation-tabs">
-            <button class="moderation-tab active" type="button">@L["AwaitingReview"] <span>47</span></button>
-            <button class="moderation-tab" type="button">@L["NeedChanges"] <span>13</span></button>
-            <button class="moderation-tab" type="button">@L["Approved"] <span>284</span></button>
-        </div>
+@if (error is not null)
+{
+    <p class="feedback-error" role="alert">@error</p>
+}
 
-        <article class="featured-review card-box">
-            <div class="featured-product-visual"><span>NEW</span><i class="bi bi-headphones"></i></div>
-            <div class="featured-review-copy">
-                <div class="review-meta"><span class="risk-chip risk-low"><i class="bi bi-shield-check"></i>@L["LowRisk"]</span><span>@L["Submitted"] · 12 @L["MinutesAgo"]</span></div>
-                <p class="eyebrow">@L["NextInQueue"]</p>
-                <h2>Wireless Headphones Pro X2</h2>
-                <p class="product-sku">SKU TRB-HDP-X2 · TechPoint UA</p>
-                <div class="product-review-facts"><div><span>@L["Category"]</span><strong>@L["Electronics"]</strong></div><div><span>@L["Price"]</span><strong>₴ 3 299</strong></div><div><span>@L["Completeness"]</span><strong>96%</strong></div></div>
-                <div class="moderation-actions"><button class="secondary-button danger" type="button"><i class="bi bi-x-lg"></i>@L["Reject"]</button><button class="secondary-button" type="button"><i class="bi bi-chat-left-text"></i>@L["NeedChanges"]</button><button class="primary-button" type="button"><i class="bi bi-check-lg"></i>@L["Approve"]</button></div>
-            </div>
-        </article>
+@if (loading)
+{
+    <div class="moderation-loading" role="status">
+        <span class="spinner-border" aria-hidden="true"></span>
+        <span>@L["LoadingModeration"]</span>
+    </div>
+}
+else if (result is not null)
+{
+    @if (result.Content.Count == 0)
+    {
+        <section class="card-box empty-state moderation-empty">
+            <i class="bi bi-check2-circle"></i>
+            <h2>@L["AllProductsReviewed"]</h2>
+            <p>@L["ModerationEmptyDesc"]</p>
+            <AuthorizeView Roles="Administrator,Manager,Seller"><a href="/products/new" class="primary-button">@L["AddProduct"]</a></AuthorizeView>
+        </section>
+    }
+
+    <div class="moderation-list">
+        @foreach (var product in result.Content)
+        {
+            var currentImage = CurrentImage(product);
+            <article class="moderation-card" @key="product.Id">
+                <div class="moderation-media">
+                    <span class="moderation-status"><i></i>@L["AwaitingReview"]</span>
+                    @if (currentImage is not null)
+                    {
+                        <img src="@Api.ResolveImageUrl(currentImage.ImageUrl)"
+                             alt="@(currentImage.AltText ?? product.Name)" />
+
+                        @if (product.Images.Count > 1)
+                        {
+                            <button class="moderation-carousel-button previous" type="button"
+                                    aria-label="@L["PreviousImage"]"
+                                    @onclick="() => ChangeImage(product, -1)">
+                                <i class="bi bi-chevron-left"></i>
+                            </button>
+                            <button class="moderation-carousel-button next" type="button"
+                                    aria-label="@L["NextImage"]"
+                                    @onclick="() => ChangeImage(product, 1)">
+                                <i class="bi bi-chevron-right"></i>
+                            </button>
+                            <span class="moderation-image-position">
+                                <i class="bi bi-images"></i>
+                                @L["ProductImagePosition", ImageIndex(product) + 1, product.Images.Count]
+                            </span>
+                        }
+                    }
+                    else
+                    {
+                        <div class="moderation-brand-fallback" role="img" aria-label="@L["NoProductImage"]">
+                            <span class="moderation-brand-mark">T</span>
+                            <strong>TREBA</strong>
+                            <small>@L["NoProductImage"]</small>
+                        </div>
+                    }
+                </div>
+
+                <div class="moderation-card-content">
+                    <div class="moderation-product-heading">
+                        <div>
+                            <p class="moderation-category">@product.CategoryName <span></span> @product.BrandName</p>
+                            <h2>@product.Name</h2>
+                        </div>
+                        <span class="moderation-created">@product.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy")</span>
+                    </div>
+
+                    <div class="moderation-product-meta">
+                        <span><b>@L["Sku"]</b> @product.Sku</span>
+                        <span><b>@L["Slug"]</b> @product.Slug</span>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(product.ShortDescription))
+                    {
+                        <p class="moderation-summary">@product.ShortDescription</p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(product.Description))
+                    {
+                        <p class="moderation-description">@product.Description</p>
+                    }
+
+                    <div class="product-review-facts">
+                        <div><span>@L["Price"]</span><strong>₴ @product.Price.ToString("N2")</strong></div>
+                        <div><span>@L["Stock"]</span><strong>@product.StockQuantity</strong></div>
+                        <div><span>@L["Warranty"]</span><strong>@product.WarrantyMonths @L["MonthsShort"]</strong></div>
+                    </div>
+
+                    <div class="moderation-actions">
+                        <button class="moderation-reject" type="button"
+                                disabled="@(reviewingId is not null)"
+                                @onclick="() => Review(product.Id, false)">
+                            <i class="bi bi-x-lg"></i>@L["Reject"]
+                        </button>
+                        <button class="moderation-approve" type="button"
+                                disabled="@(reviewingId is not null)"
+                                @onclick="() => Review(product.Id, true)">
+                            @if (reviewingId == product.Id)
+                            {
+                                <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                            }
+                            else
+                            {
+                                <i class="bi bi-check2"></i>
+                            }
+                            @L["Approve"]
+                        </button>
+                    </div>
+                </div>
+            </article>
+        }
     </div>
 
-    <aside class="queue-panel card-box">
-        <div class="card-box-header"><div><p class="eyebrow">@L["UpNext"]</p><h2 class="card-box-title">@L["Queue"]</h2></div><button class="row-menu" type="button" aria-label="@L["Filters"]"><i class="bi bi-sliders"></i></button></div>
-        <div class="queue-list">
-            @foreach (var item in QueueItems)
-            {
-                <article class="queue-item">
-                    <div class="queue-thumb @item.Color"><i class="bi @item.Icon"></i></div>
-                    <div><strong>@item.Name</strong><span>@item.Seller</span><small>@item.Age</small></div>
-                    <span class="risk-dot @item.Risk" title="@L["Risk"]"></span>
-                </article>
-            }
-        </div>
-        <button class="queue-more" type="button">@L["ViewFullQueue"] <i class="bi bi-arrow-right"></i></button>
-    </aside>
-</section>
+    @if (result.TotalPages > 1)
+    {
+        <PaginationControl CurrentPage="result.Page" TotalPages="result.TotalPages" OnPageChanged="Load" />
+    }
+}
 
 @code {
-    private IReadOnlyList<QueueItem> QueueItems =>
-    [
-        new("Smart Watch S8", "Digital Hub", "18 " + L["MinutesAgo"], "bi-smartwatch", "blue", "risk-medium"),
-        new("Organic Face Cream", "Beauty Lab", "24 " + L["MinutesAgo"], "bi-droplet", "pink", "risk-low"),
-        new("Power Station 1200W", "Volt Market", "31 " + L["MinutesAgo"], "bi-battery-charging", "green", "risk-high"),
-        new("Kids Constructor 4+", "Toy House", "42 " + L["MinutesAgo"], "bi-box", "amber", "risk-low")
-    ];
+    private PagedResponse<CatalogProductDto>? result;
+    private readonly Dictionary<Guid, int> imageIndexes = [];
+    private bool loading = true;
+    private Guid? reviewingId;
+    private string? error;
 
-    private sealed record QueueItem(string Name, string Seller, string Age, string Icon, string Color, string Risk);
+    protected override async Task OnInitializedAsync()
+    {
+        ModerationState.Changed += OnModerationChanged;
+        await Load(1);
+    }
+
+    private async Task Load(int page) => await Load(page, true);
+
+    private async Task Load(int page, bool showLoading)
+    {
+        if (showLoading)
+            loading = true;
+
+        error = null;
+        try
+        {
+            result = await Api.List(page, status: "PENDING_MODERATION");
+            ModerationState.SetPending((int)Math.Min(int.MaxValue, result.TotalElements));
+        }
+        catch (HttpRequestException exception)
+        {
+            error = exception.Message;
+        }
+        finally
+        {
+            if (showLoading)
+                loading = false;
+        }
+    }
+
+    private async Task Review(Guid id, bool approve)
+    {
+        reviewingId = id;
+        error = null;
+        try
+        {
+            await Api.Action(id, approve ? "approve" : "reject");
+
+            if (result is not null)
+            {
+                var remaining = result.Content.Where(product => product.Id != id).ToList();
+                var total = Math.Max(0, result.TotalElements - 1);
+                var totalPages = total == 0 ? 0 : (int)Math.Ceiling(total / (double)result.Size);
+                result = new(remaining, result.Page, result.Size, total, totalPages);
+                ModerationState.SetPending((int)Math.Min(int.MaxValue, total));
+
+                if (remaining.Count == 0 && result.Page > 1)
+                    await Load(result.Page - 1, false);
+            }
+        }
+        catch (HttpRequestException exception)
+        {
+            error = exception.Message;
+        }
+        finally
+        {
+            reviewingId = null;
+        }
+    }
+
+    private int ImageIndex(CatalogProductDto product) =>
+        product.Images.Count == 0 ? 0 : Math.Clamp(imageIndexes.GetValueOrDefault(product.Id), 0, product.Images.Count - 1);
+
+    private CatalogProductImageDto? CurrentImage(CatalogProductDto product) =>
+        product.Images.Count == 0 ? null : product.Images[ImageIndex(product)];
+
+    private void ChangeImage(CatalogProductDto product, int direction)
+    {
+        if (product.Images.Count < 2)
+            return;
+
+        imageIndexes[product.Id] = (ImageIndex(product) + direction + product.Images.Count) % product.Images.Count;
+    }
+
+    private void OnModerationChanged() => _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose() => ModerationState.Changed -= OnModerationChanged;
 }

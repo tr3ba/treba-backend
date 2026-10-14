@@ -1,86 +1,107 @@
-﻿using Domain.Entities;
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+using Domain.Entities;
 using Domain.Entities.Product;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Infrastructure.Persistence.Configurations
 {
     public sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
     {
-        public void Configure(EntityTypeBuilder<Product> builder)
+        public void Configure(
+            EntityTypeBuilder<Product> builder
+        )
         {
             builder.ToTable("products");
 
             builder.HasKey(x => x.Id);
 
-            builder.Property(x => x.Id)
+            builder
+                .Property(x => x.Id)
                 .ValueGeneratedNever();
 
-            builder.HasOne<Store>()
+            builder
+                .HasOne<Store>()
                 .WithMany()
                 .HasForeignKey(x => x.StoreId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            builder.Property(x => x.StoreId)
+            builder
+                .Property(x => x.StoreId)
                 .IsRequired();
 
-            builder.Property(x => x.CategoryId)
+            builder
+                .Property(x => x.CategoryId)
                 .IsRequired();
 
-            builder.Property(x => x.BrandId)
+            builder
+                .Property(x => x.BrandId)
                 .IsRequired();
 
-            builder.Property(x => x.Name)
+            builder
+                .Property(x => x.Name)
                 .IsRequired()
                 .HasMaxLength(250);
 
-            builder.Property(x => x.Slug)
+            builder
+                .Property(x => x.Slug)
                 .IsRequired()
                 .HasMaxLength(300);
 
-            builder.HasIndex(x => x.Slug)
+            builder
+                .HasIndex(x => x.Slug)
                 .IsUnique();
 
-            builder.Property(x => x.ShortDescription)
+            builder
+                .Property(x => x.ShortDescription)
                 .HasMaxLength(500);
 
             builder.Property(x => x.Description);
 
-            builder.Property(x => x.Status)
+            builder
+                .Property(x => x.Status)
                 .IsRequired()
                 .HasConversion<string>()
                 .HasMaxLength(50);
 
-            builder.Property(x => x.AverageRating)
+            builder
+                .Property(x => x.AverageRating)
                 .HasDefaultValue(0);
 
-            builder.Property(x => x.ReviewCount)
+            builder
+                .Property(x => x.ReviewCount)
                 .HasDefaultValue(0);
 
-            builder.Property(x => x.SalesCount)
+            builder
+                .Property(x => x.SalesCount)
                 .HasDefaultValue(0);
 
-            builder.Property(x => x.WarrantyMonths)
+            builder
+                .Property(x => x.WarrantyMonths)
                 .HasDefaultValue(0);
 
-            builder.Property(x => x.CountryOfOrigin)
+            builder
+                .Property(x => x.CountryOfOrigin)
                 .HasMaxLength(100);
 
-            builder.Property(x => x.CreatedAt)
+            builder
+                .Property(x => x.CreatedAt)
                 .IsRequired();
 
-            builder.Property(x => x.UpdatedAt)
+            builder
+                .Property(x => x.UpdatedAt)
                 .IsRequired();
 
-            builder.HasOne<Domain.Entities.Category>()
+            builder
+                .HasOne<Domain.Entities.Category>()
                 .WithMany()
                 .HasForeignKey(x => x.CategoryId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            builder.HasOne<Domain.Entities.Brand>()
+            builder
+                .HasOne<Domain.Entities.Brand>()
                 .WithMany()
                 .HasForeignKey(x => x.BrandId)
                 .OnDelete(DeleteBehavior.Restrict);

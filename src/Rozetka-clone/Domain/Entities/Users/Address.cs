@@ -1,7 +1,7 @@
-﻿using Domain.Entities.Common;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Domain.Entities.Common;
 
 namespace Domain.Entities.Users
 {
@@ -9,6 +9,7 @@ namespace Domain.Entities.Users
     {
         private Address()
         {
+
         }
 
         private Address(
@@ -22,7 +23,8 @@ namespace Domain.Entities.Users
             string? postalCode,
             string recipientName,
             string recipientPhone,
-            bool defaultAddress)
+            bool defaultAddress
+        )
         {
             UserId = userId;
             Country = NormalizeRequired(country);
@@ -70,13 +72,15 @@ namespace Domain.Entities.Users
             string? postalCode,
             string recipientName,
             string recipientPhone,
-            bool defaultAddress = false)
+            bool defaultAddress = false
+        )
         {
             if (userId == Guid.Empty)
             {
                 throw new ArgumentException(
                     "User id cannot be empty.",
-                    nameof(userId));
+                    nameof(userId)
+                );
             }
 
             return new Address(
@@ -90,7 +94,8 @@ namespace Domain.Entities.Users
                 postalCode,
                 recipientName,
                 recipientPhone,
-                defaultAddress);
+                defaultAddress
+            );
         }
 
         public void Update(
@@ -102,7 +107,8 @@ namespace Domain.Entities.Users
             string? apartment,
             string? postalCode,
             string recipientName,
-            string recipientPhone)
+            string recipientPhone
+        )
         {
             Country = NormalizeRequired(country);
             Region = NormalizeOptional(region);
@@ -125,14 +131,18 @@ namespace Domain.Entities.Users
             DefaultAddress = false;
         }
 
-        private static string NormalizeRequired(string value)
+        private static string NormalizeRequired(
+            string value
+        )
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(value);
 
             return value.Trim();
         }
 
-        private static string? NormalizeOptional(string? value)
+        private static string? NormalizeOptional(
+            string? value
+        )
         {
             return string.IsNullOrWhiteSpace(value)
                 ? null

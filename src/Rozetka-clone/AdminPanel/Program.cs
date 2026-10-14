@@ -12,6 +12,11 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddLocalization();
+builder.Services.AddAuthentication();
+builder.Services.AddAuthorization();
+builder.Services.AddCascadingAuthenticationState();
+builder.Services.AddScoped<CatalogApiClient>();
+builder.Services.AddScoped<SecurityApiClient>();
 
 builder.Services.AddScoped<TokenStorageService>();
 builder.Services.AddScoped<AuthorizedHttpMessageHandler>();
@@ -43,6 +48,8 @@ builder.Services.AddScoped<SellersState>();
 builder.Services.AddScoped<OrdersState>();
 builder.Services.AddScoped<ProductsState>();
 builder.Services.AddScoped<CategoriesState>();
+builder.Services.AddScoped<CurrentUserState>();
+builder.Services.AddScoped<CatalogModerationState>();
 
 var app = builder.Build();
 
@@ -65,6 +72,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 app.UseStaticFiles();
+app.MapStaticAssets();
 
 app.UseRouting();
 

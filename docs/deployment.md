@@ -1,49 +1,57 @@
 # Deployment
 
-Backend розгортається в AWS.
+Treba Backend розгортається в AWS у Docker-контейнері.
 
-Використовуються сервіси:
+## AWS Services
 
-EC2
-ECR
-RDS PostgreSQL
-IAM
-Security Groups
-Secrets Manager
-SSM
+Для backend infrastructure використовуються:
 
-Схема:
+- Amazon EC2
+- Amazon ECR
+- Amazon RDS for PostgreSQL
+- AWS Systems Manager (SSM)
+- AWS IAM
+- AWS Secrets Manager
+- Security Groups
 
-GitHub
-GitHub Actions
-AWS ECR
-AWS EC2
-Docker
-ASP.NET Backend
-AWS RDS PostgreSQL
+## Deployment Architecture
 
-Deployment виконується автоматично через GitHub Actions.
+GitHub → GitHub Actions → Docker Build → Amazon ECR → AWS Systems Manager → Amazon EC2 → Treba Backend → Amazon RDS PostgreSQL
 
-Після успішної збірки Docker image завантажується в ECR.
+## CI/CD
 
-Потім EC2 через AWS SSM завантажує новий image і запускає контейнер.
+Deployment автоматизований через GitHub Actions.
 
-Backend працює на порту:
+Після змін у `main` backend проходить build та перевірки.
 
-5000
+Після успішної збірки створюється Docker image та публікується в Amazon ECR.
 
-Після deployment виконується перевірка:
+Deployment workflow використовує AWS Systems Manager для виконання команд на EC2.
 
-GET /WeatherForecast
+EC2 завантажує Docker image з ECR та запускає backend container.
 
-Для environment variables на EC2 використовується файл:
+## Runtime
 
-/home/ubuntu/treba-backend.env
+Backend працює в Docker-контейнері.
 
-База даних:
+Backend port:
 
-PostgreSQL
+`5000`
 
-Database:
+Runtime:
 
-treba_dev
+- ASP.NET Core
+- .NET 10
+
+## Health Checks
+
+Для перевірки доступності backend використовується:
+
+`GET /ping`
+
+Очікувана відповідь:
+
+```json
+{
+  "status": "ok"
+}
