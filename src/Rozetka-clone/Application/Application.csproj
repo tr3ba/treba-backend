@@ -15,8 +15,4 @@
         <ProjectReference Include="..\Contracts\Contracts.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Orders\" />
-    </ItemGroup>
-
 </Project>

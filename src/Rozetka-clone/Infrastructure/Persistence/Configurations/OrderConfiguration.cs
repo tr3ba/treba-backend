@@ -29,15 +29,16 @@ public sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
             .HasMaxLength(32)
             .IsRequired();
 
-        builder.Property(x => x.PaymentStatus)
-            .HasConversion<string>()
-            .HasMaxLength(32)
-            .IsRequired();
-
-        builder.Property(x => x.DeliveryStatus)
-            .HasConversion<string>()
-            .HasMaxLength(32)
-            .IsRequired();
+        // TODO: после добавления Payment и Delivery убрать коменты
+        // builder.Property(x => x.PaymentStatus)
+        //     .HasConversion<string>()
+        //     .HasMaxLength(32)
+        //     .IsRequired();
+        //
+        // builder.Property(x => x.DeliveryStatus)
+        //     .HasConversion<string>()
+        //     .HasMaxLength(32)
+        //     .IsRequired();
 
         builder.Property(x => x.Currency)
             .HasMaxLength(10)
