@@ -88,6 +88,10 @@ namespace Infrastructure.Persistence
 
         public DbSet<OrderStatusHistory> OrderStatusHistories => Set<OrderStatusHistory>();
 
+        public DbSet<Domain.Entities.Payments.Payment> Payments => Set<Domain.Entities.Payments.Payment>();
+
+        public DbSet<Domain.Entities.Payments.PaymentTransaction> PaymentTransactions => Set<Domain.Entities.Payments.PaymentTransaction>();
+
         protected override void OnModelCreating(
             ModelBuilder modelBuilder
         )

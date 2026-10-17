@@ -1,6 +1,8 @@
 ﻿using Application.Abstractions;
+using Application.Payments;
 using Infrastructure.Authentication;
 using Infrastructure.Persistence;
+using Infrastructure.Payments;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -95,6 +97,9 @@ namespace Infrastructure
             services.AddScoped<ISecondFactorService, SecondFactorService>();
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<IIdentityService, IdentityService>();
+
+            services.AddScoped<IPaymentProvider, MockPaymentProvider>();
+            services.AddScoped<IPaymentService, PaymentService>();
 
             return services;
         }

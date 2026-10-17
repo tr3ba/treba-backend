@@ -1,6 +1,7 @@
 using System.Transactions;
 using Application.Abstractions;
 using Application.Inventory;
+using Application.Payments;
 using Contracts.Orders;
 using Domain.Entities.Orders;
 using Domain.Enums;
@@ -12,11 +13,13 @@ public sealed class OrderService : IOrderService
 {
     private readonly IApplicationDbContext _context;
     private readonly IInventoryService _inventoryService;
+    private readonly IPaymentService _paymentService;
 
-    public OrderService(IApplicationDbContext context, IInventoryService inventoryService)
+    public OrderService(IApplicationDbContext context, IInventoryService inventoryService, IPaymentService paymentService)
     {
         _context = context;
         _inventoryService = inventoryService;
+        _paymentService = paymentService;
     }
 
     public async Task<OrderDto> CreateOrderAsync(CreateOrderRequest request, CancellationToken cancellationToken = default)
@@ -26,7 +29,6 @@ public sealed class OrderService : IOrderService
             throw new ArgumentException("Заказ должен содержать хотя бы одну позицию.", nameof(request.Items));
         }
 
-        // Используем TransactionScope для безопасной транзакции без вызова .Database на интерфейсе
         using var scope = new TransactionScope(
             TransactionScopeOption.Required,
             new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted },
@@ -40,7 +42,6 @@ public sealed class OrderService : IOrderService
 
             var orderId = Guid.NewGuid();
 
-            // Резервируем товары через InventoryService
             await _inventoryService.ReserveItemsAsync(orderId, inventoryItemsRequest, cancellationToken);
 
             decimal subtotal = request.Items.Sum(i => i.UnitPrice * i.Quantity);
@@ -57,7 +58,7 @@ public sealed class OrderService : IOrderService
                 CustomerId = request.CustomerId,
                 Status = OrderStatus.AWAITING_PAYMENT,
                 // TODO: после добавления Payment и Delivery убрать коменты
-                // PaymentStatus = PaymentStatus.PENDING,
+                PaymentStatus = PaymentStatus.PENDING,
                 // DeliveryStatus = DeliveryStatus.CREATED,
                 Currency = "UAH",
                 Subtotal = subtotal,
@@ -116,6 +117,9 @@ public sealed class OrderService : IOrderService
             _context.Orders.Add(order);
             await _context.SaveChangesAsync(cancellationToken);
 
+            // Create payment for the order
+            await _paymentService.CreatePaymentAsync(order.Id, cancellationToken);
+
             scope.Complete(); // Успешно завершаем транзакцию
 
             return MapToDto(order);
@@ -151,7 +155,6 @@ public sealed class OrderService : IOrderService
         order.Status = OrderStatus.CANCELLED;
         order.CancelledAt = DateTimeOffset.UtcNow;
 
-        // Освобождаем складской резерв
         await _inventoryService.ReleaseReservationAsync(orderId, cancellationToken);
 
         _context.OrderStatusHistories.Add(new OrderStatusHistory
@@ -171,21 +174,20 @@ public sealed class OrderService : IOrderService
     public async Task PayOrderAsync(Guid orderId, CancellationToken cancellationToken = default)
     {
         var order = await _context.Orders
+            .Include(o => o.Payments)
             .FirstOrDefaultAsync(o => o.Id == orderId, cancellationToken)
             ?? throw new InvalidOperationException($"Заказ с ID {orderId} не найден.");
 
-        // TODO: после добавления Payment и Delivery убрать коменты
-        // if (order.PaymentStatus == PaymentStatus.SUCCEEDED)
-        // {
-        //     return;
-        // }
+        var successfulPayment = order.Payments.FirstOrDefault(p => p.Status == PaymentStatus.SUCCEEDED);
+        if (successfulPayment == null)
+        {
+            throw new InvalidOperationException("Заказ не может быть marcado как оплаченный, так как нет успешного платежа.");
+        }
 
-        // order.PaymentStatus = PaymentStatus.SUCCEEDED;
         var previousStatus = order.Status;
         order.Status = OrderStatus.PAID;
         order.ConfirmedAt = DateTimeOffset.UtcNow;
 
-        // Подтверждаем складской резерв
         await _inventoryService.ConfirmReservationAsync(orderId, cancellationToken);
 
         _context.OrderStatusHistories.Add(new OrderStatusHistory
@@ -206,9 +208,7 @@ public sealed class OrderService : IOrderService
         order.OrderNumber,
         order.CustomerId,
         order.Status.ToString(),
-        // TODO: после добавления Payment и Delivery убрать коменты
-        // order.PaymentStatus.ToString(),
-        // order.DeliveryStatus.ToString(),
+        order.PaymentStatus.ToString(),
         order.Currency,
         order.Subtotal,
         order.DiscountAmount,

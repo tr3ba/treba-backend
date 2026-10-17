@@ -5,8 +5,8 @@ public sealed record OrderDto(
     string OrderNumber,
     Guid CustomerId,
     string Status,
+    string PaymentStatus,
     // TODO: после добавления Payment и Delivery убрать коменты
-    // string PaymentStatus,
     // string DeliveryStatus,
     string Currency,
     decimal Subtotal,
