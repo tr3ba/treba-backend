@@ -475,11 +475,11 @@ namespace Application.Promotions
         }
 
         public async Task RegisterCouponUsageAsync(
-    Guid couponId,
-    Guid userId,
-    Guid orderId,
-    CancellationToken cancellationToken = default
-)
+            Guid couponId,
+            Guid userId,
+            Guid orderId,
+            CancellationToken cancellationToken = default
+        )
         {
             if (couponId == Guid.Empty)
             {
@@ -516,13 +516,78 @@ namespace Application.Promotions
                 throw new KeyNotFoundException("Coupon not found.");
             }
 
+            var alreadyRegistered = await _dbContext.CouponUsages
+                .AsNoTracking()
+                .AnyAsync(
+                    x => x.CouponId == couponId && x.OrderId == orderId,
+                    cancellationToken
+                );
+
+            if (alreadyRegistered)
+            {
+                throw new InvalidOperationException(
+                    "Coupon usage has already been registered for this order."
+                );
+            }
+
+            var now = DateTime.UtcNow;
+
+            if (!coupon.Active || now < coupon.StartAt || now > coupon.EndAt)
+            {
+                throw new InvalidOperationException(
+                    "Coupon is not active."
+                );
+            }
+
+            if (coupon.UsageLimit > 0 && coupon.UsedCount >= coupon.UsageLimit)
+            {
+                throw new InvalidOperationException(
+                    "Coupon usage limit has been reached."
+                );
+            }
+
+            if (coupon.UsageLimitPerUser > 0)
+            {
+                var userUsageCount = await _dbContext.CouponUsages
+                    .AsNoTracking()
+                    .CountAsync(
+                        x => x.CouponId == couponId && x.UserId == userId,
+                        cancellationToken
+                    );
+
+                if (userUsageCount >= coupon.UsageLimitPerUser)
+                {
+                    throw new InvalidOperationException(
+                        "Coupon usage limit for this user has been reached."
+                    );
+                }
+            }
+
+            var promotionIsActive = await _dbContext.Promotions
+                .AsNoTracking()
+                .AnyAsync(
+                    x =>
+                        x.Id == coupon.PromotionId
+                        && x.Status == PromotionStatus.ACTIVE
+                        && x.StartAt <= now
+                        && x.EndAt >= now,
+                    cancellationToken
+                );
+
+            if (!promotionIsActive)
+            {
+                throw new InvalidOperationException(
+                    "Promotion is not active."
+                );
+            }
+
             var usage = new CouponUsage
             {
                 Id = Guid.NewGuid(),
                 CouponId = couponId,
                 UserId = userId,
                 OrderId = orderId,
-                UsedAt = DateTime.UtcNow
+                UsedAt = now
             };
 
             _dbContext.CouponUsages.Add(usage);
