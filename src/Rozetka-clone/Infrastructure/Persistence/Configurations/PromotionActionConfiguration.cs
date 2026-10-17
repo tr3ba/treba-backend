@@ -38,7 +38,8 @@ namespace Infrastructure.Persistence.Configurations
                 .HasForeignKey(x => x.PromotionId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            builder.HasIndex(x => x.PromotionId);
+            builder.HasIndex(x => x.PromotionId)
+                  .IsUnique();
         }
 
     }

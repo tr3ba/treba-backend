@@ -38,6 +38,14 @@ namespace Infrastructure.Persistence.Configurations
 
             builder.HasIndex(x => x.CouponId);
             builder.HasIndex(x => x.UserId);
+
+            builder.HasIndex(x => new
+            {
+                x.CouponId,
+                x.OrderId
+            })
+            .IsUnique();
+
             builder.HasIndex(x => x.OrderId);
         }
     }
