@@ -7,6 +7,7 @@ using Application.ProductImages;
 using Application.Products;
 using Application.ProductTags;
 using Application.ProductVariants;
+using Application.Promotions;
 using Application.Reviews;
 using Application.Sellers;
 using Application.Stores;
@@ -17,6 +18,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using WebApi.BackgroundServices;
 using WebApi.Extensions;
 using WebApi.Telegram;
 
@@ -69,6 +71,10 @@ builder.Services.AddScoped<IStoreService, StoreService>();
 builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<IWishlistService, WishlistService>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
+builder.Services.AddScoped<IDiscountService, DiscountService>();
+
+
+builder.Services.AddHostedService<PromotionActivationWorker>();
 
 var jwtSection = builder.Configuration.GetSection("Jwt");
 
