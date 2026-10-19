@@ -45,6 +45,16 @@ namespace Infrastructure.Persistence
 
         public DbSet<ReviewVote> ReviewVotes => Set<ReviewVote>();
 
+        public DbSet<Promotion> Promotions => Set<Promotion>();
+
+        public DbSet<PromotionRule> PromotionRules => Set<PromotionRule>();
+
+        public DbSet<PromotionAction> PromotionActions => Set<PromotionAction>();
+
+        public DbSet<Coupon> Coupons => Set<Coupon>();
+
+        public DbSet<CouponUsage> CouponUsages => Set<CouponUsage>();
+
         public DbSet<SellerReviewResponse> SellerReviewResponses => Set<SellerReviewResponse>();
 
         public DbSet<Role> Roles => Set<Role>();

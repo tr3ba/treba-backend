@@ -20,6 +20,22 @@ namespace WebApi.Controllers
             _reviewService = reviewService;
         }
 
+        [Authorize]
+        [HttpPost]
+        public async Task<ActionResult<ReviewDto>> CreateReview(
+            [FromBody] CreateReviewRequest request,
+            CancellationToken cancellationToken)
+        {
+            var userId = GetCurrentUserId();
+
+            var review = await _reviewService.CreateReviewAsync(
+                userId,
+                request,
+                cancellationToken);
+
+            return Ok(review);
+        }
+
         [AllowAnonymous]
         [HttpGet("products/{productId:guid}")]
         public async Task<ActionResult<PagedResult<ReviewDto>>> GetProductReviews(
