@@ -24,7 +24,7 @@ $page = Get-HostingProbe $MiniAppUrl.AbsoluteUri
 $configuration = Get-HostingProbe ($origin + '/api/telegram/configuration')
 $isMiniApp = $page.Status -eq 200 -and $page.Body.Contains('telegram-web-app.js') -and $page.Body.Contains('app-shell')
 $checks = @([pscustomobject]@{ Check = 'Mini App HTML'; Status = $page.Status; Passed = $isMiniApp; Url = $page.Url })
-foreach ($asset in @('app.js', 'ui.js', 'mini.css', 'brand-mark.png')) {
+foreach ($asset in @('app.js', 'ui.js', 'mini.css', 'brand-mark.png', '../js/editor-drafts.js')) {
     $probe = Get-HostingProbe ([uri]::new($MiniAppUrl, $asset).AbsoluteUri)
     $valid = $probe.Status -eq 200
     if ($asset.EndsWith('.png')) { $valid = $valid -and $probe.ContentType -like 'image/png*' }
