@@ -7,6 +7,11 @@ on:
     types:
       - completed
   workflow_dispatch:
+    inputs:
+      image_revision:
+        description: Existing reviewed image commit SHA (empty uses the selected ref)
+        required: false
+        type: string
 
 env:
   AWS_REGION: eu-west-1
@@ -39,7 +44,7 @@ jobs:
       - name: Deploy backend through AWS SSM
         shell: bash
         env:
-          DEPLOY_REVISION: ${{ github.event.workflow_run.head_sha || github.sha }}
+          DEPLOY_REVISION: ${{ github.event.inputs.image_revision || github.event.workflow_run.head_sha || github.sha }}
         run: |
           set -euo pipefail
           python3 - <<'PY'
