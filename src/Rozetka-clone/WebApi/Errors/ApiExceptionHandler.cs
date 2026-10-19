@@ -20,7 +20,6 @@ public sealed class ApiExceptionHandler(
             KeyNotFoundException => (404, "Запись не найдена."),
             DbUpdateConcurrencyException when context.Request.Path.StartsWithSegments("/api/telegram") => (409, "Запрос уже обработан или данные изменились. Обновите страницу."),
             ArgumentException => (400, exception.Message),
-            KeyNotFoundException => (404, exception.Message),
             UserDomainException => (409, exception.Message),
             DbUpdateConcurrencyException => (409, "This product was changed by another employee. Reload it before saving."),
             Application.Common.BusinessRuleException => (409, exception.Message),
