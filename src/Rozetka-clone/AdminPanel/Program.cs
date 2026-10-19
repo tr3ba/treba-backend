@@ -17,6 +17,12 @@ builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<CatalogApiClient>();
 builder.Services.AddScoped<SecurityApiClient>();
+builder.Services.AddScoped<ReviewsApiClient>();
+builder.Services.AddScoped<DashboardApiClient>();
+builder.Services.AddScoped<ReviewModerationState>();
+builder.Services.AddScoped<SettingsApiClient>();
+builder.Services.AddScoped<TelegramApiClient>();
+builder.Services.AddSingleton<UiTime>();
 
 builder.Services.AddScoped<TokenStorageService>();
 builder.Services.AddScoped<AuthorizedHttpMessageHandler>();
@@ -98,4 +104,5 @@ app.MapRazorPages();
 app.MapRazorComponents<AdminPanel.App>()
     .AddInteractiveServerRenderMode();
 
+Treba.Development.LocalLauncherEndpoints.Map(app);
 app.Run();

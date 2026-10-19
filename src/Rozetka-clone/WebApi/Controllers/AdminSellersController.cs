@@ -30,6 +30,13 @@ namespace WebApi.Controllers
             return Ok(sellers);
         }
 
+        [HttpGet("{id:guid}")]
+        public async Task<ActionResult<SellerDto>> GetById(Guid id, CancellationToken cancellationToken)
+        {
+            var seller = await _sellerService.GetByIdAsync(id, cancellationToken);
+            return seller is null ? NotFound() : Ok(seller);
+        }
+
         [HttpPost("{id:guid}/approve")]
         public async Task<ActionResult<SellerDto>> Approve(
             Guid id,

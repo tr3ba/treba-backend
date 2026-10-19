@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Catalog;
 
-public sealed class CatalogService(
+public sealed partial class CatalogService(
     IApplicationDbContext db
 )
 {
@@ -21,10 +21,17 @@ public sealed class CatalogService(
         Guid? categoryId,
         string? sort,
         CancellationToken ct,
-        Guid? sellerUserId = null)
+        Guid? sellerUserId = null,
+        CatalogFilters? filters = null)
     {
-        page = Math.Max(1, page);
-        size = Math.Clamp(size, 1, 100);
+        if (page < 1 || page > 100000 || size is < 1 or > 100) throw new ArgumentException("Invalid pagination.");
+        filters ??= new();
+        if (filters.MinPrice < 0 || filters.MaxPrice < 0 || filters.MinPrice > filters.MaxPrice)
+            throw new ArgumentException("Invalid price range.");
+        if (!string.IsNullOrEmpty(filters.Stock) && filters.Stock is not ("available" or "low" or "out"))
+            throw new ArgumentException("Unknown stock filter.");
+        if (!string.IsNullOrEmpty(sort) && sort.ToLowerInvariant() is not ("priceasc" or "pricedesc" or "newest" or "oldest" or "nameasc" or "stockasc" or "updated"))
+            throw new ArgumentException("Unknown catalog sort.");
 
         var query = db.Products.AsNoTracking();
 
@@ -87,6 +94,8 @@ public sealed class CatalogService(
                         .ToLower()
                         .Contains(term)
                     || p.Slug.Contains(term)
+                    || db.Stores.Any(store => store.Id == p.StoreId && (store.Name.ToLower().Contains(term)
+                        || db.Sellers.Any(seller => seller.Id == store.SellerId && seller.CompanyName.ToLower().Contains(term))))
                     || db.ProductVariants.Any(
                         v =>
                             v.ProductId == p.Id
@@ -99,13 +108,29 @@ public sealed class CatalogService(
 
         if (categoryId.HasValue)
         {
-            query = query.Where(p => p.CategoryId == categoryId.Value);
+            var categoryIds = await CategoryBranchAsync(categoryId.Value, ct);
+            query = query.Where(p => categoryIds.Contains(p.CategoryId));
         }
+
+        if (filters.BrandId.HasValue) query = query.Where(p => p.BrandId == filters.BrandId.Value);
+        if (filters.SellerId.HasValue) query = query.Where(p => db.Stores.Any(s => s.Id == p.StoreId && s.SellerId == filters.SellerId.Value));
+        if (filters.MinPrice.HasValue || filters.MaxPrice.HasValue)
+            query = query.Where(p => db.ProductVariants.Any(v => v.ProductId == p.Id && v.IsActive
+                && (!filters.MinPrice.HasValue || v.Price >= filters.MinPrice.Value)
+                && (!filters.MaxPrice.HasValue || v.Price <= filters.MaxPrice.Value)));
+        if (filters.Stock == "available") query = query.Where(p => db.ProductVariants.Any(v => v.ProductId == p.Id && v.IsActive && v.StockQuantity > 0));
+        if (filters.Stock == "out") query = query.Where(p => !db.ProductVariants.Any(v => v.ProductId == p.Id && v.IsActive && v.StockQuantity > 0));
+        if (filters.Stock == "low") query = query.Where(p => db.ProductVariants.Where(v => v.ProductId == p.Id && v.IsActive).Sum(v => v.StockQuantity) > 0
+            && db.ProductVariants.Where(v => v.ProductId == p.Id && v.IsActive).Sum(v => v.StockQuantity) <= 5);
 
         var count = await query.CountAsync(ct);
 
         query = sort?.Trim().ToLowerInvariant() switch
         {
+            "nameasc" => query.OrderBy(p => p.Name).ThenBy(p => p.Id),
+            "oldest" => query.OrderBy(p => p.CreatedAt).ThenBy(p => p.Id),
+            "updated" => query.OrderByDescending(p => p.UpdatedAt).ThenBy(p => p.Id),
+            "stockasc" => query.OrderBy(p => db.ProductVariants.Where(v => v.ProductId == p.Id && v.IsActive).Sum(v => v.StockQuantity)).ThenBy(p => p.Id),
             "priceasc" => query
                 .OrderBy(p => db.ProductVariants
                     .Where(v => v.ProductId == p.Id && v.IsActive)
@@ -266,186 +291,8 @@ public sealed class CatalogService(
         );
     }
 
-    public async Task<CatalogProductDto?> SaveAsync(
-        Guid? id,
-        Guid storeId,
-        SaveCatalogProductRequest request,
-        CancellationToken ct)
-    {
-        var validation =
-            new List<System.ComponentModel.DataAnnotations.ValidationResult>();
-
-        if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(
-                request,
-                new(request),
-                validation,
-                true))
-        {
-            throw new ArgumentException(
-                string.Join(
-                    " ",
-                    validation.Select(v => v.ErrorMessage)
-                )
-            );
-        }
-
-        var slug = request.Slug
-            .Trim()
-            .ToLowerInvariant();
-
-        var sku = request.Sku
-            .Trim()
-            .ToUpperInvariant();
-
-        if (string.IsNullOrWhiteSpace(request.Name)
-            || string.IsNullOrWhiteSpace(sku))
-        {
-            throw new ArgumentException("Name and SKU are required.");
-        }
-
-        if (!await db.Categories.AnyAsync(
-                c =>
-                    c.Id == request.CategoryId
-                    && c.IsActive,
-                ct))
-        {
-            throw new ArgumentException("Select an active category.");
-        }
-
-        if (!await db.Brands.AnyAsync(
-                b =>
-                    b.Id == request.BrandId
-                    && b.IsActive,
-                ct))
-        {
-            throw new ArgumentException("Select an active brand.");
-        }
-
-        if (await db.Products.AnyAsync(
-                p =>
-                    p.Slug == slug
-                    && (
-                        !id.HasValue
-                        || p.Id != id.Value
-                    ),
-                ct))
-        {
-            throw new BusinessRuleException(
-                "Product slug is already in use."
-            );
-        }
-
-        if (await db.ProductVariants.AnyAsync(
-                v =>
-                    v.Sku.ToUpper() == sku
-                    && (
-                        !id.HasValue
-                        || v.ProductId != id.Value
-                    ),
-                ct))
-        {
-            throw new BusinessRuleException(
-                "SKU is already in use."
-            );
-        }
-
-        var product = id.HasValue
-            ? await db.Products.FirstOrDefaultAsync(
-                p => p.Id == id.Value,
-                ct
-            )
-            : new Product
-            {
-                Id = Guid.NewGuid(),
-                StoreId = storeId,
-                CreatedAt = DateTime.UtcNow,
-            };
-
-        if (product is null)
-        {
-            return null;
-        }
-
-        if (product.Status == ProductStatus.PENDING_MODERATION
-            || product.Status == ProductStatus.ARCHIVED)
-        {
-            throw new BusinessRuleException(
-                "A product under review or archived cannot be edited."
-            );
-        }
-
-        var variant = id.HasValue
-            ? await db.ProductVariants
-                .OrderBy(v => v.Sku)
-                .FirstOrDefaultAsync(
-                    v => v.ProductId == product.Id,
-                    ct
-                )
-            : null;
-
-        product.Name = request.Name.Trim();
-        product.Slug = slug;
-        product.CategoryId = request.CategoryId;
-        product.BrandId = request.BrandId;
-        product.ShortDescription = request.ShortDescription.Trim();
-        product.Description = request.Description.Trim();
-        product.WarrantyMonths = request.WarrantyMonths;
-        product.CountryOfOrigin = request.CountryOfOrigin.Trim();
-        product.Status = ProductStatus.DRAFT;
-        product.UpdatedAt = DateTime.UtcNow;
-
-        if (!id.HasValue)
-        {
-            db.Products.Add(product);
-        }
-
-        if (variant is null)
-        {
-            variant = new ProductVariant(
-                Guid.NewGuid(),
-                product.Id,
-                sku,
-                null,
-                "Основний",
-                request.Price,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                true
-            );
-
-            db.ProductVariants.Add(variant);
-        }
-        else
-        {
-            variant.Update(
-                sku,
-                variant.Barcode,
-                variant.Name,
-                request.Price,
-                variant.OldPrice,
-                variant.CostPrice,
-                variant.Weight,
-                variant.Length,
-                variant.Width,
-                variant.Height,
-                variant.IsActive
-            );
-        }
-
-        variant.SetStock(request.StockQuantity);
-
-        // Product and variant are committed together by EF's SaveChanges transaction.
-        await db.SaveChangesAsync(ct);
-
-        return await GetAsync(
-            product.Id,
-            ct
-        );
-    }
+    public Task<CatalogProductDto?> SaveAsync(Guid? id, Guid storeId, SaveCatalogProductRequest request, CancellationToken ct)
+        => SaveProductAsync(id, storeId, request, ct);
 
     private async Task<List<CatalogProductDto>> MapAsync(
         List<Product> products,
@@ -499,13 +346,18 @@ public sealed class CatalogService(
             .ThenBy(image => image.Id)
             .ToListAsync(ct);
 
+        var storeIds = products.Select(p => p.StoreId).Distinct().ToArray();
+        var stores = await db.Stores.AsNoTracking().Where(s => storeIds.Contains(s.Id)).ToDictionaryAsync(s => s.Id, ct);
+        var sellerIds = stores.Values.Select(s => s.SellerId).ToArray();
+        var sellers = await db.Sellers.AsNoTracking().Where(s => sellerIds.Contains(s.Id)).ToDictionaryAsync(s => s.Id, s => s.CompanyName, ct);
+        var values = await db.ProductAttributeValues.AsNoTracking().Where(v => ids.Contains(v.ProductId)).ToListAsync(ct);
+
         return products
             .Select(
                 p =>
                 {
-                    var variant = variants.FirstOrDefault(
-                        v => v.ProductId == p.Id
-                    );
+                    var productVariants = variants.Where(v => v.ProductId == p.Id).ToList();
+                    var variant = productVariants.FirstOrDefault(v => v.IsActive) ?? productVariants.FirstOrDefault();
 
                     var productImages = images
                         .Where(image => image.ProductId == p.Id)
@@ -543,14 +395,21 @@ public sealed class CatalogService(
                         p.ShortDescription,
                         p.Description,
                         variant?.Sku ?? "",
-                        variant?.Price ?? 0,
+                        productVariants.Where(v => v.IsActive).Select(v => (decimal?)v.Price).Min() ?? variant?.Price ?? 0,
                         variant?.OldPrice,
-                        variant?.StockQuantity ?? 0,
+                        productVariants.Where(v => v.IsActive).Sum(v => v.StockQuantity),
                         p.WarrantyMonths,
                         p.CountryOfOrigin,
                         p.CreatedAt,
                         productImages
-                    );
+                    )
+                    {
+                        StoreName = stores.GetValueOrDefault(p.StoreId)?.Name ?? "",
+                        SellerName = stores.TryGetValue(p.StoreId, out var store) ? sellers.GetValueOrDefault(store.SellerId, "") : "",
+                        UpdatedAt = p.UpdatedAt,
+                        Variants = productVariants.Select(v => new CatalogVariantInput { Id = v.Id, Name = v.Name, Sku = v.Sku, Price = v.Price, OldPrice = v.OldPrice, StockQuantity = v.StockQuantity, IsActive = v.IsActive }).ToList(),
+                        Attributes = values.Where(v => v.ProductId == p.Id).Select(v => new CatalogAttributeInput { AttributeId = v.AttributeId, VariantId = v.VariantId, OptionId = v.OptionId, StringValue = v.StringValue, NumberValue = v.NumberValue, BoolValue = v.BoolValue }).ToList()
+                    };
                 }
             )
             .ToList();

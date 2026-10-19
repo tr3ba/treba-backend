@@ -7,6 +7,11 @@ on:
     types:
       - completed
   workflow_dispatch:
+    inputs:
+      image_revision:
+        description: Existing reviewed image commit SHA (empty uses the selected ref)
+        required: false
+        type: string
 
 env:
   AWS_REGION: eu-west-1
@@ -14,12 +19,21 @@ env:
   ECR_REGISTRY: 019066823315.dkr.ecr.eu-west-1.amazonaws.com
   ECR_REPOSITORY: treba-backend
 
+concurrency:
+  group: treba-backend-ec2
+  cancel-in-progress: false
+
 jobs:
   deploy:
     if: ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main') }}
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
+      - name: Checkout the image revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -29,33 +43,44 @@ jobs:
 
       - name: Deploy backend through AWS SSM
         shell: bash
+        env:
+          DEPLOY_REVISION: ${{ github.event.inputs.image_revision || github.event.workflow_run.head_sha || github.sha }}
         run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, re
+          from pathlib import Path
+          revision = os.environ['DEPLOY_REVISION']
+          if not re.fullmatch('[0-9a-f]{40}', revision):
+              raise SystemExit('Invalid image revision')
+          image = os.environ['ECR_REGISTRY'] + '/' + os.environ['ECR_REPOSITORY'] + ':' + revision
+          script = Path('scripts/server/deploy-telegram-backend.sh').read_text()
+          command = "bash -s -- '" + image + "' '" + revision + "' <<'TREBA_DEPLOYMENT'\n" + script + '\nTREBA_DEPLOYMENT'
+          Path('ssm-deploy.json').write_text(json.dumps({'commands': [command], 'executionTimeout': ['900']}))
+          PY
           COMMAND_ID=$(aws ssm send-command \
             --instance-ids "$EC2_INSTANCE_ID" \
             --document-name "AWS-RunShellScript" \
             --comment "Deploy Treba backend from ECR" \
-            --parameters 'commands=[
-              "set -e",
-              "test -d /opt/treba-backend/uploads",
-              "aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin 019066823315.dkr.ecr.eu-west-1.amazonaws.com",
-              "docker pull 019066823315.dkr.ecr.eu-west-1.amazonaws.com/treba-backend:latest",
-              "docker stop treba-backend || true",
-              "docker rm treba-backend || true",
-              "docker run -d --name treba-backend --restart unless-stopped --env-file /home/ubuntu/treba-backend.env -p 5000:5000 -v /opt/treba-backend/uploads:/app/wwwroot/uploads 019066823315.dkr.ecr.eu-west-1.amazonaws.com/treba-backend:latest",
-              "sleep 5",
-              "curl -fsS http://localhost:5000/ping >/dev/null",
-              "docker ps --filter name=treba-backend"
-            ]' \
+            --parameters file://ssm-deploy.json \
             --query 'Command.CommandId' \
             --output text)
 
           echo "SSM Command ID: $COMMAND_ID"
 
-          aws ssm wait command-executed \
-            --command-id "$COMMAND_ID" \
-            --instance-id "$EC2_INSTANCE_ID"
-
+          for attempt in $(seq 1 90); do
+            status=$(aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "$EC2_INSTANCE_ID" --query Status --output text 2>/dev/null || echo Pending)
+            case "$status" in Success|Failed|Cancelled|TimedOut|Cancelling) break ;; esac
+            sleep 10
+          done
           aws ssm get-command-invocation \
             --command-id "$COMMAND_ID" \
             --instance-id "$EC2_INSTANCE_ID" \
-            --query '{Status:Status,Output:StandardOutputContent,Error:StandardErrorContent}'
+            --query '{Status:Status,Output:StandardOutputContent,Error:StandardErrorContent}' --output json > deployment-report.json
+          cat deployment-report.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          if json.loads(Path('deployment-report.json').read_text())['Status'] != 'Success':
+              raise SystemExit('Backend deployment failed; check the rollback result in the SSM report.')
+          PY

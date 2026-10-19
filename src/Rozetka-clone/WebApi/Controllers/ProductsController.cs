@@ -111,6 +111,13 @@ namespace WebApi.Controllers
                 return NotFound();
             }
 
+            var telegram = HttpContext.RequestServices.GetRequiredService<Microsoft.Extensions.Options.IOptions<WebApi.Telegram.TelegramOptions>>().Value;
+            if (User.IsInRole(Roles.Seller) && telegram.Enabled && telegram.EnforceSellerCategories)
+            {
+                var categoryId = await _dbContext.Products.Where(p => p.Id == id).Select(p => p.CategoryId).SingleAsync(cancellationToken);
+                await new Application.Catalog.SellerCategoryAccess(_dbContext).EnsureAllowedAsync(Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!), categoryId, cancellationToken);
+            }
+
             var result = await _productService.SubmitForModerationAsync(
                 id,
                 cancellationToken
@@ -148,11 +155,13 @@ namespace WebApi.Controllers
         [Authorize(Roles = $"{Roles.Administrator},{Roles.Manager},{Roles.Moderator}")]
         public async Task<IActionResult> RejectProduct(
             Guid id,
+            [FromBody] Contracts.Catalog.RejectProductRequest request,
             CancellationToken cancellationToken
         )
         {
             var result = await _productService.RejectAsync(
                 id,
+                request.Reason,
                 cancellationToken
             );
 

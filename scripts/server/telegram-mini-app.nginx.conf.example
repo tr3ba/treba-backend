@@ -1,0 +1,33 @@
+# Include these locations INSIDE the existing HTTPS server { ... } for treba.duckdns.org.
+# This is a template: inspect existing locations before applying it.
+# WebApi must already contain wwwroot/telegram and the Telegram controllers.
+# Confirm the current upstream port; the repository deployment uses 127.0.0.1:5000.
+
+location = /telegram {
+    return 308 /telegram/;
+}
+
+location ^~ /telegram/ {
+    # No URI after the upstream: keep /telegram/ in the request path.
+    proxy_pass http://127.0.0.1:5000;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_read_timeout 60s;
+    add_header Cache-Control "no-store" always;
+}
+
+location ^~ /api/telegram/ {
+    # Keep /api/telegram/ as well; these are not storefront routes.
+    proxy_pass http://127.0.0.1:5000;
+    proxy_set_header Host $host;
+    proxy_set_header Authorization $http_authorization;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_read_timeout 300s;
+    add_header Cache-Control "no-store" always;
+}
+
+# Keep the existing /api/v1/ and /uploads/products/ locations on the SAME WebApi.
+# The storefront's location / { ... } remains separate.
+# Validate the assembled configuration with nginx -t before reloading nginx.

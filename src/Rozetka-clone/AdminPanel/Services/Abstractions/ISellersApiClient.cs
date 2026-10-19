@@ -4,6 +4,8 @@ public interface ISellersApiClient
 {
     Task<IReadOnlyList<SellerDto>> GetSellersAsync();
     Task<SellerDto?> GetSellerByIdAsync(Guid id);
+    Task<SellerDto> ApproveAsync(Guid id);
+    Task<SellerDto> SuspendAsync(Guid id);
 }
 
 public sealed record SellerDto(

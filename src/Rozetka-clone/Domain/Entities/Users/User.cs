@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using Domain.Entities.Common;
 
 namespace Domain.Entities.Users
@@ -362,6 +362,7 @@ namespace Domain.Entities.Users
             }
 
             Status = UserStatus.Blocked;
+            RevokeRefreshToken();
             UpdatedAt = DateTimeOffset.UtcNow;
         }
 
@@ -389,6 +390,7 @@ namespace Domain.Entities.Users
             }
 
             Status = UserStatus.Deleted;
+            RevokeRefreshToken();
             IsDeleted = true;
             DeletedAt = DateTimeOffset.UtcNow;
             DeletedBy = deletedBy;
@@ -458,6 +460,7 @@ namespace Domain.Entities.Users
         )
         {
             EnsureCanBeModified();
+            if (RoleId != roleId) RevokeRefreshToken();
             RoleId = roleId;
             UpdatedAt = DateTimeOffset.UtcNow;
         }

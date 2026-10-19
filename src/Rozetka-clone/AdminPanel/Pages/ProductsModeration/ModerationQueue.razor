@@ -1,6 +1,7 @@
 @page "/moderation"
 @inject AdminPanel.Services.Implementations.CatalogApiClient Api
 @inject CatalogModerationState ModerationState
+@inject UiTime Time
 @using Contracts.Catalog
 @implements IDisposable
 
@@ -92,7 +93,7 @@ else if (result is not null)
                             <p class="moderation-category">@product.CategoryName <span></span> @product.BrandName</p>
                             <h2>@product.Name</h2>
                         </div>
-                        <span class="moderation-created">@product.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy")</span>
+                        <span class="moderation-created">@Time.Local(new DateTimeOffset(DateTime.SpecifyKind(product.CreatedAt, DateTimeKind.Utc))).ToString("dd.MM.yyyy")</span>
                     </div>
 
                     <div class="moderation-product-meta">
@@ -118,7 +119,7 @@ else if (result is not null)
                     <div class="moderation-actions">
                         <button class="moderation-reject" type="button"
                                 disabled="@(reviewingId is not null)"
-                                @onclick="() => Review(product.Id, false)">
+                                @onclick="() => OpenRejection(product)">
                             <i class="bi bi-x-lg"></i>@L["Reject"]
                         </button>
                         <button class="moderation-approve" type="button"
@@ -135,6 +136,7 @@ else if (result is not null)
                             @L["Approve"]
                         </button>
                     </div>
+                    <ProductModerationHistory ProductId="product.Id" @key="product.Id" />
                 </div>
             </article>
         }
@@ -146,12 +148,26 @@ else if (result is not null)
     }
 }
 
+@if(rejectingProduct is not null)
+{
+    <div class="security-modal-backdrop">
+        <section class="security-modal rejection-modal" role="dialog" aria-modal="true" aria-labelledby="reject-product-title">
+            <header class="security-modal-header"><h2 id="reject-product-title">@L["RejectProductTitle"]</h2><button type="button" class="security-modal-close" disabled="@(reviewingId is not null)" aria-label="@L["Close"]" @onclick="() => rejectingProduct = null"><i class="bi bi-x-lg"></i></button></header>
+            <div class="security-modal-body"><strong>@rejectingProduct.Name</strong><p>@L["RejectionReasonHint"]</p><label class="field-group"><span>@L["RejectionReason"] *</span><textarea class="form-control" rows="5" maxlength="2000" @bind="rejectionReason" @bind:event="oninput"></textarea><small>@rejectionReason.Length / 2000</small></label>@if(error is not null){<p class="feedback-error" role="alert">@error</p>}</div>
+            <footer class="security-modal-footer"><button type="button" class="secondary-button" disabled="@(reviewingId is not null)" @onclick="() => rejectingProduct = null">@L["Cancel"]</button><button type="button" class="primary-button" disabled="@(reviewingId is not null || string.IsNullOrWhiteSpace(rejectionReason))" @onclick="() => Review(rejectingProduct.Id, false)">@L["Reject"]</button></footer>
+        </section>
+    </div>
+}
+
 @code {
     private PagedResponse<CatalogProductDto>? result;
     private readonly Dictionary<Guid, int> imageIndexes = [];
     private bool loading = true;
     private Guid? reviewingId;
     private string? error;
+    private CatalogProductDto? rejectingProduct;
+    private string rejectionReason = "";
+    private void OpenRejection(CatalogProductDto product){rejectingProduct=product;rejectionReason="";error=null;}
 
     protected override async Task OnInitializedAsync()
     {
@@ -189,7 +205,8 @@ else if (result is not null)
         error = null;
         try
         {
-            await Api.Action(id, approve ? "approve" : "reject");
+            await Api.Action(id, approve ? "approve" : "reject", approve ? null : rejectionReason);
+            rejectingProduct = null;
 
             if (result is not null)
             {

@@ -75,7 +75,7 @@ else
                             @if (!string.IsNullOrWhiteSpace(seller.Phone)) { <div><dt>@L["Phone"]</dt><dd>@seller.Phone</dd></div> }
                         </dl>
                         <div class="seller-card-footer">
-                            <span>@L["Since"] @seller.CreatedAt.ToString("d", CultureInfo.CurrentCulture)</span>
+                            <span>@L["Since"] @seller.CreatedAt.ToLocalTime().ToString("d", CultureInfo.CurrentCulture)</span>
                             <a href="@($"/sellers/review/{seller.Id}")">@L["OpenProfile"] <i class="bi bi-arrow-right"></i></a>
                         </div>
                     </article>
@@ -86,6 +86,7 @@ else
 }
 
 @code {
+    [SupplyParameterFromQuery(Name = "status")] public int? InitialStatus { get; set; }
     private IReadOnlyList<SellerDto> _sellers = [];
     private string _search = string.Empty;
     private int? _status;
@@ -100,7 +101,11 @@ else
                 || seller.TaxNumber.Contains(_search, StringComparison.CurrentCultureIgnoreCase)))
         .ToList();
 
-    protected override Task OnInitializedAsync() => LoadAsync();
+    protected override Task OnParametersSetAsync()
+    {
+        _status = InitialStatus is >= 0 and <= 3 ? InitialStatus : null;
+        return LoadAsync();
+    }
 
     private async Task LoadAsync()
     {

@@ -1,0 +1,69 @@
+@using Contracts.Telegram
+@implements IDisposable
+@inject TelegramApiClient Telegram
+@inject AuthenticationStateProvider Authentication
+@inject NavigationManager Navigation
+
+@if (eligible)
+{
+    <section class="card-box telegram-profile-panel">
+        <div class="card-box-header"><h2 class="card-box-title"><i class="bi bi-telegram"></i> Telegram</h2></div>
+        <p>@L["TelegramProfileDescription"]</p>
+        @if (error is not null) { <p class="feedback-error" role="alert">@error</p> }
+        @if (status is { Configured: false }) { <p class="empty-card-text">@L["TelegramNotConfigured"]</p> }
+        else if (status is { Linked: true })
+        {
+            <p class="feedback-success">@L["TelegramLinked"] @(status.Username is { } username ? "@" + username : status.TelegramUserId?.ToString())</p>
+            <button class="secondary-button" disabled="@busy" @onclick="() => confirmUnlink = true">@L["TelegramUnlink"]</button>
+        }
+        else if (status?.PendingId is { } pending)
+        {
+            <p>@L["TelegramConfirmIdentity"] <strong>@status.PendingTelegramName @(status.PendingUsername is { } pendingName ? "@" + pendingName : "")</strong></p>
+            <button class="primary-button" disabled="@busy" @onclick="() => Confirm(pending)">@L["TelegramConfirmLink"]</button>
+        }
+        else
+        {
+            <button class="primary-button" disabled="@(busy || status is null)" @onclick="Begin"><i class="bi bi-telegram"></i> @L["TelegramLink"]</button>
+            <button class="secondary-button" disabled="@busy" @onclick="Load">@L["TelegramRefreshLink"]</button>
+        }
+        <small>@L["TelegramLinkHint"]</small>
+    </section>
+    <ConfirmDialog IsOpen="@confirmUnlink" Title="@L["TelegramUnlink"]" Message="@L["TelegramUnlinkConfirm"]" OnClose="Unlink" />
+}
+
+@code {
+    private TelegramLinkDto? status;
+    private bool eligible,busy,confirmUnlink;
+    private string? error;
+    private readonly CancellationTokenSource lifetime = new();
+    protected override async Task OnInitializedAsync()
+    {
+        var user=(await Authentication.GetAuthenticationStateAsync()).User;
+        eligible=user.IsInRole("Seller")||user.IsInRole("Moderator");
+        if(eligible) await Load();
+    }
+    private async Task Load()
+    {
+        busy=true;error=null;
+        try { status=await Telegram.Get<TelegramLinkDto>("api/telegram/link", lifetime.Token); }
+        catch(HttpRequestException ex){error=ex.Message;}
+        catch(OperationCanceledException) when(lifetime.IsCancellationRequested){}
+        finally{busy=false;}
+    }
+    private async Task Begin()
+    {
+        busy=true;error=null;
+        try { var link=await Telegram.Post<TelegramLinkStartDto>("api/telegram/link",new{},lifetime.Token); Navigation.NavigateTo(link.BotUrl,forceLoad:true); }
+        catch(HttpRequestException ex){error=ex.Message;busy=false;}
+    }
+    private async Task Confirm(Guid id)
+    {
+        busy=true;error=null;
+        try {status=await Telegram.Post<TelegramLinkDto>("api/telegram/link/confirm",new ConfirmTelegramLinkRequest(id),lifetime.Token);}
+        catch(HttpRequestException ex){error=ex.Message;}
+        finally{busy=false;}
+    }
+    private async Task Unlink(bool confirmed)
+    { confirmUnlink=false;if(!confirmed)return;busy=true;try{await Telegram.Unlink();await Load();}catch(HttpRequestException ex){error=ex.Message;}finally{busy=false;} }
+    public void Dispose(){lifetime.Cancel();lifetime.Dispose();}
+}

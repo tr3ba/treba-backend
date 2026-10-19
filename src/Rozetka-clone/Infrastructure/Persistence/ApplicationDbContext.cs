@@ -1,7 +1,8 @@
-﻿using Application.Abstractions;
+using Application.Abstractions;
 using Domain.Entities;
 using Domain.Entities.Attribute;
 using Domain.Entities.Inventory;
+using Domain.Entities.Orders;
 using Domain.Entities.Product;
 using Domain.Entities.ProductTag;
 using Domain.Entities.Users;
@@ -10,294 +11,104 @@ using DomainAttribute = Domain.Entities.Attribute.Attribute;
 
 namespace Infrastructure.Persistence
 {
-    public sealed class ApplicationDbContext : DbContext, IApplicationDbContext
+    public sealed partial class ApplicationDbContext : DbContext, IApplicationDbContext
     {
+        private readonly ICurrentActor? _actor;
         public ApplicationDbContext(
-            DbContextOptions<ApplicationDbContext> options
+            DbContextOptions<ApplicationDbContext> options,
+            ICurrentActor? actor = null
         )
             : base(options)
         {
-
+            _actor = actor;
         }
 
-        public DbSet<User> Users
-        {
-            get
-            {
-                return Set<User>();
-            }
-        }
+        public DbSet<User> Users => Set<User>();
+        public DbSet<Domain.Entities.Telegram.TelegramBotCursor> TelegramBotCursors => Set<Domain.Entities.Telegram.TelegramBotCursor>();
+        public DbSet<Domain.Entities.Telegram.TelegramBinding> TelegramBindings => Set<Domain.Entities.Telegram.TelegramBinding>();
+        public DbSet<Domain.Entities.Telegram.TelegramLinkChallenge> TelegramLinkChallenges => Set<Domain.Entities.Telegram.TelegramLinkChallenge>();
+        public DbSet<Domain.Entities.Telegram.TelegramGuardChallenge> TelegramGuardChallenges => Set<Domain.Entities.Telegram.TelegramGuardChallenge>();
+        public DbSet<Domain.Entities.Telegram.SellerCategoryGrant> SellerCategoryGrants => Set<Domain.Entities.Telegram.SellerCategoryGrant>();
+        public DbSet<Domain.Entities.Telegram.RozetkaCategoryMapping> RozetkaCategoryMappings => Set<Domain.Entities.Telegram.RozetkaCategoryMapping>();
+        public DbSet<Domain.Entities.Telegram.ProductImportDraft> ProductImportDrafts => Set<Domain.Entities.Telegram.ProductImportDraft>();
 
-        public DbSet<UserProfile> UserProfiles
-        {
-            get
-            {
-                return Set<UserProfile>();
-            }
-        }
+        public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
 
-        public DbSet<Address> Addresses
-        {
-            get
-            {
-                return Set<Address>();
-            }
-        }
+        public DbSet<Address> Addresses => Set<Address>();
 
-        public DbSet<Review> Reviews
-        {
-            get
-            {
-                return Set<Review>();
-            }
-        }
+        public DbSet<Review> Reviews => Set<Review>();
 
-        public DbSet<ReviewImage> ReviewImages
-        {
-            get
-            {
-                return Set<ReviewImage>();
-            }
-        }
+        public DbSet<ReviewImage> ReviewImages => Set<ReviewImage>();
 
-        public DbSet<ReviewVote> ReviewVotes
-        {
-            get
-            {
-                return Set<ReviewVote>();
-            }
-        }
+        public DbSet<ReviewVote> ReviewVotes => Set<ReviewVote>();
 
-        public DbSet<Promotion> Promotions
-        {
-            get
-            {
-                return Set<Promotion>();
-            }
-        }
+        public DbSet<Promotion> Promotions => Set<Promotion>();
 
-        public DbSet<PromotionRule> PromotionRules
-        {
-            get
-            {
-                return Set<PromotionRule>();
-            }
-        }
+        public DbSet<PromotionRule> PromotionRules => Set<PromotionRule>();
 
-        public DbSet<PromotionAction> PromotionActions
-        {
-            get
-            {
-                return Set<PromotionAction>();
-            }
-        }
+        public DbSet<PromotionAction> PromotionActions => Set<PromotionAction>();
 
-        public DbSet<Coupon> Coupons
-        {
-            get
-            {
-                return Set<Coupon>();
-            }
-        }
+        public DbSet<Coupon> Coupons => Set<Coupon>();
 
-        public DbSet<CouponUsage> CouponUsages
-        {
-            get
-            {
-                return Set<CouponUsage>();
-            }
-        }
+        public DbSet<CouponUsage> CouponUsages => Set<CouponUsage>();
 
-        public DbSet<SellerReviewResponse> SellerReviewResponses
-        {
-            get
-            {
-                return Set<SellerReviewResponse>();
-            }
-        }
+        public DbSet<SellerReviewResponse> SellerReviewResponses => Set<SellerReviewResponse>();
 
-        public DbSet<Role> Roles
-        {
-            get
-            {
-                return Set<Role>();
-            }
-        }
+        public DbSet<Role> Roles => Set<Role>();
 
-        public DbSet<AuthenticationChallenge> AuthenticationChallenges
-        {
-            get
-            {
-                return Set<AuthenticationChallenge>();
-            }
-        }
+        public DbSet<AdminAuditLog> AdminAuditLogs => Set<AdminAuditLog>();
 
-        public DbSet<Permission> Permissions
-        {
-            get
-            {
-                return Set<Permission>();
-            }
-        }
+        public DbSet<AuthenticationChallenge> AuthenticationChallenges => Set<AuthenticationChallenge>();
 
-        public DbSet<Product> Products
-        {
-            get
-            {
-                return Set<Product>();
-            }
-        }
+        public DbSet<Permission> Permissions => Set<Permission>();
 
-        public DbSet<ProductVariant> ProductVariants
-        {
-            get
-            {
-                return Set<ProductVariant>();
-            }
-        }
+        public DbSet<Product> Products => Set<Product>();
 
-        public DbSet<ProductImage> ProductImages
-        {
-            get
-            {
-                return Set<ProductImage>();
-            }
-        }
+        public DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();
 
-        public DbSet<ProductTag> ProductTags
-        {
-            get
-            {
-                return Set<ProductTag>();
-            }
-        }
+        public DbSet<ProductImage> ProductImages => Set<ProductImage>();
 
-        public DbSet<Category> Categories
-        {
-            get
-            {
-                return Set<Category>();
-            }
-        }
+        public DbSet<ProductTag> ProductTags => Set<ProductTag>();
 
-        public DbSet<Brand> Brands
-        {
-            get
-            {
-                return Set<Brand>();
-            }
-        }
+        public DbSet<Category> Categories => Set<Category>();
 
-        public DbSet<DomainAttribute> Attributes
-        {
-            get
-            {
-                return Set<DomainAttribute>();
-            }
-        }
+        public DbSet<Brand> Brands => Set<Brand>();
 
-        public DbSet<AttributeOption> AttributeOptions
-        {
-            get
-            {
-                return Set<AttributeOption>();
-            }
-        }
+        public DbSet<DomainAttribute> Attributes => Set<DomainAttribute>();
 
-        public DbSet<Seller> Sellers
-        {
-            get
-            {
-                return Set<Seller>();
-            }
-        }
-        public DbSet<Store> Stores
-        {
-            get
-            {
-                return Set<Store>();
-            }
-        }
+        public DbSet<AttributeOption> AttributeOptions => Set<AttributeOption>();
 
-        public DbSet<Cart> Carts
-        {
-            get
-            {
-                return Set<Cart>();
-            }
-        }
+        public DbSet<Seller> Sellers => Set<Seller>();
 
-        public DbSet<CartItem> CartItems
-        {
-            get
-            {
-                return Set<CartItem>();
-            }
-        }
+        public DbSet<Store> Stores => Set<Store>();
 
-        public DbSet<Wishlist> Wishlists
-        {
-            get
-            {
-                return Set<Wishlist>();
-            }
-        }
+        public DbSet<Cart> Carts => Set<Cart>();
 
-        public DbSet<WishlistItem> WishlistItems
-        {
-            get
-            {
-                return Set<WishlistItem>();
-            }
-        }
+        public DbSet<CartItem> CartItems => Set<CartItem>();
 
-        public DbSet<ProductAttributeValue> ProductAttributeValues
-        {
-            get
-            {
-                return Set<ProductAttributeValue>();
-            }
-        }
+        public DbSet<Wishlist> Wishlists => Set<Wishlist>();
 
-        public DbSet<ProductTagRelation> ProductTagRelations
-        {
-            get
-            {
-                return Set<ProductTagRelation>();
-            }
-        }
+        public DbSet<WishlistItem> WishlistItems => Set<WishlistItem>();
 
-        public DbSet<Warehouse> Warehouses
-        {
-            get
-            {
-                return Set<Warehouse>();
-            }
-        }
+        public DbSet<ProductAttributeValue> ProductAttributeValues => Set<ProductAttributeValue>();
 
-        public DbSet<Domain.Entities.Inventory.Inventory> Inventory
-        {
-            get
-            {
-                return Set<Domain.Entities.Inventory.Inventory>();
-            }
-        }
+        public DbSet<ProductTagRelation> ProductTagRelations => Set<ProductTagRelation>();
 
-        public DbSet<StockMovement> StockMovements
-        {
-            get
-            {
-                return Set<StockMovement>();
-            }
-        }
+        public DbSet<Warehouse> Warehouses => Set<Warehouse>();
 
-        public DbSet<InventoryReservation> InventoryReservations
-        {
-            get
-            {
-                return Set<InventoryReservation>();
-            }
-        }
+        public DbSet<Domain.Entities.Inventory.Inventory> Inventory => Set<Domain.Entities.Inventory.Inventory>();
+
+        public DbSet<StockMovement> StockMovements => Set<StockMovement>();
+
+        public DbSet<InventoryReservation> InventoryReservations => Set<InventoryReservation>();
+
+        public DbSet<Order> Orders => Set<Order>();
+
+        public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+
+        public DbSet<OrderAddress> OrderAddresses => Set<OrderAddress>();
+
+        public DbSet<OrderStatusHistory> OrderStatusHistories => Set<OrderStatusHistory>();
 
         protected override void OnModelCreating(
             ModelBuilder modelBuilder
