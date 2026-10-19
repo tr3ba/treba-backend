@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Globalization;
 using Contracts.Telegram;
 using Domain.Entities.Users;
 using Microsoft.AspNetCore.Authorization;
@@ -11,6 +12,11 @@ namespace WebApi.Controllers;
 [ApiController, Route("api/telegram"), ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public sealed class TelegramAccountController(TelegramLinkService links, TelegramGuardService guard) : ControllerBase
 {
+    [HttpGet("/telegram/{timestamp}"), AllowAnonymous, ApiExplorerSettings(IgnoreApi = true)]
+    public IActionResult CorrectCopiedMessageTime(string timestamp) =>
+        DateTime.TryParseExact(timestamp, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out _)
+            ? LocalRedirect("/telegram/") : NotFound();
+
     [HttpGet("configuration"), AllowAnonymous]
     public TelegramConfigurationDto Configuration() => links.Configuration();
     [HttpGet("link"), Authorize(Roles = Roles.Moderator + "," + Roles.Seller)]

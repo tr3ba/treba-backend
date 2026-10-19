@@ -119,6 +119,15 @@ docker exec treba-caddy caddy reload --config /etc/caddy/Caddyfile --adapter cad
 
 verify_mini_app https://treba.duckdns.org
 curl -fsS --max-time 15 https://treba.duckdns.org/ >/dev/null
+menu_ready=0
+for attempt in $(seq 1 3); do
+    if docker exec treba-backend dotnet WebApi.dll --check-telegram-deployment --verify-telegram-menu=true; then
+        menu_ready=1
+        break
+    fi
+    sleep 2
+done
+[[ "$menu_ready" == 1 ]] || { echo 'The bot menu was not configured.'; exit 1; }
 completed=1
 echo "Telegram deployment passed. Revision: $revision"
 echo "Rollback container retained: $previous"

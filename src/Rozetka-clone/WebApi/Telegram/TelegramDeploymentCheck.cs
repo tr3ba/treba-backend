@@ -7,7 +7,7 @@ namespace WebApi.Telegram;
 // An operator-only CLI command. Does not start HTTP, poll updates, send messages or change the database.
 public static class TelegramDeploymentCheck
 {
-    public static async Task<int> RunAsync(IServiceProvider services)
+    public static async Task<int> RunAsync(IServiceProvider services, bool requireMenu = false)
     {
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(60));
         try
@@ -47,7 +47,15 @@ public static class TelegramDeploymentCheck
             using var webhook = await bot.CallAsync("getWebhookInfo", new { }, timeout.Token);
             if (!string.IsNullOrEmpty(webhook.RootElement.GetProperty("result").GetProperty("url").GetString()))
                 throw new InvalidOperationException("The bot has an active webhook; long polling requires removing it first.");
-            Console.WriteLine("Telegram webhook: absent. Deployment preflight passed.");
+            Console.WriteLine("Telegram webhook: absent.");
+            using var menu = await bot.CallAsync("getChatMenuButton", new { }, timeout.Token);
+            var button = menu.RootElement.GetProperty("result");
+            var menuMatches = button.GetProperty("type").GetString() == "web_app"
+                && button.GetProperty("web_app").GetProperty("url").GetString() == options.MiniAppUrl;
+            Console.WriteLine("Telegram chat menu URL matches: " + menuMatches.ToString().ToLowerInvariant() + ".");
+            if (requireMenu && !menuMatches)
+                throw new InvalidOperationException("The running bot has not configured the expected Mini App menu button.");
+            Console.WriteLine("Telegram deployment checks passed.");
             return 0;
         }
         catch (InvalidOperationException exception)

@@ -31,6 +31,18 @@ namespace WebApi.Tests;
 
 public sealed class TelegramHttpTests
 {
+    [Fact]
+    public async Task Hosting_RedirectsAnAccidentallyCopiedMessageTime_AndKeepsOtherMissingPathsMissing()
+    {
+        await using var server = await ServerAsync();
+        using var client = server.GetTestClient();
+        using var redirected = await client.GetAsync("/telegram/13:37");
+        Assert.Equal(HttpStatusCode.Redirect, redirected.StatusCode);
+        Assert.Equal("/telegram/", redirected.Headers.Location?.OriginalString);
+        using var missing = await client.GetAsync("/telegram/missing.js");
+        Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
+    }
+
     private static async Task<WebApplication> ServerAsync()
     {
         var builder = WebApplication.CreateBuilder(); builder.WebHost.UseTestServer(); builder.Logging.ClearProviders();

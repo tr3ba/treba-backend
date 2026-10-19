@@ -151,7 +151,8 @@ var app = builder.Build();
 app.UseExceptionHandler();
 if (deploymentCheck)
 {
-    Environment.ExitCode = await TelegramDeploymentCheck.RunAsync(app.Services);
+    Environment.ExitCode = await TelegramDeploymentCheck.RunAsync(app.Services,
+        builder.Configuration.GetValue<bool>("verify-telegram-menu"));
     await app.DisposeAsync();
     return;
 }
