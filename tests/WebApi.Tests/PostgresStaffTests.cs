@@ -50,9 +50,8 @@ public sealed class PostgresStaffTests
         async Task Execute(string statement) { await using var command = new NpgsqlCommand(statement, sql); await command.ExecuteNonQueryAsync(); }
         try
         {
-            // Copies only schema; production application rows are never copied or changed.
-            foreach (var table in new[] { "roles", "users", "admin_audit_logs" })
-                await Execute($"CREATE TABLE public.\"{Prefix}{table}\" (LIKE public.\"{table}\" INCLUDING ALL)");
+            await using (var schema = new ApplicationDbContext(options))
+                await PostgresTestTables.CreateAsync(schema, sql, Prefix);
             Guid firstId, secondId;
             await using (var db = new ApplicationDbContext(options))
             {

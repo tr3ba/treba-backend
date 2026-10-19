@@ -23,6 +23,20 @@ public static class TelegramDeploymentCheck
             if (missing.Length != 0)
                 throw new InvalidOperationException("Required database migrations are missing: " + string.Join(", ", missing));
             Console.WriteLine("Telegram database migrations: present.");
+            var permissions = await db.Database.SqlQueryRaw<bool>("""
+                SELECT has_schema_privilege('public', 'USAGE') AND
+                    (SELECT bool_and(COALESCE(has_table_privilege(to_regclass(t.name), p.name), false))
+                     FROM (VALUES ('public.telegram_bindings'), ('public.telegram_link_challenges'),
+                        ('public.telegram_guard_challenges'), ('public.telegram_bot_cursors'),
+                        ('public.seller_category_grants'), ('public.rozetka_category_mappings'),
+                        ('public.product_import_drafts')) AS t(name)
+                     CROSS JOIN (VALUES ('SELECT'), ('INSERT'), ('UPDATE'), ('DELETE')) AS p(name)) AND
+                    has_table_privilege('public.admin_audit_logs', 'SELECT') AND
+                    has_table_privilege('public.admin_audit_logs', 'INSERT') AS "Value"
+                """).SingleAsync(timeout.Token);
+            if (!permissions)
+                throw new InvalidOperationException("The API database account lacks required Telegram or audit table privileges.");
+            Console.WriteLine("Telegram database privileges: present.");
 
             var bot = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>();
             using var me = await bot.CallAsync("getMe", new { }, timeout.Token);

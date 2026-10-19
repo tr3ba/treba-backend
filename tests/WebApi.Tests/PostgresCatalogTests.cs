@@ -32,8 +32,8 @@ public sealed class PostgresCatalogTests
         async Task Execute(string text) { await using var cmd = new NpgsqlCommand(text, sql); await cmd.ExecuteNonQueryAsync(); }
         try
         {
-            // Schema copies have their own indexes and no foreign keys to shared application tables.
-            foreach (var name in Tables) await Execute($"CREATE TABLE public.\"{Prefix}{name}\" (LIKE public.\"{name}\" INCLUDING ALL)");
+            await using (var schema = new ApplicationDbContext(options))
+                await PostgresTestTables.CreateAsync(schema, sql, Prefix);
             CatalogTestData.Seed seed; CatalogProductDto product;
             await using (var db = new ApplicationDbContext(options))
             {
