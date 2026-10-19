@@ -1,5 +1,25 @@
 # Local TREBA workspace
 
+## Admin panel with the hosted API
+
+For the deployed Telegram integration, use **TREBA Admin Online** on the desktop.
+It builds and starts only the local AdminPanel and connects it to
+`https://treba.duckdns.org/`. Tailscale, SSH keys, a local API and a database tunnel
+are unnecessary in this mode. The regular **TREBA Admin** shortcut continues to
+run the local development stack.
+
+```powershell
+.\scripts\Install-TrebaShortcut.ps1 -HostedApi
+.\scripts\Start-TrebaHostedAdmin.ps1
+```
+
+The online launcher reuses its own running panel when its source is unchanged.
+Its state and logs live under `%LOCALAPPDATA%\Treba\hosted-admin`. Login uses the
+server accounts. For a seller or moderator, open Profile, link Telegram, return
+to confirm the identity, then send `/menu` to `@treba_marketplace_bot`.
+
+## Local development stack
+
 Run `scripts/Install-TrebaShortcut.ps1` to place **TREBA Admin** on the Windows desktop.
 The shortcut runs `scripts/Start-Treba.ps1` from this checkout.
 
