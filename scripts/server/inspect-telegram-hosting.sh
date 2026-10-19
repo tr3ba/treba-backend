@@ -61,5 +61,27 @@ while read -r name image; do
     fi
 done < <(docker ps --format '{{.Names}} {{.Image}}')
 
+printf 'CADDY_ROUTES\n'
+if docker container inspect treba-caddy >/dev/null 2>&1; then
+    docker inspect --format '{{range .Mounts}}{{println .Source "->" .Destination}}{{end}}' treba-caddy
+    docker inspect --format '{{range $name, $network := .NetworkSettings.Networks}}{{println $name}}{{end}}' treba-caddy
+    docker exec treba-caddy caddy adapt --config /etc/caddy/Caddyfile --adapter caddyfile 2>/dev/null | python3 -c '
+import json, sys
+config = json.load(sys.stdin)
+def routes(items, indent=""):
+    for route in items:
+        for match in route.get("match", []):
+            print(indent + "MATCH " + json.dumps({key: value for key, value in match.items() if key in ("host", "path", "method")}))
+        for handler in route.get("handle", []):
+            print(indent + "HANDLER " + handler.get("handler", ""))
+            for upstream in handler.get("upstreams", []):
+                print(indent + "UPSTREAM " + upstream.get("dial", ""))
+            routes(handler.get("routes", []), indent + "  ")
+for name, server in config.get("apps", {}).get("http", {}).get("servers", {}).items():
+    print("SERVER " + name + " LISTEN " + json.dumps(server.get("listen", [])))
+    routes(server.get("routes", []))
+' || true
+fi
+
 printf 'LISTENING_PORTS\n'
 ss -ltn | head -n 20
