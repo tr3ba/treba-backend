@@ -38,6 +38,7 @@ namespace Application.Products
 
         Task<bool> RejectAsync(
             Guid id,
+            string reason,
             CancellationToken cancellationToken = default
         );
     }

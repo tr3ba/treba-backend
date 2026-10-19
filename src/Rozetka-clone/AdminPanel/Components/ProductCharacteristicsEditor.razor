@@ -1,0 +1,33 @@
+@using Contracts.Catalog
+
+<div class="characteristics-editor">
+    @if(Definitions.Count==0){<p class="muted-text">@L["NoCategoryCharacteristics"]</p>}
+    @foreach(var value in Values)
+    {
+        var definition=Definitions.FirstOrDefault(d=>d.Id==value.AttributeId);
+        <div class="characteristic-row" @key="value">
+            <label class="field-group"><span>@L["Characteristic"]</span><InputSelect class="form-control" @bind-Value="value.AttributeId" @bind-Value:after="() => DefinitionChanged(value)"><option value="@Guid.Empty">@L["SelectCharacteristic"]</option>@foreach(var item in Definitions){<option value="@item.Id">@item.Name @(item.IsRequired ? "*" : "")</option>}</InputSelect></label>
+            <label class="field-group"><span>@L["AppliesToVariant"]</span><InputSelect class="form-control" @bind-Value="value.VariantId" @bind-Value:after="Changed"><option value="">@L["AllVariants"]</option>@foreach(var variant in Variants){<option value="@variant.Id">@variant.Name · @variant.Sku</option>}</InputSelect></label>
+            <label class="field-group characteristic-value"><span>@L["CharacteristicValue"] @definition?.Unit</span>
+                @if(definition?.Type is "SELECT" or "MULTI_SELECT")
+                {<InputSelect class="form-control" @bind-Value="value.OptionId" @bind-Value:after="Changed"><option value="">@L["SelectValue"]</option>@foreach(var option in definition.Options){<option value="@option.Id">@option.Name</option>}</InputSelect>}
+                else if(definition?.Type=="NUMBER") {<InputNumber class="form-control" step="0.0001" @bind-Value="value.NumberValue" @bind-Value:after="Changed" />}
+                else if(definition?.Type=="BOOLEAN") {<InputSelect class="form-control" @bind-Value="value.BoolValue" @bind-Value:after="Changed"><option value="">@L["SelectValue"]</option><option value="true">@L["Yes"]</option><option value="false">@L["No"]</option></InputSelect>}
+                else {<InputText class="form-control" type="@(definition?.Type=="DATE" ? "date" : "text")" maxlength="2000" @bind-Value="value.StringValue" @bind-Value:after="Changed" />}
+            </label>
+            <button type="button" class="characteristic-remove secondary-button" aria-label="@L["RemoveCharacteristic"]" @onclick="() => Remove(value)"><i class="bi bi-trash3"></i></button>
+        </div>
+    }
+    <button type="button" class="secondary-button" disabled="@(Definitions.Count==0 || Values.Count>=200)" @onclick="Add"><i class="bi bi-plus-lg"></i> @L["AddCharacteristic"]</button>
+    <p class="muted-text characteristic-help">@L["MultiSelectCharacteristicHint"]</p>
+</div>
+@code {
+    [Parameter,EditorRequired]public List<CatalogAttributeInput> Values{get;set;}=[];
+    [Parameter,EditorRequired]public IReadOnlyList<CatalogAttributeDefinitionDto> Definitions{get;set;}=[];
+    [Parameter,EditorRequired]public IReadOnlyList<CatalogVariantInput> Variants{get;set;}=[];
+    [Parameter]public EventCallback OnChanged{get;set;}
+    private Task Changed()=>OnChanged.InvokeAsync();
+    private async Task Add(){Values.Add(new());await Changed();}
+    private async Task Remove(CatalogAttributeInput value){Values.Remove(value);await Changed();}
+    private async Task DefinitionChanged(CatalogAttributeInput value){value.OptionId=null;value.StringValue=null;value.NumberValue=null;value.BoolValue=null;await Changed();}
+}

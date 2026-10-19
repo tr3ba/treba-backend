@@ -11,16 +11,26 @@ using DomainAttribute = Domain.Entities.Attribute.Attribute;
 
 namespace Infrastructure.Persistence
 {
-    public sealed class ApplicationDbContext : DbContext, IApplicationDbContext
+    public sealed partial class ApplicationDbContext : DbContext, IApplicationDbContext
     {
+        private readonly ICurrentActor? _actor;
         public ApplicationDbContext(
-            DbContextOptions<ApplicationDbContext> options
+            DbContextOptions<ApplicationDbContext> options,
+            ICurrentActor? actor = null
         )
             : base(options)
         {
+            _actor = actor;
         }
 
         public DbSet<User> Users => Set<User>();
+        public DbSet<Domain.Entities.Telegram.TelegramBotCursor> TelegramBotCursors => Set<Domain.Entities.Telegram.TelegramBotCursor>();
+        public DbSet<Domain.Entities.Telegram.TelegramBinding> TelegramBindings => Set<Domain.Entities.Telegram.TelegramBinding>();
+        public DbSet<Domain.Entities.Telegram.TelegramLinkChallenge> TelegramLinkChallenges => Set<Domain.Entities.Telegram.TelegramLinkChallenge>();
+        public DbSet<Domain.Entities.Telegram.TelegramGuardChallenge> TelegramGuardChallenges => Set<Domain.Entities.Telegram.TelegramGuardChallenge>();
+        public DbSet<Domain.Entities.Telegram.SellerCategoryGrant> SellerCategoryGrants => Set<Domain.Entities.Telegram.SellerCategoryGrant>();
+        public DbSet<Domain.Entities.Telegram.RozetkaCategoryMapping> RozetkaCategoryMappings => Set<Domain.Entities.Telegram.RozetkaCategoryMapping>();
+        public DbSet<Domain.Entities.Telegram.ProductImportDraft> ProductImportDrafts => Set<Domain.Entities.Telegram.ProductImportDraft>();
 
         public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
 
@@ -35,6 +45,8 @@ namespace Infrastructure.Persistence
         public DbSet<SellerReviewResponse> SellerReviewResponses => Set<SellerReviewResponse>();
 
         public DbSet<Role> Roles => Set<Role>();
+
+        public DbSet<AdminAuditLog> AdminAuditLogs => Set<AdminAuditLog>();
 
         public DbSet<AuthenticationChallenge> AuthenticationChallenges => Set<AuthenticationChallenge>();
 

@@ -8,23 +8,32 @@
 @if (message is not null) { <p class="feedback-success" role="status">@message</p> }
 <section class="categories-workspace">
     <div class="category-tree-panel card-box"><div class="card-box-header"><h2>@L["CategoryTree"]</h2><span>@L["CategoriesCount", Flatten(tree).Count()]</span></div>
+        <label class="workspace-search category-tree-search"><i class="bi bi-search"></i><input aria-label="@L["CategoryTreeSearch"]" placeholder="@L["CategoryTreeSearch"]" @bind="search" @bind:event="oninput" /></label>
+        <div class="category-tree-controls"><button class="btn-link-action" @onclick="ExpandAll">@L["ExpandAll"]</button><button class="btn-link-action" @onclick="() => expanded.Clear()">@L["CollapseAll"]</button></div>
         @if (loading){ <p>@L["Loading"]</p> }
         <nav class="category-tree">
-        @foreach(var category in Flatten(tree))
+        @foreach(var row in CategoryTreePresentation.Visible(tree, expanded, search))
         {
-            <button class="category-tree-row @(editingId == category.Id ? "selected" : "")" @onclick="() => Edit(category)"><span class="category-tree-icon blue"><i class="bi bi-folder"></i></span><span style="padding-left:@(category.Level * 12)px"><strong>@category.Name</strong><small>@category.Slug · @(category.Active ? L["Active"] : L["Hidden"])</small></span></button>
+            var category = row.Category;
+            <div class="category-branch @(editingId == category.Id ? "selected" : "")" style="--category-depth:@row.Depth">
+                @if(category.Children.Count > 0) { <button class="category-toggle" aria-label="@L[expanded.Contains(category.Id) ? "CollapseCategory" : "ExpandCategory", category.Name]" aria-expanded="@(expanded.Contains(category.Id) || !string.IsNullOrWhiteSpace(search))" @onclick="() => Toggle(category.Id)"><i class="bi @(expanded.Contains(category.Id) || !string.IsNullOrWhiteSpace(search) ? "bi-chevron-down" : "bi-chevron-right")"></i></button> }
+                else { <span class="category-toggle-spacer"></span> }
+                <button class="category-tree-row" @onclick="() => Edit(category)" title="@row.Path"><span class="category-tree-icon blue"><i class="bi bi-folder"></i></span><span><strong>@category.Name</strong><small>@category.Slug · @(category.Active ? L["Active"] : L["Hidden"])</small></span></button>
+            </div>
         }
         </nav>
         @if (!loading && tree.Count == 0){<p class="empty-state">@L["CreateFirstCategory"]</p>}
+        @if (!loading && tree.Count > 0 && CategoryTreePresentation.Visible(tree, expanded, search).Count == 0){<p class="empty-state">@L["NoCategoriesFound"]</p>}
     </div>
     <section class="card-box editor-section category-editor-card"><h2>@(editingId.HasValue ? L["EditCategory"] : L["NewCategory"])</h2>
+        @if(editingId.HasValue) { <p class="category-breadcrumb" aria-label="@L["CategoryPath"]">@CategoryTreePresentation.Flatten(tree).FirstOrDefault(row => row.Category.Id == editingId)?.Path</p><button type="button" class="secondary-button category-add-child" @onclick="NewChild">@L["AddSubcategory"]</button> }
         <EditForm Model="model" OnValidSubmit="Save" FormName="category-editor" @key="model">
             <DataAnnotationsValidator/><ValidationSummary/>
             <label class="field-group"><span>@L["Name"] *</span><InputText class="form-control" @bind-Value="model.Name" /></label>
             <label class="field-group"><span>@L["Slug"] *</span><InputText class="form-control" @bind-Value="model.Slug" /></label>
             @if (!editingId.HasValue)
             {
-                <label class="field-group"><span>@L["ParentCategory"]</span><InputSelect class="form-control" @bind-Value="model.ParentId"><option value="">@L["RootCategory"]</option>@foreach(var c in Flatten(tree)){<option value="@c.Id">@c.Name</option>}</InputSelect></label>
+                <label class="field-group"><span>@L["ParentCategory"]</span><InputSelect class="form-control" @bind-Value="model.ParentId"><option value="">@L["RootCategory"]</option>@foreach(var row in CategoryTreePresentation.Flatten(tree)){<option value="@row.Category.Id">@row.Path</option>}</InputSelect></label>
             }
             <label class="field-group"><span>@L["Description"]</span><InputTextArea class="form-control" rows="3" @bind-Value="model.Description" /></label>
             <label class="field-group"><span>@L["SortOrder"]</span><InputNumber class="form-control" @bind-Value="model.SortOrder" /></label>
@@ -41,6 +50,8 @@
     private Guid? editingId;
     private bool loading, busy;
     private string? error, message;
+    private string search = "";
+    private readonly HashSet<Guid> expanded = [];
     protected override Task OnInitializedAsync() => Load();
     private async Task Load()
     {
@@ -50,6 +61,9 @@
         finally{loading=false;}
     }
     private void New(){editingId=null;model=new();error=null;message=null;}
+    private void NewChild(){var parent = editingId; New(); model.ParentId = parent; if(parent.HasValue)expanded.Add(parent.Value);}
+    private void Toggle(Guid id){if(!expanded.Add(id))expanded.Remove(id);}
+    private void ExpandAll(){foreach(var category in Flatten(tree))expanded.Add(category.Id);}
     private void Edit(CategoryTreeDto c){editingId=c.Id;model=new(){Name=c.Name,Slug=c.Slug,Active=c.Active,SortOrder=c.SortOrder,Description=c.Description ?? ""};error=null;message=null;}
     private static IEnumerable<CategoryTreeDto> Flatten(IEnumerable<CategoryTreeDto> nodes)
     {

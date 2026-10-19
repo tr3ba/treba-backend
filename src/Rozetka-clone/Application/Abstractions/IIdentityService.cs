@@ -7,6 +7,7 @@ namespace Application.Abstractions;
 
 public interface IIdentityService
 {
+    Task<LoginResponse> LoginWithGuardAsync(Guid userId, CancellationToken cancellationToken = default);
     Task<AuthResponse> RegisterAsync(
         RegisterRequest request,
         CancellationToken cancellationToken = default

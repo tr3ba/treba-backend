@@ -13,14 +13,15 @@ public static class AdminAccess
         if (route is "/" or "/profile") return true;
 
         if (route.StartsWith("/users", StringComparison.Ordinal)) return role == "Administrator";
-        if (route == "/settings") return role == "Administrator";
+        if (route == "/settings" || route.StartsWith("/settings/", StringComparison.Ordinal)) return role == "Administrator";
         if (route.StartsWith("/categories", StringComparison.Ordinal)) return role is "Administrator" or "Manager";
         if (route.StartsWith("/sellers", StringComparison.Ordinal)) return role is "Administrator" or "Manager";
         if (route == "/moderation") return role is "Administrator" or "Manager" or "Moderator";
+        if (route == "/reviews") return role is "Administrator" or "Manager" or "Moderator";
         if (route is "/products/new" || route.EndsWith("/edit", StringComparison.Ordinal) && route.StartsWith("/products/", StringComparison.Ordinal))
             return role is "Administrator" or "Manager" or "Seller";
         if (route == "/products") return true;
-        if (route is "/orders" or "/reviews" or "/support" or "/customer-activity"
+        if (route is "/orders" or "/support" or "/customer-activity"
             or "/storefront" or "/loyalty") return role == "Administrator";
         return false;
     }
