@@ -14,7 +14,7 @@ public static class TelegramRegistration
         services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton<TelegramInitDataValidator>(); services.AddSingleton<TelegramBotClient>();
         services.AddSingleton<ITelegramBotClient>(sp => sp.GetRequiredService<TelegramBotClient>());
-        services.AddSingleton<IRozetkaSourceClient, RozetkaSourceClient>(); services.AddSingleton<RozetkaProductParser>();
+        services.AddSingleton<IMarketplaceSourceClient>(_ => new MarketplaceSourceClient()); services.AddSingleton<MarketplaceProductParser>();
         services.AddScoped<TelegramLinkService>(); services.AddScoped<TelegramGuardService>(); services.AddScoped<ProductImportService>();
         services.AddScoped<SellerCategoryAccess>(); services.AddHostedService<TelegramBotWorker>();
         services.AddAuthentication().AddScheme<AuthenticationSchemeOptions, TelegramAuthenticationHandler>(TelegramAuthenticationHandler.SchemeName, _ => { });

@@ -88,7 +88,7 @@ internal static class TelegramTestData
           "offers":{"price":199.90,"priceCurrency":"UAH"},
           "additionalProperty":[{"name":"Memory","value":"128 GB"}]}]}</script></head><body></body></html>
         """;
-    internal sealed class Source : IRozetkaSourceClient
+    internal sealed class Source : IMarketplaceSourceClient
     {
         internal int Downloads;
         public Task<string> GetPageAsync(Uri uri, CancellationToken ct) => Task.FromResult(Html.Replace("<script>bad()</script>", "<script>bad()<\\/script>", StringComparison.Ordinal));

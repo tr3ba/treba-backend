@@ -95,7 +95,7 @@ async function homePage() {
         el('span', { class: 'avatar' }, bootstrap.user.name.slice(0, 1))), guardCard(),
         el('div', { class: 'stats' }, stat(stats.total, 'Всего товаров'), stat(stats.pending, 'На проверке', true), stat(isSeller() ? stats.drafts : bootstrap.pendingReviews, isSeller() ? 'Черновики' : 'Новых отзывов')));
     if (isSeller()) append(page, el('section', { class: 'card' }, el('div', { class: 'section-title', style: 'margin-top:0' }, el('h2', {}, 'Товар по ссылке'), icon('import')),
-        el('p', { class: 'hint', style: 'margin-bottom:15px' }, 'Добавьте ссылку Rozetka. Проверьте данные и отправьте товар на модерацию.'), button('Импортировать товар', () => navigate('import'), 'primary wide')));
+        el('p', { class: 'hint', style: 'margin-bottom:15px' }, 'Добавьте ссылку Rozetka, Prom.ua или Эпицентра. Проверьте данные и отправьте товар на модерацию.'), button('Импортировать товар', () => navigate('import'), 'primary wide')));
     const rows = await request('products?status=' + (isSeller() ? '' : 'PENDING_MODERATION'));
     append(page, el('div', { class: 'section-title' }, el('h2', {}, isSeller() ? 'Последние товары' : 'Ожидают решения'), button('Все', () => navigate(isSeller() ? 'products' : 'moderation'), 'secondary small')),
         rows.content.length ? rows.content.slice(0, 3).map(productCard) : empty('Пока всё спокойно', isSeller() ? 'Добавьте первый товар вручную или по ссылке.' : 'Новых товаров на проверке нет.'));
@@ -272,13 +272,15 @@ function renderAttributes(panel, model, definitions) {
 
 async function importPage() {
     if (!isSeller()) throw new Error('Импорт доступен продавцу.');
-    let url = '';
+    let url = '', categoryId = '';
     const submit = button('Получить данные товара', () => {
         if (!form.reportValidity()) return;
-        return perform(submit, async () => { const data = await request('imports', 'POST', { url }); await navigate('importPreview', { id: data.id }, true); });
+        return perform(submit, async () => { const data = await request('imports', 'POST', { url, categoryId: categoryId || null }); await navigate('importPreview', { id: data.id }, true); });
     }, 'primary wide', !!preview);
     const form = el('form', { class: 'card stack', onsubmit: event => event.preventDefault() },
-        field('Ссылка на товар Rozetka', input('', value => url = value, { type: 'url', placeholder: 'https://rozetka.com.ua/…/p123456/', required: true, maxlength: 1500 })), submit);
+        field('Ссылка на товар', input('', value => url = value, { type: 'url', placeholder: 'Rozetka, Prom.ua или Эпицентр', required: true, maxlength: 1500 })),
+        bootstrap.canClassifyImports ? field('Категория Treba', select([{ id: '', name: 'Определить автоматически' }, ...bootstrap.categories.filter(c => bootstrap.allowedCategoryIds.includes(c.id))], categoryId, value => categoryId = value),
+            'Если категория не определилась, выберите подходящую. Модератор проверит карточку перед публикацией.') : null, submit);
     return el('div', {}, heading('Импорт товара', 'Новая карточка — из одной ссылки.'),
         el('section', { class: 'import-hero' }, icon('import'), el('h2', {}, 'Ссылка. Проверка. Готово.'), el('p', {}, 'Название, описание и фотографии появятся в предпросмотре. Вы решаете, когда отправить товар на проверку.')),
         form, el('ol', { class: 'steps' }, el('li', {}, 'Вставьте ссылку на конкретный товар.'), el('li', {}, 'Treba проверит разрешение на его категорию.'), el('li', {}, 'Проверьте данные, укажите свою цену и остаток.'), el('li', {}, 'Отправьте карточку модератору.')),

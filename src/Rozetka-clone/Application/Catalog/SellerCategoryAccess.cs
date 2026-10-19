@@ -38,4 +38,11 @@ public sealed class SellerCategoryAccess(IApplicationDbContext db)
         if (!await IsAllowedAsync(userId, categoryId, ct))
             throw new BusinessRuleException("Продажа товаров этой категории не разрешена. Обратитесь к администратору магазина.");
     }
+
+    public async Task<bool> CanClassifyUnmappedImportsAsync(Guid userId, CancellationToken ct)
+    {
+        var allowed = (await AllowedIdsAsync(userId, ct)).ToHashSet();
+        var active = await db.Categories.AsNoTracking().Where(c => c.IsActive).Select(c => c.Id).ToListAsync(ct);
+        return active.Count > 0 && active.All(allowed.Contains);
+    }
 }
