@@ -29,7 +29,7 @@ public static class TelegramPreviewEndpoints
             return Results.Ok(new {
                 bootstrap = new { user = new TelegramUserDto(user, "Саша Treba", role, 9990001), stats = new CatalogStatsDto(17, 12, 2, 2, 1, 0),
                     categories = new[] { new CatalogLookupDto(category,"Побутова техніка → Клімат-техніка → Зволожувачі повітря") },
-                    brands = new[] { new CatalogLookupDto(brand,"LEVOIT") }, stores = role == "Seller" ? new[] { new CatalogLookupDto(store,"Treba Studio") } : [], allowedCategoryIds = new[] { category }, pendingReviews = 3 },
+                    brands = new[] { new CatalogLookupDto(brand,"LEVOIT") }, stores = role == "Seller" ? new[] { new CatalogLookupDto(store,"Treba Studio") } : [], allowedCategoryIds = new[] { category }, canClassifyImports = role == "Seller", pendingReviews = 3 },
                 products,
                 importPreview = new ImportPreviewDto(Guid.Parse("30000000-0000-0000-0000-000000000001"), "https://rozetka.com.ua/demo/p123456/",
                     "Зволожувач LEVOIT Dual 200S Smart", "Пример описания импортируемого товара. Проверьте комплектацию и характеристики перед отправкой.", "LEVOIT",

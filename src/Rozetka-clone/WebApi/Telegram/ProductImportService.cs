@@ -13,27 +13,44 @@ using Microsoft.EntityFrameworkCore;
 
 namespace WebApi.Telegram;
 
-public sealed class ProductImportService(ApplicationDbContext db, IRozetkaSourceClient source, RozetkaProductParser parser,
+public sealed class ProductImportService(ApplicationDbContext db, IMarketplaceSourceClient source, MarketplaceProductParser parser,
     SellerCategoryAccess access, CatalogService catalog, IProductService products, IProductMediaStorage media, TimeProvider clock)
 {
-    public async Task<ImportPreviewDto> PreviewAsync(Guid userId, string url, CancellationToken ct)
+    public async Task<ImportPreviewDto> PreviewAsync(Guid userId, string url, CancellationToken ct, Guid? categoryId = null)
     {
-        var uri = RozetkaSourceClient.ProductUri(url); var now = clock.GetUtcNow();
+        var uri = MarketplaceSourceClient.ProductUri(url); var now = clock.GetUtcNow();
         if (!await db.Sellers.AnyAsync(s => s.UserId == userId && s.Status == SellerStatus.ACTIVE, ct))
             throw new BusinessRuleException("Импорт доступен только активному продавцу.");
         if (await db.ProductImportDrafts.CountAsync(d => d.UserId == userId && d.ExpiresAt > now && d.SubmittedAt == null, ct) >= 10)
             throw new BusinessRuleException("Слишком много незавершённых импортов. Завершите текущие или попробуйте позже.");
         var data = parser.Parse(uri, await source.GetPageAsync(uri, ct));
         var mapping = await db.RozetkaCategoryMappings.AsNoTracking().SingleOrDefaultAsync(m => m.ExternalKey == data.CategoryKey, ct);
-        if (mapping is null) throw new BusinessRuleException("Категория Rozetka " + data.CategoryKey + " ещё не сопоставлена с каталогом Treba. Обратитесь к администратору.");
-        await access.EnsureAllowedAsync(userId, mapping.CategoryId, ct);
+        var independentClassification = mapping is null;
+        if (mapping is not null)
+        {
+            if (categoryId.HasValue && categoryId != mapping.CategoryId) throw new BusinessRuleException("У источника уже настроена категория Treba. Выберите её или оставьте автоматическое определение.");
+            categoryId = mapping.CategoryId;
+        }
+        else
+        {
+            if (!await access.CanClassifyUnmappedImportsAsync(userId, ct))
+                throw new BusinessRuleException("Категория источника " + data.CategoryKey + " ещё не сопоставлена с каталогом Treba. Обратитесь к администратору.");
+            if (!categoryId.HasValue)
+            {
+                var candidates = await db.Categories.AsNoTracking().Where(c => c.IsActive).Select(c => new { c.Id, c.Name }).ToListAsync(ct);
+                var matches = candidates.Where(c => NormalizeCategory(c.Name) == NormalizeCategory(data.CategoryName)).ToList();
+                if (matches.Count == 1) categoryId = matches[0].Id;
+            }
+            if (!categoryId.HasValue) throw new BusinessRuleException("Выберите категорию Treba под ссылкой и повторите загрузку. Категория источника: " + data.CategoryName + ".");
+        }
+        await access.EnsureAllowedAsync(userId, categoryId!.Value, ct);
         if (await db.ProductImportDrafts.AnyAsync(d => d.UserId == userId && d.SourceProductId == data.Id && d.SubmittedAt != null, ct))
             throw new BusinessRuleException("Этот товар уже импортирован в ваш каталог. Откройте его в списке товаров.");
         var details = data.Characteristics.Count == 0 ? "" : "\n\nХарактеристики источника:\n" + string.Join('\n', data.Characteristics.Select(c => c.Name + ": " + c.Value));
         var description = data.Description + details;
         var draft = new ProductImportDraft { UserId = userId, SourceProductId = data.Id, SourceUrl = data.Url, Name = data.Name,
-            Description = description[..Math.Min(10000, description.Length)], BrandName = data.BrandName, SourceCategoryKey = data.CategoryKey,
-            SourceCategoryName = data.CategoryName, CategoryId = mapping.CategoryId, SourcePrice = data.Price,
+            Description = description[..Math.Min(10000, description.Length)], BrandName = data.BrandName, SourceCategoryKey = (independentClassification ? "u:" : "") + data.CategoryKey,
+            SourceCategoryName = data.CategoryName, CategoryId = categoryId.Value, SourcePrice = data.Price,
             ImagesJson = JsonSerializer.Serialize(data.Images), CharacteristicsJson = JsonSerializer.Serialize(data.Characteristics), CreatedAt = now, ExpiresAt = now.AddHours(1) };
         db.ProductImportDrafts.Add(draft); await db.SaveChangesAsync(ct);
         return await ToDtoAsync(draft, ct);
@@ -45,8 +62,11 @@ public sealed class ProductImportService(ApplicationDbContext db, IRozetkaSource
         await using var transaction = db.Database.IsRelational() ? await db.Database.BeginTransactionAsync(ct) : null;
         var draft = await RequireDraft(userId, id, ct);
         if (draft.SubmittedAt is not null && draft.ProductId is { } completed) return completed;
-        var mapping = await db.RozetkaCategoryMappings.AsNoTracking().SingleOrDefaultAsync(m => m.ExternalKey == draft.SourceCategoryKey, ct);
-        if (mapping?.CategoryId != draft.CategoryId) throw new BusinessRuleException("Сопоставление категории изменилось. Создайте предпросмотр заново.");
+        var independentClassification = draft.SourceCategoryKey.StartsWith("u:", StringComparison.Ordinal);
+        var externalKey = independentClassification ? draft.SourceCategoryKey[2..] : draft.SourceCategoryKey;
+        var mapping = await db.RozetkaCategoryMappings.AsNoTracking().SingleOrDefaultAsync(m => m.ExternalKey == externalKey, ct);
+        if (independentClassification ? mapping is not null && mapping.CategoryId != draft.CategoryId || !await access.CanClassifyUnmappedImportsAsync(userId, ct) : mapping?.CategoryId != draft.CategoryId)
+            throw new BusinessRuleException("Сопоставление категории или разрешения изменились. Создайте предпросмотр заново.");
         await access.EnsureAllowedAsync(userId, draft.CategoryId, ct);
         if (!await db.Stores.AnyAsync(s => s.Id == request.StoreId && s.IsActive && db.Sellers.Any(seller => seller.Id == s.SellerId && seller.UserId == userId && seller.Status == SellerStatus.ACTIVE), ct))
             throw new BusinessRuleException("Выберите доступный магазин продавца.");
@@ -55,7 +75,7 @@ public sealed class ProductImportService(ApplicationDbContext db, IRozetkaSource
         try
         {
             var product = await catalog.SaveAsync(null, request.StoreId, new SaveCatalogProductRequest {
-                Name = request.Name, Slug = "import-" + draft.SourceProductId + "-" + draft.Id.ToString("N")[..12], CategoryId = draft.CategoryId,
+                Name = request.Name, Slug = "import-" + draft.SourceProductId.Replace(':', '-') + "-" + draft.Id.ToString("N")[..12], CategoryId = draft.CategoryId,
                 BrandId = request.BrandId, StoreId = request.StoreId, Description = request.Description,
                 ShortDescription = request.Description[..Math.Min(500, request.Description.Length)], Sku = request.Sku,
                 Price = request.Price, StockQuantity = request.StockQuantity, Attributes = request.Attributes,
@@ -64,7 +84,7 @@ public sealed class ProductImportService(ApplicationDbContext db, IRozetkaSource
             var urls = JsonSerializer.Deserialize<List<string>>(draft.ImagesJson) ?? [];
             for (var index = 0; index < urls.Count; index++)
             {
-                var bytes = await source.GetImageAsync(RozetkaSourceClient.ImageUri(urls[index]), ct);
+                var bytes = await source.GetImageAsync(MarketplaceSourceClient.ImageUri(urls[index]), ct);
                 if (bytes.Length is <= 0 or > 5 * 1024 * 1024) throw new BusinessRuleException("Фотография источника превышает допустимый размер.");
                 var extension = ImageExtension(bytes) ?? throw new BusinessRuleException("Фотография источника имеет неподдерживаемый формат.");
                 var fileName = Guid.NewGuid().ToString("N") + extension;
@@ -107,4 +127,5 @@ public sealed class ProductImportService(ApplicationDbContext db, IRozetkaSource
         if (bytes.AsSpan().StartsWith("GIF87a"u8) || bytes.AsSpan().StartsWith("GIF89a"u8)) return ".gif";
         return null;
     }
+    private static string NormalizeCategory(string value) => string.Concat(value.ToLowerInvariant().Where(char.IsLetterOrDigit));
 }

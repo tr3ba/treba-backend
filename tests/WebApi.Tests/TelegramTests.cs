@@ -142,10 +142,10 @@ public sealed class TelegramTests
     [InlineData("http://rozetka.com.ua/test/p123/")] [InlineData("https://evil.example/test/p123/")]
     [InlineData("https://rozetka.com.ua.evil.example/test/p123/")] [InlineData("https://rozetka.com.ua:444/test/p123/")]
     [InlineData("https://user:pass@rozetka.com.ua/test/p123/")] [InlineData("https://rozetka.com.ua/category/c123/")]
-    public void Import_RejectsOtherOriginsAndNonProductUrls(string url) => Assert.Throws<ArgumentException>(() => RozetkaSourceClient.ProductUri(url));
+    public void Import_RejectsOtherOriginsAndNonProductUrls(string url) => Assert.Throws<ArgumentException>(() => MarketplaceSourceClient.ProductUri(url));
 
     [Theory]
     [InlineData("127.0.0.1")] [InlineData("169.254.169.254")] [InlineData("10.0.0.1")] [InlineData("172.16.0.1")]
     [InlineData("100.92.44.73")] [InlineData("::1")] [InlineData("::ffff:127.0.0.1")] [InlineData("fc00::1")]
-    public void Import_RejectsPrivateNetworkAddresses(string address) => Assert.False(RozetkaSourceClient.IsPublicAddress(IPAddress.Parse(address)));
+    public void Import_RejectsPrivateNetworkAddresses(string address) => Assert.False(MarketplaceSourceClient.IsPublicAddress(IPAddress.Parse(address)));
 }

@@ -34,6 +34,7 @@ public sealed class TelegramMiniAppController(ApplicationDbContext db, CatalogSe
         return Ok(new { user = new TelegramUserDto(UserId, User.FindFirstValue("firstName") + " " + User.FindFirstValue("lastName"), User.FindFirstValue(ClaimTypes.Role)!, long.Parse(User.FindFirstValue("telegram_id")!, System.Globalization.CultureInfo.InvariantCulture)),
             stats = await catalog.StatsAsync(ct, SellerScope), categories = options.Categories, brands = options.Brands, stores,
             allowedCategoryIds = IsSeller ? await categories.AllowedIdsAsync(UserId, ct) : [],
+            canClassifyImports = IsSeller && await categories.CanClassifyUnmappedImportsAsync(UserId, ct),
             pendingReviews = IsSeller ? 0 : await workspace.PendingReviewsAsync(ct) });
     }
     [HttpGet("products")]
@@ -85,7 +86,7 @@ public sealed class TelegramMiniAppController(ApplicationDbContext db, CatalogSe
     public async Task<IActionResult> GuardApprove(GuardScanRequest request, CancellationToken ct)
     { await guard.ApproveAsync(request.QrPayload, UserId, long.Parse(User.FindFirstValue("telegram_id")!, System.Globalization.CultureInfo.InvariantCulture), ct); return NoContent(); }
     [HttpPost("imports"), Authorize(Roles = Roles.Seller), EnableRateLimiting("telegram-import")]
-    public Task<ImportPreviewDto> Import(ImportUrlRequest request, CancellationToken ct) => import.PreviewAsync(UserId, request.Url, ct);
+    public Task<ImportPreviewDto> Import(ImportUrlRequest request, CancellationToken ct) => import.PreviewAsync(UserId, request.Url, ct, request.CategoryId);
     [HttpGet("imports/{id:guid}"), Authorize(Roles = Roles.Seller)]
     public Task<ImportPreviewDto> Preview(Guid id, CancellationToken ct) => import.GetAsync(UserId, id, ct);
     [HttpPost("imports/{id:guid}/submit"), Authorize(Roles = Roles.Seller), EnableRateLimiting("telegram-import")]

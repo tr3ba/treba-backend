@@ -67,7 +67,7 @@ public sealed class TelegramHttpTests
         services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
         services.AddSingleton<TimeProvider>(new TelegramTestData.Clock());
         services.AddTrebaTelegram(builder.Configuration);
-        services.AddSingleton<IRozetkaSourceClient, TelegramTestData.Source>(); services.AddSingleton<IProductMediaStorage, TelegramTestData.Media>();
+        services.AddSingleton<IMarketplaceSourceClient, TelegramTestData.Source>(); services.AddSingleton<IProductMediaStorage, TelegramTestData.Media>();
         services.AddScoped<IIdentityService>(sp => TelegramTestData.Identity(sp.GetRequiredService<ApplicationDbContext>()));
         services.AddScoped<CatalogService>(); services.AddScoped<IProductService,ProductService>(); services.AddScoped<AdminWorkspaceService>(); services.AddScoped<IReviewService, ReviewService>();
         services.AddAuthentication("Bearer").AddScheme<AuthenticationSchemeOptions, WebsiteAuthentication>("Bearer", _ => {});
