@@ -17,12 +17,99 @@ namespace Application.Reviews
             _dbContext = dbContext;
         }
 
-        public Task<ReviewDto> CreateReviewAsync(
+        public async Task<ReviewDto> CreateReviewAsync(
             Guid userId,
             CreateReviewRequest request,
             CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            if (request.Rating < 1 || request.Rating > 5)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(request.Rating),
+                    "Rating must be between 1 and 5.");
+            }
+
+            var orderItem = await _dbContext.OrderItems
+                .AsNoTracking()
+                .Where(x =>
+                    x.Id == request.OrderItemId &&
+                    x.ProductId == request.ProductId)
+                .Select(x => new
+                {
+                    x.Id,
+                    x.ProductId,
+                    x.OrderId
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (orderItem is null)
+            {
+                throw new KeyNotFoundException("Order item not found.");
+            }
+
+            var isPurchasedByUser = await _dbContext.Orders
+                .AsNoTracking()
+                .AnyAsync(
+                    x =>
+                        x.Id == orderItem.OrderId &&
+                        x.CustomerId == userId,
+                    cancellationToken);
+
+            if (!isPurchasedByUser)
+            {
+                throw new BusinessRuleException(
+                    "Only the buyer of the product can leave a review.");
+            }
+
+            var reviewAlreadyExists = await _dbContext.Reviews
+                .AsNoTracking()
+                .AnyAsync(
+                    x => x.OrderItemId == request.OrderItemId,
+                    cancellationToken);
+
+            if (reviewAlreadyExists)
+            {
+                throw new BusinessRuleException(
+                    "A review already exists for this order item.");
+            }
+
+            var now = DateTime.UtcNow;
+
+            var review = new Domain.Entities.Review
+            {
+                Id = Guid.NewGuid(),
+                ProductId = orderItem.ProductId,
+                UserId = userId,
+                OrderItemId = orderItem.Id,
+                Rating = request.Rating,
+                Title = request.Title,
+                Comment = request.Comment,
+                Status = ReviewStatus.PENDING,
+                VerifiedPurchase = true,
+                HelpfulCount = 0,
+                CreatedAt = now,
+                UpdatedAt = now
+            };
+
+            _dbContext.Reviews.Add(review);
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            return new ReviewDto
+            {
+                Id = review.Id,
+                ProductId = review.ProductId,
+                UserId = review.UserId,
+                OrderItemId = review.OrderItemId,
+                Rating = review.Rating,
+                Title = review.Title,
+                Comment = review.Comment,
+                Status = review.Status,
+                VerifiedPurchase = review.VerifiedPurchase,
+                HelpfulCount = review.HelpfulCount,
+                CreatedAt = review.CreatedAt,
+                UpdatedAt = review.UpdatedAt
+            };
         }
 
         public async Task<ReviewDto> UpdateReviewAsync(
