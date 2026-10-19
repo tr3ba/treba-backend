@@ -13,7 +13,7 @@ public sealed partial class ApplicationDbContext
     {
         ["User"] = ["Email", "FirstName", "LastName", "RoleId", "Status", "IsDeleted"],
         ["Product"] = ["Name", "Slug", "ShortDescription", "Description", "CategoryId", "BrandId", "Status", "WarrantyMonths", "CountryOfOrigin"],
-        ["ProductVariant"] = ["Sku", "Price", "OldPrice", "StockQuantity", "IsActive"],
+        ["ProductVariant"] = ["Sku", "Barcode", "Price", "OldPrice", "StockQuantity", "IsActive"],
         ["ProductImage"] = ["ImageUrl", "AltText", "IsMain", "SortOrder"],
         ["ProductAttributeValue"] = ["AttributeId", "VariantId", "OptionId", "StringValue", "NumberValue", "BoolValue"],
         ["Category"] = ["Name", "Slug", "ParentId", "IsActive"],

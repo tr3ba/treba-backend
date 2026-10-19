@@ -9,6 +9,16 @@
 @using System.Text.Json
 
 <PageTitle>@(Id.HasValue ? L["EditProduct"] : L["NewProduct"]) — Treba Admin</PageTitle>
+@if(ready)
+{
+    <EditorAutosave @key="draftKey" @ref="autosave" UserScope="@userScope" DraftKey="@draftKey" Snapshot="Snapshot" Photos="BackupPhotos" HasChanges="HasChanges" Enabled="@(!busy&&!allowNavigation)" OnRestore="RestoreBackup"/>
+    <section class="workspace-identifiers card-box">
+        <label class="field-group"><span>@L["WorkspaceManufacturerPartNumber"]</span><input class="form-control" maxlength="100" @bind="model.ManufacturerPartNumber"/></label>
+        <button type="button" class="secondary-button" @onclick="CheckDuplicates">@L["WorkspaceCheckDuplicates"]</button>
+        @foreach(var duplicate in duplicates){<p class="feedback-error">@duplicate.Reason: <a href="@($"/products/{duplicate.Id}/edit")">@duplicate.Name</a> · @duplicate.StoreName</p>}
+        @if(duplicates.Count>0){<label><input type="checkbox" @bind="duplicateAcknowledged"/> @L["WorkspaceCreateSeparate"]</label>}
+    </section>
+}
 
 <a class="users-back-link product-back-link" href="@BackUri">
     <i class="bi bi-arrow-left"></i> @L["BackToProducts"]
@@ -124,6 +134,7 @@ else if (ready)
                             <div class="editor-form-grid">
                                 <label class="field-group"><span>@L["VariantName"] *</span><InputText class="form-control" maxlength="250" @bind-Value="variant.Name" /></label>
                                 <label class="field-group"><span>@L["Sku"] *</span><InputText class="form-control" maxlength="100" @bind-Value="variant.Sku" /></label>
+                                <label class="field-group"><span>@L["WorkspaceBarcode"]</span><InputText class="form-control" maxlength="100" @bind-Value="variant.Barcode" /></label>
                                 <label class="field-group"><span>@L["Price"] (₴) *</span><InputNumber class="form-control" step="0.01" @bind-Value="variant.Price" /></label>
                                 <label class="field-group"><span>@L["OldPrice"] (₴)</span><InputNumber class="form-control" step="0.01" @bind-Value="variant.OldPrice" /></label>
                                 <label class="field-group"><span>@L["Stock"] *</span><InputNumber class="form-control" @bind-Value="variant.StockQuantity" /></label>
@@ -254,8 +265,29 @@ else if (ready)
     private string categorySearch="",attributeName="",attributeUnit="",savedState="";
     private bool loading=true,busy,submit,ready,allowNavigation,canCreateAttributes;
     private string? error;
+    private EditorAutosave? autosave;private string userScope="",draftKey="";
+    private IReadOnlyList<Contracts.Telegram.ProductDuplicateDto> duplicates=[];private bool duplicateAcknowledged;
+    private IReadOnlyList<EditorBackupPhoto> BackupPhotos()=>pendingImages.Select(p=>new EditorBackupPhoto(p.Id,p.Name,p.ContentType,p.Bytes)).ToList();
+    private async Task RestoreBackup(EditorRecovery backup)
+    {
+        var recovered=JsonSerializer.Deserialize<CatalogEditorBackup>(backup.ModelJson)??throw new JsonException();
+        if(Id.HasValue&&recovered.ProductId!=Id)throw new JsonException();
+        if(recovered.ProductId.HasValue&&!Id.HasValue)
+        {
+            var current=await Api.GetProduct(recovered.ProductId.Value);
+            if(current.Status is "PENDING_MODERATION" or "ARCHIVED")throw new HttpRequestException(L["ProductChangedReload"]);
+            Id=current.Id;foreach(var variant in current.Variants)existingVariantIds.Add(variant.Id);
+            foreach(var image in await Api.Images(current.Id))images.Add(new(image.Id,await Api.ImageDataUrl(image.ImageUrl),image.AltText??current.Name,image.IsMain));
+        }
+        model=recovered.Model;
+        pendingImages.Clear();foreach(var p in backup.Photos.Where(p=>AllowedImageTypes.Contains(p.ContentType)&&p.Bytes.LongLength is >0 and <=MaxImageBytes))pendingImages.Add(new(p.Name,p.ContentType,p.Bytes,$"data:{p.ContentType};base64,{Convert.ToBase64String(p.Bytes)}"){Id=p.Id});
+        await LoadDefinitions();
+    }
+    private Task<List<Contracts.Telegram.ProductDuplicateDto>> FindDuplicates()=>Api.DuplicatesMany(new(){BrandId=model.BrandId,ManufacturerPartNumber=model.ManufacturerPartNumber,Barcodes=model.Variants?.Where(v=>!string.IsNullOrWhiteSpace(v.Barcode)).Select(v=>v.Barcode!).ToList()??[],ExcludeId=Id});
+    private async Task CheckDuplicates(){try{duplicates=await FindDuplicates();}catch(HttpRequestException ex){error=ex.Message;}}
     private string BackUri=>ReturnUrl is not null&&(ReturnUrl=="/products"||ReturnUrl.StartsWith("/products?",StringComparison.Ordinal))?ReturnUrl:"/products";
-    private string Snapshot()=>JsonSerializer.Serialize(model);
+    private string Snapshot()=>JsonSerializer.Serialize(new CatalogEditorBackup(Id,model));
+    private sealed record CatalogEditorBackup(Guid? ProductId,SaveCatalogProductRequest Model);
     private bool HasChanges=>ready&&!allowNavigation&&(pendingImages.Count>0||Snapshot()!=savedState);
 
     protected override async Task OnParametersSetAsync()
@@ -264,7 +296,8 @@ else if (ready)
         model=new(){Variants=[],Attributes=[]};
         try
         {
-            canCreateAttributes=(await Authentication.GetAuthenticationStateAsync()).User.IsInRole("Administrator");
+            var principal=(await Authentication.GetAuthenticationStateAsync()).User;canCreateAttributes=principal.IsInRole("Administrator");
+            userScope=principal.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value??"";draftKey=Id.HasValue?"product:"+Id:"new:"+CopyFrom;
             var options=await Api.FilterOptions();
             var activeCategories=await Api.Categories();
             categories=options.Categories.Where(c=>activeCategories.Any(a=>a.Id==c.Id)).ToList();
@@ -275,7 +308,7 @@ else if (ready)
             {
                 var product=await Api.GetProduct(source.Value);
                 model=new(){Name=product.Name,Slug=product.Slug,Sku=product.Sku,CategoryId=product.CategoryId,BrandId=product.BrandId,StoreId=product.StoreId,
-                    Price=product.Price,StockQuantity=product.StockQuantity,Description=product.Description,ShortDescription=product.ShortDescription,
+                    Price=product.Price,StockQuantity=product.StockQuantity,Description=product.Description,ShortDescription=product.ShortDescription,ManufacturerPartNumber=product.ManufacturerPartNumber,
                     WarrantyMonths=product.WarrantyMonths,CountryOfOrigin=product.CountryOfOrigin,ExpectedUpdatedAt=Id.HasValue?product.UpdatedAt:null,
                     Variants=product.Variants.ToList(),Attributes=product.Attributes.ToList()};
                 if(model.Variants.Count==0)model.Variants.Add(new(){Id=product.ProductVariantId??Guid.NewGuid(),Name=L["MainVariant"],Sku=product.Sku,Price=product.Price,OldPrice=product.OldPrice,StockQuantity=product.StockQuantity});
@@ -370,22 +403,25 @@ else if (ready)
         busy=true;error=null;
         try
         {
+            duplicates=await FindDuplicates();if(duplicates.Count>0&&!duplicateAcknowledged){error=L["WorkspaceDuplicateFound"];return;}
             var product=await Api.Save(Id,model);Id=product.Id;model.ExpectedUpdatedAt=product.UpdatedAt;
             foreach(var variant in product.Variants)existingVariantIds.Add(variant.Id);
             savedState=Snapshot();
+            if(autosave is not null)await autosave.CheckpointAsync();
             var nextSortOrder=images.Count;
             foreach(var pending in pendingImages.ToList())
             {
                 await using var content=new MemoryStream(pending.Bytes,writable:false);
                 var uploaded=await Api.UploadImage(product.Id,content,pending.Name,pending.ContentType,images.Count==0,nextSortOrder++);
                 images.Add(new(uploaded.Id,pending.Preview,uploaded.AltText??product.Name,uploaded.IsMain));pendingImages.Remove(pending);
+                if(autosave is not null)await autosave.CheckpointAsync();
             }
             if(submit){await Api.Action(product.Id,"submit");await ModerationState.RefreshAsync();}
-            allowNavigation=true;Navigation.NavigateTo(BackUri);
+            allowNavigation=true;if(autosave is not null)await autosave.ClearAsync();Navigation.NavigateTo(BackUri);
         }
         catch(HttpRequestException ex){error=ex.Message.StartsWith("This product was changed",StringComparison.Ordinal)?L["ProductChangedReload"]:ex.Message;}
         finally{busy=false;}
     }
-    private sealed record PendingImage(string Name,string ContentType,byte[] Bytes,string Preview);
+    private sealed record PendingImage(string Name,string ContentType,byte[] Bytes,string Preview){public Guid Id{get;init;}=Guid.NewGuid();}
     private sealed record ProductImageView(Guid Id,string? Preview,string AltText,bool IsMain);
 }

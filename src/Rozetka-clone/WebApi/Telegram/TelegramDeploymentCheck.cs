@@ -18,7 +18,7 @@ public static class TelegramDeploymentCheck
                 throw new InvalidOperationException("Telegram server settings are incomplete or long polling is disabled.");
             var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             var applied = (await db.Database.GetAppliedMigrationsAsync(timeout.Token)).ToHashSet(StringComparer.Ordinal);
-            string[] required = ["20261017110000_AddAdminAuditLog", "20261018112728_AddTelegramWorkspace"];
+            string[] required = ["20261017110000_AddAdminAuditLog", "20261018112728_AddTelegramWorkspace", "20261019165544_AddSellerWorkspaceTools"];
             var missing = required.Where(migration => !applied.Contains(migration)).ToArray();
             if (missing.Length != 0)
                 throw new InvalidOperationException("Required database migrations are missing: " + string.Join(", ", missing));
@@ -29,7 +29,8 @@ public static class TelegramDeploymentCheck
                      FROM (VALUES ('public.telegram_bindings'), ('public.telegram_link_challenges'),
                         ('public.telegram_guard_challenges'), ('public.telegram_bot_cursors'),
                         ('public.seller_category_grants'), ('public.rozetka_category_mappings'),
-                        ('public.product_import_drafts')) AS t(name)
+                        ('public.product_import_drafts'), ('public.product_identities'),
+                        ('public.seller_import_jobs'), ('public.telegram_notifications')) AS t(name)
                      CROSS JOIN (VALUES ('SELECT'), ('INSERT'), ('UPDATE'), ('DELETE')) AS p(name)) AND
                     has_table_privilege('public.admin_audit_logs', 'SELECT') AND
                     has_table_privilege('public.admin_audit_logs', 'INSERT') AS "Value"

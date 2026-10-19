@@ -3,6 +3,8 @@ using Domain.Entities.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Contracts.Telegram;
+using Infrastructure.Administration;
 
 namespace WebApi.Controllers
 {
@@ -28,6 +30,14 @@ namespace WebApi.Controllers
             var sellers = await _sellerService.GetAllAsync(cancellationToken);
 
             return Ok(sellers);
+        }
+
+        [HttpPost, Authorize(Roles = Roles.Administrator)]
+        public async Task<ActionResult<SellerWorkspaceCreatedDto>> Create(CreateSellerWorkspaceRequest request,
+            [FromServices] SellerProvisioningService provisioning, CancellationToken ct)
+        {
+            var result = await provisioning.CreateAsync(request, ct);
+            return CreatedAtAction(nameof(GetById), new { id = result.SellerId }, result);
         }
 
         [HttpGet("{id:guid}")]

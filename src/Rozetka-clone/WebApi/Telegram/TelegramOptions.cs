@@ -4,6 +4,7 @@ public sealed class TelegramOptions
 {
     public bool Enabled { get; set; }
     public bool LongPollingEnabled { get; set; }
+    public bool WorkspaceJobsEnabled { get; set; } = true;
     public string BotToken { get; set; } = "";
     private string botUsername = "";
     public string BotUsername { get => botUsername; set => botUsername = (value ?? "").Trim().TrimStart('@'); }

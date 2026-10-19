@@ -12,7 +12,7 @@ namespace WebApi.Tests;
 public sealed class PostgresCatalogTests
 {
     private static readonly string Prefix = "treba_qa_cat_" + Guid.NewGuid().ToString("N")[..12] + "_";
-    private static readonly string[] Tables = ["categories", "brands", "sellers", "stores", "products", "product_variants", "product_images", "attributes", "attribute_options", "product_attribute_values", "admin_audit_logs"];
+    private static readonly string[] Tables = ["categories", "brands", "sellers", "stores", "products", "product_variants", "product_images", "product_identities", "attributes", "attribute_options", "product_attribute_values", "users", "roles", "telegram_bindings", "telegram_notifications", "admin_audit_logs"];
     public sealed class QaModelCustomizer(ModelCustomizerDependencies dependencies) : ModelCustomizer(dependencies)
     {
         public override void Customize(ModelBuilder builder, DbContext context)

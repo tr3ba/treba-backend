@@ -11,6 +11,7 @@
         <p class="eyebrow">@L["PartnerNetwork"]</p>
         <h1>@L["SellersManagement"]</h1>
     </div>
+    <AuthorizeView Roles="Administrator"><a class="primary-button" href="/sellers/new"><i class="bi bi-plus-lg"></i>@L["WorkspaceCreateSeller"]</a></AuthorizeView>
 </section>
 
 @if (_loading)

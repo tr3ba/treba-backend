@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <data name="Dashboard" xml:space="preserve"><value>Дашборд</value></data>
   <data name="Management" xml:space="preserve"><value>Управление</value></data>
@@ -668,7 +668,10 @@
   <data name="TelegramConfirmLink" xml:space="preserve"><value>Подтвердить привязку</value></data>
   <data name="TelegramLink" xml:space="preserve"><value>Привязать Telegram</value></data>
   <data name="TelegramRefreshLink" xml:space="preserve"><value>Обновить статус</value></data>
-  <data name="TelegramLinkHint" xml:space="preserve"><value>После запуска бота вернитесь сюда и подтвердите свой аккаунт. Для входа Guard нужен привязанный Telegram.</value></data>
+  <data name="TelegramLinkHint" xml:space="preserve"><value>Нажмите Start в боте. Подтверждение появится здесь автоматически. Ссылка действует 10 минут.</value></data>
+  <data name="TelegramOpenBot" xml:space="preserve"><value>Открыть Telegram</value></data>
+  <data name="TelegramWaitingForBot" xml:space="preserve"><value>Ожидаем запуска бота…</value></data>
+  <data name="TelegramLinkExpired" xml:space="preserve"><value>Время привязки истекло. Нажмите «Привязать Telegram», чтобы повторить.</value></data>
   <data name="TelegramUnlinkConfirm" xml:space="preserve"><value>Отключить Telegram? Mini App и подтверждение новых входов через Guard станут недоступны.</value></data>
   <data name="GuardSignIn" xml:space="preserve"><value>Вход через Guard</value></data>
   <data name="GuardSignInHint" xml:space="preserve"><value>Для продавцов и модераторов с привязанным Telegram.</value></data>
@@ -690,4 +693,40 @@
   <data name="Saved" xml:space="preserve"><value>Сохранено</value></data>
   <data name="Remove" xml:space="preserve"><value>Убрать</value></data>
   <data name="Add" xml:space="preserve"><value>Добавить</value></data>
+  <data name="WorkspaceRecoveryFound" xml:space="preserve"><value>Найдена локальная копия незавершённой работы. При восстановлении сохраняется проверка версии товара на сервере.</value></data>
+  <data name="WorkspaceKeepValue" xml:space="preserve"><value>Не менять</value></data>
+  <data name="WorkspaceSelectProduct" xml:space="preserve"><value>Выбрать товар</value></data>
+  <data name="WorkspaceAutosaveHint" xml:space="preserve"><value>Поля и выбранные фотографии автоматически сохраняются в этом браузере</value></data>
+  <data name="WorkspaceVariantAvailability" xml:space="preserve"><value>Доступность вариантов</value></data>
+  <data name="WorkspaceAllCategories" xml:space="preserve"><value>Все текущие активные категории и их подкатегории</value></data>
+  <data name="WorkspaceDiscardBackup" xml:space="preserve"><value>Удалить локальную копию</value></data>
+  <data name="WorkspacePricePercent" xml:space="preserve"><value>Изменить цену на %</value></data>
+  <data name="WorkspaceCompanyName" xml:space="preserve"><value>Название продавца</value></data>
+  <data name="WorkspaceBulkTitle" xml:space="preserve"><value>Изменить выбранные товары</value></data>
+  <data name="WorkspaceNewValue" xml:space="preserve"><value>Новое значение</value></data>
+  <data name="WorkspacePreviewChanges" xml:space="preserve"><value>Предпросмотр изменений</value></data>
+  <data name="WorkspaceTestSeller" xml:space="preserve"><value>Тестовый продавец — технические реквизиты</value></data>
+  <data name="WorkspaceCheckDuplicates" xml:space="preserve"><value>Проверить дубли</value></data>
+  <data name="WorkspaceCreateSeller" xml:space="preserve"><value>Создать продавца</value></data>
+  <data name="WorkspaceStoreName" xml:space="preserve"><value>Название магазина</value></data>
+  <data name="WorkspaceManufacturerPartNumber" xml:space="preserve"><value>Артикул производителя (MPN)</value></data>
+  <data name="WorkspaceAvailable" xml:space="preserve"><value>Доступен</value></data>
+  <data name="WorkspaceBulkConfirmHint" xml:space="preserve"><value>Проверьте изменения. Статус модерации товаров сохраняется, действия попадут в журнал.</value></data>
+  <data name="WorkspacePasswordHint" xml:space="preserve"><value>От 12 до 128 символов. Пароль не сохраняется в черновиках.</value></data>
+  <data name="WorkspaceSellerWizardHint" xml:space="preserve"><value>Аккаунт, профиль продавца, магазин и категории создаются вместе.</value></data>
+  <data name="WorkspaceApplyChanges" xml:space="preserve"><value>Применить изменения</value></data>
+  <data name="WorkspaceBlankKeepsValue" xml:space="preserve"><value>пусто — не менять</value></data>
+  <data name="WorkspaceActivateSeller" xml:space="preserve"><value>Активировать продавца сразу</value></data>
+  <data name="WorkspaceAutosaved" xml:space="preserve"><value>Несохранённые изменения сохранены в этом браузере</value></data>
+  <data name="WorkspaceAutosaveFailed" xml:space="preserve"><value>Автосохранение недоступно. Сохраните карточку кнопкой «Черновик».</value></data>
+  <data name="WorkspaceUnavailable" xml:space="preserve"><value>Недоступен</value></data>
+  <data name="WorkspaceRestore" xml:space="preserve"><value>Восстановить</value></data>
+  <data name="WorkspaceStoreSlug" xml:space="preserve"><value>Адрес магазина</value></data>
+  <data name="WorkspaceBarcode" xml:space="preserve"><value>Штрихкод / EAN</value></data>
+  <data name="WorkspacePriceFixed" xml:space="preserve"><value>Установить цену</value></data>
+  <data name="WorkspaceSelectPage" xml:space="preserve"><value>Выбрать товары на странице</value></data>
+  <data name="WorkspaceDuplicateFound" xml:space="preserve"><value>Найдены похожие товары. Откройте существующий или подтвердите создание отдельной карточки.</value></data>
+  <data name="WorkspaceCreateSeparate" xml:space="preserve"><value>Создать отдельную карточку, несмотря на совпадение</value></data>
+  <data name="AuditFieldBarcode" xml:space="preserve"><value>Штрихкод</value></data>
+  <data name="WorkspaceOldPriceRemoved" xml:space="preserve"><value>Старая цена будет убрана</value></data>
 </root>

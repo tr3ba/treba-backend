@@ -1,11 +1,16 @@
 [CmdletBinding()]
 param(
     [string]$LocalSettings = (Join-Path $env:LOCALAPPDATA 'Treba\launcher.json'),
+    [switch]$LocalApi,
     [switch]$NoBrowser,
     [switch]$NoPause
 )
 
 $ErrorActionPreference = 'Stop'
+if (!$LocalApi) {
+    & (Join-Path $PSScriptRoot 'Start-TrebaHostedAdmin.ps1') -NoBrowser:$NoBrowser -NoPause:$NoPause
+    return
+}
 $repository = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $stateDirectory = Join-Path $env:LOCALAPPDATA 'Treba\launcher'
 $agentFile = Join-Path $env:LOCALAPPDATA 'Treba\dev-connection\ssh-agent.json'
@@ -69,12 +74,7 @@ function Wait-Url([string]$Url, [int]$Seconds = 90, [Diagnostics.Process]$Proces
     throw ('Service did not become ready within ' + $Seconds + ' seconds: ' + $Url + '. Last check: ' + $lastResult + '. Output: ' + $OutputLog + '. Errors: ' + $ErrorLog)
 }
 function Protect-File([string]$Path) {
-    $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
-    $acl = New-Object Security.AccessControl.FileSecurity
-    $acl.SetOwner($identity.User)
-    $acl.SetAccessRuleProtection($true, $false)
-    $acl.AddAccessRule((New-Object Security.AccessControl.FileSystemAccessRule($identity.User, 'FullControl', 'Allow')))
-    Set-Acl -LiteralPath $Path -AclObject $acl
+    & (Join-Path $PSScriptRoot 'Protect-TrebaLocalFile.ps1') -Path $Path
 }
 function Save-State($Value, [string]$Path) {
     $newFile = !(Test-Path -LiteralPath $Path)
@@ -115,12 +115,15 @@ function Test-ExistingTunnel([int]$Port, $Settings) {
     } catch { return $false }
 }
 function Start-App([string]$Dll, [string]$WorkingDirectory, [string[]]$Arguments, [string]$Name) {
+    if (!(Test-Path -LiteralPath $Dll -PathType Leaf)) { throw ('Application build is missing: ' + $Dll + '. Start TREBA again to rebuild it.') }
     $stdout = Join-Path $stateDirectory ($Name + '-' + $runId + '-output.log')
     $stderr = Join-Path $stateDirectory ($Name + '-' + $runId + '-error.log')
     $appLogs[$Name] = @{ Output = $stdout; Error = $stderr }
-    $argumentsList = @(('"' + $Dll + '"')) + $Arguments
+    $argumentsList = @('exec', ('"' + $Dll + '"')) + $Arguments
     $process = Start-Process -FilePath (Get-Command dotnet.exe).Source -ArgumentList $argumentsList -WorkingDirectory $WorkingDirectory -WindowStyle Hidden -RedirectStandardOutput $stdout -RedirectStandardError $stderr -PassThru
-    Write-LaunchLog ('Started ' + $Name + ': pid=' + $process.Id + ', output=' + $stdout + ', errors=' + $stderr)
+    # Keep a process handle before Refresh; Windows PowerShell otherwise loses the exit code.
+    $null = $process.Handle
+    Write-LaunchLog ('Started ' + $Name + ': pid=' + $process.Id + ', dll=' + $Dll + ', output=' + $stdout + ', errors=' + $stderr)
     return $process
 }
 
@@ -144,37 +147,38 @@ try {
     $network = (& $tailscale status --json 2>$null) | ConvertFrom-Json
     if ($network.BackendState -ne 'Running') { throw 'Sign in to your Treba Marketplace account in Tailscale and try again.' }
 
-    Write-Step 'Preparing the SSH key...'
-    $gitBin = Join-Path $env:ProgramFiles 'Git\usr\bin'
-    $agentReady = $false
-    if (Test-Path -LiteralPath $agentFile) {
-        $savedAgent = Get-Content -LiteralPath $agentFile -Raw | ConvertFrom-Json
-        $env:SSH_AUTH_SOCK = $savedAgent.SSH_AUTH_SOCK; $env:SSH_AGENT_PID = $savedAgent.SSH_AGENT_PID
-        $agentReady = (Get-AgentKeys "$gitBin\ssh-add.exe").Ready
-    }
-    if (!$agentReady) {
-        $agentOutput = (& "$gitBin\ssh-agent.exe" -s) -join "`n"
-        if ($agentOutput -notmatch 'SSH_AUTH_SOCK=([^;]+)') { throw 'Could not start the SSH agent.' }; $env:SSH_AUTH_SOCK = $Matches[1]
-        if ($agentOutput -notmatch 'SSH_AGENT_PID=([^;]+)') { throw 'Could not read the SSH agent process.' }; $env:SSH_AGENT_PID = $Matches[1]
-        New-Item -ItemType Directory -Path (Split-Path -Parent $agentFile) -Force | Out-Null
-        Save-State @{SSH_AUTH_SOCK=$env:SSH_AUTH_SOCK;SSH_AGENT_PID=$env:SSH_AGENT_PID} $agentFile
-    }
-    $publicKey = ((Get-Content -LiteralPath ($settings.SshKeyPath + '.pub') -Raw).Trim() -split '\s+')[0..1] -join ' '
-    $loadedKeys = (Get-AgentKeys "$gitBin\ssh-add.exe").PublicKeys
-    if (!$loadedKeys.Contains($publicKey)) {
-        Write-Host 'Enter the SSH key passphrase once. It will be kept in memory for up to 8 hours.' -ForegroundColor Yellow
-        & "$gitBin\ssh-add.exe" -t 8h $settings.SshKeyPath
-        if ($LASTEXITCODE -ne 0) { throw 'SSH key was not unlocked.' }
-    }
-
     Write-Step 'Opening the database tunnel...'
     $requestedPort = [int]$settings.DatabasePort
     Write-LaunchLog ('Requested database port: ' + $requestedPort)
     $databasePort = $requestedPort
     $sshLog = Join-Path $stateDirectory 'ssh-error.log'
     $databaseReady = $false
-    foreach ($candidate in @($requestedPort, [int]$previous.DatabasePort) | Select-Object -Unique) {
+    foreach ($candidate in @($requestedPort, [int]$previous.DatabasePort, [int]$apiConfiguration.DevelopmentConnection.DatabasePort) | Select-Object -Unique) {
         if ($candidate -gt 0 -and (Test-ExistingTunnel $candidate $settings)) { $databasePort = $candidate; $databaseReady = $true; break }
+    }
+    $gitBin = Join-Path $env:ProgramFiles 'Git\usr\bin'
+    if (!$databaseReady) {
+        Write-Step 'Preparing the SSH key...'
+        $agentReady = $false
+        if (Test-Path -LiteralPath $agentFile) {
+            $savedAgent = Get-Content -LiteralPath $agentFile -Raw | ConvertFrom-Json
+            $env:SSH_AUTH_SOCK = $savedAgent.SSH_AUTH_SOCK; $env:SSH_AGENT_PID = $savedAgent.SSH_AGENT_PID
+            $agentReady = (Get-AgentKeys "$gitBin\ssh-add.exe").Ready
+        }
+        if (!$agentReady) {
+            $agentOutput = (& "$gitBin\ssh-agent.exe" -s) -join "`n"
+            if ($agentOutput -notmatch 'SSH_AUTH_SOCK=([^;]+)') { throw 'Could not start the SSH agent.' }; $env:SSH_AUTH_SOCK = $Matches[1]
+            if ($agentOutput -notmatch 'SSH_AGENT_PID=([^;]+)') { throw 'Could not read the SSH agent process.' }; $env:SSH_AGENT_PID = $Matches[1]
+            New-Item -ItemType Directory -Path (Split-Path -Parent $agentFile) -Force | Out-Null
+            Save-State @{SSH_AUTH_SOCK=$env:SSH_AUTH_SOCK;SSH_AGENT_PID=$env:SSH_AGENT_PID} $agentFile
+        }
+        $publicKey = ((Get-Content -LiteralPath ($settings.SshKeyPath + '.pub') -Raw).Trim() -split '\s+')[0..1] -join ' '
+        $loadedKeys = (Get-AgentKeys "$gitBin\ssh-add.exe").PublicKeys
+        if (!$loadedKeys.Contains($publicKey)) {
+            Write-Host 'Enter the SSH key passphrase once. It will be kept in memory for up to 8 hours.' -ForegroundColor Yellow
+            & "$gitBin\ssh-add.exe" -t 8h $settings.SshKeyPath
+            if ($LASTEXITCODE -ne 0) { throw 'SSH key was not unlocked.' }
+        }
     }
     if (!$databaseReady) { $databasePort = Free-Port $requestedPort }
     if ($databasePort -ne $requestedPort) { Write-Step ('Local port ' + $requestedPort + ' is unavailable; using ' + $databasePort + ' for the database.') }

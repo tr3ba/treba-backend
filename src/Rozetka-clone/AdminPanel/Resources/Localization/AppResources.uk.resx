@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <data name="Dashboard" xml:space="preserve"><value>Дашборд</value></data>
   <data name="Management" xml:space="preserve"><value>Керування</value></data>
@@ -668,7 +668,10 @@
   <data name="TelegramConfirmLink" xml:space="preserve"><value>Підтвердити прив’язку</value></data>
   <data name="TelegramLink" xml:space="preserve"><value>Прив’язати Telegram</value></data>
   <data name="TelegramRefreshLink" xml:space="preserve"><value>Оновити статус</value></data>
-  <data name="TelegramLinkHint" xml:space="preserve"><value>Після запуску бота поверніться сюди та підтвердьте свій обліковий запис. Для входу Guard потрібен прив’язаний Telegram.</value></data>
+  <data name="TelegramLinkHint" xml:space="preserve"><value>Натисніть Start у боті. Підтвердження з’явиться тут автоматично. Посилання діє 10 хвилин.</value></data>
+  <data name="TelegramOpenBot" xml:space="preserve"><value>Відкрити Telegram</value></data>
+  <data name="TelegramWaitingForBot" xml:space="preserve"><value>Очікуємо запуску бота…</value></data>
+  <data name="TelegramLinkExpired" xml:space="preserve"><value>Час прив’язки минув. Натисніть «Прив’язати Telegram», щоб повторити.</value></data>
   <data name="TelegramUnlinkConfirm" xml:space="preserve"><value>Від’єднати Telegram? Mini App і підтвердження нових входів через Guard стануть недоступними.</value></data>
   <data name="GuardSignIn" xml:space="preserve"><value>Вхід через Guard</value></data>
   <data name="GuardSignInHint" xml:space="preserve"><value>Для продавців і модераторів із прив’язаним Telegram.</value></data>
@@ -690,4 +693,40 @@
   <data name="Saved" xml:space="preserve"><value>Збережено</value></data>
   <data name="Remove" xml:space="preserve"><value>Прибрати</value></data>
   <data name="Add" xml:space="preserve"><value>Додати</value></data>
+  <data name="WorkspaceRecoveryFound" xml:space="preserve"><value>Знайдено локальну копію незавершеної роботи. Відновлення зберігає перевірку версії товару на сервері.</value></data>
+  <data name="WorkspaceKeepValue" xml:space="preserve"><value>Не змінювати</value></data>
+  <data name="WorkspaceSelectProduct" xml:space="preserve"><value>Вибрати товар</value></data>
+  <data name="WorkspaceAutosaveHint" xml:space="preserve"><value>Поля й вибрані фотографії автоматично зберігаються в цьому браузері</value></data>
+  <data name="WorkspaceVariantAvailability" xml:space="preserve"><value>Доступність варіантів</value></data>
+  <data name="WorkspaceAllCategories" xml:space="preserve"><value>Усі поточні активні категорії та їхні підкатегорії</value></data>
+  <data name="WorkspaceDiscardBackup" xml:space="preserve"><value>Видалити локальну копію</value></data>
+  <data name="WorkspacePricePercent" xml:space="preserve"><value>Змінити ціну на %</value></data>
+  <data name="WorkspaceCompanyName" xml:space="preserve"><value>Назва продавця</value></data>
+  <data name="WorkspaceBulkTitle" xml:space="preserve"><value>Змінити вибрані товари</value></data>
+  <data name="WorkspaceNewValue" xml:space="preserve"><value>Нове значення</value></data>
+  <data name="WorkspacePreviewChanges" xml:space="preserve"><value>Перегляд змін</value></data>
+  <data name="WorkspaceTestSeller" xml:space="preserve"><value>Тестовий продавець — технічні реквізити</value></data>
+  <data name="WorkspaceCheckDuplicates" xml:space="preserve"><value>Перевірити дублікати</value></data>
+  <data name="WorkspaceCreateSeller" xml:space="preserve"><value>Створити продавця</value></data>
+  <data name="WorkspaceStoreName" xml:space="preserve"><value>Назва магазину</value></data>
+  <data name="WorkspaceManufacturerPartNumber" xml:space="preserve"><value>Артикул виробника (MPN)</value></data>
+  <data name="WorkspaceAvailable" xml:space="preserve"><value>Доступний</value></data>
+  <data name="WorkspaceBulkConfirmHint" xml:space="preserve"><value>Перевірте зміни. Статус модерації товарів зберігається, дії потраплять до журналу.</value></data>
+  <data name="WorkspacePasswordHint" xml:space="preserve"><value>Від 12 до 128 символів. Пароль не зберігається в чернетках.</value></data>
+  <data name="WorkspaceSellerWizardHint" xml:space="preserve"><value>Акаунт, профіль продавця, магазин і категорії створюються разом.</value></data>
+  <data name="WorkspaceApplyChanges" xml:space="preserve"><value>Застосувати зміни</value></data>
+  <data name="WorkspaceBlankKeepsValue" xml:space="preserve"><value>порожньо — не змінювати</value></data>
+  <data name="WorkspaceActivateSeller" xml:space="preserve"><value>Активувати продавця одразу</value></data>
+  <data name="WorkspaceAutosaved" xml:space="preserve"><value>Незбережені зміни збережено в цьому браузері</value></data>
+  <data name="WorkspaceAutosaveFailed" xml:space="preserve"><value>Автозбереження недоступне. Збережіть картку кнопкою «Чернетка».</value></data>
+  <data name="WorkspaceUnavailable" xml:space="preserve"><value>Недоступний</value></data>
+  <data name="WorkspaceRestore" xml:space="preserve"><value>Відновити</value></data>
+  <data name="WorkspaceStoreSlug" xml:space="preserve"><value>Адреса магазину</value></data>
+  <data name="WorkspaceBarcode" xml:space="preserve"><value>Штрихкод / EAN</value></data>
+  <data name="WorkspacePriceFixed" xml:space="preserve"><value>Установити ціну</value></data>
+  <data name="WorkspaceSelectPage" xml:space="preserve"><value>Вибрати товари на сторінці</value></data>
+  <data name="WorkspaceDuplicateFound" xml:space="preserve"><value>Знайдено схожі товари. Відкрийте наявний або підтвердьте створення окремої картки.</value></data>
+  <data name="WorkspaceCreateSeparate" xml:space="preserve"><value>Створити окрему картку попри збіг</value></data>
+  <data name="AuditFieldBarcode" xml:space="preserve"><value>Штрихкод</value></data>
+  <data name="WorkspaceOldPriceRemoved" xml:space="preserve"><value>Стару ціну буде прибрано</value></data>
 </root>

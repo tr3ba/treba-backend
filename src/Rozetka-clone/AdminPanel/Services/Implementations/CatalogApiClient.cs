@@ -8,6 +8,13 @@ namespace AdminPanel.Services.Implementations;
 
 public sealed class CatalogApiClient(HttpClient http)
 {
+    public async Task<BulkCatalogPreviewDto> PreviewBulk(BulkCatalogRequest request)
+    {using var response=await http.PostAsJsonAsync("api/v1/admin/catalog/bulk/preview",request);await RequireSuccess(response);return (await response.Content.ReadFromJsonAsync<BulkCatalogPreviewDto>())!;}
+    public async Task ApplyBulk(string token)
+    {using var response=await http.PostAsJsonAsync("api/v1/admin/catalog/bulk/apply",new ApplyBulkCatalogRequest(token));await RequireSuccess(response);}
+    public Task<List<Contracts.Telegram.ProductDuplicateDto>> Duplicates(Guid brandId,string part,string? barcode,Guid? excludeId)=>Get<List<Contracts.Telegram.ProductDuplicateDto>>($"api/v1/admin/catalog/duplicates?brandId={brandId}&manufacturerPartNumber={Encode(part)}&barcode={Encode(barcode)}&excludeId={excludeId}");
+    public async Task<List<Contracts.Telegram.ProductDuplicateDto>> DuplicatesMany(Contracts.Telegram.DuplicateLookupRequest request)
+    {using var response=await http.PostAsJsonAsync("api/v1/admin/catalog/duplicates",request);await RequireSuccess(response);return (await response.Content.ReadFromJsonAsync<List<Contracts.Telegram.ProductDuplicateDto>>())!;}
     public Task<PagedResponse<CatalogProductDto>> List(int page = 1, string? search = null, string? status = null,
         Guid? categoryId = null, Guid? brandId = null, Guid? sellerId = null, decimal? minPrice = null, decimal? maxPrice = null, string? stock = null, string? sort = null) =>
         Get<PagedResponse<CatalogProductDto>>($"api/v1/admin/catalog/products?page={page}&size=12&search={Encode(search)}&status={Encode(status)}"

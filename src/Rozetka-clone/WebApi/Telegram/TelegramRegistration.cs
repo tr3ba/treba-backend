@@ -17,6 +17,10 @@ public static class TelegramRegistration
         services.AddSingleton<IMarketplaceSourceClient>(_ => new MarketplaceSourceClient()); services.AddSingleton<MarketplaceProductParser>();
         services.AddScoped<TelegramLinkService>(); services.AddScoped<TelegramGuardService>(); services.AddScoped<ProductImportService>();
         services.AddScoped<SellerCategoryAccess>(); services.AddHostedService<TelegramBotWorker>();
+        services.AddDataProtection();
+        services.AddScoped<CatalogDuplicateService>(); services.AddScoped<BulkCatalogService>();
+        services.AddScoped<Infrastructure.Administration.SellerProvisioningService>();
+        services.AddScoped<SellerImportQueue>(); services.AddScoped<SellerWorkspaceRunner>(); services.AddHostedService<SellerWorkspaceWorker>();
         services.AddAuthentication().AddScheme<AuthenticationSchemeOptions, TelegramAuthenticationHandler>(TelegramAuthenticationHandler.SchemeName, _ => { });
         services.AddRateLimiter(options =>
         {

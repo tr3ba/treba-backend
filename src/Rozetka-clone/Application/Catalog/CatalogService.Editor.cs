@@ -56,12 +56,15 @@ public sealed partial class CatalogService
             var variant = existing.SingleOrDefault(v => v.Id == input.Id);
             if (variant is null)
             {
-                variant = new(input.Id, product.Id, input.Sku, null, input.Name, input.Price, input.OldPrice, null, null, null, null, null, input.IsActive);
+                variant = new(input.Id, product.Id, input.Sku, CatalogDuplicateService.Normalize(input.Barcode), input.Name, input.Price, input.OldPrice, null, null, null, null, null, input.IsActive);
                 db.ProductVariants.Add(variant);
             }
-            else variant.Update(input.Sku, variant.Barcode, input.Name, input.Price, input.OldPrice, variant.CostPrice, variant.Weight, variant.Length, variant.Width, variant.Height, input.IsActive);
+            else variant.Update(input.Sku, input.Barcode is null ? variant.Barcode : CatalogDuplicateService.Normalize(input.Barcode), input.Name, input.Price, input.OldPrice, variant.CostPrice, variant.Weight, variant.Length, variant.Width, variant.Height, input.IsActive);
             variant.SetStock(input.StockQuantity);
         }
+        var identity = await db.ProductIdentities.SingleOrDefaultAsync(i => i.ProductId == product.Id, ct);
+        if (identity is null) { identity = new() { ProductId = product.Id }; db.ProductIdentities.Add(identity); }
+        identity.ManufacturerPartNumber = (request.ManufacturerPartNumber ?? "").Trim(); identity.NormalizedPartNumber = CatalogDuplicateService.Normalize(request.ManufacturerPartNumber);
         // Keep variant ids referenced by carts and past purchases; omitted variants become inactive.
         if (request.Variants is not null)
             foreach (var variant in existing.Where(v => !ids.Contains(v.Id)))

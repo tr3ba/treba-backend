@@ -70,6 +70,7 @@ public sealed class TelegramHttpTests
         services.AddSingleton<IMarketplaceSourceClient, TelegramTestData.Source>(); services.AddSingleton<IProductMediaStorage, TelegramTestData.Media>();
         services.AddScoped<IIdentityService>(sp => TelegramTestData.Identity(sp.GetRequiredService<ApplicationDbContext>()));
         services.AddScoped<CatalogService>(); services.AddScoped<IProductService,ProductService>(); services.AddScoped<AdminWorkspaceService>(); services.AddScoped<IReviewService, ReviewService>();
+        services.AddScoped<Application.Sellers.ISellerService,Application.Sellers.SellerService>();
         services.AddAuthentication("Bearer").AddScheme<AuthenticationSchemeOptions, WebsiteAuthentication>("Bearer", _ => {});
         services.AddAuthorization(); services.AddControllers().AddApplicationPart(typeof(TelegramMiniAppController).Assembly);
         services.AddProblemDetails(); services.AddExceptionHandler<ApiExceptionHandler>();
@@ -166,6 +167,40 @@ public sealed class TelegramHttpTests
         await using var server=await ServerAsync();using var client=server.GetTestClient();
         client.DefaultRequestHeaders.Add("X-Website-Role",role);client.DefaultRequestHeaders.Add("X-Website-User",Guid.NewGuid().ToString());
         Assert.Equal(expected,(await client.GetAsync("/api/v1/admin/telegram/mappings")).StatusCode);
+    }
+    [Theory]
+    [InlineData(Roles.Administrator,HttpStatusCode.Created)]
+    [InlineData(Roles.Manager,HttpStatusCode.Forbidden)]
+    [InlineData(Roles.Moderator,HttpStatusCode.Forbidden)]
+    [InlineData(Roles.Seller,HttpStatusCode.Forbidden)]
+    [InlineData(Roles.Customer,HttpStatusCode.Forbidden)]
+    public async Task SellerWizard_IsAnAdministratorOnlyAtomicEndpoint(string role,HttpStatusCode expected)
+    {
+        await using var server=await ServerAsync();using var client=server.GetTestClient();
+        using(var scope=server.Services.CreateScope()) await TelegramTestData.SeedAsync(scope.ServiceProvider.GetRequiredService<ApplicationDbContext>());
+        client.DefaultRequestHeaders.Add("X-Website-Role",role);client.DefaultRequestHeaders.Add("X-Website-User",Guid.NewGuid().ToString());
+        var response=await client.PostAsJsonAsync("/api/v1/admin/sellers",new CreateSellerWorkspaceRequest { Email="wizard@example.test",Password="Workspace-password-123!",FirstName="Test",LastName="Seller",CompanyName="Test company",StoreName="Test store",StoreSlug="wizard-store",TestSeller=true,AllCategories=true });
+        Assert.Equal(expected,response.StatusCode);
+        if(expected==HttpStatusCode.Created){Assert.NotNull(response.Headers.Location);Assert.DoesNotContain("Workspace-password",await response.Content.ReadAsStringAsync());}
+    }
+
+    [Fact]
+    public async Task Workspace_MiniAppQueueAndBulk_RejectModeratorAndCustomerMutations()
+    {
+        await using var server=await ServerAsync();using var client=server.GetTestClient();
+        var clock=(TelegramTestData.Clock)server.Services.GetRequiredService<TimeProvider>();Guid sellerId;
+        using(var scope=server.Services.CreateScope()){
+            var db=scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();var seed=await TelegramTestData.SeedAsync(db);await TelegramTestData.AllowImportAsync(db,seed);sellerId=seed.User.Id;await TelegramTestData.BindAsync(db,seed.User,clock);
+            var moderator=await TelegramTestData.UserAsync(db,Roles.Moderator);await TelegramTestData.BindAsync(db,moderator,clock,67890);
+        }
+        client.DefaultRequestHeaders.Authorization=new("Tma",TelegramTestData.Signed(67890,clock.Now));
+        Assert.Equal(HttpStatusCode.Forbidden,(await client.PostAsJsonAsync("/api/telegram/mini/imports/queue",new QueueImportsRequest([new(TelegramTestData.SourceUrl)]))).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden,(await client.PostAsJsonAsync("/api/telegram/mini/bulk/preview",new{})).StatusCode);
+        client.DefaultRequestHeaders.Authorization=new("Tma",TelegramTestData.Signed(12345,clock.Now));
+        Assert.Equal(HttpStatusCode.OK,(await client.PostAsJsonAsync("/api/telegram/mini/imports/queue",new QueueImportsRequest([new(TelegramTestData.SourceUrl)]))).StatusCode);
+        using(var scope=server.Services.CreateScope())Assert.Equal(sellerId,(await scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().SellerImportJobs.SingleAsync()).UserId);
+        client.DefaultRequestHeaders.Authorization=null;client.DefaultRequestHeaders.Add("X-Website-Role",Roles.Customer);client.DefaultRequestHeaders.Add("X-Website-User",sellerId.ToString());
+        Assert.Equal(HttpStatusCode.Forbidden,(await client.PostAsJsonAsync("/api/v1/admin/catalog/bulk/preview",new{})).StatusCode);
     }
     private sealed class Bot : ITelegramBotClient
     {

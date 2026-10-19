@@ -27,4 +27,6 @@
 	</ItemGroup>
 
   <ItemGroup><Compile Include="..\Shared\LocalLauncherEndpoints.cs" Link="LocalLauncherEndpoints.cs" /></ItemGroup>
+  <ItemGroup><Content Remove="wwwroot/js/editor-drafts.js" /><Content Include="..\Shared\editor-drafts.js" Link="wwwroot\js\editor-drafts.js" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
+  <Target Name="PrepareEditorDraftModule" BeforeTargets="PrepareForBuild"><Copy SourceFiles="../Shared/editor-drafts.js" DestinationFiles="$(MSBuildProjectDirectory)/wwwroot/js/editor-drafts.js" SkipUnchangedFiles="true" /></Target>
 </Project>

@@ -40,6 +40,7 @@ public sealed class SaveCatalogProductRequest : IValidatableObject
     public string CountryOfOrigin { get; set; } = "";
 
     public DateTime? ExpectedUpdatedAt { get; set; }
+    [StringLength(100)] public string ManufacturerPartNumber { get; set; } = "";
     public List<CatalogVariantInput>? Variants { get; set; }
     public List<CatalogAttributeInput>? Attributes { get; set; }
 
@@ -118,6 +119,7 @@ public sealed record CatalogProductDto(
     public string StoreName { get; init; } = "";
     public string SellerName { get; init; } = "";
     public DateTime UpdatedAt { get; init; }
+    public string ManufacturerPartNumber { get; init; } = "";
     public IReadOnlyList<CatalogVariantInput> Variants { get; init; } = [];
     public IReadOnlyList<CatalogAttributeInput> Attributes { get; init; } = [];
 }
@@ -148,6 +150,7 @@ public sealed record CatalogProductImageDto(
 
 public sealed class CatalogVariantInput : IValidatableObject
 {
+    [StringLength(100)] public string? Barcode { get; set; }
     public Guid Id { get; set; } = Guid.NewGuid();
     [Required, StringLength(100)] public string Sku { get; set; } = "";
     [Required, StringLength(250)] public string Name { get; set; } = "";

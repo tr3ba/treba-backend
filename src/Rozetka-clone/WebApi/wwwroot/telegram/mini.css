@@ -29,3 +29,7 @@
 @keyframes startup-spin{to{transform:rotate(360deg)}}
 @keyframes startup-dot{0%,70%,100%{opacity:.22;transform:translateY(0)}35%{opacity:1;transform:translateY(-3px)}}
 @media(prefers-reduced-motion:reduce){.startup-orbit,.startup-progress span{animation:none}.startup-screen{transition:none}}
+:root { --workspace-checkbox-size: 20px; }
+.workspace-select-product { display:flex; align-items:center; gap:10px; }
+.workspace-select-product > input[type=checkbox] { width:var(--workspace-checkbox-size); height:var(--workspace-checkbox-size); flex:0 0 auto; accent-color:var(--accent,#f97316); }
+.workspace-select-product > .product-card { flex:1; min-width:0; }

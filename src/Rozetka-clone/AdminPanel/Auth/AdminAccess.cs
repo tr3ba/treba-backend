@@ -15,6 +15,7 @@ public static class AdminAccess
         if (route.StartsWith("/users", StringComparison.Ordinal)) return role == "Administrator";
         if (route == "/settings" || route.StartsWith("/settings/", StringComparison.Ordinal)) return role == "Administrator";
         if (route.StartsWith("/categories", StringComparison.Ordinal)) return role is "Administrator" or "Manager";
+        if (route == "/sellers/new") return role == "Administrator";
         if (route.StartsWith("/sellers", StringComparison.Ordinal)) return role is "Administrator" or "Manager";
         if (route == "/moderation") return role is "Administrator" or "Manager" or "Moderator";
         if (route == "/reviews") return role is "Administrator" or "Manager" or "Moderator";

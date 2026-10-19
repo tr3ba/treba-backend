@@ -5,11 +5,13 @@
 @inject TelegramApiClient Telegram
 @inject IJSRuntime Js
 
+@if (configured)
+{
 <section class="guard-login-panel">
     @if(guard is null)
     {
         <button type="button" class="secondary-button wide" @onclick="Start" disabled="@(busy || !configured)"><i class="bi bi-qr-code-scan"></i> @L["GuardSignIn"]</button>
-        <small>@L[configured ? "GuardSignInHint" : "TelegramNotConfigured"]</small>
+        <small>@L["GuardSignInHint"]</small>
     }
     else
     {
@@ -21,6 +23,7 @@
     }
     @if(error is not null){<p class="feedback-error" role="alert">@error</p>}
 </section>
+}
 
 @code {
     [Parameter] public EventCallback<LoginResponse> OnCompleted {get;set;}

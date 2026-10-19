@@ -28,15 +28,23 @@ public sealed record ImportedCharacteristicDto(string Name, string Value);
 public sealed record ImportPreviewDto(Guid Id, string SourceUrl, string Name, string Description, string BrandName,
     string SourceCategoryName, Guid CategoryId, string CategoryName, decimal? SourcePrice,
     IReadOnlyList<string> Images, IReadOnlyList<ImportedCharacteristicDto> Characteristics, DateTimeOffset ExpiresAt,
-    Guid? ProductId, DateTimeOffset? SubmittedAt);
+    Guid? ProductId, DateTimeOffset? SubmittedAt)
+{
+    public string ManufacturerPartNumber { get; init; } = "";
+    public string Barcode { get; init; } = "";
+    public IReadOnlyList<ProductDuplicateDto> Duplicates { get; init; } = [];
+}
 public sealed class SubmitImportRequest
 {
     [Required, StringLength(250)] public string Name { get; set; } = "";
     [StringLength(10000)] public string Description { get; set; } = "";
     public Guid StoreId { get; set; }
     public Guid BrandId { get; set; }
+    [StringLength(100)] public string ManufacturerPartNumber { get; set; } = "";
+    [StringLength(100)] public string Barcode { get; set; } = "";
+    public bool DuplicateConfirmed { get; set; }
     [Required, StringLength(100)] public string Sku { get; set; } = "";
-    [Range(typeof(decimal), "0.01", "999999999.99")] public decimal Price { get; set; }
+    [Range(typeof(decimal), "0.01", "999999999.99", ParseLimitsInInvariantCulture = true, ConvertValueInInvariantCulture = true)] public decimal Price { get; set; }
     [Range(0, 1000000)] public int StockQuantity { get; set; }
     public List<CatalogAttributeInput> Attributes { get; set; } = [];
 }
