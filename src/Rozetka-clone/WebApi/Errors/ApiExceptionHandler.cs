@@ -18,6 +18,7 @@ public sealed class ApiExceptionHandler(
         var (status, title) = exception switch
         {
             ArgumentException => (400, exception.Message),
+            KeyNotFoundException => (404, exception.Message),
             UserDomainException => (409, exception.Message),
             Application.Common.BusinessRuleException => (409, exception.Message),
             InvalidOperationException => (400, exception.Message),
