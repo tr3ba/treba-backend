@@ -34,18 +34,32 @@ public sealed class TelegramHttpTests
     [Fact]
     public async Task Hosting_RedirectsAnAccidentallyCopiedMessageTime_AndKeepsOtherMissingPathsMissing()
     {
-        await using var server = await ServerAsync();
-        using var client = server.GetTestClient();
-        using var redirected = await client.GetAsync("/telegram/13:37");
-        Assert.Equal(HttpStatusCode.Redirect, redirected.StatusCode);
-        Assert.Equal("/telegram/", redirected.Headers.Location?.OriginalString);
-        using var missing = await client.GetAsync("/telegram/missing.js");
-        Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
+        var webRoot = Path.Combine(Path.GetTempPath(), "treba-telegram-http-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(Path.Combine(webRoot, "telegram"));
+        await File.WriteAllTextAsync(Path.Combine(webRoot, "telegram", "index.html"), "<div class='app-shell'>Treba</div>");
+        await File.WriteAllTextAsync(Path.Combine(webRoot, "telegram", "app.js"), "const app = window.Telegram;");
+        try
+        {
+            await using var server = await ServerAsync(webRoot);
+            using var client = server.GetTestClient();
+            using var redirected = await client.GetAsync("/telegram/13:37");
+            Assert.Equal(HttpStatusCode.Redirect, redirected.StatusCode);
+            Assert.Equal("/telegram/", redirected.Headers.Location?.OriginalString);
+            Assert.Contains("app-shell", await client.GetStringAsync("/telegram/"));
+            Assert.Contains("window.Telegram", await client.GetStringAsync("/telegram/app.js"));
+            using var missing = await client.GetAsync("/telegram/missing.js");
+            Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
+        }
+        finally
+        {
+            Assert.StartsWith(Path.GetFullPath(Path.GetTempPath()), Path.GetFullPath(webRoot));
+            Directory.Delete(webRoot, recursive: true);
+        }
     }
 
-    private static async Task<WebApplication> ServerAsync()
+    private static async Task<WebApplication> ServerAsync(string? webRoot = null)
     {
-        var builder = WebApplication.CreateBuilder(); builder.WebHost.UseTestServer(); builder.Logging.ClearProviders();
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions { WebRootPath = webRoot }); builder.WebHost.UseTestServer(); builder.Logging.ClearProviders();
         builder.Configuration.AddInMemoryCollection(new Dictionary<string,string?> { ["Telegram:Enabled"]="true", ["Telegram:BotToken"]=TelegramTestData.BotToken,
             ["Telegram:BotUsername"]="TrebaTestBot", ["Telegram:MiniAppUrl"]="https://treba.example/telegram/" });
         var services = builder.Services; var database = Guid.NewGuid().ToString();
@@ -59,7 +73,9 @@ public sealed class TelegramHttpTests
         services.AddAuthentication("Bearer").AddScheme<AuthenticationSchemeOptions, WebsiteAuthentication>("Bearer", _ => {});
         services.AddAuthorization(); services.AddControllers().AddApplicationPart(typeof(TelegramMiniAppController).Assembly);
         services.AddProblemDetails(); services.AddExceptionHandler<ApiExceptionHandler>();
-        var app = builder.Build(); app.UseExceptionHandler(); app.UseRouting(); app.UseAuthentication(); app.UseAuthorization(); app.UseRateLimiter(); app.MapControllers();
+        var app = builder.Build(); app.UseExceptionHandler(); app.UseRouting();
+        if (webRoot is not null) { app.UseDefaultFiles(); app.UseStaticFiles(); }
+        app.UseAuthentication(); app.UseAuthorization(); app.UseRateLimiter(); app.MapControllers();
         await app.StartAsync(); return app;
     }
     private sealed class WebsiteAuthentication(IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder)

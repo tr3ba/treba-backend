@@ -12,7 +12,7 @@ namespace WebApi.Controllers;
 [ApiController, Route("api/telegram"), ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public sealed class TelegramAccountController(TelegramLinkService links, TelegramGuardService guard) : ControllerBase
 {
-    [HttpGet("/telegram/{timestamp}"), AllowAnonymous, ApiExplorerSettings(IgnoreApi = true)]
+    [HttpGet(@"/telegram/{timestamp:regex(^\d\d:\d\d$)}"), AllowAnonymous, ApiExplorerSettings(IgnoreApi = true)]
     public IActionResult CorrectCopiedMessageTime(string timestamp) =>
         DateTime.TryParseExact(timestamp, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out _)
             ? LocalRedirect("/telegram/") : NotFound();

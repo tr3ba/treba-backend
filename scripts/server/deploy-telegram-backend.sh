@@ -72,8 +72,11 @@ wait_for_api() {
 
 verify_mini_app() {
     local origin="$1"
+    echo "Checking Mini App HTML: $origin/telegram/"
     curl -fsS --max-time 10 "$origin/telegram/" | grep 'app-shell' >/dev/null
+    echo "Checking Mini App JavaScript: $origin/telegram/app.js"
     curl -fsS --max-time 10 "$origin/telegram/app.js" | grep 'Telegram' >/dev/null
+    echo "Checking Telegram configuration: $origin/api/telegram/configuration"
     curl -fsS --max-time 10 "$origin/api/telegram/configuration" | python3 -c '
 import json, sys
 config = json.load(sys.stdin)

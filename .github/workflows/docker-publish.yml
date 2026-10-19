@@ -104,6 +104,13 @@ jobs:
           fi
 
           echo "Backend /ping passed."
+          curl -fsS http://localhost:5050/telegram/ | grep 'app-shell' >/dev/null
+          curl -fsS http://localhost:5050/telegram/app.js | grep 'Telegram' >/dev/null
+          curl -fsS http://localhost:5050/telegram/ui.js >/dev/null
+          curl -fsS http://localhost:5050/telegram/mini.css >/dev/null
+          curl -fsS http://localhost:5050/telegram/brand-mark.png >/dev/null
+          curl -fsS http://localhost:5050/api/telegram/configuration >/dev/null
+          echo "Published Telegram HTML, assets and configuration route passed."
 
           docker push "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
           if [ "$GITHUB_REF" = refs/heads/main ]; then
