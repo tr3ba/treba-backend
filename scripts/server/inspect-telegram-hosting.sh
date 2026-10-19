@@ -19,6 +19,8 @@ values = dict(item.split("=", 1) for item in json.load(sys.stdin) if "=" in item
 for name in ("Telegram__Enabled", "Telegram__LongPollingEnabled", "Telegram__BotUsername", "Telegram__MiniAppUrl", "Telegram__EnforceSellerCategories"):
     print(name + "=" + values.get(name, "<missing>"))
 print("Telegram__BotToken_present=" + str(bool(values.get("Telegram__BotToken", "").strip())).lower())
+for name in ("ASPNETCORE_ENVIRONMENT", "ASPNETCORE_WEBROOT", "ASPNETCORE_CONTENTROOT", "ASPNETCORE_HTTPS_PORT"):
+    print(name + "=" + values.get(name, "<missing>"))
 '
 fi
 
@@ -85,3 +87,14 @@ fi
 
 printf 'LISTENING_PORTS\n'
 ss -ltn | head -n 20
+
+printf 'PUBLISHED_TELEGRAM_ASSETS\n'
+while read -r repository tag; do
+    if [[ "$tag" =~ ^[0-9a-f]{40}$ ]]; then
+        printf 'IMAGE %s:%s\n' "$repository" "$tag"
+        docker run --rm --read-only --network none --entrypoint /bin/sh "$repository:$tag" -c '
+            ls -ld /app/wwwroot /app/wwwroot/telegram 2>/dev/null || true
+            find /app/wwwroot/telegram -maxdepth 1 -type f -printf "%f %s bytes\n" 2>/dev/null || true
+        '
+    fi
+done < <(docker image ls --filter reference=019066823315.dkr.ecr.eu-west-1.amazonaws.com/treba-backend --format '{{.Repository}} {{.Tag}}' | head -n 3)
