@@ -55,3 +55,21 @@ Runtime:
 {
   "status": "ok"
 }
+```
+
+## Telegram deployment
+
+Telegram Mini App is served by WebApi at `/telegram/`. The inspected EC2 uses Caddy
+(`treba-caddy`, `/opt/treba-caddy/Caddyfile`); that path must join the existing API
+matcher and keep the request path unchanged. The storefront continues at `/`.
+
+The deployment workflow pins the image to the source commit SHA and invokes
+`scripts/server/deploy-telegram-backend.sh` over the existing SSM channel. It checks
+the actual database migrations and bot token using `--check-telegram-deployment`,
+then tests a temporary loopback container before replacing the running API.
+The previous container and Caddy configuration are retained for rollback.
+Database migrations are not applied by this deployment command.
+
+Server bot settings stay in the existing deployment environment. Never commit or
+print the bot token. See [Telegram handoff](telegram-server-handoff.md) for settings,
+database prerequisites, checks and the existing separate AdminPanel deployment.

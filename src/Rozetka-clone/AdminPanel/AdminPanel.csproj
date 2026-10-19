@@ -10,4 +10,5 @@
     <ProjectReference Include="..\Contracts\Contracts.csproj" />
   </ItemGroup>
 
+  <ItemGroup><Compile Include="..\Shared\LocalLauncherEndpoints.cs" Link="LocalLauncherEndpoints.cs" /></ItemGroup>
 </Project>

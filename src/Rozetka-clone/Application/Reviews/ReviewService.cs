@@ -112,6 +112,9 @@ namespace Application.Reviews
             ReviewStatus status,
             CancellationToken cancellationToken = default)
         {
+            if (status is not (ReviewStatus.PUBLISHED or ReviewStatus.REJECTED))
+                throw new ArgumentException("Choose PUBLISHED or REJECTED.", nameof(status));
+
             var review = await _dbContext.Reviews
                 .FirstOrDefaultAsync(
                     x => x.Id == reviewId,
@@ -122,14 +125,27 @@ namespace Application.Reviews
                 throw new KeyNotFoundException("Review not found.");
             }
 
+            if (review.Status == ReviewStatus.DELETED)
+                throw new BusinessRuleException("Deleted reviews cannot be moderated.");
+            if (review.Status == status) return;
+
+            var product = await _dbContext.Products.FirstOrDefaultAsync(x => x.Id == review.ProductId, cancellationToken)
+                ?? throw new KeyNotFoundException("Product not found.");
+            var otherRatings = await _dbContext.Reviews.AsNoTracking()
+                .Where(x => x.ProductId == review.ProductId && x.Id != reviewId && x.Status == ReviewStatus.PUBLISHED)
+                .GroupBy(x => x.ProductId)
+                .Select(group => new { Count = group.Count(), Sum = group.Sum(x => x.Rating) })
+                .SingleOrDefaultAsync(cancellationToken);
+            var count = (otherRatings?.Count ?? 0) + (status == ReviewStatus.PUBLISHED ? 1 : 0);
+            var sum = (otherRatings?.Sum ?? 0) + (status == ReviewStatus.PUBLISHED ? review.Rating : 0);
+
             review.Status = status;
             review.UpdatedAt = DateTime.UtcNow;
+            product.ReviewCount = count;
+            product.AverageRating = count == 0 ? 0 : sum / (double)count;
+            product.UpdatedAt = review.UpdatedAt;
 
             await _dbContext.SaveChangesAsync(cancellationToken);
-
-            await RecalculateProductRatingAsync(
-                review.ProductId,
-                cancellationToken);
         }
 
         public async Task VoteReviewAsync(

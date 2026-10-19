@@ -1,0 +1,67 @@
+@using Contracts.Telegram
+@using Contracts.Authentication
+@using Microsoft.JSInterop
+@implements IDisposable
+@inject TelegramApiClient Telegram
+@inject IJSRuntime Js
+
+<section class="guard-login-panel">
+    @if(guard is null)
+    {
+        <button type="button" class="secondary-button wide" @onclick="Start" disabled="@(busy || !configured)"><i class="bi bi-qr-code-scan"></i> @L["GuardSignIn"]</button>
+        <small>@L[configured ? "GuardSignInHint" : "TelegramNotConfigured"]</small>
+    }
+    else
+    {
+        <h3>Treba Guard</h3><p>@L["GuardScanHint"]</p>
+        <img class="guard-qr" src="@guard.QrCodeDataUrl" alt="@L["GuardQrAlt"]" />
+        <p>@L["GuardMatchCode"] <strong>@guard.DisplayCode</strong></p>
+        <small>@L["GuardExpires"]</small>
+        <button type="button" class="secondary-button" @onclick="Reset">@L["Cancel"]</button>
+    }
+    @if(error is not null){<p class="feedback-error" role="alert">@error</p>}
+</section>
+
+@code {
+    [Parameter] public EventCallback<LoginResponse> OnCompleted {get;set;}
+    private GuardStartDto? guard;
+    private bool configured,busy;
+    private string? error;
+    private CancellationTokenSource? polling;
+    protected override async Task OnInitializedAsync()
+    { try{configured=(await Telegram.Get<TelegramConfigurationDto>("api/telegram/configuration")).Configured;}catch(HttpRequestException){configured=false;} }
+    private async Task Start()
+    {
+        busy=true;error=null;
+        try
+        {
+            var device=await Js.InvokeAsync<string>("trebaGuard.deviceName");
+            guard=await Telegram.Post<GuardStartDto>("api/telegram/guard",new CreateGuardRequest(device));
+            polling=new();_ = Poll(guard,polling.Token);
+        }
+        catch(HttpRequestException ex){error=ex.Message;}
+        finally{busy=false;}
+    }
+    private async Task Poll(GuardStartDto attempt,CancellationToken ct)
+    {
+        try
+        {
+            while(!ct.IsCancellationRequested)
+            {
+                await Task.Delay(2000,ct);
+                var status=await Telegram.Post<GuardStatusDto>("api/telegram/guard/status",new GuardBrowserRequest(attempt.Id,attempt.BrowserSecret),ct);
+                if(status.Status=="approved")
+                {
+                    var response=await Telegram.Post<LoginResponse>("api/telegram/guard/complete",new GuardBrowserRequest(attempt.Id,attempt.BrowserSecret),ct);
+                    await InvokeAsync(async()=>{guard=null;await OnCompleted.InvokeAsync(response);StateHasChanged();});return;
+                }
+                if(status.Status is "expired" or "consumed")
+                {await InvokeAsync(()=>{guard=null;error=L["GuardExpired"];StateHasChanged();});return;}
+            }
+        }
+        catch(OperationCanceledException) when(ct.IsCancellationRequested){}
+        catch(HttpRequestException ex){await InvokeAsync(()=>{guard=null;error=ex.Message;StateHasChanged();});}
+    }
+    private void Reset(){polling?.Cancel();polling?.Dispose();polling=null;guard=null;error=null;}
+    public void Dispose()=>Reset();
+}

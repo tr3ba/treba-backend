@@ -10,6 +10,9 @@
 *.log
 .env
 .env.*
+**/appsettings.Development.json
+**/appsettings.Local.json
+**/secrets.json
 docker-compose*.yml
 README*
 docs

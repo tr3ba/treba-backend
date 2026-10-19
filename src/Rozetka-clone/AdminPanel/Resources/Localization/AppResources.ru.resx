@@ -478,4 +478,216 @@
   <data name="Store" xml:space="preserve"><value>Магазин</value></data>
   <data name="SelectStore" xml:space="preserve"><value>Выберите магазин</value></data>
   <data name="NoAvailableStores" xml:space="preserve"><value>Для аккаунта нет доступного активного магазина. Сначала создайте и одобрите магазин продавца.</value></data>
+  <data name="ActiveSellersCount" xml:space="preserve"><value>Активных продавцов: {0}</value></data>
+  <data name="ActivityPeriod" xml:space="preserve"><value>Период</value></data>
+  <data name="DashboardLoadFailed" xml:space="preserve"><value>Не удалось загрузить обзор маркетплейса.</value></data>
+  <data name="ExcludingDeletedUsers" xml:space="preserve"><value>Без удалённых учётных записей</value></data>
+  <data name="InLastDays" xml:space="preserve"><value>За последние {0} дней</value></data>
+  <data name="LatestWorkspaceChanges" xml:space="preserve"><value>Последние изменения</value></data>
+  <data name="LatestWorkspaceChangesDescription" xml:space="preserve"><value>Текущее состояние недавно обновлённых записей.</value></data>
+  <data name="MarketplaceOverview" xml:space="preserve"><value>Обзор маркетплейса</value></data>
+  <data name="NewUserRegistered" xml:space="preserve"><value>Зарегистрирована новая учётная запись</value></data>
+  <data name="NoRecentActivity" xml:space="preserve"><value>За этот период изменений нет.</value></data>
+  <data name="NoReviewsFound" xml:space="preserve"><value>Отзывы не найдены</value></data>
+  <data name="NoReviewsFoundDescription" xml:space="preserve"><value>Попробуйте другой фильтр или поиск. Новые отзывы появятся здесь для проверки.</value></data>
+  <data name="PeriodDays" xml:space="preserve"><value>{0} дней</value></data>
+  <data name="PublishedReviewsCount" xml:space="preserve"><value>Опубликованных отзывов: {0}</value></data>
+  <data name="PublishReview" xml:space="preserve"><value>Опубликовать</value></data>
+  <data name="ReactivateSeller" xml:space="preserve"><value>Возобновить работу</value></data>
+  <data name="RefreshData" xml:space="preserve"><value>Обновить</value></data>
+  <data name="RejectReviewConfirm" xml:space="preserve"><value>Отклонить этот отзыв? Покупатели не увидят его, и он не будет учитываться в рейтинге товара.</value></data>
+  <data name="ReviewActionFailed" xml:space="preserve"><value>Не удалось изменить статус отзыва. Попробуйте ещё раз.</value></data>
+  <data name="ReviewPage" xml:space="preserve"><value>Страница {0} из {1}</value></data>
+  <data name="ReviewQueueDescription" xml:space="preserve"><value>Проверяйте отзывы покупателей перед публикацией.</value></data>
+  <data name="ReviewRating" xml:space="preserve"><value>Оценка: {0} из 5</value></data>
+  <data name="ReviewResultsCount" xml:space="preserve"><value>Найдено отзывов: {0}</value></data>
+  <data name="ReviewsAwaitingModeration" xml:space="preserve"><value>Отзывы на проверке</value></data>
+  <data name="ReviewSearchPlaceholder" xml:space="preserve"><value>Товар, автор или текст отзыва</value></data>
+  <data name="ReviewsLoadFailed" xml:space="preserve"><value>Не удалось загрузить отзывы.</value></data>
+  <data name="ReviewStatusSaved" xml:space="preserve"><value>Статус отзыва сохранён. Рейтинг товара обновлён.</value></data>
+  <data name="SellerActionFailed" xml:space="preserve"><value>Не удалось изменить статус продавца. Попробуйте ещё раз.</value></data>
+  <data name="SellerStatusSaved" xml:space="preserve"><value>Статус продавца сохранён.</value></data>
+  <data name="SuspendSeller" xml:space="preserve"><value>Приостановить работу</value></data>
+  <data name="SuspendSellerConfirm" xml:space="preserve"><value>Приостановить работу продавца «{0}»? Статус профиля изменится на «Приостановлен».</value></data>
+  <data name="TotalUsersLabel" xml:space="preserve"><value>Всего пользователей</value></data>
+  <data name="WorkspaceCountsDescription" xml:space="preserve"><value>Очереди показывают текущие итоги; период применяется к новым пользователям и последним изменениям.</value></data>
+  <data name="ArchivedStatus" xml:space="preserve"><value>В архиве</value></data>
+  <data name="ProductImageUnavailable" xml:space="preserve"><value>Фото недоступно</value></data>
+  <data name="ProductImagesUnavailable" xml:space="preserve"><value>Не удалось загрузить часть фотографий. Данные товара можно редактировать.</value></data>
+  <data name="SettingsDescription" xml:space="preserve"><value>Управляйте доступом сотрудников и просматривайте историю изменений.</value></data>
+  <data name="StaffAndRoles" xml:space="preserve"><value>Сотрудники и роли</value></data>
+  <data name="StaffAndRolesDescription" xml:space="preserve"><value>Создавайте учётные записи сотрудников, назначайте роли и управляйте доступом.</value></data>
+  <data name="AuditLog" xml:space="preserve"><value>Журнал действий</value></data>
+  <data name="AuditLogDescription" xml:space="preserve"><value>Кто, когда и что изменил: сотрудники, товары, продавцы и модерация.</value></data>
+  <data name="Open" xml:space="preserve"><value>Открыть</value></data>
+  <data name="AddStaff" xml:space="preserve"><value>Добавить сотрудника</value></data>
+  <data name="StaffRole" xml:space="preserve"><value>Роль</value></data>
+  <data name="StaffPasswordHint" xml:space="preserve"><value>Не менее 12 символов. Передайте пароль сотруднику лично.</value></data>
+  <data name="StaffSearch" xml:space="preserve"><value>Имя или email сотрудника</value></data>
+  <data name="AllRoles" xml:space="preserve"><value>Все роли</value></data>
+  <data name="StaffMember" xml:space="preserve"><value>Сотрудник</value></data>
+  <data name="YouLabel" xml:space="preserve"><value>Это вы</value></data>
+  <data name="StaffBlocked" xml:space="preserve"><value>Доступ заблокирован</value></data>
+  <data name="StaffActive" xml:space="preserve"><value>Доступ открыт</value></data>
+  <data name="ChangeAccess" xml:space="preserve"><value>Изменить доступ</value></data>
+  <data name="NoStaffFound" xml:space="preserve"><value>Сотрудники не найдены.</value></data>
+  <data name="AccessChangeHint" xml:space="preserve"><value>Смена роли или блокировка закрывает доступ в текущих сеансах сотрудника.</value></data>
+  <data name="BlockStaffAccess" xml:space="preserve"><value>Заблокировать доступ</value></data>
+  <data name="ConfirmAccessChange" xml:space="preserve"><value>Сохранить изменения роли и доступа этого сотрудника?</value></data>
+  <data name="StaffSaved" xml:space="preserve"><value>Изменения сохранены.</value></data>
+  <data name="RoleAdministrator" xml:space="preserve"><value>Администратор</value></data>
+  <data name="RoleManager" xml:space="preserve"><value>Менеджер</value></data>
+  <data name="RoleModerator" xml:space="preserve"><value>Модератор</value></data>
+  <data name="RoleSeller" xml:space="preserve"><value>Продавец</value></data>
+  <data name="AuditSearch" xml:space="preserve"><value>Сотрудник или название записи</value></data>
+  <data name="AuditEntity" xml:space="preserve"><value>Раздел</value></data>
+  <data name="AuditAction" xml:space="preserve"><value>Действие</value></data>
+  <data name="DateFrom" xml:space="preserve"><value>С даты</value></data>
+  <data name="DateTo" xml:space="preserve"><value>По дату</value></data>
+  <data name="AuditEmpty" xml:space="preserve"><value>Действий пока нет. Здесь появятся изменения, сохранённые после включения журнала.</value></data>
+  <data name="AuditChanges" xml:space="preserve"><value>Что изменилось</value></data>
+  <data name="AuditField" xml:space="preserve"><value>Поле</value></data>
+  <data name="AuditBefore" xml:space="preserve"><value>Было</value></data>
+  <data name="AuditAfter" xml:space="preserve"><value>Стало</value></data>
+  <data name="AuditActionCreate" xml:space="preserve"><value>Создание</value></data>
+  <data name="AuditActionUpdate" xml:space="preserve"><value>Изменение</value></data>
+  <data name="AuditActionDelete" xml:space="preserve"><value>Удаление</value></data>
+  <data name="AuditEntityUser" xml:space="preserve"><value>Сотрудники и пользователи</value></data>
+  <data name="AuditEntityProduct" xml:space="preserve"><value>Товар</value></data>
+  <data name="AuditEntityProductVariant" xml:space="preserve"><value>Цена и остаток</value></data>
+  <data name="AuditEntityProductImage" xml:space="preserve"><value>Фотография товара</value></data>
+  <data name="AuditEntityCategory" xml:space="preserve"><value>Категория</value></data>
+  <data name="AuditEntityBrand" xml:space="preserve"><value>Бренд</value></data>
+  <data name="AuditEntitySeller" xml:space="preserve"><value>Продавец</value></data>
+  <data name="AuditEntityStore" xml:space="preserve"><value>Магазин</value></data>
+  <data name="AuditEntityReview" xml:space="preserve"><value>Отзыв</value></data>
+  <data name="AuditFieldEmail" xml:space="preserve"><value>Email</value></data>
+  <data name="AuditFieldFirstName" xml:space="preserve"><value>Имя</value></data>
+  <data name="AuditFieldLastName" xml:space="preserve"><value>Фамилия</value></data>
+  <data name="AuditFieldRoleId" xml:space="preserve"><value>Роль</value></data>
+  <data name="AuditFieldStatus" xml:space="preserve"><value>Статус</value></data>
+  <data name="AuditFieldIsDeleted" xml:space="preserve"><value>Удалён</value></data>
+  <data name="AuditFieldName" xml:space="preserve"><value>Название</value></data>
+  <data name="AuditFieldSlug" xml:space="preserve"><value>Адрес страницы</value></data>
+  <data name="AuditFieldShortDescription" xml:space="preserve"><value>Краткое описание</value></data>
+  <data name="AuditFieldDescription" xml:space="preserve"><value>Описание</value></data>
+  <data name="AuditFieldCategoryId" xml:space="preserve"><value>Категория</value></data>
+  <data name="AuditFieldBrandId" xml:space="preserve"><value>Бренд</value></data>
+  <data name="AuditFieldWarrantyMonths" xml:space="preserve"><value>Гарантия, месяцев</value></data>
+  <data name="AuditFieldCountryOfOrigin" xml:space="preserve"><value>Страна производства</value></data>
+  <data name="AuditFieldSku" xml:space="preserve"><value>Артикул</value></data>
+  <data name="AuditFieldPrice" xml:space="preserve"><value>Цена</value></data>
+  <data name="AuditFieldOldPrice" xml:space="preserve"><value>Старая цена</value></data>
+  <data name="AuditFieldStockQuantity" xml:space="preserve"><value>Остаток</value></data>
+  <data name="AuditFieldIsActive" xml:space="preserve"><value>Активен</value></data>
+  <data name="AuditFieldImageUrl" xml:space="preserve"><value>Фотография</value></data>
+  <data name="AuditFieldAltText" xml:space="preserve"><value>Описание фотографии</value></data>
+  <data name="AuditFieldIsMain" xml:space="preserve"><value>Главное фото</value></data>
+  <data name="AuditFieldSortOrder" xml:space="preserve"><value>Порядок</value></data>
+  <data name="AuditFieldParentId" xml:space="preserve"><value>Родительская категория</value></data>
+  <data name="AuditFieldCompanyName" xml:space="preserve"><value>Название компании</value></data>
+  <data name="SettingsDatabaseUpdateRequired" xml:space="preserve"><value>Для журнала действий требуется обновление базы данных. Администратор базы должен применить подготовленную миграцию.</value></data>
+  <data name="ActiveVariant" xml:space="preserve"><value>Активный вариант</value></data>
+  <data name="AddSubcategory" xml:space="preserve"><value>Добавить подкатегорию</value></data>
+  <data name="AddVariant" xml:space="preserve"><value>Добавить вариант</value></data>
+  <data name="AllBrands" xml:space="preserve"><value>Все бренды</value></data>
+  <data name="AllCategories" xml:space="preserve"><value>Все категории</value></data>
+  <data name="AllStock" xml:space="preserve"><value>Любой остаток</value></data>
+  <data name="AllVariants" xml:space="preserve"><value>Весь товар</value></data>
+  <data name="AppliesToVariant" xml:space="preserve"><value>Применить к</value></data>
+  <data name="CategoryPath" xml:space="preserve"><value>Путь категории</value></data>
+  <data name="CategoryTreeSearch" xml:space="preserve"><value>Название или путь категории</value></data>
+  <data name="Characteristic" xml:space="preserve"><value>Характеристика</value></data>
+  <data name="CharacteristicUnit" xml:space="preserve"><value>Единица измерения</value></data>
+  <data name="CharacteristicsEditorHint" xml:space="preserve"><value>Общие параметры товара и отдельные значения для его вариантов.</value></data>
+  <data name="CollapseAll" xml:space="preserve"><value>Свернуть всё</value></data>
+  <data name="ExpandAll" xml:space="preserve"><value>Раскрыть всё</value></data>
+  <data name="CollapseCategory" xml:space="preserve"><value>Свернуть {0}</value></data>
+  <data name="ExpandCategory" xml:space="preserve"><value>Раскрыть {0}</value></data>
+  <data name="CopyProduct" xml:space="preserve"><value>Копировать</value></data>
+  <data name="CopySuffix" xml:space="preserve"><value>копия</value></data>
+  <data name="CreateCharacteristic" xml:space="preserve"><value>Создать характеристику</value></data>
+  <data name="CreateCharacteristicHint" xml:space="preserve"><value>Добавит текстовую характеристику в выбранную категорию. Она станет доступна и другим товарам этой категории.</value></data>
+  <data name="InStock" xml:space="preserve"><value>В наличии</value></data>
+  <data name="InvalidPriceRange" xml:space="preserve"><value>Укажите корректный диапазон цен: от меньшей к большей.</value></data>
+  <data name="LeaveUnsavedProduct" xml:space="preserve"><value>Есть несохранённые изменения товара. Выйти без сохранения?</value></data>
+  <data name="MainVariant" xml:space="preserve"><value>Основной</value></data>
+  <data name="MaxPrice" xml:space="preserve"><value>Цена до, ₴</value></data>
+  <data name="MinPrice" xml:space="preserve"><value>Цена от, ₴</value></data>
+  <data name="ModerationHistory" xml:space="preserve"><value>История модерации</value></data>
+  <data name="ModerationHistoryEmpty" xml:space="preserve"><value>Решений пока нет. Здесь появятся новые отправки и результаты проверки.</value></data>
+  <data name="ModerationHistoryLimit" xml:space="preserve"><value>Показаны последние 100 событий.</value></data>
+  <data name="MultiSelectCharacteristicHint" xml:space="preserve"><value>Для характеристики с несколькими значениями добавьте отдельную строку для каждого значения.</value></data>
+  <data name="NewVariant" xml:space="preserve"><value>Новый вариант</value></data>
+  <data name="NoCategoriesFound" xml:space="preserve"><value>Категории не найдены.</value></data>
+  <data name="NoCategoryCharacteristics" xml:space="preserve"><value>В этой категории пока нет характеристик. Администратор может добавить их ниже.</value></data>
+  <data name="PriceFrom" xml:space="preserve"><value>от</value></data>
+  <data name="ProductChangedReload" xml:space="preserve"><value>Товар уже изменил другой сотрудник. Откройте карточку заново, чтобы не перезаписать его работу.</value></data>
+  <data name="ProductCopyNotice" xml:space="preserve"><value>Копия ещё не сохранена. Данные, варианты и характеристики скопированы; остатки обнулены, фотографии добавляются отдельно.</value></data>
+  <data name="RejectProductTitle" xml:space="preserve"><value>Отклонить товар</value></data>
+  <data name="RejectionReason" xml:space="preserve"><value>Причина отклонения</value></data>
+  <data name="RejectionReasonHint" xml:space="preserve"><value>Опишите, что нужно исправить. Продавец увидит этот комментарий в карточке товара.</value></data>
+  <data name="RemoveCharacteristic" xml:space="preserve"><value>Удалить характеристику</value></data>
+  <data name="RemoveVariant" xml:space="preserve"><value>Убрать вариант</value></data>
+  <data name="SelectCharacteristic" xml:space="preserve"><value>Выберите характеристику</value></data>
+  <data name="SelectValue" xml:space="preserve"><value>Выберите значение</value></data>
+  <data name="SellerRejectionNotice" xml:space="preserve"><value>Замечания к товару</value></data>
+  <data name="SortCatalog" xml:space="preserve"><value>Сортировка</value></data>
+  <data name="SortName" xml:space="preserve"><value>Название: А–Я</value></data>
+  <data name="SortNewest" xml:space="preserve"><value>Сначала новые</value></data>
+  <data name="SortOldest" xml:space="preserve"><value>Сначала старые</value></data>
+  <data name="SortPriceAsc" xml:space="preserve"><value>Сначала дешевле</value></data>
+  <data name="SortPriceDesc" xml:space="preserve"><value>Сначала дороже</value></data>
+  <data name="SortStock" xml:space="preserve"><value>Сначала мало на складе</value></data>
+  <data name="SortUpdated" xml:space="preserve"><value>Недавно изменённые</value></data>
+  <data name="StockUpToFive" xml:space="preserve"><value>Мало: 1–5 шт.</value></data>
+  <data name="TotalVariantStock" xml:space="preserve"><value>Общий остаток активных вариантов</value></data>
+  <data name="VariantCount" xml:space="preserve"><value>Вариантов: {0}</value></data>
+  <data name="VariantEditorHint" xml:space="preserve"><value>У каждого размера, цвета или комплектации — свой артикул, цена и остаток. Старые варианты можно отключить.</value></data>
+  <data name="VariantName" xml:space="preserve"><value>Название варианта</value></data>
+  <data name="DecisionSubmitted" xml:space="preserve"><value>Отправлено на модерацию</value></data>
+  <data name="DecisionApproved" xml:space="preserve"><value>Одобрено</value></data>
+  <data name="DecisionRejected" xml:space="preserve"><value>Отклонено</value></data>
+  <data name="AuditActionModeration" xml:space="preserve"><value>Модерация</value></data>
+  <data name="AuditFieldDecision" xml:space="preserve"><value>Решение</value></data>
+  <data name="AuditFieldReason" xml:space="preserve"><value>Причина</value></data>
+  <data name="AuditEntityProductAttributeValue" xml:space="preserve"><value>Характеристика товара</value></data>
+  <data name="AuditFieldAttributeId" xml:space="preserve"><value>Характеристика</value></data>
+  <data name="AuditFieldVariantId" xml:space="preserve"><value>Вариант</value></data>
+  <data name="AuditFieldOptionId" xml:space="preserve"><value>Значение из списка</value></data>
+  <data name="AuditFieldStringValue" xml:space="preserve"><value>Текст</value></data>
+  <data name="AuditFieldNumberValue" xml:space="preserve"><value>Число</value></data>
+  <data name="AuditFieldBoolValue" xml:space="preserve"><value>Да / нет</value></data>
+  <data name="RoleSystem" xml:space="preserve"><value>Система</value></data>
+  <data name="CatalogAllSellers" xml:space="preserve"><value>Все продавцы</value></data>
+  <data name="TelegramProfileDescription" xml:space="preserve"><value>Товары, модерация и вход через Guard — в компактном приложении Telegram.</value></data>
+  <data name="TelegramNotConfigured" xml:space="preserve"><value>Бот пока не подключён. Администратор настроит Telegram перед началом работы.</value></data>
+  <data name="TelegramLinked" xml:space="preserve"><value>Telegram привязан:</value></data>
+  <data name="TelegramUnlink" xml:space="preserve"><value>Отключить Telegram</value></data>
+  <data name="TelegramConfirmIdentity" xml:space="preserve"><value>Подтвердите, что это ваш Telegram:</value></data>
+  <data name="TelegramConfirmLink" xml:space="preserve"><value>Подтвердить привязку</value></data>
+  <data name="TelegramLink" xml:space="preserve"><value>Привязать Telegram</value></data>
+  <data name="TelegramRefreshLink" xml:space="preserve"><value>Обновить статус</value></data>
+  <data name="TelegramLinkHint" xml:space="preserve"><value>После запуска бота вернитесь сюда и подтвердите свой аккаунт. Для входа Guard нужен привязанный Telegram.</value></data>
+  <data name="TelegramUnlinkConfirm" xml:space="preserve"><value>Отключить Telegram? Mini App и подтверждение новых входов через Guard станут недоступны.</value></data>
+  <data name="GuardSignIn" xml:space="preserve"><value>Вход через Guard</value></data>
+  <data name="GuardSignInHint" xml:space="preserve"><value>Для продавцов и модераторов с привязанным Telegram.</value></data>
+  <data name="GuardScanHint" xml:space="preserve"><value>Откройте Treba в Telegram → Guard и отсканируйте QR-код.</value></data>
+  <data name="GuardQrAlt" xml:space="preserve"><value>Одноразовый QR-код входа Treba Guard</value></data>
+  <data name="GuardMatchCode" xml:space="preserve"><value>Сверьте код:</value></data>
+  <data name="GuardExpires" xml:space="preserve"><value>QR-код действует две минуты. Подтверждайте только свой вход.</value></data>
+  <data name="GuardExpired" xml:space="preserve"><value>QR-код истёк или уже использован. Создайте новый для входа.</value></data>
+  <data name="SellerAllowedCategories" xml:space="preserve"><value>Разрешённые категории</value></data>
+  <data name="SellerAllowedCategoriesHint" xml:space="preserve"><value>Выберите, какие товары может продавать этот продавец. Ограничения действуют при включённой интеграции Telegram; импорт всегда проверяет категорию.</value></data>
+  <data name="IncludeSubcategories" xml:space="preserve"><value>Включая подкатегории</value></data>
+  <data name="TelegramSettingsDescription" xml:space="preserve"><value>Подключение бота, Guard и сопоставление категорий импорта Rozetka.</value></data>
+  <data name="TelegramConnection" xml:space="preserve"><value>Подключение Telegram</value></data>
+  <data name="TelegramConfigured" xml:space="preserve"><value>Бот подключён. Продавцы и модераторы могут привязать Telegram в своём профиле.</value></data>
+  <data name="RozetkaCategoryMapping" xml:space="preserve"><value>Категории Rozetka → Treba</value></data>
+  <data name="RozetkaCategoryMappingHint" xml:space="preserve"><value>Укажите код категории из ссылки Rozetka (например, c80158) и соответствующую категорию Treba. Без сопоставления импорт запрещён.</value></data>
+  <data name="RozetkaCategoryCode" xml:space="preserve"><value>Код категории Rozetka</value></data>
+  <data name="Integrations" xml:space="preserve"><value>Интеграции</value></data>
+  <data name="Saved" xml:space="preserve"><value>Сохранено</value></data>
+  <data name="Remove" xml:space="preserve"><value>Убрать</value></data>
+  <data name="Add" xml:space="preserve"><value>Добавить</value></data>
 </root>

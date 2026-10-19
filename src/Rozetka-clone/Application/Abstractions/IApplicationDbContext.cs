@@ -12,6 +12,13 @@ namespace Application.Abstractions
 {
     public interface IApplicationDbContext
     {
+        DbSet<Domain.Entities.Telegram.TelegramBotCursor> TelegramBotCursors { get; }
+        DbSet<Domain.Entities.Telegram.TelegramBinding> TelegramBindings { get; }
+        DbSet<Domain.Entities.Telegram.TelegramLinkChallenge> TelegramLinkChallenges { get; }
+        DbSet<Domain.Entities.Telegram.TelegramGuardChallenge> TelegramGuardChallenges { get; }
+        DbSet<Domain.Entities.Telegram.SellerCategoryGrant> SellerCategoryGrants { get; }
+        DbSet<Domain.Entities.Telegram.RozetkaCategoryMapping> RozetkaCategoryMappings { get; }
+        DbSet<Domain.Entities.Telegram.ProductImportDraft> ProductImportDrafts { get; }
         DbSet<User> Users { get; }
 
         DbSet<UserProfile> UserProfiles { get; }
@@ -19,6 +26,8 @@ namespace Application.Abstractions
         DbSet<Address> Addresses { get; }
 
         DbSet<Role> Roles { get; }
+
+        DbSet<AdminAuditLog> AdminAuditLogs { get; }
 
         DbSet<AuthenticationChallenge> AuthenticationChallenges { get; }
 

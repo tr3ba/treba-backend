@@ -11,24 +11,24 @@ using WebApi.Requests;
 namespace WebApi.Controllers
 {
     [ApiController]
-    [Authorize(Roles = $"{Roles.Administrator},{Roles.Manager},{Roles.Moderator},{Roles.Seller}")]
+    [Authorize(AuthenticationSchemes = "Bearer," + WebApi.Telegram.TelegramAuthenticationHandler.SchemeName, Roles = $"{Roles.Administrator},{Roles.Manager},{Roles.Moderator},{Roles.Seller}")]
     [Route("api/v1/products/{productId:guid}/images")]
     public sealed class ProductImagesController : ControllerBase
     {
         private const long MaxImageBytes = 5 * 1024 * 1024;
 
         private readonly IProductImageService _productImageService;
-        private readonly IWebHostEnvironment _environment;
+        private readonly IProductMediaStorage _media;
         private readonly IApplicationDbContext _dbContext;
 
         public ProductImagesController(
             IProductImageService productImageService,
-            IWebHostEnvironment environment,
+            IProductMediaStorage media,
             IApplicationDbContext dbContext
         )
         {
             _productImageService = productImageService;
-            _environment = environment;
+            _media = media;
             _dbContext = dbContext;
         }
 
@@ -160,37 +160,9 @@ namespace WebApi.Controllers
                 );
             }
 
-            var webRoot = _environment.WebRootPath ?? Path.Combine(
-                _environment.ContentRootPath,
-                "wwwroot"
-            );
-
-            var relativeDirectory = Path.Combine(
-                "uploads",
-                "products",
-                productId.ToString("N")
-            );
-
-            var directory = Path.Combine(
-                webRoot,
-                relativeDirectory
-            );
-
-            Directory.CreateDirectory(directory);
-
             var fileName =
                 $"{Guid.NewGuid():N}{imageType.Value.Extension}";
-
-            var absolutePath = Path.Combine(
-                directory,
-                fileName
-            );
-
-            await System.IO.File.WriteAllBytesAsync(
-                absolutePath,
-                bytes,
-                cancellationToken
-            );
+            await _media.SaveAsync(productId, fileName, bytes, cancellationToken);
 
             try
             {
@@ -226,7 +198,7 @@ namespace WebApi.Controllers
             }
             catch
             {
-                System.IO.File.Delete(absolutePath);
+                await _media.DeleteAsync(productId, fileName, CancellationToken.None);
                 throw;
             }
         }
@@ -298,9 +270,10 @@ namespace WebApi.Controllers
 
             if (image is not null)
             {
-                DeleteUploadedFile(
+                await DeleteUploadedFile(
                     productId,
-                    image.ImageUrl
+                    image.ImageUrl,
+                    cancellationToken
                 );
             }
 
@@ -362,9 +335,10 @@ namespace WebApi.Controllers
             );
         }
 
-        private void DeleteUploadedFile(
+        private async Task DeleteUploadedFile(
             Guid productId,
-            string imageUrl
+            string imageUrl,
+            CancellationToken ct
         )
         {
             var expectedPrefix =
@@ -378,39 +352,9 @@ namespace WebApi.Controllers
                 return;
             }
 
-            var webRoot = _environment.WebRootPath ?? Path.Combine(
-                _environment.ContentRootPath,
-                "wwwroot"
-            );
-
-            var productRoot = Path.GetFullPath(
-                Path.Combine(
-                    webRoot,
-                    "uploads",
-                    "products",
-                    productId.ToString("N")
-                )
-            );
-
-            var absolutePath = Path.GetFullPath(
-                Path.Combine(
-                    webRoot,
-                    imageUrl
-                        .TrimStart('/')
-                        .Replace(
-                            '/',
-                            Path.DirectorySeparatorChar
-                        )
-                )
-            );
-
-            if (absolutePath.StartsWith(
-                    productRoot + Path.DirectorySeparatorChar,
-                    StringComparison.OrdinalIgnoreCase
-                ))
-            {
-                System.IO.File.Delete(absolutePath);
-            }
+            var fileName = imageUrl[expectedPrefix.Length..];
+            if (!fileName.Contains('/') && !fileName.Contains('\\'))
+                await _media.DeleteAsync(productId, fileName, ct);
         }
 
         private static (string Extension, string ContentType)? DetectImageType(

@@ -6,18 +6,24 @@ using Application.Common;
 using Domain.Entities.Product;
 using Domain.Enums;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
+using Contracts.Admin.Settings;
+using Domain.Entities.Users;
 
 namespace Application.Products
 {
     public sealed class ProductService : IProductService
     {
         private readonly IApplicationDbContext _dbContext;
+        private readonly ICurrentActor? _actor;
 
         public ProductService(
-            IApplicationDbContext dbContext
+            IApplicationDbContext dbContext,
+            ICurrentActor? actor = null
         )
         {
             _dbContext = dbContext;
+            _actor = actor;
         }
 
         public async Task<IReadOnlyList<ProductDto>> GetAllAsync(
@@ -270,8 +276,10 @@ namespace Application.Products
                 throw new BusinessRuleException("Product brand must be active.");
             }
 
+            var previous = product.Status;
             product.Status = ProductStatus.PENDING_MODERATION;
             product.UpdatedAt = DateTime.UtcNow;
+            RecordDecision(product, previous, "Submitted", null);
 
             await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -298,8 +306,10 @@ namespace Application.Products
                 throw new BusinessRuleException("Product must be pending moderation.");
             }
 
+            var previous = product.Status;
             product.Status = ProductStatus.ACTIVE;
             product.UpdatedAt = DateTime.UtcNow;
+            RecordDecision(product, previous, "Approved", null);
 
             await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -308,9 +318,12 @@ namespace Application.Products
 
         public async Task<bool> RejectAsync(
             Guid id,
+            string reason,
             CancellationToken cancellationToken = default
         )
         {
+            if (string.IsNullOrWhiteSpace(reason) || reason.Trim().Length > 2000)
+                throw new ArgumentException("Enter a rejection reason of up to 2000 characters.");
             var product = await FindProductAsync(
                 id,
                 cancellationToken
@@ -326,12 +339,25 @@ namespace Application.Products
                 throw new BusinessRuleException("Product must be pending moderation.");
             }
 
+            var previous = product.Status;
             product.Status = ProductStatus.REJECTED;
             product.UpdatedAt = DateTime.UtcNow;
+            RecordDecision(product, previous, "Rejected", reason.Trim());
 
             await _dbContext.SaveChangesAsync(cancellationToken);
 
             return true;
+        }
+
+        private void RecordDecision(Product product, ProductStatus previous, string decision, string? reason)
+        {
+            var name = _actor?.Name ?? "System";
+            var changes = new List<AuditChangeDto> { new("Status", previous.ToString(), product.Status.ToString()), new("Decision", null, decision) };
+            if (reason is not null) changes.Add(new("Reason", null, reason));
+            _dbContext.AdminAuditLogs.Add(new AdminAuditLog {
+                EntityId = product.Id, EntityType = "Product", EntityName = product.Name[..Math.Min(500, product.Name.Length)],
+                ActorId = _actor?.UserId ?? Guid.Empty, ActorName = name[..Math.Min(name.Length, 320)], ActorRole = _actor?.Role ?? "System",
+                Action = "Moderation", ChangesJson = JsonSerializer.Serialize(changes) });
         }
 
         private Task<Product?> FindProductAsync(

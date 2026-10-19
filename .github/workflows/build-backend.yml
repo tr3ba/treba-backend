@@ -9,6 +9,18 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_DB: treba_tests
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: treba_ci_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d treba_tests"
+          --health-interval 5s --health-timeout 5s --health-retries 12
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -36,4 +48,6 @@ jobs:
         run: dotnet list src/Rozetka-clone/Rozetka-clone.sln package --vulnerable --include-transitive
 
       - name: Run tests
+        env:
+          TREBA_TEST_POSTGRES: Host=127.0.0.1;Port=5432;Database=treba_tests;Username=postgres;Password=treba_ci_only
         run: dotnet test tests/WebApi.Tests/WebApi.Tests.csproj --configuration Release

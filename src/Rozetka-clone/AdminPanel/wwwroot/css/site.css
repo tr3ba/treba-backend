@@ -5252,6 +5252,9 @@ button:disabled { opacity:.5; cursor:wait; }
 .product-image-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:14px; margin-top:18px; }
 .product-image-card { position:relative; min-height:140px; overflow:hidden; border:1px solid #dfe5ee; border-radius:12px; background:#f8fafc; }
 .product-image-card img { display:block; width:100%; height:140px; object-fit:cover; }
+.product-image-unavailable { display:flex; min-height:140px; padding:30px 12px; flex-direction:column; align-items:center; justify-content:center; gap:8px; color:#64748b; font-size:12px; text-align:center; }
+.product-image-unavailable i { font-size:24px; }
+.product-image-warning { margin-top:16px; color:#92400e; font-size:14px; }
 .product-image-card.pending { border-style:dashed; }
 .product-image-main,.product-image-pending { position:absolute; left:8px; bottom:8px; padding:4px 8px; border-radius:20px; background:rgba(15,23,42,.82); color:#fff; font-size:9px; font-weight:750; }
 .product-image-pending { background:rgba(37,99,235,.88); }

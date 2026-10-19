@@ -18,10 +18,24 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using WebApi.Extensions;
+using WebApi.Telegram;
 
-var builder = WebApplication.CreateBuilder(args);
+var deploymentCheck = args.Contains("--check-telegram-deployment", StringComparer.Ordinal);
+var builder = WebApplication.CreateBuilder(args.Where(argument => argument != "--check-telegram-deployment").ToArray());
 
 builder.Services.AddScoped<Application.Catalog.CatalogService>();
+builder.Services.AddTrebaTelegram(builder.Configuration);
+builder.Services.AddScoped<Application.Administration.AdminWorkspaceService>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<Application.Abstractions.ICurrentActor, WebApi.Authentication.HttpCurrentActor>();
+builder.Services.AddScoped<Infrastructure.Administration.StaffSettingsService>();
+builder.Services.AddOptions<WebApi.Media.ProductMediaOptions>().BindConfiguration("ProductMedia")
+    .Validate(options => options.Provider is "Local" or "Sftp", "ProductMedia:Provider must be Local or Sftp.")
+    .Validate(options => options.Provider != "Sftp" || (!string.IsNullOrWhiteSpace(options.SshHost)
+        && !string.IsNullOrWhiteSpace(options.SshUsername) && !string.IsNullOrWhiteSpace(options.SshKeyPath)
+        && options.RootPath.StartsWith('/') && options.SshPort is > 0 and <= 65535), "Shared media connection is incomplete.")
+    .ValidateOnStart();
+builder.Services.AddSingleton<Application.Abstractions.IProductMediaStorage, WebApi.Media.ProductMediaStorage>();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<WebApi.Errors.ApiExceptionHandler>();
 
@@ -119,6 +133,8 @@ builder
                             is Domain.Entities.Users.UserStatus.Blocked
                                 or Domain.Entities.Users.UserStatus.Deleted
                         || user.Role?.Name != context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value
+                        || !Infrastructure.Authentication.SessionTokenBinding.IsCurrent(
+                            context.Principal?.FindFirst(Infrastructure.Authentication.SessionTokenBinding.ClaimName)?.Value, user)
                     )
                     {
                         context.Fail("Account is unavailable or role has changed.");
@@ -133,6 +149,12 @@ builder.Services.AddAuthorization();
 var app = builder.Build();
 
 app.UseExceptionHandler();
+if (deploymentCheck)
+{
+    Environment.ExitCode = await TelegramDeploymentCheck.RunAsync(app.Services);
+    await app.DisposeAsync();
+    return;
+}
 if (builder.Configuration.GetValue<bool>("ApplyMigrations"))
 {
     await using var scope = app.Services.CreateAsyncScope();
@@ -164,10 +186,12 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
+app.UseDefaultFiles();
 app.UseStaticFiles();
 app.UseCors("Frontend");
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 app.MapGet(
     "/health",
@@ -207,5 +231,7 @@ app.MapGet(
 );
 
 app.MapControllers();
+Treba.Development.LocalLauncherEndpoints.Map(app);
+TelegramPreviewEndpoints.Map(app);
 
 app.Run();
