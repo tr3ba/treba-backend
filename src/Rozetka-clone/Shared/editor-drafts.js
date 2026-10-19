@@ -44,5 +44,6 @@ export async function editorStream(scope, key) {
     const entry = await get(scope, key); if (!entry) return null;
     const payload = { modelJson: entry.data.modelJson, photos: (entry.data.photos || []).map(photo => ({ id: photo.id, name: photo.name,
         contentType: photo.contentType, bytes: base64(new Uint8Array(photo.bytes)) })) };
-    return DotNet.createJSStreamReference(new Blob([JSON.stringify(payload)], { type: 'application/json' }));
+    // InvokeAsync<IJSStreamReference> wraps the Blob itself; pre-wrapping it would wrap twice.
+    return new Blob([JSON.stringify(payload)], { type: 'application/json' });
 }

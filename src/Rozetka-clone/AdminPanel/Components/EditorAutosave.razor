@@ -27,7 +27,7 @@
         if(!firstRender||string.IsNullOrWhiteSpace(UserScope))return;
         try
         {
-            module=await Js.InvokeAsync<IJSObjectReference>("import","./js/editor-drafts.js");
+            module=await Js.InvokeAsync<IJSObjectReference>("import","./"+Assets["js/editor-drafts.js"]);
             recoverable=await module.InvokeAsync<JsonElement?>("meta",UserScope,DraftKey) is not null;
             loop=Loop();StateHasChanged();
         }
