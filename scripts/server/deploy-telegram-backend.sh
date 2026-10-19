@@ -37,7 +37,13 @@ cleanup() {
             docker exec treba-caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null 2>&1 || true
         fi
         if [[ "$switched" == 1 ]]; then
-            docker rm -f treba-backend >/dev/null 2>&1 || true
+            if docker container inspect treba-backend >/dev/null 2>&1; then
+                echo 'Telegram worker diagnostics from the failed candidate:'
+                docker logs --tail 200 treba-backend 2>&1 | grep -E 'Telegram worker paused|Telegram Bot API|Telegram bot username' || true
+                docker stop treba-backend >/dev/null 2>&1 || true
+                docker rename treba-backend "treba-backend-failed-$deployment_id"
+                echo "Failed container retained: treba-backend-failed-$deployment_id"
+            fi
             docker rename "$previous" treba-backend
             docker start treba-backend >/dev/null
         elif [[ "$old_stopped" == 1 ]]; then
@@ -52,7 +58,7 @@ aws ecr get-login-password --region eu-west-1 | docker login --username AWS --pa
 docker pull "$image"
 
 # Checks the actual server DB and token, without opening HTTP or consuming bot updates.
-docker run --rm --env-file "$env_file" --network host "$image" --check-telegram-deployment
+docker run --rm --env-file "$env_file" --network host "$image" --check-telegram-deployment --Logging:LogLevel:Microsoft.EntityFrameworkCore.Database.Command=Warning
 
 # Test the new HTTP app on an automatically assigned loopback port before stopping the old app.
 docker run -d --name "$candidate" --env-file "$env_file" \
@@ -123,12 +129,12 @@ docker exec treba-caddy caddy reload --config /etc/caddy/Caddyfile --adapter cad
 verify_mini_app https://treba.duckdns.org
 curl -fsS --max-time 15 https://treba.duckdns.org/ >/dev/null
 menu_ready=0
-for attempt in $(seq 1 3); do
-    if docker exec treba-backend dotnet WebApi.dll --check-telegram-deployment --verify-telegram-menu=true; then
+for attempt in $(seq 1 12); do
+    if docker exec treba-backend dotnet WebApi.dll --check-telegram-deployment --verify-telegram-menu=true --Logging:LogLevel:Microsoft.EntityFrameworkCore.Database.Command=Warning; then
         menu_ready=1
         break
     fi
-    sleep 2
+    sleep 5
 done
 [[ "$menu_ready" == 1 ]] || { echo 'The bot menu was not configured.'; exit 1; }
 completed=1

@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - main
+    paths:
+      - src/**
+      - tests/**
+      - docker/Dockerfile.backend
+      - .dockerignore
+      - .github/workflows/docker-publish.yml
   workflow_dispatch:
 
 permissions:
