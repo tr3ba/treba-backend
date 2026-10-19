@@ -32,6 +32,7 @@ public sealed class ApiExceptionHandler(
             IOException => (503, "Photo storage is unavailable. Check the connection and try again."),
             _ => (500, "An unexpected error occurred."),
         };
+
         logger.LogError(
             exception,
             "Request failed with status {Status}; trace {TraceId}",
