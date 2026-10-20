@@ -4,6 +4,7 @@
 @inject OperationsApiClient Api
 @inject UiTime Time
 @inject IJSRuntime Js
+@inject AuthenticationStateProvider Authentication
 <PageTitle>@L["SupportAndReturns"] — Treba Admin</PageTitle>
 <a href="/support" class="users-back-link">← @L["SupportAndReturns"]</a>
 @if(error is not null){<p class="feedback-error" role="alert">@error <button class="secondary-button" @onclick="()=>Load()">@L["TryAgain"]</button></p>}
@@ -19,12 +20,12 @@ else if(ticket is not null){
             @if(ticket.Summary.Status!="CLOSED"){
                 <form class="support-composer" @onsubmit="Send" @onsubmit:preventDefault>
                     <label class="field-group"><span>@(internalNote?O["InternalNote"]:O["ReplyToCustomer"])</span><textarea class="form-control" rows="4" maxlength="4000" @bind="message" @bind:event="oninput" disabled="@busy"></textarea></label>
-                    <div class="support-composer-actions"><label class="operations-check"><input type="checkbox" @bind="internalNote" disabled="@busy"/> @O["InternalNoteHint"]</label><button class="primary-button" disabled="@(busy||string.IsNullOrWhiteSpace(message))">@O["SendMessage"]</button></div>
+                    <div class="support-composer-actions">@if(role is "Administrator" or "Manager" or "Moderator"){<label class="operations-check"><input type="checkbox" @bind="internalNote" disabled="@busy"/> @O["InternalNoteHint"]</label>}<button class="primary-button" disabled="@(busy||string.IsNullOrWhiteSpace(message))">@O["SendMessage"]</button></div>
                 </form>
             }
             else{<p class="empty-state">@O["ConversationClosed"]</p>}
         </section>
-        <aside class="card-box"><h2>@O["ConversationContext"]</h2><p><a href="@($"/customer-activity/{ticket.Summary.CustomerId}")">@ticket.Summary.CustomerName</a></p>
+        <aside class="card-box"><h2>@O["ConversationContext"]</h2><p>@if(AdminAccess.CanAccess(role,"/customer-activity")){<a href="@($"/customer-activity/{ticket.Summary.CustomerId}")">@ticket.Summary.CustomerName</a>}else{@ticket.Summary.CustomerName}</p>
             @if(ticket.Summary.OrderId.HasValue){<p>@O["OrderNumber"]: <a href="@($"/orders/{ticket.Summary.OrderId}")">@ticket.Summary.OrderNumber</a></p>}
             @if(ticket.Summary.ProductId.HasValue){<p>@O["Product"]: @ticket.Summary.ProductName</p>}
             <hr/><h2>@O["ChangeStatus"]</h2>
@@ -46,6 +47,8 @@ else if(ticket is not null){
     private Guid pendingMessage, loadedId, readId;
     private Guid renderedMessage;
     private bool pendingInternal;
+    private string? role;
+    protected override async Task OnInitializedAsync() => role = (await Authentication.GetAuthenticationStateAsync()).User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
     private readonly CancellationTokenSource lifetime = new();
     private Task? polling;
     protected override async Task OnParametersSetAsync() {

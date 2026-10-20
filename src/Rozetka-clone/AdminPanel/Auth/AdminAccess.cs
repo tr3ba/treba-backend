@@ -23,8 +23,9 @@ public static class AdminAccess
             return role is "Administrator" or "Manager" or "Seller";
         if (route == "/products") return true;
         if (route == "/orders" || route.StartsWith("/orders/", StringComparison.Ordinal)) return role is "Administrator" or "Manager" or "Seller";
-        if (route is "/support" or "/customer-activity" or "/loyalty"
-            || route.StartsWith("/support/", StringComparison.Ordinal) || route.StartsWith("/customer-activity/", StringComparison.Ordinal)
+        if (route == "/support" || route.StartsWith("/support/", StringComparison.Ordinal)) return true;
+        if (route is "/customer-activity" or "/loyalty"
+            || route.StartsWith("/customer-activity/", StringComparison.Ordinal)
             || route.StartsWith("/loyalty/", StringComparison.Ordinal)) return role is "Administrator" or "Manager";
         return false;
     }

@@ -142,4 +142,7 @@
   <data name="UnreadMessages" xml:space="preserve"><value>Unread messages</value></data>
   <data name="LinkedItem" xml:space="preserve"><value>Order / product</value></data>
   <data name="Product" xml:space="preserve"><value>Product</value></data>
+  <data name="SellerQuestions" xml:space="preserve"><value>Product questions</value></data>
+  <data name="SellerQueueHint" xml:space="preserve"><value>Only questions about your products appear here. Reply directly to the customer.</value></data>
+  <data name="TrebaQueueHint" xml:space="preserve"><value>TREBA chats are answered by administrators, managers and moderators. Product questions go to their sellers.</value></data>
 </root>

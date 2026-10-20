@@ -21,9 +21,9 @@ public sealed class OperationsService(IApplicationDbContext db)
         // These are placed-order amounts, not payment-provider revenue.
         var amount = await period.Where(o => o.Status != OrderStatus.CANCELLED && o.Status != OrderStatus.RETURNED).SumAsync(o => (decimal?)o.TotalAmount, ct) ?? 0;
         return new(days, await period.CountAsync(ct), await db.Orders.CountAsync(o => o.CancelledAt >= since, ct), amount,
-            await db.SupportTickets.CountAsync(t => t.Status == "OPEN" || t.Status == "IN_PROGRESS" || t.Status == "APPROVED", ct),
-            await db.SupportTickets.CountAsync(t => (t.Status == "OPEN" || t.Status == "IN_PROGRESS" || t.Status == "APPROVED") && t.CreatedAt < stale
-                && !db.SupportMessages.Any(m => m.TicketId == t.Id && !m.Internal && (m.AuthorRole == "Administrator" || m.AuthorRole == "Manager") && m.CreatedAt >= stale), ct),
+            await db.SupportTickets.CountAsync(t => t.ProductId == null && (t.Status == "OPEN" || t.Status == "IN_PROGRESS" || t.Status == "APPROVED"), ct),
+            await db.SupportTickets.CountAsync(t => t.ProductId == null && (t.Status == "OPEN" || t.Status == "IN_PROGRESS" || t.Status == "APPROVED") && t.CreatedAt < stale
+                && !db.SupportMessages.Any(m => m.TicketId == t.Id && !m.Internal && (m.AuthorRole == "Administrator" || m.AuthorRole == "Manager" || m.AuthorRole == "Moderator") && m.CreatedAt >= stale), ct),
             await db.Products.CountAsync(p => p.Status == ProductStatus.ACTIVE && !db.ProductVariants.Any(v => v.ProductId == p.Id && v.IsActive && v.StockQuantity > 0), ct),
             await db.Products.CountAsync(p => p.Status == ProductStatus.PENDING_MODERATION && p.UpdatedAt < moderationStale, ct));
     }
@@ -64,7 +64,7 @@ public sealed class OperationsService(IApplicationDbContext db)
                              from o in orderGroup.DefaultIfEmpty()
                              join product in db.Products.AsNoTracking() on t.ProductId equals product.Id into productGroup
                              from p in productGroup.DefaultIfEmpty()
-                             where t.CustomerId == id
+                             where t.CustomerId == id && t.ProductId == null
                              orderby t.UpdatedAt descending, t.Id
                              select new TicketRow(t.Id, t.OrderId, o == null ? null : o.OrderNumber, t.CustomerId, (user.FirstName + " " + user.LastName).Trim(), t.Kind, t.Subject, t.Status, t.CreatedAt, t.UpdatedAt, t.Version, t.ProductId, p == null ? null : p.Name)).Take(100).ToListAsync(ct);
         var amount = await all.Where(o => o.Status != OrderStatus.CANCELLED && o.Status != OrderStatus.RETURNED).SumAsync(o => (decimal?)o.TotalAmount, ct) ?? 0;
