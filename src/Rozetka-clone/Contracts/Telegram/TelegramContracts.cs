@@ -30,10 +30,14 @@ public sealed record ImportPreviewDto(Guid Id, string SourceUrl, string Name, st
     IReadOnlyList<string> Images, IReadOnlyList<ImportedCharacteristicDto> Characteristics, DateTimeOffset ExpiresAt,
     Guid? ProductId, DateTimeOffset? SubmittedAt)
 {
+    public Guid? BrandId { get; init; }
     public string ManufacturerPartNumber { get; init; } = "";
     public string Barcode { get; init; } = "";
     public IReadOnlyList<ProductDuplicateDto> Duplicates { get; init; } = [];
 }
+public sealed record CreateImportBrandRequest([Required, StringLength(200)] string Name);
+public sealed record SellerImportOptionsDto(IReadOnlyList<CatalogLookupDto> Categories, IReadOnlyList<CatalogLookupDto> Brands,
+    IReadOnlyList<CatalogLookupDto> Stores, bool CanClassifyImports);
 public sealed class SubmitImportRequest
 {
     [Required, StringLength(250)] public string Name { get; set; } = "";

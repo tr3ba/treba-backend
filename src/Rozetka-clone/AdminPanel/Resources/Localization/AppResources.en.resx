@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <data name="Dashboard" xml:space="preserve"><value>Dashboard</value></data>
   <data name="Management" xml:space="preserve"><value>Management</value></data>
@@ -729,4 +729,35 @@
   <data name="WorkspaceCreateSeparate" xml:space="preserve"><value>Create a separate product despite the match</value></data>
   <data name="AuditFieldBarcode" xml:space="preserve"><value>Barcode</value></data>
   <data name="WorkspaceOldPriceRemoved" xml:space="preserve"><value>Previous price will be removed</value></data>
+  <data name="BackToStorefront" xml:space="preserve"><value>Back to website</value></data>
+  <data name="ImportProducts" xml:space="preserve"><value>Import products</value></data>
+  <data name="ImportProductsHint" xml:space="preserve"><value>Copy product details from Rozetka, Prom.ua or Epicentr and review them before moderation.</value></data>
+  <data name="ImportLinks" xml:space="preserve"><value>Product links</value></data>
+  <data name="ImportLinksHint" xml:space="preserve"><value>Add 1–20 links, one per line.</value></data>
+  <data name="ImportAutoCategory" xml:space="preserve"><value>Detect automatically</value></data>
+  <data name="ImportLoadLinks" xml:space="preserve"><value>Load products</value></data>
+  <data name="ImportLoading" xml:space="preserve"><value>Please wait…</value></data>
+  <data name="ImportQueue" xml:space="preserve"><value>Import queue</value></data>
+  <data name="ImportQueueEmpty" xml:space="preserve"><value>Add links to load your first products.</value></data>
+  <data name="ImportQueued" xml:space="preserve"><value>Links added. Loading continues even if you close this page.</value></data>
+  <data name="ImportReview" xml:space="preserve"><value>Review product</value></data>
+  <data name="ImportNoImages" xml:space="preserve"><value>No photos were provided by the source.</value></data>
+  <data name="ImportSourceBrand" xml:space="preserve"><value>Brand on source website</value></data>
+  <data name="ImportBrandMissing" xml:space="preserve"><value>Choose an existing brand or create a new one.</value></data>
+  <data name="ImportCreateBrand" xml:space="preserve"><value>Create brand</value></data>
+  <data name="ImportSourceCharacteristics" xml:space="preserve"><value>Source specifications</value></data>
+  <data name="ImportDuplicates" xml:space="preserve"><value>Similar products exist in your catalog. Review them before creating a separate product.</value></data>
+  <data name="ImportViewSource" xml:space="preserve"><value>View source</value></data>
+  <data name="ImportReviewHint" xml:space="preserve"><value>Review the name, description, brand, price and photos. The product will be published after moderation.</value></data>
+  <data name="ImportAlreadySubmitted" xml:space="preserve"><value>This product has already been sent for moderation.</value></data>
+  <data name="ImportBrandSelected" xml:space="preserve"><value>Brand selected.</value></data>
+  <data name="ImportSubmitted" xml:space="preserve"><value>Product created and sent for moderation.</value></data>
+  <data name="ImportRequestTimeout" xml:space="preserve"><value>The server did not respond in time. Please try again.</value></data>
+  <data name="ImportLeaveConfirm" xml:space="preserve"><value>Leave this preview? Your latest changes may not have been saved yet.</value></data>
+  <data name="ImportStatusQueued" xml:space="preserve"><value>Queued</value></data>
+  <data name="ImportStatusProcessing" xml:space="preserve"><value>Loading</value></data>
+  <data name="ImportStatusReady" xml:space="preserve"><value>Ready for review</value></data>
+  <data name="ImportStatusFailed" xml:space="preserve"><value>Loading failed</value></data>
+  <data name="ImportStatusExpired" xml:space="preserve"><value>Preview expired</value></data>
+  <data name="ImportStatusSubmitted" xml:space="preserve"><value>Sent for moderation</value></data>
 </root>

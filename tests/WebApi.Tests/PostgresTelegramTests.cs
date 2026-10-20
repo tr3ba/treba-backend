@@ -22,6 +22,50 @@ public sealed class PostgresTelegramTests
         }
     }
     [PostgresFact]
+    public async Task ConcurrentImportBrandCreation_ReusesOneBrand_AndReturnsItInThePreview()
+    {
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>().UseNpgsql(Environment.GetEnvironmentVariable("TREBA_TEST_POSTGRES")!).ReplaceService<IModelCustomizer, Model>().Options;
+        await using var sql = new NpgsqlConnection(Environment.GetEnvironmentVariable("TREBA_TEST_POSTGRES")!); await sql.OpenAsync();
+        string[] tables = [];
+        try
+        {
+            Guid userId, previewId;
+            var clock = new TelegramTestData.Clock();
+            await using(var db = new ApplicationDbContext(options))
+            {
+                tables = db.Model.GetEntityTypes().Select(e => e.GetTableName()!).Distinct().ToArray();
+                await PostgresTestTables.CreateAsync(db, sql, Prefix);
+                var seed = await TelegramTestData.SeedAsync(db); await TelegramTestData.AllowImportAsync(db, seed); userId = seed.User.Id;
+                previewId = (await TelegramTestData.Import(db, clock, new(), new()).PreviewAsync(userId, TelegramTestData.SourceUrl, default)).Id;
+                (await db.ProductImportDrafts.SingleAsync()).BrandName = " Acme   Labs "; await db.SaveChangesAsync();
+            }
+            async Task<Guid> Create(string name)
+            {
+                await using var db = new ApplicationDbContext(options);
+                return (await TelegramTestData.Import(db, clock, new(), new()).CreateBrandAsync(userId, previewId, name, default)).Id;
+            }
+            var created = await Task.WhenAll(Create("Acme Labs"), Create(" ACME  LABS "), Create("acme labs"));
+            Assert.Single(created.Distinct());
+            await using(var db = new ApplicationDbContext(options))
+            {
+                Assert.Equal(2, await db.Brands.CountAsync());
+                Assert.Equal(created[0], (await TelegramTestData.Import(db, clock, new(), new()).GetAsync(userId, previewId, default)).BrandId);
+            }
+        }
+        finally
+        {
+            await using var owned = new NpgsqlCommand("SELECT tablename FROM pg_tables WHERE schemaname='public' AND tableowner=current_user AND tablename=ANY(@names)", sql);
+            owned.Parameters.AddWithValue("names", tables); var names = new List<string>();
+            await using(var reader = await owned.ExecuteReaderAsync()) while(await reader.ReadAsync()) names.Add(reader.GetString(0));
+            if(names.Count > 0)
+            {
+                Assert.All(names, name => Assert.StartsWith(Prefix, name));
+                await using var drop = new NpgsqlCommand("DROP TABLE " + string.Join(',', names.Select(name => "public.\"" + name.Replace("\"", "\"\"") + "\"")) + " CASCADE", sql);
+                await drop.ExecuteNonQueryAsync();
+            }
+        }
+    }
+    [PostgresFact]
     public async Task PostgreSql_GuardConcurrency_AndImportPhotoFailureRollsBackAllRowsAndFiles()
     {
         var connection=Environment.GetEnvironmentVariable("TREBA_TEST_POSTGRES")!;

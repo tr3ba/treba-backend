@@ -1,4 +1,6 @@
 using System.Text.Json;
+using System.Text;
+using System.Security.Cryptography;
 using Application.Abstractions;
 using Application.Catalog;
 using Application.Common;
@@ -16,13 +18,61 @@ namespace WebApi.Telegram;
 public sealed class ProductImportService(ApplicationDbContext db, IMarketplaceSourceClient source, MarketplaceProductParser parser,
     SellerCategoryAccess access, CatalogService catalog, IProductService products, IProductMediaStorage media, TimeProvider clock)
 {
-    public async Task<ImportPreviewDto> PreviewAsync(Guid userId, string url, CancellationToken ct, Guid? categoryId = null)
+    public async Task EnsureSellerAsync(Guid userId, CancellationToken ct)
     {
-        var uri = MarketplaceSourceClient.ProductUri(url); var now = clock.GetUtcNow();
         if (!await db.Sellers.AnyAsync(s => s.UserId == userId && s.Status == SellerStatus.ACTIVE, ct))
             throw new BusinessRuleException("Импорт доступен только активному продавцу.");
         if (!await db.Users.AnyAsync(u => u.Id == userId && !u.IsDeleted && u.Status == Domain.Entities.Users.UserStatus.Active && u.Role != null && u.Role.Name == Domain.Entities.Users.Roles.Seller, ct))
             throw new BusinessRuleException("Доступ аккаунта продавца изменился.");
+    }
+
+    public async Task<SellerImportOptionsDto> OptionsAsync(Guid userId, CancellationToken ct)
+    {
+        await EnsureSellerAsync(userId, ct);
+        var allowed = await access.AllowedIdsAsync(userId, ct);
+        return new(await db.Categories.AsNoTracking().Where(c => c.IsActive && allowed.Contains(c.Id)).OrderBy(c => c.Name).Select(c => new CatalogLookupDto(c.Id, c.Name)).ToListAsync(ct),
+            await db.Brands.AsNoTracking().Where(b => b.IsActive).OrderBy(b => b.Name).Select(b => new CatalogLookupDto(b.Id, b.Name)).ToListAsync(ct),
+            await db.Stores.AsNoTracking().Where(s => s.IsActive && db.Sellers.Any(seller => seller.Id == s.SellerId && seller.UserId == userId && seller.Status == SellerStatus.ACTIVE)).OrderBy(s => s.Name).Select(s => new CatalogLookupDto(s.Id, s.Name)).ToListAsync(ct),
+            await access.CanClassifyUnmappedImportsAsync(userId, ct));
+    }
+
+    public async Task<CatalogLookupDto> CreateBrandAsync(Guid userId, Guid draftId, string name, CancellationToken ct)
+    {
+        name = string.Join(' ', name.Normalize(NormalizationForm.FormKC).Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+        if (name.Length is < 1 or > 200) throw new ArgumentException("Укажите название бренда до 200 символов.");
+        await using var transaction = db.Database.IsRelational() ? await db.Database.BeginTransactionAsync(ct) : null;
+        await EnsureSellerAsync(userId, ct);
+        var draft = await RequireDraft(userId, draftId, ct);
+        if (draft.SubmittedAt is not null) throw new BusinessRuleException("Этот импорт уже завершён.");
+        await access.EnsureAllowedAsync(userId, draft.CategoryId, ct);
+        if (!await db.Stores.AnyAsync(s => s.IsActive && db.Sellers.Any(seller => seller.Id == s.SellerId && seller.UserId == userId && seller.Status == SellerStatus.ACTIVE), ct))
+            throw new BusinessRuleException("У продавца нет доступного магазина.");
+        var key = NormalizeBrand(name);
+        var digest = SHA256.HashData(Encoding.UTF8.GetBytes("seller-import-brand:" + key));
+        if (db.Database.IsNpgsql())
+            await db.Database.ExecuteSqlRawAsync("SELECT pg_advisory_xact_lock({0})", [BitConverter.ToInt64(digest, 0)], ct);
+        var known = (await db.Brands.AsNoTracking().ToListAsync(ct)).FirstOrDefault(b => NormalizeBrand(b.Name) == key);
+        if (known is not null)
+        {
+            if (!known.IsActive) throw new BusinessRuleException("Этот бренд отключён. Выберите другой бренд или обратитесь к администратору.");
+            if (transaction is not null) await transaction.CommitAsync(ct);
+            return new(known.Id, known.Name);
+        }
+        var slug = System.Text.RegularExpressions.Regex.Replace(name.ToLowerInvariant(), @"[^\p{L}\p{Nd}]+", "-").Trim('-');
+        if (slug.Length > 180) slug = slug[..180];
+        var brand = new Domain.Entities.Brand { Id = Guid.NewGuid(), Name = name, Slug = (slug.Length == 0 ? "brand" : slug) + "-" + Convert.ToHexString(digest)[..16].ToLowerInvariant(), IsActive = true };
+        db.Brands.Add(brand);
+        await db.SaveChangesAsync(ct);
+        if (transaction is not null) await transaction.CommitAsync(ct);
+        return new(brand.Id, brand.Name);
+    }
+
+    private static string NormalizeBrand(string name) => string.Join(' ', name.Normalize(NormalizationForm.FormKC).Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)).ToUpperInvariant();
+
+    public async Task<ImportPreviewDto> PreviewAsync(Guid userId, string url, CancellationToken ct, Guid? categoryId = null)
+    {
+        var uri = MarketplaceSourceClient.ProductUri(url); var now = clock.GetUtcNow();
+        await EnsureSellerAsync(userId, ct);
         if (await db.ProductImportDrafts.CountAsync(d => d.UserId == userId && d.ExpiresAt > now && d.SubmittedAt == null, ct) >= 50)
             throw new BusinessRuleException("Слишком много незавершённых импортов. Завершите текущие или попробуйте позже.");
         var data = parser.Parse(uri, await source.GetPageAsync(uri, ct));
@@ -57,10 +107,12 @@ public sealed class ProductImportService(ApplicationDbContext db, IMarketplaceSo
         db.ProductImportDrafts.Add(draft); await db.SaveChangesAsync(ct);
         return await ToDtoAsync(draft, ct);
     }
-    public async Task<ImportPreviewDto> GetAsync(Guid userId, Guid id, CancellationToken ct) => await ToDtoAsync(await RequireDraft(userId, id, ct), ct);
+    public async Task<ImportPreviewDto> GetAsync(Guid userId, Guid id, CancellationToken ct)
+    { var draft = await RequireDraft(userId, id, ct); await EnsureSellerAsync(userId, ct); return await ToDtoAsync(draft, ct); }
 
     public async Task<Guid> SubmitAsync(Guid userId, Guid id, SubmitImportRequest request, CancellationToken ct)
     {
+        await EnsureSellerAsync(userId, ct);
         await using var transaction = db.Database.IsRelational() ? await db.Database.BeginTransactionAsync(ct) : null;
         var draft = await RequireDraft(userId, id, ct);
         if (draft.SubmittedAt is not null && draft.ProductId is { } completed) return completed;
@@ -124,13 +176,13 @@ public sealed class ProductImportService(ApplicationDbContext db, IMarketplaceSo
     private async Task<ImportPreviewDto> ToDtoAsync(ProductImportDraft draft, CancellationToken ct)
     {
         var identifiers = ReadIdentifiers(draft);
-        var brandId = await db.Brands.Where(b => b.IsActive && b.Name.ToLower() == draft.BrandName.ToLower()).Select(b => b.Id).FirstOrDefaultAsync(ct);
+        var brandId = (await db.Brands.AsNoTracking().Where(b => b.IsActive).ToListAsync(ct)).FirstOrDefault(b => NormalizeBrand(b.Name) == NormalizeBrand(draft.BrandName))?.Id ?? Guid.Empty;
         var duplicates = await new CatalogDuplicateService(db).FindAsync(draft.UserId, brandId, identifiers.PartNumber, identifiers.Barcode, draft.ProductId, ct);
         return new(draft.Id, draft.SourceUrl, draft.Name,
         draft.Description, draft.BrandName, draft.SourceCategoryName, draft.CategoryId,
         await db.Categories.Where(c => c.Id == draft.CategoryId).Select(c => c.Name).SingleAsync(ct), draft.SourcePrice,
         JsonSerializer.Deserialize<List<string>>(draft.ImagesJson) ?? [], JsonSerializer.Deserialize<List<ImportedCharacteristicDto>>(draft.CharacteristicsJson) ?? [],
-        draft.ExpiresAt, draft.ProductId, draft.SubmittedAt) { ManufacturerPartNumber = identifiers.PartNumber, Barcode = identifiers.Barcode, Duplicates = duplicates };
+        draft.ExpiresAt, draft.ProductId, draft.SubmittedAt) { BrandId = brandId == Guid.Empty ? null : brandId, ManufacturerPartNumber = identifiers.PartNumber, Barcode = identifiers.Barcode, Duplicates = duplicates };
     }
     private static (string PartNumber, string Barcode) ReadIdentifiers(ProductImportDraft draft)
     {

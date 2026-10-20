@@ -30,6 +30,7 @@
         <h1>@(Id.HasValue ? L["EditProduct"] : L["NewProduct"])</h1>
         <p>@L["ProductEditorSubtitle"]</p>
     </div>
+    <SellerImportEntry Role="@editorRole" IsNew="@(!Id.HasValue)" />
     @if(Id.HasValue){<a class="secondary-button" href="@($"/products/new?copyFrom={Id}&returnUrl={Uri.EscapeDataString(BackUri)}")">@L["CopyProduct"]</a>}
 </section>
 
@@ -265,6 +266,7 @@ else if (ready)
     private string categorySearch="",attributeName="",attributeUnit="",savedState="";
     private bool loading=true,busy,submit,ready,allowNavigation,canCreateAttributes;
     private string? error;
+    private string? editorRole;
     private EditorAutosave? autosave;private string userScope="",draftKey="";
     private IReadOnlyList<Contracts.Telegram.ProductDuplicateDto> duplicates=[];private bool duplicateAcknowledged;
     private IReadOnlyList<EditorBackupPhoto> BackupPhotos()=>pendingImages.Select(p=>new EditorBackupPhoto(p.Id,p.Name,p.ContentType,p.Bytes)).ToList();
@@ -297,6 +299,7 @@ else if (ready)
         try
         {
             var principal=(await Authentication.GetAuthenticationStateAsync()).User;canCreateAttributes=principal.IsInRole("Administrator");
+            editorRole=principal.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
             userScope=principal.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value??"";draftKey=Id.HasValue?"product:"+Id:"new:"+CopyFrom;
             var options=await Api.FilterOptions();
             var activeCategories=await Api.Categories();
