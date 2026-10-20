@@ -17,6 +17,12 @@ location ^~ /telegram/ {
     add_header Cache-Control "no-store" always;
 }
 
+location = /js/editor-drafts.js {
+    proxy_pass http://127.0.0.1:5000;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+
 location ^~ /api/telegram/ {
     # Keep /api/telegram/ as well; these are not storefront routes.
     proxy_pass http://127.0.0.1:5000;

@@ -64,7 +64,12 @@ Runtime:
 
 ## Telegram deployment
 
-Telegram Mini App is served by WebApi at `/telegram/`. The inspected EC2 uses Caddy
+Telegram Mini App is served by WebApi at `/telegram/`. Its shared draft-storage module
+at `/js/editor-drafts.js` must also reach WebApi: a storefront HTML response, even with
+HTTP 200, prevents the module graph from executing and leaves the startup screen visible.
+The image smoke test checks the module graph through Caddy with an HTML storefront fallback;
+deployment also verifies JavaScript MIME types on the public paths.
+The inspected EC2 uses Caddy
 (`treba-caddy`, `/opt/treba-caddy/Caddyfile`); that path must join the existing API
 matcher and keep the request path unchanged. The storefront continues at `/`.
 
