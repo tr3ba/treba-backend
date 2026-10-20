@@ -19,6 +19,8 @@ public sealed class OperationsApiClient(HttpClient http)
     }
     public Task<PagedResponse<TicketRow>> Tickets(int page, string? status, string? kind, string? search, string? view = null) => Get<PagedResponse<TicketRow>>($"api/v1/support?page={page}&status={E(status)}&kind={E(kind)}&search={E(search)}&view={E(view)}");
     public Task<TicketDetails> Ticket(Guid id) => Get<TicketDetails>($"api/v1/support/{id}");
+    public Task<TicketMessagePage> TicketMessages(Guid id, Guid before) => Get<TicketMessagePage>($"api/v1/support/{id}/messages?before={before}");
+    public Task ReadTicket(Guid id, Guid messageId) => Send(HttpMethod.Post, $"api/v1/support/{id}/read", new ReadTicketRequest(messageId));
     public async Task<TicketDetails> CreateTicket(CreateTicketRequest request)
     { using var response = await http.PostAsJsonAsync("api/v1/support", request); await CatalogApiClient.RequireSuccess(response); return await Read<TicketDetails>(response); }
     public Task Message(Guid id, TicketMessageRequest request) => Send(HttpMethod.Post, $"api/v1/support/{id}/messages", request);

@@ -10,7 +10,12 @@ namespace WebApi.Controllers;
 public sealed class SupportController(SupportService support) : ControllerBase
 {
     [HttpGet]
-    public Task<PagedResponse<TicketRow>> List(int page = 1, string? status = null, string? kind = null, string? search = null, string? view = null, CancellationToken ct = default) => support.ListAsync(page, status, kind, search, ct, view);
+    public Task<PagedResponse<TicketRow>> List(int page = 1, string? status = null, string? kind = null, string? search = null, string? view = null, Guid? productId = null, CancellationToken ct = default) => support.ListAsync(page, status, kind, search, ct, view, productId);
+    [HttpGet("{id:guid}/messages")]
+    public Task<TicketMessagePage> Messages(Guid id, Guid? before = null, CancellationToken ct = default) => support.MessagesAsync(id, before, ct);
+    [HttpPost("{id:guid}/read")]
+    public async Task<IActionResult> Read(Guid id, ReadTicketRequest request, CancellationToken ct)
+    { await support.MarkReadAsync(id, request, ct); return NoContent(); }
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<TicketDetails>> Get(Guid id, CancellationToken ct) => await support.DetailsAsync(id, ct) is { } result ? Ok(result) : NotFound();
     [HttpPost]

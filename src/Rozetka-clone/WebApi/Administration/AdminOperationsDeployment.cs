@@ -6,9 +6,9 @@ namespace WebApi.Administration;
 // Operator-only commands: never start HTTP, workers, Telegram polling or notifications.
 public static class AdminOperationsDeployment
 {
-    public const string Migration = "20261020093201_AddAdminOperations";
+    public const string Migration = "20261020104554_AddSupportConversations";
     private static readonly HashSet<string> AllowedPending =
-        ["20261017112413_AddPromotions", "20261019213326_AddReviewOrderItemRelation", Migration];
+        ["20261017112413_AddPromotions", "20261019213326_AddReviewOrderItemRelation", "20261020093201_AddAdminOperations", Migration];
 
     public static async Task<int> RunAsync(IServiceProvider services, bool migrate)
     {
@@ -31,9 +31,9 @@ public static class AdminOperationsDeployment
                          FROM pg_class c CROSS JOIN pg_roles r
                          WHERE r.rolname = current_user AND c.oid IN
                             (to_regclass('public.orders'), to_regclass('public.promotions'),
-                             to_regclass('public.reviews'), to_regclass('public.users'), to_regclass('public.products'))) AS "Value"
+                             to_regclass('public.reviews'), to_regclass('public.users'), to_regclass('public.products'), to_regclass('public.support_tickets'))) AS "Value"
                     """).SingleAsync(timeout.Token);
-                if (!canMigrate) throw new InvalidOperationException("The API database account cannot apply DDL. Apply scripts/sql/20261020-admin-operations.sql with the database owner, then retry deployment.");
+                if (!canMigrate) throw new InvalidOperationException("The API database account cannot apply DDL. Apply the reviewed operational SQL scripts with the database owner, then retry deployment.");
                 await db.Database.MigrateAsync(timeout.Token);
                 Console.WriteLine("Operational database migrations applied.");
             }

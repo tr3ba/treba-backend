@@ -77,9 +77,9 @@
   <data name="Enabled" xml:space="preserve"><value>Enabled</value></data>
   <data name="Remove" xml:space="preserve"><value>Remove</value></data>
   <data name="AddCoupon" xml:space="preserve"><value>Add coupon</value></data>
-  <data name="TicketSearch" xml:space="preserve"><value>Subject, order number or customer</value></data>
+  <data name="TicketSearch" xml:space="preserve"><value>Subject, product, order number or customer</value></data>
   <data name="Kind" xml:space="preserve"><value>Ticket type</value></data>
-  <data name="Kind_QUESTION" xml:space="preserve"><value>Order question</value></data>
+  <data name="Kind_QUESTION" xml:space="preserve"><value>Product or order question</value></data>
   <data name="Kind_RETURN" xml:space="preserve"><value>Return</value></data>
   <data name="FindOrder" xml:space="preserve"><value>Find an order by number or customer</value></data>
   <data name="Subject" xml:space="preserve"><value>Subject</value></data>
@@ -133,4 +133,11 @@
   <data name="Before" xml:space="preserve"><value>Before</value></data>
   <data name="After" xml:space="preserve"><value>After</value></data>
   <data name="BaselineAt" xml:space="preserve"><value>Baseline from {0}</value></data>
+  <data name="AutoRefreshChat" xml:space="preserve"><value>New messages appear automatically</value></data>
+  <data name="ConversationClosed" xml:space="preserve"><value>This conversation is closed.</value></data>
+  <data name="ConversationContext" xml:space="preserve"><value>Customer and context</value></data>
+  <data name="EarlierMessages" xml:space="preserve"><value>Earlier messages</value></data>
+  <data name="Kind_CHAT" xml:space="preserve"><value>Personal support</value></data>
+  <data name="ReplyToCustomer" xml:space="preserve"><value>Reply to customer</value></data>
+  <data name="UnreadMessages" xml:space="preserve"><value>Unread messages</value></data>
 </root>

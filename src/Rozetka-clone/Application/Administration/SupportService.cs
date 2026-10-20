@@ -13,75 +13,118 @@ public sealed class SupportService(IApplicationDbContext db, ICurrentActor actor
 {
     private bool Staff => actor.Role is "Administrator" or "Manager";
     private IQueryable<SupportTicket> Visible => Staff ? db.SupportTickets : db.SupportTickets.Where(t => t.CustomerId == actor.UserId);
-    public async Task<PagedResponse<TicketRow>> ListAsync(int page, string? status, string? kind, string? search, CancellationToken ct, string? view = null)
+    private IQueryable<SupportMessage> Messages(Guid id) => db.SupportMessages.AsNoTracking().Where(m => m.TicketId == id && (Staff || !m.Internal));
+    private IQueryable<TicketRow> Rows(IQueryable<SupportTicket> query) =>
+        from t in query
+        join u in db.Users.AsNoTracking() on t.CustomerId equals u.Id
+        join order in db.Orders.AsNoTracking() on t.OrderId equals order.Id into orderGroup
+        from o in orderGroup.DefaultIfEmpty()
+        join product in db.Products.AsNoTracking() on t.ProductId equals product.Id into productGroup
+        from p in productGroup.DefaultIfEmpty()
+        orderby t.UpdatedAt descending, t.Id
+        select new TicketRow(t.Id, t.OrderId, o == null ? null : o.OrderNumber, t.CustomerId,
+            (u.FirstName + " " + u.LastName).Trim(), t.Kind, t.Subject, t.Status, t.CreatedAt, t.UpdatedAt, t.Version,
+            t.ProductId, p == null ? null : p.Name,
+            db.SupportMessages.Where(m => m.TicketId == t.Id && (Staff || !m.Internal)).OrderByDescending(m => m.CreatedAt).ThenByDescending(m => m.Id).Select(m => m.Message).FirstOrDefault(),
+            db.SupportMessages.Count(m => m.TicketId == t.Id && !m.Internal &&
+                (Staff ? m.AuthorRole == "Customer" && (t.StaffReadAt == null || m.CreatedAt > t.StaffReadAt)
+                    : (m.AuthorRole == "Administrator" || m.AuthorRole == "Manager") && (t.CustomerReadAt == null || m.CreatedAt > t.CustomerReadAt))), p == null ? null : p.Slug);
+
+    public async Task<PagedResponse<TicketRow>> ListAsync(int page, string? status, string? kind, string? search, CancellationToken ct, string? view = null, Guid? productId = null)
     {
         OrderService.ValidatePage(page, 12);
         var query = Visible.AsNoTracking();
         if (!string.IsNullOrWhiteSpace(view))
         {
-            if (view is not ("open" or "overdue"))
-                throw new ArgumentException("Unknown ticket queue.");
-            query = query.Where(t => t.Status == "OPEN" || t.Status == "IN_PROGRESS" || t.Status == "APPROVED");
+            if (view is not ("open" or "overdue" or "unread")) throw new ArgumentException("Unknown ticket queue.");
+            if (view == "unread") query = query.Where(t => db.SupportMessages.Any(m => m.TicketId == t.Id && !m.Internal &&
+                (Staff ? m.AuthorRole == "Customer" && (t.StaffReadAt == null || m.CreatedAt > t.StaffReadAt)
+                    : (m.AuthorRole == "Administrator" || m.AuthorRole == "Manager") && (t.CustomerReadAt == null || m.CreatedAt > t.CustomerReadAt))));
+            else query = query.Where(t => t.Status == "OPEN" || t.Status == "IN_PROGRESS" || t.Status == "APPROVED");
             if (view == "overdue")
             {
                 var stale = DateTimeOffset.UtcNow.AddHours(-48);
-                query = query.Where(t => t.CreatedAt < stale && !db.SupportMessages.Any(m => m.TicketId == t.Id
+                query = query.Where(t => t.CreatedAt < stale && !db.SupportMessages.Any(m => m.TicketId == t.Id && !m.Internal
                     && (m.AuthorRole == "Administrator" || m.AuthorRole == "Manager") && m.CreatedAt >= stale));
             }
         }
-        if (!string.IsNullOrWhiteSpace(status))
-        {
-            ValidateStatus(status);
-            query = query.Where(t => t.Status == status);
-        }
-        if (!string.IsNullOrWhiteSpace(kind))
-        {
-            ValidateKind(kind);
-            query = query.Where(t => t.Kind == kind);
-        }
+        if (!string.IsNullOrWhiteSpace(status)) { ValidateStatus(status); query = query.Where(t => t.Status == status); }
+        if (!string.IsNullOrWhiteSpace(kind)) { ValidateKind(kind); query = query.Where(t => t.Kind == kind); }
+        if (productId.HasValue) query = query.Where(t => t.ProductId == productId);
         if (!string.IsNullOrWhiteSpace(search))
         {
             var term = search.Trim().ToLowerInvariant();
-            query = query.Where(t => t.Subject.ToLower().Contains(term) || db.Orders.Any(o => o.Id == t.OrderId && (o.OrderNumber.ToLower().Contains(term) || o.RecipientName.ToLower().Contains(term))));
+            query = query.Where(t => t.Subject.ToLower().Contains(term)
+                || db.Users.Any(u => u.Id == t.CustomerId && (u.FirstName.ToLower().Contains(term) || u.LastName.ToLower().Contains(term) || u.Email.ToLower().Contains(term)))
+                || db.Products.Any(p => p.Id == t.ProductId && p.Name.ToLower().Contains(term))
+                || db.Orders.Any(o => o.Id == t.OrderId && o.OrderNumber.ToLower().Contains(term)));
         }
         var count = await query.CountAsync(ct);
-        var rows = await (from t in query
-                          join o in db.Orders.AsNoTracking() on t.OrderId equals o.Id
-                          orderby t.UpdatedAt descending, t.Id
-                          select new TicketRow(t.Id, o.Id, o.OrderNumber, t.CustomerId, o.RecipientName, t.Kind, t.Subject, t.Status, t.CreatedAt, t.UpdatedAt, t.Version))
-                          .Skip((page - 1) * 12).Take(12).ToListAsync(ct);
+        var rows = await Rows(query.OrderByDescending(t => t.UpdatedAt).ThenBy(t => t.Id).Skip((page - 1) * 12).Take(12)).ToListAsync(ct);
         return new(rows, page, 12, count, (int)Math.Ceiling(count / 12d));
     }
     public async Task<TicketDetails?> DetailsAsync(Guid id, CancellationToken ct)
     {
-        var row = await (from t in Visible.AsNoTracking()
-                         join o in db.Orders.AsNoTracking() on t.OrderId equals o.Id
-                         where t.Id == id
-                         select new TicketRow(t.Id, o.Id, o.OrderNumber, t.CustomerId, o.RecipientName, t.Kind, t.Subject, t.Status, t.CreatedAt, t.UpdatedAt, t.Version)).SingleOrDefaultAsync(ct);
-        if (row is null)
-            return null;
-        var messages = await db.SupportMessages.AsNoTracking().Where(m => m.TicketId == id && (Staff || !m.Internal))
-            .OrderByDescending(m => m.CreatedAt).ThenByDescending(m => m.Id).Take(200).ToListAsync(ct);
-        return new(row, messages.OrderBy(m => m.CreatedAt).ThenBy(m => m.Id).Select(m => new TicketMessageView(m.Id, m.AuthorName, m.AuthorRole, m.Message, m.Internal, m.CreatedAt)).ToList(), Staff ? Allowed(row.Kind, row.Status) : []);
+        var row = await Rows(Visible.AsNoTracking().Where(t => t.Id == id)).SingleOrDefaultAsync(ct);
+        if (row is null) return null;
+        var page = await MessagesAsync(id, null, ct);
+        return new(row, page.Messages, Staff ? Allowed(row.Kind, row.Status) : [], page.HasMore);
+    }
+    public async Task<TicketMessagePage> MessagesAsync(Guid id, Guid? before, CancellationToken ct)
+    {
+        if (!await Visible.AnyAsync(t => t.Id == id, ct)) throw new KeyNotFoundException();
+        var query = Messages(id);
+        if (before.HasValue)
+        {
+            var cursor = await query.SingleOrDefaultAsync(m => m.Id == before, ct) ?? throw new KeyNotFoundException();
+            query = query.Where(m => m.CreatedAt < cursor.CreatedAt || m.CreatedAt == cursor.CreatedAt && m.Id.CompareTo(cursor.Id) < 0);
+        }
+        var messages = await query.OrderByDescending(m => m.CreatedAt).ThenByDescending(m => m.Id).Take(51).ToListAsync(ct);
+        return new(messages.Take(50).Reverse().Select(m => new TicketMessageView(m.Id, m.AuthorName, m.AuthorRole, m.Message, m.Internal, m.CreatedAt)).ToList(), messages.Count > 50);
     }
     public async Task<TicketDetails> CreateAsync(CreateTicketRequest request, CancellationToken ct)
     {
         ValidateKind(request.Kind);
         OrderService.ValidateText(request.Subject, 200, "Subject");
         OrderService.ValidateText(request.Message, 4000, "Message");
-        var order = await orders.VisibleOrders().SingleOrDefaultAsync(o => o.Id == request.OrderId, ct) ?? throw new KeyNotFoundException();
-        if (!Staff && order.CustomerId != actor.UserId)
-            throw new KeyNotFoundException();
-        if (request.Kind == "RETURN")
+        if (request.ClientRequestId == Guid.Empty) throw new ArgumentException("Invalid request identifier.");
+        if (request.ClientRequestId is { } requestId && await db.SupportTickets.AnyAsync(t => t.Id == requestId, ct))
         {
-            if (order.Status is not (OrderStatus.DELIVERED or OrderStatus.COMPLETED))
-                throw new BusinessRuleException("Returns are available for delivered or completed orders.");
-            if (await db.SupportTickets.AnyAsync(t => t.OrderId == order.Id && t.Kind == "RETURN" && (t.Status == "OPEN" || t.Status == "IN_PROGRESS" || t.Status == "APPROVED"), ct))
-                throw new BusinessRuleException("This order already has an active return request.");
+            var existing = await DetailsAsync(requestId, ct) ?? throw new KeyNotFoundException();
+            var first = await db.SupportMessages.AsNoTracking().SingleOrDefaultAsync(m => m.Id == requestId && m.TicketId == requestId, ct);
+            if (first is null || first.AuthorId != actor.UserId || first.Message != request.Message.Trim()) throw new BusinessRuleException("Request identifier already used.");
+            return existing;
         }
-        var ticket = new SupportTicket { OrderId = order.Id, CustomerId = order.CustomerId, Kind = request.Kind, Subject = request.Subject.Trim() };
+        var customerId = actor.UserId ?? throw new UnauthorizedAccessException();
+        if (request.OrderId.HasValue)
+        {
+            var order = await orders.VisibleOrders().SingleOrDefaultAsync(o => o.Id == request.OrderId, ct) ?? throw new KeyNotFoundException();
+            if (!Staff && order.CustomerId != customerId) throw new KeyNotFoundException();
+            customerId = order.CustomerId;
+            if (request.Kind == "RETURN")
+            {
+                if (order.Status is not (OrderStatus.DELIVERED or OrderStatus.COMPLETED)) throw new BusinessRuleException("Returns are available for delivered or completed orders.");
+                if (await db.SupportTickets.AnyAsync(t => t.OrderId == order.Id && t.Kind == "RETURN" && t.Status != "CLOSED" && t.Status != "REJECTED", ct))
+                    throw new BusinessRuleException("This order already has an active return request.");
+            }
+        }
+        if (request.Kind == "RETURN" && (!request.OrderId.HasValue || request.ProductId.HasValue)) throw new ArgumentException("A return requires an order.");
+        if (request.Kind == "CHAT" && (request.OrderId.HasValue || request.ProductId.HasValue)) throw new ArgumentException("A personal chat cannot reference a product or order.");
+        if (request.Kind == "QUESTION" && !request.ProductId.HasValue && !request.OrderId.HasValue) throw new ArgumentException("Choose a product or order for the question.");
+        if (request.ProductId.HasValue && (request.OrderId.HasValue || !await db.Products.AnyAsync(p => p.Id == request.ProductId && p.Status == ProductStatus.ACTIVE, ct))) throw new KeyNotFoundException();
+        if (Staff && !request.OrderId.HasValue) throw new ArgumentException("Customers start their personal and product chats.");
+        if (request.Kind == "CHAT" || request.ProductId.HasValue)
+        {
+            var active = await Visible.SingleOrDefaultAsync(t => t.CustomerId == customerId && t.Kind == request.Kind && t.ProductId == request.ProductId && t.Status != "CLOSED", ct);
+            if (active is not null)
+            {
+                await MessageAsync(active.Id, new(request.Message, false, request.ClientRequestId), ct);
+                return (await DetailsAsync(active.Id, ct))!;
+            }
+        }
+        var ticket = new SupportTicket { Id = request.ClientRequestId ?? Guid.NewGuid(), OrderId = request.OrderId, ProductId = request.ProductId, CustomerId = customerId, Kind = request.Kind, Subject = request.Subject.Trim() };
         db.SupportTickets.Add(ticket);
-        AddMessage(ticket.Id, request.Message, false);
+        AddMessage(ticket.Id, request.Message, false, request.ClientRequestId);
         await db.SaveChangesAsync(ct);
         return (await DetailsAsync(ticket.Id, ct))!;
     }
@@ -89,66 +132,54 @@ public sealed class SupportService(IApplicationDbContext db, ICurrentActor actor
     {
         OrderService.ValidateText(request.Message, 4000, "Message");
         var ticket = await Visible.SingleOrDefaultAsync(t => t.Id == id, ct) ?? throw new KeyNotFoundException();
-        if (ticket.Status == "CLOSED")
-            throw new BusinessRuleException("Closed tickets cannot receive messages.");
-        if (request.Internal && !Staff)
-            throw new ArgumentException("Only staff can add internal notes.");
-        AddMessage(id, request.Message, request.Internal);
-        ticket.Version = Guid.NewGuid();
-        ticket.UpdatedAt = DateTimeOffset.UtcNow;
+        if (request.Internal && !Staff) throw new ArgumentException("Only staff can add internal notes.");
+        if (request.ClientMessageId == Guid.Empty) throw new ArgumentException("Invalid message identifier.");
+        if (request.ClientMessageId is { } messageId && await db.SupportMessages.AsNoTracking().SingleOrDefaultAsync(m => m.Id == messageId, ct) is { } previous)
+        {
+            if (previous.TicketId == id && previous.AuthorId == actor.UserId && previous.Message == request.Message.Trim() && previous.Internal == request.Internal) return;
+            throw new BusinessRuleException("Message identifier already used.");
+        }
+        if (ticket.Status == "CLOSED") throw new BusinessRuleException("Closed tickets cannot receive messages. Start a new conversation.");
+        AddMessage(id, request.Message, request.Internal, request.ClientMessageId);
+        ticket.Version = Guid.NewGuid(); ticket.UpdatedAt = DateTimeOffset.UtcNow;
+        if (Staff && !request.Internal && ticket.Status == "OPEN") ticket.Status = "IN_PROGRESS";
+        await db.SaveChangesAsync(ct);
+    }
+    public async Task MarkReadAsync(Guid id, ReadTicketRequest request, CancellationToken ct)
+    {
+        var ticket = await Visible.SingleOrDefaultAsync(t => t.Id == id, ct) ?? throw new KeyNotFoundException();
+        var message = await Messages(id).SingleOrDefaultAsync(m => m.Id == request.MessageId, ct) ?? throw new KeyNotFoundException();
+        if (Staff) ticket.StaffReadAt = ticket.StaffReadAt > message.CreatedAt ? ticket.StaffReadAt : message.CreatedAt;
+        else ticket.CustomerReadAt = ticket.CustomerReadAt > message.CreatedAt ? ticket.CustomerReadAt : message.CreatedAt;
         await db.SaveChangesAsync(ct);
     }
     public async Task ChangeStatusAsync(Guid id, ChangeTicketStatusRequest request, CancellationToken ct)
     {
-        if (!Staff)
-            throw new UnauthorizedAccessException();
+        if (!Staff) throw new UnauthorizedAccessException();
         var ticket = await db.SupportTickets.SingleOrDefaultAsync(t => t.Id == id, ct) ?? throw new KeyNotFoundException();
-        if (ticket.Version != request.ExpectedVersion)
-            throw new BusinessRuleException("The ticket changed. Reload it before saving.");
-        if (!Allowed(ticket.Kind, ticket.Status).Contains(request.Status))
-            throw new BusinessRuleException("This ticket status transition is not allowed.");
+        if (ticket.Version != request.ExpectedVersion) throw new BusinessRuleException("The ticket changed. Reload it before saving.");
+        if (!Allowed(ticket.Kind, ticket.Status).Contains(request.Status)) throw new BusinessRuleException("This ticket status transition is not allowed.");
         if (ticket.Kind == "RETURN" && (request.Status == "APPROVED" || ticket.Status == "APPROVED" && request.Status == "CLOSED"))
         {
             var order = await db.Orders.SingleAsync(o => o.Id == ticket.OrderId, ct);
             var approve = request.Status == "APPROVED";
-            if (approve ? order.Status is not (OrderStatus.DELIVERED or OrderStatus.COMPLETED) : order.Status != OrderStatus.RETURN_REQUESTED)
-                throw new BusinessRuleException("The order status no longer permits this return operation.");
+            if (approve ? order.Status is not (OrderStatus.DELIVERED or OrderStatus.COMPLETED) : order.Status != OrderStatus.RETURN_REQUESTED) throw new BusinessRuleException("The order status no longer permits this return operation.");
             await orders.StageTransitionAsync(order, approve ? OrderStatus.RETURN_REQUESTED : OrderStatus.RETURNED,
                 approve ? "Return approved; awaiting receipt of goods." : "Returned goods received; stock restored. Payment refund must be handled separately.", ct);
         }
-        var previous = ticket.Status;
-        ticket.Status = request.Status;
-        ticket.UpdatedAt = DateTimeOffset.UtcNow;
-        ticket.Version = Guid.NewGuid();
-        AddMessage(id, $"{previous} → {request.Status}", false);
-        await db.SaveChangesAsync(ct);
+        var previous = ticket.Status; ticket.Status = request.Status; ticket.UpdatedAt = DateTimeOffset.UtcNow; ticket.Version = Guid.NewGuid();
+        AddMessage(id, $"{previous} → {request.Status}", false); await db.SaveChangesAsync(ct);
     }
-    private void AddMessage(Guid id, string text, bool internalNote) => db.SupportMessages.Add(new()
+    private void AddMessage(Guid id, string text, bool internalNote, Guid? messageId = null) => db.SupportMessages.Add(new()
     {
-        TicketId = id,
-        AuthorId = actor.UserId ?? throw new UnauthorizedAccessException(),
-        AuthorName = actor.Name,
-        AuthorRole = actor.Role,
-        Message = text.Trim(),
-        Internal = internalNote
+        Id = messageId ?? Guid.NewGuid(), TicketId = id, AuthorId = actor.UserId ?? throw new UnauthorizedAccessException(),
+        AuthorName = actor.Name, AuthorRole = actor.Role, Message = text.Trim(), Internal = internalNote
     });
     private static IReadOnlyList<string> Allowed(string kind, string status) => (kind, status) switch
     {
-        ("RETURN", "OPEN") => ["IN_PROGRESS", "APPROVED", "REJECTED"],
-        ("RETURN", "IN_PROGRESS") => ["APPROVED", "REJECTED"],
-        ("RETURN", "APPROVED" or "REJECTED") => ["CLOSED"],
-        (_, "OPEN") => ["IN_PROGRESS", "CLOSED"],
-        (_, "IN_PROGRESS") => ["CLOSED"],
-        _ => []
+        ("RETURN", "OPEN") => ["IN_PROGRESS", "APPROVED", "REJECTED"], ("RETURN", "IN_PROGRESS") => ["APPROVED", "REJECTED"],
+        ("RETURN", "APPROVED" or "REJECTED") => ["CLOSED"], (_, "OPEN") => ["IN_PROGRESS", "CLOSED"], (_, "IN_PROGRESS") => ["CLOSED"], _ => []
     };
-    private static void ValidateKind(string kind)
-    {
-        if (kind is not ("QUESTION" or "RETURN"))
-            throw new ArgumentException("Unknown ticket kind.");
-    }
-    private static void ValidateStatus(string status)
-    {
-        if (status is not ("OPEN" or "IN_PROGRESS" or "APPROVED" or "REJECTED" or "CLOSED"))
-            throw new ArgumentException("Unknown ticket status.");
-    }
+    private static void ValidateKind(string kind) { if (kind is not ("CHAT" or "QUESTION" or "RETURN")) throw new ArgumentException("Unknown ticket kind."); }
+    private static void ValidateStatus(string status) { if (status is not ("OPEN" or "IN_PROGRESS" or "APPROVED" or "REJECTED" or "CLOSED")) throw new ArgumentException("Unknown ticket status."); }
 }
