@@ -19,6 +19,20 @@ public sealed class CatalogController(
     Microsoft.Extensions.Options.IOptions<WebApi.Telegram.TelegramOptions> telegram
 ) : ControllerBase
 {
+    [HttpGet("duplicates")]
+    public Task<IReadOnlyList<Contracts.Telegram.ProductDuplicateDto>> Duplicates(Guid brandId, string? manufacturerPartNumber, string? barcode, Guid? excludeId,
+        [FromServices] CatalogDuplicateService duplicates, CancellationToken ct) => duplicates.FindAsync(SellerUserScope(), brandId, manufacturerPartNumber, barcode, excludeId, ct);
+    [HttpPost("duplicates")]
+    public Task<IReadOnlyList<Contracts.Telegram.ProductDuplicateDto>> LookupDuplicates(Contracts.Telegram.DuplicateLookupRequest request,
+        [FromServices] CatalogDuplicateService duplicates, CancellationToken ct) => duplicates.FindManyAsync(SellerUserScope(), request.BrandId, request.ManufacturerPartNumber, request.Barcodes, request.ExcludeId, ct);
+
+    [HttpPost("bulk/preview"), Authorize(Roles = Roles.Administrator + "," + Roles.Manager + "," + Roles.Seller)]
+    public Task<BulkCatalogPreviewDto> BulkPreview(BulkCatalogRequest request, [FromServices] WebApi.Telegram.BulkCatalogService bulk, CancellationToken ct)
+        => bulk.PreviewAsync(Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!), SellerUserScope(), request, ct);
+
+    [HttpPost("bulk/apply"), Authorize(Roles = Roles.Administrator + "," + Roles.Manager + "," + Roles.Seller)]
+    public async Task<IActionResult> BulkApply(ApplyBulkCatalogRequest request, [FromServices] WebApi.Telegram.BulkCatalogService bulk, CancellationToken ct)
+        => Ok(new { updated = await bulk.ApplyAsync(Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!), SellerUserScope(), request.Token, ct) });
     [HttpGet("products")]
     public async Task<PagedResponse<CatalogProductDto>> List(
         int page = 1,

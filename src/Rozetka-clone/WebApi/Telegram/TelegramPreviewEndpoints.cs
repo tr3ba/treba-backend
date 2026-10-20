@@ -35,6 +35,10 @@ public static class TelegramPreviewEndpoints
                     "Зволожувач LEVOIT Dual 200S Smart", "Пример описания импортируемого товара. Проверьте комплектацию и характеристики перед отправкой.", "LEVOIT",
                     "Зволожувачі повітря", category, "Побутова техніка → Клімат-техніка → Зволожувачі повітря", 2499, [],
                     [new ImportedCharacteristicDto("Объём резервуара", "3 л"), new ImportedCharacteristicDto("Площадь помещения", "27 м²")], DateTimeOffset.UtcNow.AddHours(1), null, null),
+                importJobs = new[] {
+                    new ImportJobDto(Guid.Parse("40000000-0000-0000-0000-000000000001"), user, "https://rozetka.com.ua/demo/p123456/", "Ready", null, Guid.Parse("30000000-0000-0000-0000-000000000001"), null, DateTimeOffset.UtcNow.AddMinutes(-3), 1),
+                    new ImportJobDto(Guid.Parse("40000000-0000-0000-0000-000000000002"), user, "https://prom.ua/ua/p1758574113-example.html", "Failed", "Источник временно недоступен. Повторите загрузку.", null, null, DateTimeOffset.UtcNow.AddMinutes(-2), 1)
+                },
                 reviews = new[] { new { id = Guid.NewGuid(), productName = "Зволожувач LEVOIT Dual 200S", authorName = "Покупатель Treba", rating = 5, title = "Удобный товар для дома", comment = "Понятное управление, приятный дизайн. Всё понравилось.", createdAt = now } },
                 history = new[] { new ProductModerationDto(Guid.NewGuid(), DateTimeOffset.UtcNow.AddHours(-2), "Модератор Treba", "Rejected", "Добавьте подробное описание комплектации и проверьте характеристики.") }
             });

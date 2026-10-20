@@ -280,6 +280,7 @@ namespace Application.Products
             product.Status = ProductStatus.PENDING_MODERATION;
             product.UpdatedAt = DateTime.UtcNow;
             RecordDecision(product, previous, "Submitted", null);
+            await QueueNotificationsAsync(product, "Submitted", null, cancellationToken);
 
             await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -310,6 +311,7 @@ namespace Application.Products
             product.Status = ProductStatus.ACTIVE;
             product.UpdatedAt = DateTime.UtcNow;
             RecordDecision(product, previous, "Approved", null);
+            await QueueNotificationsAsync(product, "Approved", null, cancellationToken);
 
             await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -343,6 +345,7 @@ namespace Application.Products
             product.Status = ProductStatus.REJECTED;
             product.UpdatedAt = DateTime.UtcNow;
             RecordDecision(product, previous, "Rejected", reason.Trim());
+            await QueueNotificationsAsync(product, "Rejected", reason.Trim(), cancellationToken);
 
             await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -358,6 +361,20 @@ namespace Application.Products
                 EntityId = product.Id, EntityType = "Product", EntityName = product.Name[..Math.Min(500, product.Name.Length)],
                 ActorId = _actor?.UserId ?? Guid.Empty, ActorName = name[..Math.Min(name.Length, 320)], ActorRole = _actor?.Role ?? "System",
                 Action = "Moderation", ChangesJson = JsonSerializer.Serialize(changes) });
+        }
+
+        private async Task QueueNotificationsAsync(Product product, string decision, string? reason, CancellationToken ct)
+        {
+            var role = decision == "Submitted" ? Roles.Moderator : Roles.Seller;
+            var owner = await _dbContext.Stores.Where(s => s.Id == product.StoreId)
+                .Join(_dbContext.Sellers, s => s.SellerId, seller => seller.Id, (s, seller) => seller.UserId).Select(id => (Guid?)id).SingleOrDefaultAsync(ct);
+            var users = await _dbContext.Users.Where(u => !u.IsDeleted && u.Status == UserStatus.Active && u.Role != null && u.Role.Name == role
+                && (decision == "Submitted" || u.Id == owner) && _dbContext.TelegramBindings.Any(b => b.UserId == u.Id)).Select(u => u.Id).ToListAsync(ct);
+            var title = decision == "Submitted" ? "Новый товар на модерации" : decision == "Approved" ? "Товар одобрен" : "Товар отклонён";
+            var text = title + "\n" + product.Name + (reason is null ? "" : "\n\nПричина: " + reason);
+            foreach (var userId in users) _dbContext.TelegramNotifications.Add(new Domain.Entities.Telegram.TelegramNotification {
+                UserId = userId, ProductId = product.Id, ExpectedRole = role, ExpectedStatus = product.Status.ToString(),
+                Text = text[..Math.Min(3500, text.Length)], View = "product" });
         }
 
         private Task<Product?> FindProductAsync(

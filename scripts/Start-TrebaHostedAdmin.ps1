@@ -26,11 +26,12 @@ function Own-Panel($Session) {
 
 try {
     try { $locked = $mutex.WaitOne(0) } catch [Threading.AbandonedMutexException] { $locked = $true }
-    if (!$locked) { Write-Host 'TREBA Admin Online is already starting.'; return }
+    if (!$locked) { Write-Host 'TREBA Admin is already starting.'; return }
     Write-Host '[TREBA] Checking the hosted API...'
     $ping = Invoke-RestMethod -Uri ($apiUrl + 'ping') -TimeoutSec 15
     if ($ping.status -ne 'ok') { throw 'The hosted Treba API is unavailable.' }
     $source = New-Object Text.StringBuilder
+    [void]$source.Append('workspace-build-v1')
     $files = @(& git -C $repository ls-files --cached --others --exclude-standard -- src/Rozetka-clone/AdminPanel src/Rozetka-clone/Contracts src/Rozetka-clone/Shared) | Sort-Object -Unique
     if ($LASTEXITCODE -ne 0) { throw 'Unable to read the admin source files.' }
     foreach ($file in $files) { if (Test-Path -LiteralPath (Join-Path $repository $file)) { [void]$source.Append($file).Append((File-Hash (Join-Path $repository $file))) } }
@@ -41,20 +42,35 @@ try {
     $owned = Own-Panel $previous
     if ($owned -and $previous.SourceHash -eq $sourceHash -and $previous.ApiUrl -eq $apiUrl) {
         $url = 'http://localhost:' + $previous.Port + '/'
-        Write-Host ('TREBA Admin Online is ready: ' + $url) -ForegroundColor Green
+        Write-Host ('TREBA Admin is ready: ' + $url) -ForegroundColor Green
         if (!$NoBrowser) { Start-Process $url }
         return
     }
 
     Write-Host '[TREBA] Checking the admin build...'
-    $build = Join-Path $stateDirectory ('builds\' + $sourceHash)
+    $build = Join-Path $repository ('.treba-local\builds\hosted-admin\' + $sourceHash)
     $dll = Join-Path $build 'bin\AdminPanel\release\AdminPanel.dll'
-    if (!(Test-Path -LiteralPath $dll)) {
-        & dotnet build (Join-Path $adminRoot 'AdminPanel.csproj') -c Release --artifacts-path $build --nologo --verbosity quiet
+    if (![IO.File]::Exists($dll)) {
+        & dotnet build (Join-Path $adminRoot 'AdminPanel.csproj') -c Release --no-incremental --artifacts-path $build --nologo --verbosity quiet
         if ($LASTEXITCODE -ne 0) { throw 'The admin panel build failed.' }
     }
+    if (![IO.File]::Exists($dll)) { throw ('Application build is missing after rebuilding: ' + $dll) }
+    & (Join-Path $PSScriptRoot 'Protect-TrebaLocalFile.ps1') -Path $stateFile
     if ($owned) { Invoke-RestMethod -Method Post -Uri ('http://127.0.0.1:' + $previous.Port + '/__local/stop') -Headers @{'X-Treba-Launcher'=$previous.Token} -TimeoutSec 5 | Out-Null }
-    $port = 5220
+    # Upgrade the old desktop launcher on the same admin address, verifying ownership first.
+    $legacyFile = Join-Path $env:LOCALAPPDATA 'Treba\launcher\session.json'
+    if (Test-Path -LiteralPath $legacyFile) {
+        $legacy = Get-Content -LiteralPath $legacyFile -Raw | ConvertFrom-Json
+        try {
+            $legacyStatus = Invoke-RestMethod -Uri ('http://127.0.0.1:' + $legacy.AdminPort + '/__local/status') -Headers @{'X-Treba-Launcher'=$legacy.Token} -TimeoutSec 3
+            if ($legacy.AdminPort -eq 5218 -and $legacyStatus.launchId -eq $legacy.SourceHash) {
+                Invoke-RestMethod -Method Post -Uri ('http://127.0.0.1:' + $legacy.AdminPort + '/__local/stop') -Headers @{'X-Treba-Launcher'=$legacy.Token} -TimeoutSec 5 | Out-Null
+            }
+        } catch { }
+    }
+    $port = 5218
+    $deadline = (Get-Date).AddSeconds(5)
+    while ((Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue) -and (Get-Date) -lt $deadline) { Start-Sleep -Milliseconds 200 }
     while ($port -lt 6220) {
         $listener = New-Object Net.Sockets.TcpListener([Net.IPAddress]::Loopback, $port)
         try { $listener.ExclusiveAddressUse = $true; $listener.Start(); break }
@@ -71,28 +87,25 @@ try {
     try {
         $env:ASPNETCORE_ENVIRONMENT = 'Development'; $env:DOTNET_ENVIRONMENT = 'Development'
         $env:LocalLaunch__Token = $token; $env:LocalLaunch__Id = $sourceHash
-        $process = Start-Process -FilePath (Get-Command dotnet.exe).Source -ArgumentList @(('"' + $dll + '"'),('--urls=http://127.0.0.1:' + $port),('--ApiBaseUrl=' + $apiUrl)) -WorkingDirectory $adminRoot -WindowStyle Hidden -RedirectStandardOutput $stdout -RedirectStandardError $stderr -PassThru
+        $process = Start-Process -FilePath (Get-Command dotnet.exe).Source -ArgumentList @('exec',('"' + $dll + '"'),('--urls=http://127.0.0.1:' + $port),('--ApiBaseUrl=' + $apiUrl)) -WorkingDirectory $adminRoot -WindowStyle Hidden -RedirectStandardOutput $stdout -RedirectStandardError $stderr -PassThru
+        $null = $process.Handle
     } finally { foreach ($name in $savedEnvironment.Keys) { [Environment]::SetEnvironmentVariable($name, $savedEnvironment[$name], 'Process') } }
     @{SourceHash=$sourceHash;Token=$token;Port=$port;ApiUrl=$apiUrl;ProcessId=$process.Id} | ConvertTo-Json | Set-Content -LiteralPath $stateFile -Encoding UTF8
-    $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
-    $acl = New-Object Security.AccessControl.FileSecurity; $acl.SetOwner($identity.User); $acl.SetAccessRuleProtection($true,$false)
-    $acl.AddAccessRule((New-Object Security.AccessControl.FileSystemAccessRule($identity.User,'FullControl','Allow')))
-    Set-Acl -LiteralPath $stateFile -AclObject $acl
     $deadline = (Get-Date).AddSeconds(60); $ready = $false
     do {
         $process.Refresh()
-        if ($process.HasExited) { throw ('The admin panel exited. Logs: ' + $stateDirectory) }
+        if ($process.HasExited) { throw ('The admin panel exited with code ' + $process.ExitCode + '. Output: ' + $stdout + '. Errors: ' + $stderr) }
         try { $response = Invoke-WebRequest -UseBasicParsing -Uri ('http://127.0.0.1:' + $port + '/auth/login') -TimeoutSec 3; $ready = [int]$response.StatusCode -eq 200 } catch { }
         if (!$ready) { Start-Sleep -Milliseconds 500 }
     } while (!$ready -and (Get-Date) -lt $deadline)
     if (!$ready) { throw ('The admin panel did not become ready. Logs: ' + $stateDirectory) }
     $url = 'http://localhost:' + $port + '/'
-    Write-Host ('TREBA Admin Online is ready: ' + $url) -ForegroundColor Green
+    Write-Host ('TREBA Admin is ready: ' + $url) -ForegroundColor Green
     Write-Host ('API: ' + $apiUrl)
     if (!$NoBrowser) { Start-Process $url }
 } catch {
     if ($locked) { $mutex.ReleaseMutex(); $locked = $false }
-    Write-Host ('TREBA Admin Online could not start: ' + $_.Exception.Message) -ForegroundColor Red
+    Write-Host ('TREBA Admin could not start: ' + $_.Exception.Message) -ForegroundColor Red
     if (!$NoPause) { Read-Host 'Press Enter to close' | Out-Null }
     exit 1
 } finally { if ($locked) { $mutex.ReleaseMutex() }; $mutex.Dispose() }

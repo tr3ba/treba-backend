@@ -36,10 +36,12 @@
     @if (_loading) { <p class="empty-state" role="status">@L["LoadingCatalog"]</p> }
     else if (_result is not null)
     {
-        <div class="table-wrap"><table class="custom-table storefront-products-table"><thead><tr><th>@L["Product"]</th><th>@L["Category"]</th><th>@L["Brand"]</th><th>@L["Price"]</th><th>@L["Stock"]</th><th>@L["Status"]</th><th>@L["Actions"]</th></tr></thead><tbody>
+        @if(_canEdit){<BulkCatalogPanel ProductIds="@_selected.ToList()" OnApplied="Reload"/>}
+        <div class="table-wrap"><table class="custom-table storefront-products-table"><thead><tr>@if(_canEdit){<th><input type="checkbox" aria-label="@L["WorkspaceSelectPage"]" checked="@(_result.Content.Count>0&&_result.Content.All(p=>_selected.Contains(p.Id)))" @onchange="SelectPage"/></th>}<th>@L["Product"]</th><th>@L["Category"]</th><th>@L["Brand"]</th><th>@L["Price"]</th><th>@L["Stock"]</th><th>@L["Status"]</th><th>@L["Actions"]</th></tr></thead><tbody>
         @foreach(var product in _result.Content)
         {
             <tr @key="product.Id">
+                @if(_canEdit){<td><input type="checkbox" aria-label="@(L["WorkspaceSelectProduct"].Value+": "+product.Name)" checked="@_selected.Contains(product.Id)" @onchange="args=>SelectProduct(product.Id,args)"/></td>}
                 <td><div class="catalog-product"><span class="product-thumb blue"><i class="bi bi-box-seam"></i></span><div><strong>@product.Name</strong><small>@product.Sku · @product.SellerName</small>@if(product.Variants.Count > 1){<small>@L["VariantCount", product.Variants.Count]</small>}</div></div></td>
                 <td>@product.CategoryName</td><td>@product.BrandName</td><td><strong>@if(product.Variants.Count(v => v.IsActive) > 1){<span>@L["PriceFrom"] </span>}₴ @product.Price.ToString("N2")</strong></td><td>@product.StockQuantity</td>
                 <td><span class="status-badge @(product.Status == "ACTIVE" ? "badge-paid" : "badge-pending")">@StatusLabel(product.Status)</span></td>
@@ -83,6 +85,9 @@
     private decimal? _min,_max;
     private bool _loading=true,_canEdit,_canModerate;
     private string? _error;
+    private HashSet<Guid> _selected=[];
+    private void SelectProduct(Guid id,ChangeEventArgs args){if(args.Value is true)_selected.Add(id);else _selected.Remove(id);}
+    private void SelectPage(ChangeEventArgs args){foreach(var product in _result?.Content??[]){if(args.Value is true)_selected.Add(product.Id);else _selected.Remove(product.Id);}}
     protected override async Task OnInitializedAsync()
     {
         var role=(await Authentication.GetAuthenticationStateAsync()).User.FindFirst(ClaimTypes.Role)?.Value;
@@ -96,6 +101,7 @@
     }
     private async Task Reload()
     {
+        _selected.Clear();
         _loading=true;_error=null;_result=null;
         try { _options??=await Api.FilterOptions(); _result=await Api.List(QueryPage??1,QuerySearch,QueryStatus,QueryCategory,QueryBrand,QuerySeller,QueryMin,QueryMax,QueryStock,QuerySort); _stats=await Api.Stats(); }
         catch(HttpRequestException ex){_error=ex.Message;} finally{_loading=false;}

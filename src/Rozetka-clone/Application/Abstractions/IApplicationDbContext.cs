@@ -12,6 +12,9 @@ namespace Application.Abstractions
 {
     public interface IApplicationDbContext
     {
+        DbSet<Domain.Entities.Telegram.SellerImportJob> SellerImportJobs { get; }
+        DbSet<Domain.Entities.Telegram.TelegramNotification> TelegramNotifications { get; }
+        DbSet<Domain.Entities.Telegram.ProductIdentity> ProductIdentities { get; }
         DbSet<Domain.Entities.Telegram.TelegramBotCursor> TelegramBotCursors { get; }
         DbSet<Domain.Entities.Telegram.TelegramBinding> TelegramBindings { get; }
         DbSet<Domain.Entities.Telegram.TelegramLinkChallenge> TelegramLinkChallenges { get; }

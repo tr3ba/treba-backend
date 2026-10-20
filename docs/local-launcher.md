@@ -2,26 +2,33 @@
 
 ## Admin panel with the hosted API
 
-For the deployed Telegram integration, use **TREBA Admin Online** on the desktop.
+Use **TREBA Admin** on the desktop for the admin panel, Telegram linking and Guard.
 It builds and starts only the local AdminPanel and connects it to
 `https://treba.duckdns.org/`. Tailscale, SSH keys, a local API and a database tunnel
-are unnecessary in this mode. The regular **TREBA Admin** shortcut continues to
-run the local development stack.
+are unnecessary. The profile and login page use the same server accounts and bot.
+The older **TREBA Admin Online** entry point remains a compatibility alias for this panel.
 
 ```powershell
-.\scripts\Install-TrebaShortcut.ps1 -HostedApi
-.\scripts\Start-TrebaHostedAdmin.ps1
+.\scripts\Install-TrebaShortcut.ps1
+.\scripts\Start-Treba.ps1
 ```
 
 The online launcher reuses its own running panel when its source is unchanged.
-Its state and logs live under `%LOCALAPPDATA%\Treba\hosted-admin`. Login uses the
-server accounts. For a seller or moderator, open Profile, link Telegram, return
-to confirm the identity, then send `/menu` to `@treba_marketplace_bot`.
+Its state and logs live under `%LOCALAPPDATA%\Treba\hosted-admin`; isolated builds live under `.treba-local/builds/hosted-admin` in the checkout. The ignored workspace build directory is shared by terminal and desktop launches. A missing assembly triggers a complete rebuild before any running panel is stopped. Login uses the
+server accounts. Its preferred port is `5218`, with the next available port used if occupied.
+For a seller or moderator, open Profile, select Link Telegram and open the bot from the inline panel.
+The profile stays open and detects `/start` automatically; confirm the displayed Telegram identity there.
+Already linked profiles show the linked account without setup instructions. Send `/menu` to `@treba_marketplace_bot` for its menu.
 
 ## Local development stack
 
-Run `scripts/Install-TrebaShortcut.ps1` to place **TREBA Admin** on the Windows desktop.
-The shortcut runs `scripts/Start-Treba.ps1` from this checkout.
+The local development stack is available explicitly, without changing the ordinary admin shortcut:
+
+```powershell
+.\scripts\Start-Treba.ps1 -LocalApi
+# Optional separate developer shortcut:
+.\scripts\Install-TrebaShortcut.ps1 -LocalApi -Name 'TREBA Development'
+```
 
 The launcher connects Tailscale, unlocks the configured SSH key through the Git for Windows SSH agent,
 opens the PostgreSQL tunnel, builds the current source into an isolated directory, starts WebApi and
@@ -49,7 +56,7 @@ an already running instance. `session.json` records the exact log paths without 
 credentials or the SSH passphrase.
 Readiness allows up to 90 seconds and checks the database through `/health`. If a child exits early,
 the launcher reports its exit code immediately; timeouts include the last HTTP/connection error.
-For a terminal smoke check, run `scripts/Start-Treba.ps1 -NoBrowser -NoPause`.
+For a local-stack terminal smoke check, run `scripts/Start-Treba.ps1 -LocalApi -NoBrowser -NoPause`.
 Run `tests/Launcher.Tests.ps1` in Windows PowerShell to check port routing, occupied-port fallback,
 HTTP readiness retries, early process exit and timeout diagnostics without accessing the shared server.
 

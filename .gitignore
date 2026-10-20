@@ -45,3 +45,6 @@ appsettings.Local.json
 
 # Security: local .NET development configuration
 appsettings.Development.json
+/.treba-local/
+/src/Rozetka-clone/AdminPanel/wwwroot/js/editor-drafts.js
+/src/Rozetka-clone/WebApi/wwwroot/js/editor-drafts.js

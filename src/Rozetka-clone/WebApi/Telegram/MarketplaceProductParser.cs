@@ -110,6 +110,8 @@ public sealed class MarketplaceProductParser
                 var key = Clean(cells[0].TextContent, 200).TrimEnd(':'); var value = Clean(cells[1].TextContent, 2000);
                 if (key.Length > 0 && value.Length > 0 && characteristics.Count < 100 && !characteristics.Any(c => c.Name == key && c.Value == value)) characteristics.Add(new(key, value));
             }
+            AddIdentifier(characteristics, "Артикул производителя", Text(product, "mpn"));
+            AddIdentifier(characteristics, "Штрихкод", Text(product, "gtin13") ?? Text(product, "gtin14") ?? Text(product, "gtin12") ?? Text(product, "gtin8") ?? Text(product, "gtin"));
             decimal? price = null;
             if (product.ValueKind == JsonValueKind.Object && product.TryGetProperty("offers", out var offers))
                 foreach (var offer in offers.ValueKind == JsonValueKind.Array ? offers.EnumerateArray().ToArray() : [offers])
@@ -165,9 +167,16 @@ public sealed class MarketplaceProductParser
                         var value = Clean(values, 2000);
                         if (title.Length > 0 && value.Length > 0 && characteristics.Count < 100) characteristics.Add(new(title, value));
                     }
+        AddIdentifier(characteristics, "Артикул производителя", Text(data, "article"));
+        AddIdentifier(characteristics, "Штрихкод", Text(data, "barcode") ?? Text(data, "gtin"));
         decimal? price = decimal.TryParse(Text(data, "price"), NumberStyles.Number, CultureInfo.InvariantCulture, out var amount) && amount is > 0 and <= 999999999.99m ? decimal.Round(amount, 2) : null;
         return new(expectedId, source.AbsoluteUri, name, Clean(description ?? "", 10000), Clean(Text(data, "brand") ?? "", 200), "c" + categoryId,
             Clean(categoryName, 250), price, images, characteristics);
+    }
+    private static void AddIdentifier(List<ImportedCharacteristicDto> values, string name, string? raw)
+    {
+        var value = Clean(raw ?? "", 100);
+        if (value.Length > 0 && !values.Any(v => v.Name == name && v.Value == value)) values.Insert(0, new(name, value));
     }
     private static string? Meta(IDocument document, string key) => document.QuerySelector("meta[property='" + key + "']")?.GetAttribute("content");
     private static bool Type(JsonElement node, string name) => node.ValueKind == JsonValueKind.Object && node.TryGetProperty("@type", out var type)

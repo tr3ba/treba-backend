@@ -24,6 +24,9 @@ namespace Infrastructure.Persistence
         }
 
         public DbSet<User> Users => Set<User>();
+        public DbSet<Domain.Entities.Telegram.SellerImportJob> SellerImportJobs => Set<Domain.Entities.Telegram.SellerImportJob>();
+        public DbSet<Domain.Entities.Telegram.TelegramNotification> TelegramNotifications => Set<Domain.Entities.Telegram.TelegramNotification>();
+        public DbSet<Domain.Entities.Telegram.ProductIdentity> ProductIdentities => Set<Domain.Entities.Telegram.ProductIdentity>();
         public DbSet<Domain.Entities.Telegram.TelegramBotCursor> TelegramBotCursors => Set<Domain.Entities.Telegram.TelegramBotCursor>();
         public DbSet<Domain.Entities.Telegram.TelegramBinding> TelegramBindings => Set<Domain.Entities.Telegram.TelegramBinding>();
         public DbSet<Domain.Entities.Telegram.TelegramLinkChallenge> TelegramLinkChallenges => Set<Domain.Entities.Telegram.TelegramLinkChallenge>();
@@ -117,6 +120,11 @@ namespace Infrastructure.Persistence
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+            modelBuilder.Entity<Product>().Property(p => p.UpdatedAt).IsConcurrencyToken();
+            modelBuilder.Entity<ProductVariant>().Property(v => v.Price).IsConcurrencyToken();
+            modelBuilder.Entity<ProductVariant>().Property(v => v.OldPrice).IsConcurrencyToken();
+            modelBuilder.Entity<ProductVariant>().Property(v => v.StockQuantity).IsConcurrencyToken();
+            modelBuilder.Entity<ProductVariant>().Property(v => v.IsActive).IsConcurrencyToken();
         }
     }
 }

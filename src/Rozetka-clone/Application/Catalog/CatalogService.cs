@@ -337,6 +337,7 @@ public sealed partial class CatalogService(
             .OrderBy(v => v.Sku)
             .ToListAsync(ct);
 
+        var identities = await db.ProductIdentities.AsNoTracking().Where(i => ids.Contains(i.ProductId)).ToDictionaryAsync(i => i.ProductId, i => i.ManufacturerPartNumber, ct);
         var images = await db
             .ProductImages
             .AsNoTracking()
@@ -407,7 +408,8 @@ public sealed partial class CatalogService(
                         StoreName = stores.GetValueOrDefault(p.StoreId)?.Name ?? "",
                         SellerName = stores.TryGetValue(p.StoreId, out var store) ? sellers.GetValueOrDefault(store.SellerId, "") : "",
                         UpdatedAt = p.UpdatedAt,
-                        Variants = productVariants.Select(v => new CatalogVariantInput { Id = v.Id, Name = v.Name, Sku = v.Sku, Price = v.Price, OldPrice = v.OldPrice, StockQuantity = v.StockQuantity, IsActive = v.IsActive }).ToList(),
+                        ManufacturerPartNumber = identities.GetValueOrDefault(p.Id, ""),
+                        Variants = productVariants.Select(v => new CatalogVariantInput { Id = v.Id, Name = v.Name, Sku = v.Sku, Barcode = v.Barcode, Price = v.Price, OldPrice = v.OldPrice, StockQuantity = v.StockQuantity, IsActive = v.IsActive }).ToList(),
                         Attributes = values.Where(v => v.ProductId == p.Id).Select(v => new CatalogAttributeInput { AttributeId = v.AttributeId, VariantId = v.VariantId, OptionId = v.OptionId, StringValue = v.StringValue, NumberValue = v.NumberValue, BoolValue = v.BoolValue }).ToList()
                     };
                 }

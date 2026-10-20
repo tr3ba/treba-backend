@@ -20,7 +20,7 @@ public sealed class TelegramBotClient(IOptions<TelegramOptions> options) : ITele
         try
         {
             using var response = await client.PostAsJsonAsync("https://api.telegram.org/bot" + options.Value.BotToken + "/" + method, payload, ct);
-            if (!response.IsSuccessStatusCode) throw new TelegramBotException("Telegram Bot API returned HTTP " + (int)response.StatusCode + ".");
+            if (!response.IsSuccessStatusCode) throw new TelegramBotException("Telegram Bot API returned HTTP " + (int)response.StatusCode + ".", (int)response.StatusCode);
             var document = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync(ct), cancellationToken: ct);
             if (!document.RootElement.TryGetProperty("ok", out var ok) || !ok.GetBoolean()) { document.Dispose(); throw new TelegramBotException("Telegram Bot API rejected the request."); }
             return document;
@@ -41,4 +41,7 @@ public sealed class TelegramBotClient(IOptions<TelegramOptions> options) : ITele
     public void Dispose() => client.Dispose();
 }
 
-public sealed class TelegramBotException(string message) : Exception(message);
+public sealed class TelegramBotException(string message, int? httpStatus = null) : Exception(message)
+{
+    public int? HttpStatus { get; } = httpStatus;
+}

@@ -87,6 +87,22 @@ public sealed class TelegramMiniAppController(ApplicationDbContext db, CatalogSe
     { await guard.ApproveAsync(request.QrPayload, UserId, long.Parse(User.FindFirstValue("telegram_id")!, System.Globalization.CultureInfo.InvariantCulture), ct); return NoContent(); }
     [HttpPost("imports"), Authorize(Roles = Roles.Seller), EnableRateLimiting("telegram-import")]
     public Task<ImportPreviewDto> Import(ImportUrlRequest request, CancellationToken ct) => import.PreviewAsync(UserId, request.Url, ct, request.CategoryId);
+    [HttpGet("imports/queue"), Authorize(Roles = Roles.Seller)]
+    public Task<IReadOnlyList<ImportJobDto>> ImportQueue([FromServices] SellerImportQueue queue, CancellationToken ct) => queue.ListAsync(UserId, ct);
+    [HttpPost("imports/queue"), Authorize(Roles = Roles.Seller), EnableRateLimiting("telegram-import")]
+    public Task<IReadOnlyList<ImportJobDto>> QueueImports(QueueImportsRequest request, [FromServices] SellerImportQueue queue, CancellationToken ct) => queue.AddAsync(UserId, request, ct);
+    [HttpPost("imports/queue/{id:guid}/retry"), Authorize(Roles = Roles.Seller), EnableRateLimiting("telegram-import")]
+    public async Task<IActionResult> RetryImport(Guid id, [FromServices] SellerImportQueue queue, CancellationToken ct) { await queue.RetryAsync(UserId, id, ct); return NoContent(); }
+    [HttpGet("duplicates"), Authorize(Roles = Roles.Seller)]
+    public Task<IReadOnlyList<ProductDuplicateDto>> Duplicates(Guid brandId, string? manufacturerPartNumber, string? barcode, Guid? excludeId,
+        [FromServices] CatalogDuplicateService duplicates, CancellationToken ct) => duplicates.FindAsync(UserId, brandId, manufacturerPartNumber, barcode, excludeId, ct);
+    [HttpPost("duplicates"), Authorize(Roles = Roles.Seller)]
+    public Task<IReadOnlyList<ProductDuplicateDto>> LookupDuplicates(DuplicateLookupRequest request,
+        [FromServices] CatalogDuplicateService duplicates, CancellationToken ct) => duplicates.FindManyAsync(UserId, request.BrandId, request.ManufacturerPartNumber, request.Barcodes, request.ExcludeId, ct);
+    [HttpPost("bulk/preview"), Authorize(Roles = Roles.Seller)]
+    public Task<BulkCatalogPreviewDto> BulkPreview(BulkCatalogRequest request, [FromServices] BulkCatalogService bulk, CancellationToken ct) => bulk.PreviewAsync(UserId, UserId, request, ct);
+    [HttpPost("bulk/apply"), Authorize(Roles = Roles.Seller)]
+    public async Task<IActionResult> BulkApply(ApplyBulkCatalogRequest request, [FromServices] BulkCatalogService bulk, CancellationToken ct) => Ok(new { updated = await bulk.ApplyAsync(UserId, UserId, request.Token, ct) });
     [HttpGet("imports/{id:guid}"), Authorize(Roles = Roles.Seller)]
     public Task<ImportPreviewDto> Preview(Guid id, CancellationToken ct) => import.GetAsync(UserId, id, ct);
     [HttpPost("imports/{id:guid}/submit"), Authorize(Roles = Roles.Seller), EnableRateLimiting("telegram-import")]

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <data name="Dashboard" xml:space="preserve"><value>Dashboard</value></data>
   <data name="Management" xml:space="preserve"><value>Management</value></data>
@@ -668,7 +668,10 @@
   <data name="TelegramConfirmLink" xml:space="preserve"><value>Confirm link</value></data>
   <data name="TelegramLink" xml:space="preserve"><value>Link Telegram</value></data>
   <data name="TelegramRefreshLink" xml:space="preserve"><value>Refresh status</value></data>
-  <data name="TelegramLinkHint" xml:space="preserve"><value>After starting the bot, return here to confirm your account. Guard sign-in requires a linked Telegram account.</value></data>
+  <data name="TelegramLinkHint" xml:space="preserve"><value>Press Start in the bot. Confirmation will appear here automatically. The link is valid for 10 minutes.</value></data>
+  <data name="TelegramOpenBot" xml:space="preserve"><value>Open Telegram</value></data>
+  <data name="TelegramWaitingForBot" xml:space="preserve"><value>Waiting for the bot to start…</value></data>
+  <data name="TelegramLinkExpired" xml:space="preserve"><value>The link has expired. Select “Link Telegram” to try again.</value></data>
   <data name="TelegramUnlinkConfirm" xml:space="preserve"><value>Unlink Telegram? The Mini App and approval of new Guard sign-ins will be unavailable.</value></data>
   <data name="GuardSignIn" xml:space="preserve"><value>Sign in with Guard</value></data>
   <data name="GuardSignInHint" xml:space="preserve"><value>For sellers and moderators with a linked Telegram account.</value></data>
@@ -690,4 +693,40 @@
   <data name="Saved" xml:space="preserve"><value>Saved</value></data>
   <data name="Remove" xml:space="preserve"><value>Remove</value></data>
   <data name="Add" xml:space="preserve"><value>Add</value></data>
+  <data name="WorkspaceRecoveryFound" xml:space="preserve"><value>An unfinished local copy was found. Restoring it preserves server version checks.</value></data>
+  <data name="WorkspaceKeepValue" xml:space="preserve"><value>Keep unchanged</value></data>
+  <data name="WorkspaceSelectProduct" xml:space="preserve"><value>Select product</value></data>
+  <data name="WorkspaceAutosaveHint" xml:space="preserve"><value>Fields and selected photos are backed up automatically in this browser</value></data>
+  <data name="WorkspaceVariantAvailability" xml:space="preserve"><value>Variant availability</value></data>
+  <data name="WorkspaceAllCategories" xml:space="preserve"><value>All current active categories and their descendants</value></data>
+  <data name="WorkspaceDiscardBackup" xml:space="preserve"><value>Discard local copy</value></data>
+  <data name="WorkspacePricePercent" xml:space="preserve"><value>Change price by %</value></data>
+  <data name="WorkspaceCompanyName" xml:space="preserve"><value>Seller name</value></data>
+  <data name="WorkspaceBulkTitle" xml:space="preserve"><value>Edit selected products</value></data>
+  <data name="WorkspaceNewValue" xml:space="preserve"><value>New value</value></data>
+  <data name="WorkspacePreviewChanges" xml:space="preserve"><value>Preview changes</value></data>
+  <data name="WorkspaceTestSeller" xml:space="preserve"><value>Test seller — technical tax identifier</value></data>
+  <data name="WorkspaceCheckDuplicates" xml:space="preserve"><value>Check duplicates</value></data>
+  <data name="WorkspaceCreateSeller" xml:space="preserve"><value>Create seller</value></data>
+  <data name="WorkspaceStoreName" xml:space="preserve"><value>Store name</value></data>
+  <data name="WorkspaceManufacturerPartNumber" xml:space="preserve"><value>Manufacturer part number (MPN)</value></data>
+  <data name="WorkspaceAvailable" xml:space="preserve"><value>Available</value></data>
+  <data name="WorkspaceBulkConfirmHint" xml:space="preserve"><value>Review these changes. Moderation status is preserved and changes are audited.</value></data>
+  <data name="WorkspacePasswordHint" xml:space="preserve"><value>12–128 characters. Passwords are never saved in drafts.</value></data>
+  <data name="WorkspaceSellerWizardHint" xml:space="preserve"><value>Create the account, seller profile, store and category access together.</value></data>
+  <data name="WorkspaceApplyChanges" xml:space="preserve"><value>Apply changes</value></data>
+  <data name="WorkspaceBlankKeepsValue" xml:space="preserve"><value>leave blank to keep</value></data>
+  <data name="WorkspaceActivateSeller" xml:space="preserve"><value>Activate seller immediately</value></data>
+  <data name="WorkspaceAutosaved" xml:space="preserve"><value>Unsubmitted changes are backed up in this browser</value></data>
+  <data name="WorkspaceAutosaveFailed" xml:space="preserve"><value>Autosave is unavailable. Save the product using the Draft button.</value></data>
+  <data name="WorkspaceUnavailable" xml:space="preserve"><value>Unavailable</value></data>
+  <data name="WorkspaceRestore" xml:space="preserve"><value>Restore</value></data>
+  <data name="WorkspaceStoreSlug" xml:space="preserve"><value>Store URL name</value></data>
+  <data name="WorkspaceBarcode" xml:space="preserve"><value>Barcode / EAN</value></data>
+  <data name="WorkspacePriceFixed" xml:space="preserve"><value>Set price</value></data>
+  <data name="WorkspaceSelectPage" xml:space="preserve"><value>Select products on this page</value></data>
+  <data name="WorkspaceDuplicateFound" xml:space="preserve"><value>Similar products were found. Open an existing product or confirm creating a separate one.</value></data>
+  <data name="WorkspaceCreateSeparate" xml:space="preserve"><value>Create a separate product despite the match</value></data>
+  <data name="AuditFieldBarcode" xml:space="preserve"><value>Barcode</value></data>
+  <data name="WorkspaceOldPriceRemoved" xml:space="preserve"><value>Previous price will be removed</value></data>
 </root>

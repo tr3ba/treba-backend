@@ -4,3 +4,4 @@
 .login-brand-mark.is-loading::after{content:'';position:absolute;inset:-8px;border:2px solid #ffffff1a;border-top-color:#ff8a3c;border-right-color:#f47b2a70;border-radius:50%;animation:treba-login-spin 1.2s linear infinite}
 @keyframes treba-login-spin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.login-brand-mark.is-loading::after{animation:none}}
+.telegram-open-bot{display:inline-flex;align-items:center;gap:.6rem;text-decoration:none}.telegram-profile-panel .telegram-link-waiting{display:flex;align-items:center;gap:.6rem;color:var(--text-muted,#8994a8)}
