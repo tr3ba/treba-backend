@@ -7,4 +7,5 @@ public sealed record CreateOrderRequest(
     string RecipientPhone,
     string RecipientEmail,
     CreateOrderAddressDto Address,
-    List<CreateOrderItemDto> Items);
+    List<CreateOrderItemDto> Items,
+    string? CouponCode = null);

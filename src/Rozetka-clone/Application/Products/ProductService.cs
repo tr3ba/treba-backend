@@ -344,6 +344,7 @@ namespace Application.Products
             var previous = product.Status;
             product.Status = ProductStatus.REJECTED;
             product.UpdatedAt = DateTime.UtcNow;
+            await new Application.Catalog.ModerationComparisonService(_dbContext).CaptureAsync(product, cancellationToken);
             RecordDecision(product, previous, "Rejected", reason.Trim());
             await QueueNotificationsAsync(product, "Rejected", reason.Trim(), cancellationToken);
 
@@ -356,11 +357,19 @@ namespace Application.Products
         {
             var name = _actor?.Name ?? "System";
             var changes = new List<AuditChangeDto> { new("Status", previous.ToString(), product.Status.ToString()), new("Decision", null, decision) };
-            if (reason is not null) changes.Add(new("Reason", null, reason));
-            _dbContext.AdminAuditLogs.Add(new AdminAuditLog {
-                EntityId = product.Id, EntityType = "Product", EntityName = product.Name[..Math.Min(500, product.Name.Length)],
-                ActorId = _actor?.UserId ?? Guid.Empty, ActorName = name[..Math.Min(name.Length, 320)], ActorRole = _actor?.Role ?? "System",
-                Action = "Moderation", ChangesJson = JsonSerializer.Serialize(changes) });
+            if (reason is not null)
+                changes.Add(new("Reason", null, reason));
+            _dbContext.AdminAuditLogs.Add(new AdminAuditLog
+            {
+                EntityId = product.Id,
+                EntityType = "Product",
+                EntityName = product.Name[..Math.Min(500, product.Name.Length)],
+                ActorId = _actor?.UserId ?? Guid.Empty,
+                ActorName = name[..Math.Min(name.Length, 320)],
+                ActorRole = _actor?.Role ?? "System",
+                Action = "Moderation",
+                ChangesJson = JsonSerializer.Serialize(changes)
+            });
         }
 
         private async Task QueueNotificationsAsync(Product product, string decision, string? reason, CancellationToken ct)
@@ -372,9 +381,16 @@ namespace Application.Products
                 && (decision == "Submitted" || u.Id == owner) && _dbContext.TelegramBindings.Any(b => b.UserId == u.Id)).Select(u => u.Id).ToListAsync(ct);
             var title = decision == "Submitted" ? "Новый товар на модерации" : decision == "Approved" ? "Товар одобрен" : "Товар отклонён";
             var text = title + "\n" + product.Name + (reason is null ? "" : "\n\nПричина: " + reason);
-            foreach (var userId in users) _dbContext.TelegramNotifications.Add(new Domain.Entities.Telegram.TelegramNotification {
-                UserId = userId, ProductId = product.Id, ExpectedRole = role, ExpectedStatus = product.Status.ToString(),
-                Text = text[..Math.Min(3500, text.Length)], View = "product" });
+            foreach (var userId in users)
+                _dbContext.TelegramNotifications.Add(new Domain.Entities.Telegram.TelegramNotification
+                {
+                    UserId = userId,
+                    ProductId = product.Id,
+                    ExpectedRole = role,
+                    ExpectedStatus = product.Status.ToString(),
+                    Text = text[..Math.Min(3500, text.Length)],
+                    View = "product"
+                });
         }
 
         private Task<Product?> FindProductAsync(

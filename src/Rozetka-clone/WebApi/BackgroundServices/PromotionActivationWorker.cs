@@ -69,25 +69,27 @@ public sealed class PromotionActivationWorker : BackgroundService
 
         var promotionsToActivate = await dbContext.Promotions
             .Where(x =>
-                x.Status == PromotionStatus.DRAFT &&
+                x.Status == PromotionStatus.SCHEDULED &&
                 x.StartAt <= now &&
                 x.EndAt > now)
             .ToListAsync(cancellationToken);
 
         var promotionsToFinish = await dbContext.Promotions
             .Where(x =>
-                x.Status == PromotionStatus.ACTIVE &&
+                (x.Status == PromotionStatus.ACTIVE || x.Status == PromotionStatus.SCHEDULED) &&
                 x.EndAt <= now)
             .ToListAsync(cancellationToken);
 
         foreach (var promotion in promotionsToActivate)
         {
             promotion.Status = PromotionStatus.ACTIVE;
+            promotion.Version = Guid.NewGuid();
         }
 
         foreach (var promotion in promotionsToFinish)
         {
             promotion.Status = PromotionStatus.FINISHED;
+            promotion.Version = Guid.NewGuid();
         }
 
         if (promotionsToActivate.Count == 0 &&

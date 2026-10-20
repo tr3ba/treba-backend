@@ -21,7 +21,7 @@ public sealed class ApiExceptionHandler(
             DbUpdateConcurrencyException when context.Request.Path.StartsWithSegments("/api/telegram") => (409, "Запрос уже обработан или данные изменились. Обновите страницу."),
             ArgumentException => (400, exception.Message),
             UserDomainException => (409, exception.Message),
-            DbUpdateConcurrencyException => (409, "This product was changed by another employee. Reload it before saving."),
+            DbUpdateConcurrencyException => (409, "Data changed while the request was being processed. Reload it before saving."),
             Application.Common.BusinessRuleException => (409, exception.Message),
             InvalidOperationException => (400, exception.Message),
             UnauthorizedAccessException => (401, exception.Message),

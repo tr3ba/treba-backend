@@ -69,7 +69,7 @@ public sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
             .IsRequired();
 
         builder.Property(x => x.Version)
-            .IsRowVersion();
+            .IsConcurrencyToken().ValueGeneratedNever();
 
     }
 }

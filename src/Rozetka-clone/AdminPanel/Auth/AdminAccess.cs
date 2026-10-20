@@ -22,8 +22,10 @@ public static class AdminAccess
         if (route is "/products/new" || route.EndsWith("/edit", StringComparison.Ordinal) && route.StartsWith("/products/", StringComparison.Ordinal))
             return role is "Administrator" or "Manager" or "Seller";
         if (route == "/products") return true;
-        if (route is "/orders" or "/support" or "/customer-activity"
-            or "/storefront" or "/loyalty") return role == "Administrator";
+        if (route == "/orders" || route.StartsWith("/orders/", StringComparison.Ordinal)) return role is "Administrator" or "Manager" or "Seller";
+        if (route is "/support" or "/customer-activity" or "/loyalty"
+            || route.StartsWith("/support/", StringComparison.Ordinal) || route.StartsWith("/customer-activity/", StringComparison.Ordinal)
+            || route.StartsWith("/loyalty/", StringComparison.Ordinal)) return role is "Administrator" or "Manager";
         return false;
     }
 }

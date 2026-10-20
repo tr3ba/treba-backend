@@ -24,6 +24,9 @@ namespace Infrastructure.Persistence
         }
 
         public DbSet<User> Users => Set<User>();
+        public DbSet<ProductReviewBaseline> ProductReviewBaselines => Set<ProductReviewBaseline>();
+        public DbSet<Domain.Entities.Support.SupportTicket> SupportTickets => Set<Domain.Entities.Support.SupportTicket>();
+        public DbSet<Domain.Entities.Support.SupportMessage> SupportMessages => Set<Domain.Entities.Support.SupportMessage>();
         public DbSet<Domain.Entities.Telegram.SellerImportJob> SellerImportJobs => Set<Domain.Entities.Telegram.SellerImportJob>();
         public DbSet<Domain.Entities.Telegram.TelegramNotification> TelegramNotifications => Set<Domain.Entities.Telegram.TelegramNotification>();
         public DbSet<Domain.Entities.Telegram.ProductIdentity> ProductIdentities => Set<Domain.Entities.Telegram.ProductIdentity>();
@@ -125,6 +128,13 @@ namespace Infrastructure.Persistence
             modelBuilder.Entity<ProductVariant>().Property(v => v.OldPrice).IsConcurrencyToken();
             modelBuilder.Entity<ProductVariant>().Property(v => v.StockQuantity).IsConcurrencyToken();
             modelBuilder.Entity<ProductVariant>().Property(v => v.IsActive).IsConcurrencyToken();
+            modelBuilder.Entity<Order>().Property(o => o.Status).IsConcurrencyToken();
+            modelBuilder.Entity<Promotion>().Property(p => p.Version).IsConcurrencyToken();
+            modelBuilder.Entity<Coupon>().Property(c => c.UsedCount).IsConcurrencyToken();
+            modelBuilder.Entity<Coupon>().Property(c => c.Active).IsConcurrencyToken();
+            modelBuilder.Entity<Coupon>().Property(c => c.UsageLimit).IsConcurrencyToken();
+            modelBuilder.Entity<Coupon>().Property(c => c.UsageLimitPerUser).IsConcurrencyToken();
+            modelBuilder.Entity<InventoryReservation>().Property(r => r.Status).IsConcurrencyToken();
         }
     }
 }

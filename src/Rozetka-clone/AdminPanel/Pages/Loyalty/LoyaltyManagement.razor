@@ -1,4 +1,5 @@
 @page "/loyalty"
+@inject OperationsApiClient Api
 
 <PageTitle>@L["PromotionsAndLoyalty"] — Treba Admin</PageTitle>
 
@@ -6,4 +7,10 @@
     <div><p class="eyebrow">@L["Growth"]</p><h1>@L["PromotionsAndLoyalty"]</h1></div>
 </section>
 
-<WorkspaceUnavailable Icon="bi-gift" Message="@L["LoyaltyUnavailable"]" />
+<section class="card-box">
+    <form class="operations-toolbar" @onsubmit="Search" @onsubmit:preventDefault><label class="field-group"><span>@L["Search"]</span><input class="form-control" @bind="search" placeholder="@O["PromotionSearch"]" /></label><label class="field-group"><span>@L["Status"]</span><select class="form-control" @bind="status"><option value="">@O["AllStatuses"]</option>@foreach(var state in OperationsUi.PromotionStatuses){<option value="@state">@O["Promotion_"+state]</option>}</select></label><button class="secondary-button" disabled="@loading">@L["Search"]</button><a href="/loyalty/new" class="primary-button">@O["NewPromotion"]</a></form>
+    @if(error is not null){<p class="feedback-error" role="alert">@error <button class="secondary-button" @onclick="()=>Load(page)">@L["TryAgain"]</button></p>}
+    @if(loading){<p class="empty-state">@L["Loading"]</p>}
+    else if(result is not null){<div class="table-wrap"><table class="custom-table"><thead><tr><th>@O["PromotionName"]</th><th>@L["Status"]</th><th>@O["Discount"]</th><th>@O["CouponCodes"]</th><th>@O["Period"]</th></tr></thead><tbody>@foreach(var p in result.Content){<tr><td><a href="@($"/loyalty/{p.Id}")">@p.Name</a></td><td>@O["Promotion_"+p.Status]</td><td>@p.DiscountValue.ToString("N2") @(p.Type=="PERCENTAGE"?"%":"₴")</td><td>@foreach(var c in p.Coupons){<span class="operations-muted">@c.Code · @O["UsageCount",c.UsedCount] @if(!c.Active){<span>(@O["Disabled"])</span>}</span>}</td><td>@p.StartAt.ToString("d") — @p.EndAt.ToString("d")</td></tr>}</tbody></table></div>@if(result.Content.Count==0){<p class="empty-state">@O["NoResults"]</p>}<PaginationControl CurrentPage="result.Page" TotalPages="result.TotalPages" OnPageChanged="Load" />}
+</section>
+@code{private string search="",status="";private bool loading;private int page=1;private string? error;private PagedResponse<PromotionView>? result;protected override Task OnInitializedAsync()=>Load(1);private Task Search()=>Load(1);private async Task Load(int p){loading=true;error=null;page=p;try{result=await Api.Promotions(p,search,status);}catch(HttpRequestException e){error=e.Message;result=null;}finally{loading=false;}}}

@@ -276,7 +276,10 @@ namespace Application.Promotions
                         true,
                         couponValidation.CouponId,
                         promotion.Id
-                    );
+                    )
+                    {
+                        PromotionVersion = promotion.Version
+                    };
 
                 default:
                     throw new NotSupportedException(
@@ -310,6 +313,20 @@ namespace Application.Promotions
 
             var totalAmount = subtotal - discountAmount;
 
+            var allocations = new Dictionary<Guid, decimal>();
+            var remaining = discountAmount;
+            var groups = eligibleItems.GroupBy(x => x.VariantId).OrderBy(x => x.Key).ToList();
+            var remainingSubtotal = eligibleSubtotal;
+            foreach (var group in groups)
+            {
+                var lineTotal = group.Sum(x => x.LineTotal);
+                var amount = remainingSubtotal == 0 ? 0 : Math.Min(lineTotal,
+                    decimal.Round(remaining * lineTotal / remainingSubtotal, 2, MidpointRounding.AwayFromZero));
+                allocations[group.Key] = amount;
+                remaining -= amount;
+                remainingSubtotal -= lineTotal;
+            }
+
             return new DiscountResult(
                 subtotal,
                 discountAmount,
@@ -317,7 +334,11 @@ namespace Application.Promotions
                 false,
                 couponValidation.CouponId,
                 promotion.Id
-            );
+            )
+            {
+                PromotionVersion = promotion.Version,
+                LineDiscounts = allocations
+            };
         }
 
         public async Task<CouponValidationResult> ValidateCouponAsync(

@@ -57,6 +57,10 @@ trap cleanup EXIT
 aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin 019066823315.dkr.ecr.eu-west-1.amazonaws.com >/dev/null
 docker pull "$image"
 
+# Apply only the reviewed, backwards-compatible operational migrations before switching HTTP.
+# The command checks schema ownership first and leaves the old container running on failure.
+docker run --rm --env-file "$env_file" --network host "$image" --migrate-admin-operations --Logging:LogLevel:Microsoft.EntityFrameworkCore=Critical
+
 # Checks the actual server DB and token, without opening HTTP or consuming bot updates.
 docker run --rm --env-file "$env_file" --network host "$image" --check-telegram-deployment --Logging:LogLevel:Microsoft.EntityFrameworkCore.Database.Command=Warning
 
@@ -91,8 +95,20 @@ if config.get("configured") is not True or config.get("botUsername") != "treba_m
 '
 }
 
+verify_operations() {
+    local origin="$1"
+    local path code
+    curl -fsS --max-time 10 "$origin/health" >/dev/null
+    for path in /api/v1/admin/orders /api/v1/support /api/v1/admin/operations/customers /api/v1/admin/promotions; do
+        code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$origin$path")
+        [[ "$code" == 401 ]] || { echo "Operational route unavailable: $path (HTTP $code)"; return 1; }
+    done
+    echo 'Operational routes exist and require authentication.'
+}
+
 wait_for_api "http://$candidate_address"
 verify_mini_app "http://$candidate_address"
+verify_operations "http://$candidate_address"
 docker rm -f "$candidate" >/dev/null
 docker exec treba-caddy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null
 
@@ -105,6 +121,7 @@ docker run -d --name treba-backend --restart unless-stopped --env-file "$env_fil
     -p 5000:5000 -v /opt/treba-backend/uploads:/app/wwwroot/uploads "$image" >/dev/null
 wait_for_api http://127.0.0.1:5000
 verify_mini_app http://127.0.0.1:5000
+verify_operations http://127.0.0.1:5000
 
 cp -p "$caddy_file" "$caddy_backup"
 proxy_changed=1
@@ -127,6 +144,11 @@ docker exec treba-caddy caddy validate --config /etc/caddy/Caddyfile --adapter c
 docker exec treba-caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null
 
 verify_mini_app https://treba.duckdns.org
+# The public proxy may intentionally expose /health only to internal callers.
+for path in /api/v1/admin/orders /api/v1/support /api/v1/admin/operations/customers /api/v1/admin/promotions; do
+    code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "https://treba.duckdns.org$path")
+    [[ "$code" == 401 ]] || { echo "Public operational route unavailable: $path (HTTP $code)"; exit 1; }
+done
 curl -fsS --max-time 15 https://treba.duckdns.org/ >/dev/null
 menu_ready=0
 for attempt in $(seq 1 12); do

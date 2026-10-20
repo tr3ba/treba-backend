@@ -9,16 +9,17 @@ namespace AdminPanel.Services.Implementations;
 public sealed class CatalogApiClient(HttpClient http)
 {
     public async Task<BulkCatalogPreviewDto> PreviewBulk(BulkCatalogRequest request)
-    {using var response=await http.PostAsJsonAsync("api/v1/admin/catalog/bulk/preview",request);await RequireSuccess(response);return (await response.Content.ReadFromJsonAsync<BulkCatalogPreviewDto>())!;}
+    { using var response = await http.PostAsJsonAsync("api/v1/admin/catalog/bulk/preview", request); await RequireSuccess(response); return (await response.Content.ReadFromJsonAsync<BulkCatalogPreviewDto>())!; }
     public async Task ApplyBulk(string token)
-    {using var response=await http.PostAsJsonAsync("api/v1/admin/catalog/bulk/apply",new ApplyBulkCatalogRequest(token));await RequireSuccess(response);}
-    public Task<List<Contracts.Telegram.ProductDuplicateDto>> Duplicates(Guid brandId,string part,string? barcode,Guid? excludeId)=>Get<List<Contracts.Telegram.ProductDuplicateDto>>($"api/v1/admin/catalog/duplicates?brandId={brandId}&manufacturerPartNumber={Encode(part)}&barcode={Encode(barcode)}&excludeId={excludeId}");
+    { using var response = await http.PostAsJsonAsync("api/v1/admin/catalog/bulk/apply", new ApplyBulkCatalogRequest(token)); await RequireSuccess(response); }
+    public Task<List<Contracts.Telegram.ProductDuplicateDto>> Duplicates(Guid brandId, string part, string? barcode, Guid? excludeId) => Get<List<Contracts.Telegram.ProductDuplicateDto>>($"api/v1/admin/catalog/duplicates?brandId={brandId}&manufacturerPartNumber={Encode(part)}&barcode={Encode(barcode)}&excludeId={excludeId}");
     public async Task<List<Contracts.Telegram.ProductDuplicateDto>> DuplicatesMany(Contracts.Telegram.DuplicateLookupRequest request)
-    {using var response=await http.PostAsJsonAsync("api/v1/admin/catalog/duplicates",request);await RequireSuccess(response);return (await response.Content.ReadFromJsonAsync<List<Contracts.Telegram.ProductDuplicateDto>>())!;}
+    { using var response = await http.PostAsJsonAsync("api/v1/admin/catalog/duplicates", request); await RequireSuccess(response); return (await response.Content.ReadFromJsonAsync<List<Contracts.Telegram.ProductDuplicateDto>>())!; }
     public Task<PagedResponse<CatalogProductDto>> List(int page = 1, string? search = null, string? status = null,
-        Guid? categoryId = null, Guid? brandId = null, Guid? sellerId = null, decimal? minPrice = null, decimal? maxPrice = null, string? stock = null, string? sort = null) =>
+        Guid? categoryId = null, Guid? brandId = null, Guid? sellerId = null, decimal? minPrice = null, decimal? maxPrice = null, string? stock = null, string? sort = null, int? waitingHours = null) =>
         Get<PagedResponse<CatalogProductDto>>($"api/v1/admin/catalog/products?page={page}&size=12&search={Encode(search)}&status={Encode(status)}"
-            + $"&categoryId={categoryId}&brandId={brandId}&sellerId={sellerId}&minPrice={Number(minPrice)}&maxPrice={Number(maxPrice)}&stock={Encode(stock)}&sort={Encode(sort)}");
+            + $"&categoryId={categoryId}&brandId={brandId}&sellerId={sellerId}&minPrice={Number(minPrice)}&maxPrice={Number(maxPrice)}&stock={Encode(stock)}&sort={Encode(sort)}&waitingHours={waitingHours}");
+    public Task<ModerationComparisonDto> Comparison(Guid id) => Get<ModerationComparisonDto>($"api/v1/admin/catalog/products/{id}/resubmission-changes");
     private static string Encode(string? value) => Uri.EscapeDataString(value ?? "");
     private static string Number(decimal? value) => value?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "";
     public Task<CatalogFilterOptionsDto> FilterOptions() => Get<CatalogFilterOptionsDto>("api/v1/admin/catalog/filter-options");

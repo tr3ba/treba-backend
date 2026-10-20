@@ -28,7 +28,7 @@ builder.Services.AddScoped<TokenStorageService>();
 builder.Services.AddScoped<AuthorizedHttpMessageHandler>();
 
 builder.Services.AddScoped<AuthenticationStateProvider, JwtAuthenticationStateProvider>();
-builder.Services.AddScoped<JwtAuthenticationStateProvider>(sp => 
+builder.Services.AddScoped<JwtAuthenticationStateProvider>(sp =>
     (JwtAuthenticationStateProvider)sp.GetRequiredService<AuthenticationStateProvider>());
 
 builder.Services.AddScoped(sp =>
@@ -45,13 +45,12 @@ builder.Services.AddScoped(sp =>
 
 builder.Services.AddScoped<IUsersApiClient, UsersApiClient>();
 builder.Services.AddScoped<ISellersApiClient, SellersApiClient>();
-builder.Services.AddScoped<IOrdersApiClient, OrdersApiClient>();
+builder.Services.AddScoped<OperationsApiClient>();
 builder.Services.AddScoped<IProductsApiClient, ProductsApiClient>();
 builder.Services.AddScoped<ICategoriesApiClient, CategoriesApiClient>();
 
 builder.Services.AddScoped<UsersState>();
 builder.Services.AddScoped<SellersState>();
-builder.Services.AddScoped<OrdersState>();
 builder.Services.AddScoped<ProductsState>();
 builder.Services.AddScoped<CategoriesState>();
 builder.Services.AddScoped<CurrentUserState>();

@@ -1,4 +1,7 @@
 @page "/orders"
+@inject OperationsApiClient Api
+@inject UiTime Time
+@inject NavigationManager Nav
 
 <PageTitle>@L["Orders"] — Treba Admin</PageTitle>
 
@@ -6,4 +9,28 @@
     <div><p class="eyebrow">@L["Operations"]</p><h1>@L["OrdersManagement"]</h1></div>
 </section>
 
-<WorkspaceUnavailable Icon="bi-receipt" Message="@L["OrdersUnavailable"]" />
+<section class="card-box">
+    <form class="operations-toolbar" @onsubmit="Search" @onsubmit:preventDefault>
+        <label class="field-group"><span>@L["Search"]</span><input class="form-control" @bind="search" placeholder="@O["OrderSearch"]" /></label>
+        <label class="field-group"><span>@L["Status"]</span><select class="form-control" @bind="status"><option value="">@O["AllStatuses"]</option>@foreach(var state in OperationsUi.OrderStatuses){<option value="@state">@O["Order_" + state]</option>}</select></label>
+        <label class="field-group"><span>@O["From"]</span><input type="date" class="form-control" @bind="from" /></label>
+        <label class="field-group"><span>@O["ToInclusive"]</span><input type="date" class="form-control" @bind="to" /></label>
+        <button class="primary-button" disabled="@loading">@L["Search"]</button>
+    </form>
+    @if(error is not null){<p class="feedback-error" role="alert">@error <button class="secondary-button" @onclick="() => Load(page)">@L["TryAgain"]</button></p>}
+    @if(loading){<p class="empty-state" role="status">@L["Loading"]</p>}
+    else if(result is not null){<p class="operations-caption">@O["ResultCount", result.TotalElements]</p><OrderTable Rows="result.Content" /><PaginationControl CurrentPage="result.Page" TotalPages="result.TotalPages" OnPageChanged="SetPage" />}
+</section>
+@code {
+    [SupplyParameterFromQuery(Name="search")] public string? QuerySearch {get;set;}
+    [SupplyParameterFromQuery(Name="status")] public string? QueryStatus {get;set;}
+    [SupplyParameterFromQuery(Name="page")] public int? QueryPage {get;set;}
+    [SupplyParameterFromQuery(Name="from")] public string? QueryFrom {get;set;}
+    [SupplyParameterFromQuery(Name="to")] public string? QueryTo {get;set;}
+    private string search="",status=""; private DateOnly? from,to; private int page=1; private bool loading; private string? error; private PagedResponse<OrderRow>? result;
+    protected override async Task OnParametersSetAsync(){search=QuerySearch??"";status=QueryStatus??"";from=DateOnly.TryParse(QueryFrom,out var f)?f:null;to=DateOnly.TryParse(QueryTo,out var t)?t:null;await Load(QueryPage??1);}
+    private void Search()=>Navigate(1);
+    private Task SetPage(int p){Navigate(p);return Task.CompletedTask;}
+    private void Navigate(int p)=>Nav.NavigateTo(Nav.GetUriWithQueryParameters(new Dictionary<string,object?>{{"page",p},{"search",search},{"status",status},{"from",from?.ToString("yyyy-MM-dd")},{"to",to?.ToString("yyyy-MM-dd")}}));
+    private async Task Load(int p){loading=true;error=null;page=p;try{result=await Api.Orders(p,status,search,from.HasValue?new DateTimeOffset(Time.UtcStart(from.Value)):null,to.HasValue?new DateTimeOffset(Time.UtcStart(to.Value.AddDays(1))):null);}catch(HttpRequestException e){error=e.Message;result=null;}finally{loading=false;}}
+}
