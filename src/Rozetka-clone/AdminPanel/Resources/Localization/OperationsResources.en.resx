@@ -140,4 +140,6 @@
   <data name="Kind_CHAT" xml:space="preserve"><value>Personal support</value></data>
   <data name="ReplyToCustomer" xml:space="preserve"><value>Reply to customer</value></data>
   <data name="UnreadMessages" xml:space="preserve"><value>Unread messages</value></data>
+  <data name="LinkedItem" xml:space="preserve"><value>Order / product</value></data>
+  <data name="Product" xml:space="preserve"><value>Product</value></data>
 </root>
