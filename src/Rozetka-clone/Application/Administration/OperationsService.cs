@@ -23,14 +23,14 @@ public sealed class OperationsService(IApplicationDbContext db)
         return new(days, await period.CountAsync(ct), await db.Orders.CountAsync(o => o.CancelledAt >= since, ct), amount,
             await db.SupportTickets.CountAsync(t => t.Status == "OPEN" || t.Status == "IN_PROGRESS" || t.Status == "APPROVED", ct),
             await db.SupportTickets.CountAsync(t => (t.Status == "OPEN" || t.Status == "IN_PROGRESS" || t.Status == "APPROVED") && t.CreatedAt < stale
-                && !db.SupportMessages.Any(m => m.TicketId == t.Id && (m.AuthorRole == "Administrator" || m.AuthorRole == "Manager") && m.CreatedAt >= stale), ct),
+                && !db.SupportMessages.Any(m => m.TicketId == t.Id && !m.Internal && (m.AuthorRole == "Administrator" || m.AuthorRole == "Manager") && m.CreatedAt >= stale), ct),
             await db.Products.CountAsync(p => p.Status == ProductStatus.ACTIVE && !db.ProductVariants.Any(v => v.ProductId == p.Id && v.IsActive && v.StockQuantity > 0), ct),
             await db.Products.CountAsync(p => p.Status == ProductStatus.PENDING_MODERATION && p.UpdatedAt < moderationStale, ct));
     }
     public async Task<PagedResponse<CustomerRow>> CustomersAsync(int page, string? search, CancellationToken ct)
     {
         OrderService.ValidatePage(page, 12);
-        var query = db.Users.AsNoTracking().Where(u => !u.IsDeleted && (db.Orders.Any(o => o.CustomerId == u.Id) || db.Reviews.Any(r => r.UserId == u.Id)));
+        var query = db.Users.AsNoTracking().Where(u => !u.IsDeleted && (db.Orders.Any(o => o.CustomerId == u.Id) || db.Reviews.Any(r => r.UserId == u.Id) || db.SupportTickets.Any(t => t.CustomerId == u.Id)));
         if (!string.IsNullOrWhiteSpace(search))
         {
             var term = search.Trim().ToLowerInvariant();
@@ -60,10 +60,13 @@ public sealed class OperationsService(IApplicationDbContext db)
                              orderby r.CreatedAt descending, r.Id
                              select new CustomerReview(r.Id, p.Id, p.Name, r.Rating, r.Comment, r.Status.ToString(), r.CreatedAt)).Take(100).ToListAsync(ct);
         var tickets = await (from t in db.SupportTickets.AsNoTracking()
-                             join o in db.Orders.AsNoTracking() on t.OrderId equals o.Id
+                             join order in db.Orders.AsNoTracking() on t.OrderId equals order.Id into orderGroup
+                             from o in orderGroup.DefaultIfEmpty()
+                             join product in db.Products.AsNoTracking() on t.ProductId equals product.Id into productGroup
+                             from p in productGroup.DefaultIfEmpty()
                              where t.CustomerId == id
                              orderby t.UpdatedAt descending, t.Id
-                             select new TicketRow(t.Id, o.Id, o.OrderNumber, t.CustomerId, o.RecipientName, t.Kind, t.Subject, t.Status, t.CreatedAt, t.UpdatedAt, t.Version)).Take(100).ToListAsync(ct);
+                             select new TicketRow(t.Id, t.OrderId, o == null ? null : o.OrderNumber, t.CustomerId, (user.FirstName + " " + user.LastName).Trim(), t.Kind, t.Subject, t.Status, t.CreatedAt, t.UpdatedAt, t.Version, t.ProductId, p == null ? null : p.Name)).Take(100).ToListAsync(ct);
         var amount = await all.Where(o => o.Status != OrderStatus.CANCELLED && o.Status != OrderStatus.RETURNED).SumAsync(o => (decimal?)o.TotalAmount, ct) ?? 0;
         return new(new(id, $"{user.FirstName} {user.LastName}".Trim(), user.Email, await all.CountAsync(ct), amount, await db.Reviews.CountAsync(r => r.UserId == id && r.Status != ReviewStatus.DELETED, ct), orders.FirstOrDefault()?.CreatedAt),
             orders.Select(o => OrderService.Row(o, items.Where(i => i.OrderId == o.Id))).ToList(), reviews, tickets);

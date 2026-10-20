@@ -1,4 +1,5 @@
 using Domain.Entities.Orders;
+using Domain.Entities.Product;
 using Domain.Entities.Support;
 using Domain.Entities.Users;
 using Microsoft.EntityFrameworkCore;
@@ -16,10 +17,18 @@ public sealed class SupportTicketConfiguration : IEntityTypeConfiguration<Suppor
         builder.Property(x => x.Kind).HasMaxLength(20).IsRequired();
         builder.Property(x => x.Status).HasMaxLength(20).IsRequired();
         builder.Property(x => x.Version).IsConcurrencyToken();
+        builder.Property(x => x.CustomerReadAt).IsConcurrencyToken();
+        builder.Property(x => x.StaffReadAt).IsConcurrencyToken();
         builder.HasIndex(x => new { x.Status, x.UpdatedAt });
         builder.HasIndex(x => x.CustomerId);
         builder.HasIndex(x => x.OrderId);
         builder.HasIndex(x => new { x.OrderId, x.Kind }).IsUnique().HasFilter("\"Kind\" = 'RETURN' AND \"Status\" IN ('OPEN', 'IN_PROGRESS', 'APPROVED')");
+        builder.HasIndex(x => x.CustomerId).IsUnique()
+            .HasFilter("\"Kind\" = 'CHAT' AND \"Status\" <> 'CLOSED'");
+        builder.HasIndex(x => new { x.CustomerId, x.UpdatedAt });
+        builder.HasIndex(x => new { x.CustomerId, x.ProductId }).IsUnique()
+            .HasFilter("\"Kind\" = 'QUESTION' AND \"ProductId\" IS NOT NULL AND \"Status\" <> 'CLOSED'");
+        builder.HasOne<Product>().WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Order>().WithMany().HasForeignKey(x => x.OrderId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<User>().WithMany().HasForeignKey(x => x.CustomerId).OnDelete(DeleteBehavior.Restrict);
     }

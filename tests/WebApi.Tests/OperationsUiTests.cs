@@ -82,6 +82,8 @@ public sealed class OperationsUiTests
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             var path = request.RequestUri!.AbsolutePath;
+            if (path == "/api/v1/support/" + TicketId + "/read" && request.Method == HttpMethod.Post)
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NoContent));
             object value = path switch
             {
                 "/api/v1/admin/catalog/filter-options" => new Contracts.Catalog.CatalogFilterOptionsDto([], [], []),

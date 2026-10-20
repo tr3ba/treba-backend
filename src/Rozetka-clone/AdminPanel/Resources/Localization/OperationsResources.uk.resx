@@ -77,9 +77,9 @@
   <data name="Enabled" xml:space="preserve"><value>Увімкнено</value></data>
   <data name="Remove" xml:space="preserve"><value>Прибрати</value></data>
   <data name="AddCoupon" xml:space="preserve"><value>Додати промокод</value></data>
-  <data name="TicketSearch" xml:space="preserve"><value>Тема, номер замовлення або покупець</value></data>
+  <data name="TicketSearch" xml:space="preserve"><value>Тема, товар, номер замовлення або покупець</value></data>
   <data name="Kind" xml:space="preserve"><value>Тип звернення</value></data>
-  <data name="Kind_QUESTION" xml:space="preserve"><value>Питання щодо замовлення</value></data>
+  <data name="Kind_QUESTION" xml:space="preserve"><value>Питання про товар або замовлення</value></data>
   <data name="Kind_RETURN" xml:space="preserve"><value>Повернення</value></data>
   <data name="FindOrder" xml:space="preserve"><value>Знайти замовлення за номером або покупцем</value></data>
   <data name="Subject" xml:space="preserve"><value>Тема</value></data>
@@ -133,4 +133,11 @@
   <data name="Before" xml:space="preserve"><value>Було</value></data>
   <data name="After" xml:space="preserve"><value>Стало</value></data>
   <data name="BaselineAt" xml:space="preserve"><value>Версія від {0}</value></data>
+  <data name="AutoRefreshChat" xml:space="preserve"><value>Нові повідомлення з’являються автоматично</value></data>
+  <data name="ConversationClosed" xml:space="preserve"><value>Переписку завершено.</value></data>
+  <data name="ConversationContext" xml:space="preserve"><value>Покупець і контекст</value></data>
+  <data name="EarlierMessages" xml:space="preserve"><value>Попередні повідомлення</value></data>
+  <data name="Kind_CHAT" xml:space="preserve"><value>Особиста підтримка</value></data>
+  <data name="ReplyToCustomer" xml:space="preserve"><value>Відповідь покупцю</value></data>
+  <data name="UnreadMessages" xml:space="preserve"><value>Непрочитані повідомлення</value></data>
 </root>

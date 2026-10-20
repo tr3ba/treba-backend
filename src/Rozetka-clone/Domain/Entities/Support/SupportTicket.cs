@@ -3,7 +3,7 @@ namespace Domain.Entities.Support;
 public sealed class SupportTicket
 {
     public Guid Id { get; set; } = Guid.NewGuid();
-    public Guid OrderId
+    public Guid? OrderId
     {
         get; set;
     }
@@ -11,6 +11,9 @@ public sealed class SupportTicket
     {
         get; set;
     }
+    public Guid? ProductId { get; set; }
+    public DateTimeOffset? CustomerReadAt { get; set; }
+    public DateTimeOffset? StaffReadAt { get; set; }
     public string Kind { get; set; } = "QUESTION";
     public string Subject { get; set; } = "";
     public string Status { get; set; } = "OPEN";

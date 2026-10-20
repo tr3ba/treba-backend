@@ -86,20 +86,25 @@ public sealed record PromotionView(Guid Id, string Name, string Description, str
 
 public sealed class CreateTicketRequest
 {
-    public Guid OrderId
+    public Guid? OrderId
     {
         get; set;
     }
+    public Guid? ProductId { get; set; }
+    public Guid? ClientRequestId { get; set; }
     [Required] public string Kind { get; set; } = "QUESTION";
     [Required, StringLength(200)] public string Subject { get; set; } = "";
     [Required, StringLength(4000)] public string Message { get; set; } = "";
 }
-public sealed record TicketMessageRequest([Required, StringLength(4000)] string Message, bool Internal = false);
+public sealed record TicketMessageRequest([Required, StringLength(4000)] string Message, bool Internal = false, Guid? ClientMessageId = null);
+public sealed record ReadTicketRequest(Guid MessageId);
 public sealed record ChangeTicketStatusRequest([Required] string Status, Guid ExpectedVersion);
-public sealed record TicketRow(Guid Id, Guid OrderId, string OrderNumber, Guid CustomerId, string CustomerName,
-    string Kind, string Subject, string Status, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt, Guid Version);
+public sealed record TicketRow(Guid Id, Guid? OrderId, string? OrderNumber, Guid CustomerId, string CustomerName,
+    string Kind, string Subject, string Status, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt, Guid Version,
+    Guid? ProductId = null, string? ProductName = null, string? LastMessage = null, int UnreadCount = 0, string? ProductSlug = null);
 public sealed record TicketMessageView(Guid Id, string AuthorName, string AuthorRole, string Message, bool Internal, DateTimeOffset CreatedAt);
-public sealed record TicketDetails(TicketRow Summary, IReadOnlyList<TicketMessageView> Messages, IReadOnlyList<string> AllowedStatuses);
+public sealed record TicketDetails(TicketRow Summary, IReadOnlyList<TicketMessageView> Messages, IReadOnlyList<string> AllowedStatuses, bool HasEarlierMessages = false);
+public sealed record TicketMessagePage(IReadOnlyList<TicketMessageView> Messages, bool HasMore);
 public sealed record CustomerRow(Guid Id, string Name, string Email, int Orders, decimal OrderedAmount, int Reviews, DateTimeOffset? LastOrderAt);
 public sealed record CustomerDetails(CustomerRow Customer, IReadOnlyList<OrderRow> Orders,
     IReadOnlyList<CustomerReview> Reviews, IReadOnlyList<TicketRow> Tickets);
