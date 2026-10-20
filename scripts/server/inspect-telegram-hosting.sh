@@ -59,7 +59,10 @@ environment = dict(os.environ, PGHOST=fields['host'], PGPORT=fields.get('port', 
     PGOPTIONS='-c default_transaction_read_only=on -c statement_timeout=10000')
 sql = '''SELECT u."Email", r."Name" AS "Role", u."Status", u."IsDeleted",
 u."AuthenticatorEnabled", u."EmailTwoFactorEnabled",
-EXISTS(SELECT 1 FROM telegram_bindings b WHERE b."UserId"=u."Id") AS "TelegramGuardLinked"
+EXISTS(SELECT 1 FROM telegram_bindings b WHERE b."UserId"=u."Id") AS "TelegramGuardLinked",
+(SELECT b."Username" FROM telegram_bindings b WHERE b."UserId"=u."Id") AS "TelegramUsername",
+(SELECT b."LinkedAt" FROM telegram_bindings b WHERE b."UserId"=u."Id") AS "TelegramLinkedAt",
+(SELECT right(b."TelegramUserId"::text,4) FROM telegram_bindings b WHERE b."UserId"=u."Id") AS "TelegramIdSuffix"
 FROM users u JOIN roles r ON r."Id"=u."RoleId" WHERE lower(u."Email")=lower(:'account_email');'''
 command = ['docker', 'run', '--rm', '-i', '--network', 'host']
 for key in ('PGHOST', 'PGPORT', 'PGDATABASE', 'PGUSER', 'PGPASSWORD', 'PGSSLMODE', 'PGCONNECT_TIMEOUT', 'PGOPTIONS'):
@@ -69,6 +72,15 @@ result = subprocess.run(command, input=sql, text=True, env=environment, capture_
 if result.returncode:
     raise SystemExit('Read-only account inspection failed; no database credentials were printed')
 print('ACCOUNT_ACCESS_CHECK\n' + result.stdout)
+try:
+    import urllib.request
+    request = urllib.request.Request('https://api.telegram.org/bot' + values['Telegram__BotToken'] + '/getMe',
+        data=b'{}', headers={'Content-Type':'application/json'})
+    with urllib.request.urlopen(request, timeout=15) as response:
+        bot = json.load(response)
+    print('ACTUAL_BOT_USERNAME=' + bot.get('result', {}).get('username', '<missing>'))
+except Exception as error:
+    print('BOT_IDENTITY_CHECK_FAILED=' + type(error).__name__)
 PY
 fi
 
