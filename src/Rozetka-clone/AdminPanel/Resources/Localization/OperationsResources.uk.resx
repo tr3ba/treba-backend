@@ -142,4 +142,7 @@
   <data name="UnreadMessages" xml:space="preserve"><value>Непрочитані повідомлення</value></data>
   <data name="LinkedItem" xml:space="preserve"><value>Замовлення / товар</value></data>
   <data name="Product" xml:space="preserve"><value>Товар</value></data>
+  <data name="SellerQuestions" xml:space="preserve"><value>Питання про товари</value></data>
+  <data name="SellerQueueHint" xml:space="preserve"><value>Тут лише питання про ваші товари. Відповідайте покупцям напряму.</value></data>
+  <data name="TrebaQueueHint" xml:space="preserve"><value>У чаті TREBA відповідають адміністратори, менеджери та модератори. Питання про товари надходять їхнім продавцям.</value></data>
 </root>

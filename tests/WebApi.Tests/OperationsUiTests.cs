@@ -63,6 +63,18 @@ public sealed class OperationsUiTests
         if (visible) { Assert.Contains("/products?stock=out&status=ACTIVE", html); Assert.DoesNotContain("amp;amp;", html); }
         Assert.False(AdminPanel.Auth.AdminAccess.CanAccess(role, "/storefront"));
         Assert.Equal(role is "Seller" or "Manager" or "Administrator", AdminPanel.Auth.AdminAccess.CanAccess(role, "/orders/" + OrderId));
+        Assert.True(AdminPanel.Auth.AdminAccess.CanAccess(role, "/support/" + TicketId));
+    }
+    [Theory]
+    [InlineData("Seller", false, false)]
+    [InlineData("Moderator", true, false)]
+    [InlineData("Manager", true, true)]
+    public async Task SupportWorkspace_OnlyShowsRoleAppropriateControls(string role,bool notes,bool customerHistory)
+    {
+        var html=await Render<TicketDetailsPage>(new(){["Id"]=TicketId},role);
+        Assert.Equal(notes,html.Contains("type=\"checkbox\""));
+        Assert.Equal(customerHistory,html.Contains("/customer-activity/"));
+        Assert.False(AdminPanel.Auth.AdminAccess.CanAccess("Customer","/support"));
     }
     private static async Task<string> Render<T>(Dictionary<string, object?> parameters, string role = "Manager") where T : IComponent
     {

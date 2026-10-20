@@ -20,7 +20,7 @@
             @if (Can("/users")) { <div class="nav-item"><NavLink class="nav-link" href="users"><i class="bi bi-people"></i> @L["Users"]</NavLink></div> }
             @if (Can("/sellers")) { <div class="nav-item"><NavLink class="nav-link" href="sellers"><i class="bi bi-shop"></i> @L["Sellers"]</NavLink></div> }
             @if (Can("/reviews")) { <div class="nav-item"><NavLink class="nav-link" href="reviews"><i class="bi bi-star"></i> @L["Reviews"]@if (ReviewModeration.PendingCount > 0) { <span class="menu-counter">@ReviewModeration.PendingCount</span> }</NavLink></div> }
-            @if (Can("/support")) { <div class="nav-item"><NavLink class="nav-link" href="support"><i class="bi bi-chat-dots"></i> @L["SupportAndReturns"]</NavLink></div> }
+            @if (Can("/support")) { <div class="nav-item"><NavLink class="nav-link" href="support"><i class="bi bi-chat-dots"></i> @(_role == "Seller" ? O["SellerQuestions"] : L["SupportAndReturns"])</NavLink></div> }
             @if (Can("/customer-activity")) { <div class="nav-item"><NavLink class="nav-link" href="customer-activity"><i class="bi bi-activity"></i> @L["CustomerActivity"]</NavLink></div> }
         }
         @if (Can("/loyalty"))
