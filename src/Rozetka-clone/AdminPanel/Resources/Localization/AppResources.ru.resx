@@ -674,7 +674,7 @@
   <data name="TelegramLinkExpired" xml:space="preserve"><value>Время привязки истекло. Нажмите «Привязать Telegram», чтобы повторить.</value></data>
   <data name="TelegramUnlinkConfirm" xml:space="preserve"><value>Отключить Telegram? Mini App и подтверждение новых входов через Guard станут недоступны.</value></data>
   <data name="GuardSignIn" xml:space="preserve"><value>Вход через Guard</value></data>
-  <data name="GuardSignInHint" xml:space="preserve"><value>Для продавцов и модераторов с привязанным Telegram.</value></data>
+  <data name="GuardSignInHint" xml:space="preserve"><value>Для сотрудников и продавцов с привязанным Telegram.</value></data>
   <data name="GuardScanHint" xml:space="preserve"><value>Откройте Treba в Telegram → Guard и отсканируйте QR-код.</value></data>
   <data name="GuardQrAlt" xml:space="preserve"><value>Одноразовый QR-код входа Treba Guard</value></data>
   <data name="GuardMatchCode" xml:space="preserve"><value>Сверьте код:</value></data>

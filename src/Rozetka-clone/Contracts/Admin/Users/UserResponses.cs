@@ -25,7 +25,8 @@ public sealed record UserDetailsResponse(
     DateTimeOffset? UpdatedAt,
     DateTimeOffset? LastLoginAt,
     UserProfileResponse? Profile,
-    IReadOnlyList<UserAddressResponse> Addresses
+    IReadOnlyList<UserAddressResponse> Addresses,
+    string? Role = null
 );
 
 public sealed record UserStatusResponse(

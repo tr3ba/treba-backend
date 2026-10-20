@@ -1780,6 +1780,9 @@ namespace Infrastructure.Migrations
                     b.Property<DateTimeOffset>("ExpiresAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("LoginChallengeId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("Version")
                         .IsConcurrencyToken()
                         .HasColumnType("uuid");
@@ -1789,6 +1792,8 @@ namespace Infrastructure.Migrations
                     b.HasIndex("ApprovedUserId");
 
                     b.HasIndex("ExpiresAt");
+
+                    b.HasIndex("LoginChallengeId");
 
                     b.ToTable("telegram_guard_challenges", (string)null);
                 });
@@ -2041,6 +2046,7 @@ namespace Infrastructure.Migrations
                         .HasColumnType("character varying(128)");
 
                     b.Property<DateTimeOffset?>("ConsumedAt")
+                        .IsConcurrencyToken()
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTimeOffset>("CreatedAt")
@@ -2743,6 +2749,11 @@ namespace Infrastructure.Migrations
                     b.HasOne("Domain.Entities.Users.User", null)
                         .WithMany()
                         .HasForeignKey("ApprovedUserId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("Domain.Entities.Users.AuthenticationChallenge", null)
+                        .WithMany()
+                        .HasForeignKey("LoginChallengeId")
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 

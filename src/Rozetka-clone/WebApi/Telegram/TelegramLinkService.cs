@@ -10,12 +10,12 @@ namespace WebApi.Telegram;
 
 public sealed class TelegramLinkService(ApplicationDbContext db, IOptions<TelegramOptions> options, TimeProvider clock)
 {
-    public static bool EligibleRole(string? role) => role is Roles.Moderator or Roles.Seller;
+    public static bool EligibleRole(string? role) => role is Roles.Administrator or Roles.Manager or Roles.Moderator or Roles.Seller;
     public async Task<User> RequireUserAsync(Guid userId, CancellationToken ct)
     {
         var user = await db.Users.Include(u => u.Role).SingleOrDefaultAsync(u => u.Id == userId, ct);
         if (user is null || user.IsDeleted || user.Status != UserStatus.Active || !EligibleRole(user.Role?.Name))
-            throw new UnauthorizedAccessException("Telegram доступен только активным продавцам и модераторам Treba.");
+            throw new UnauthorizedAccessException("Telegram доступен только активным сотрудникам и продавцам Treba.");
         return user;
     }
     public TelegramConfigurationDto Configuration() => new(options.Value.Configured,
@@ -85,7 +85,7 @@ public sealed class TelegramLinkService(ApplicationDbContext db, IOptions<Telegr
         var now = clock.GetUtcNow();
         foreach (var challenge in await db.TelegramLinkChallenges.Where(c => c.UserId == userId && c.CompletedAt == null && c.ExpiresAt > now).ToListAsync(ct))
         { challenge.ExpiresAt = now; challenge.Version = Guid.NewGuid(); }
-        foreach (var guard in await db.TelegramGuardChallenges.Where(c => c.ApprovedUserId == userId && c.ConsumedAt == null && c.ExpiresAt > now).ToListAsync(ct))
+        foreach (var guard in await db.TelegramGuardChallenges.Where(c => (c.ApprovedUserId == userId || db.AuthenticationChallenges.Any(a => a.Id == c.LoginChallengeId && a.UserId == userId)) && c.ConsumedAt == null && c.ExpiresAt > now).ToListAsync(ct))
         { guard.ExpiresAt = now; guard.Version = Guid.NewGuid(); }
         await db.SaveChangesAsync(ct);
     }

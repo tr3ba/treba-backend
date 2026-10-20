@@ -19,16 +19,16 @@ public sealed class TelegramAccountController(TelegramLinkService links, Telegra
 
     [HttpGet("configuration"), AllowAnonymous]
     public TelegramConfigurationDto Configuration() => links.Configuration();
-    [HttpGet("link"), Authorize(Roles = Roles.Moderator + "," + Roles.Seller)]
+    [HttpGet("link"), Authorize(Roles = "Administrator,Manager,Moderator,Seller")]
     public Task<TelegramLinkDto> Link(CancellationToken ct) => links.StatusAsync(UserId, ct);
-    [HttpPost("link"), Authorize(Roles = Roles.Moderator + "," + Roles.Seller), EnableRateLimiting("telegram-sensitive")]
+    [HttpPost("link"), Authorize(Roles = "Administrator,Manager,Moderator,Seller"), EnableRateLimiting("telegram-sensitive")]
     public Task<TelegramLinkStartDto> BeginLink(CancellationToken ct) => links.BeginAsync(UserId, ct);
-    [HttpPost("link/confirm"), Authorize(Roles = Roles.Moderator + "," + Roles.Seller)]
+    [HttpPost("link/confirm"), Authorize(Roles = "Administrator,Manager,Moderator,Seller")]
     public Task<TelegramLinkDto> ConfirmLink(ConfirmTelegramLinkRequest request, CancellationToken ct) => links.ConfirmAsync(UserId, request.ChallengeId, ct);
-    [HttpDelete("link"), Authorize(Roles = Roles.Moderator + "," + Roles.Seller)]
+    [HttpDelete("link"), Authorize(Roles = "Administrator,Manager,Moderator,Seller")]
     public async Task<IActionResult> Unlink(CancellationToken ct) { await links.UnlinkAsync(UserId, ct); return NoContent(); }
     [HttpPost("guard"), AllowAnonymous, EnableRateLimiting("telegram-sensitive")]
-    public Task<GuardStartDto> StartGuard(CreateGuardRequest request, CancellationToken ct) => guard.CreateAsync(request.DeviceName, HttpContext.Connection.RemoteIpAddress?.ToString(), ct);
+    public Task<GuardStartDto> StartGuard(CreateGuardRequest request, CancellationToken ct) => guard.CreateAsync(request.DeviceName, HttpContext.Connection.RemoteIpAddress?.ToString(), ct, request.LoginChallengeId);
     [HttpPost("guard/status"), AllowAnonymous, EnableRateLimiting("telegram-poll")]
     public Task<GuardStatusDto> GuardStatus(GuardBrowserRequest request, CancellationToken ct) => guard.StatusAsync(request.Id, request.BrowserSecret, ct);
     [HttpPost("guard/complete"), AllowAnonymous, EnableRateLimiting("telegram-sensitive")]

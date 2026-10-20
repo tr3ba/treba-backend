@@ -11,6 +11,7 @@ public sealed class AuthenticationChallengeConfiguration : IEntityTypeConfigurat
     )
     {
         builder.ToTable("authentication_challenges");
+        builder.Property(challenge => challenge.ConsumedAt).IsConcurrencyToken();
         builder.HasKey(challenge => challenge.Id);
         builder
             .Property(challenge => challenge.Purpose)

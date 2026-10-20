@@ -6,6 +6,7 @@ public static class TwoFactorMethods
 {
     public const string Authenticator = "authenticator";
     public const string Email = "email";
+    public const string Telegram = "telegram";
 }
 
 public sealed record LoginResponse(
@@ -26,7 +27,7 @@ public sealed record SendEmailLoginCodeRequest(
 
 public sealed record VerifyLoginSecondFactorRequest(
     Guid ChallengeId,
-    [Required, RegularExpression("^(authenticator|email)$")] string Method,
+    [Required, RegularExpression("^(authenticator|email|telegram)$")] string Method,
     [Required, RegularExpression("^[0-9]{6}$")] string Code
 );
 

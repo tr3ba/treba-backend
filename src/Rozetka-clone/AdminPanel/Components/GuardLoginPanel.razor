@@ -27,6 +27,7 @@
 
 @code {
     [Parameter] public EventCallback<LoginResponse> OnCompleted {get;set;}
+    [Parameter] public Guid? LoginChallengeId {get;set;}
     private GuardStartDto? guard;
     private bool configured,busy;
     private string? error;
@@ -39,7 +40,7 @@
         try
         {
             var device=await Js.InvokeAsync<string>("trebaGuard.deviceName");
-            guard=await Telegram.Post<GuardStartDto>("api/telegram/guard",new CreateGuardRequest(device));
+            guard=await Telegram.Post<GuardStartDto>("api/telegram/guard",new CreateGuardRequest(device,LoginChallengeId));
             polling=new();_ = Poll(guard,polling.Token);
         }
         catch(HttpRequestException ex){error=ex.Message;}

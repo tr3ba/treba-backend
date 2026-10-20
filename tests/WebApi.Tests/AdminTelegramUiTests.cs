@@ -36,6 +36,8 @@ public sealed class AdminTelegramUiTests
     [Theory]
     [InlineData("Seller")]
     [InlineData("Moderator")]
+    [InlineData("Administrator")]
+    [InlineData("Manager")]
     public async Task Profile_LinkedAccountShowsItsIdentity_WithoutLinkingOrRefreshInstructions(string role)
     {
         using var api = new FixtureApi(new TelegramLinkDto(true, true, "fixture_account", 12345, DateTimeOffset.UtcNow, null, null, null));
@@ -68,8 +70,6 @@ public sealed class AdminTelegramUiTests
     }
 
     [Theory]
-    [InlineData("Administrator")]
-    [InlineData("Manager")]
     [InlineData("Customer")]
     public async Task Profile_DoesNotOfferLinkingToOtherRoles(string role)
     {

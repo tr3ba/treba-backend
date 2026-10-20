@@ -32,6 +32,11 @@ EC2 завантажує Docker image з ECR та запускає backend conta
 
 ## Runtime
 
+The production AdminPanel is also published in the reviewed backend image and runs as
+`treba-admin` behind Caddy at `https://admin.treba.duckdns.org`. It has no published host port.
+Website sign-in and the separate development login are described in
+[website admin login](website-admin-login.md).
+
 Backend працює в Docker-контейнері.
 
 Backend port:

@@ -674,7 +674,7 @@
   <data name="TelegramLinkExpired" xml:space="preserve"><value>The link has expired. Select “Link Telegram” to try again.</value></data>
   <data name="TelegramUnlinkConfirm" xml:space="preserve"><value>Unlink Telegram? The Mini App and approval of new Guard sign-ins will be unavailable.</value></data>
   <data name="GuardSignIn" xml:space="preserve"><value>Sign in with Guard</value></data>
-  <data name="GuardSignInHint" xml:space="preserve"><value>For sellers and moderators with a linked Telegram account.</value></data>
+  <data name="GuardSignInHint" xml:space="preserve"><value>For staff and sellers with a linked Telegram account.</value></data>
   <data name="GuardScanHint" xml:space="preserve"><value>Open Treba in Telegram → Guard and scan the QR code.</value></data>
   <data name="GuardQrAlt" xml:space="preserve"><value>Single-use Treba Guard sign-in QR code</value></data>
   <data name="GuardMatchCode" xml:space="preserve"><value>Match this code:</value></data>

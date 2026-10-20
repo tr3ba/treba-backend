@@ -10,7 +10,7 @@ public sealed record TelegramLinkStartDto(Guid Id, string BotUrl, DateTimeOffset
 public sealed record ConfirmTelegramLinkRequest(Guid ChallengeId);
 public sealed record TelegramUserDto(Guid Id, string Name, string Role, long TelegramId);
 
-public sealed record CreateGuardRequest([StringLength(200)] string? DeviceName);
+public sealed record CreateGuardRequest([StringLength(200)] string? DeviceName, Guid? LoginChallengeId = null);
 public sealed record GuardStartDto(Guid Id, string BrowserSecret, string QrPayload, string QrCodeDataUrl, string DisplayCode, DateTimeOffset ExpiresAt);
 public sealed record GuardBrowserRequest(Guid Id, [Required, StringLength(64)] string BrowserSecret);
 public sealed record GuardScanRequest([Required, StringLength(200)] string QrPayload);

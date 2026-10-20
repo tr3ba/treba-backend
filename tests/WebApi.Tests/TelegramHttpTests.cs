@@ -92,7 +92,7 @@ public sealed class TelegramHttpTests
 
     [Theory]
     [InlineData(Roles.Seller, HttpStatusCode.OK)] [InlineData(Roles.Moderator, HttpStatusCode.OK)]
-    [InlineData(Roles.Customer, HttpStatusCode.Unauthorized)] [InlineData(Roles.Administrator, HttpStatusCode.Unauthorized)]
+    [InlineData(Roles.Customer, HttpStatusCode.Unauthorized)] [InlineData(Roles.Administrator, HttpStatusCode.OK)] [InlineData(Roles.Manager, HttpStatusCode.OK)]
     public async Task MiniApp_RequiresSignedTelegramData_AndCurrentEligibleBinding(string role, HttpStatusCode expected)
     {
         await using var server = await ServerAsync(); using var client = server.GetTestClient(); Guid userId;
