@@ -11,6 +11,8 @@
 .seller-import-job { display:flex; justify-content:space-between; align-items:center; gap:16px; border-top:1px solid #e2e8f0; padding:20px 0; }
 .seller-import-job > div { display:grid; gap:8px; min-width:0; flex:1; }
 .seller-import-job a:not(.secondary-button) { overflow-wrap:anywhere; font-size:13px; color:#64748b; }
+.seller-import-job > .seller-import-retry { flex:0 1 320px; min-width:220px; }
+.seller-import-retry button { justify-self:start; }
 .seller-import-images { display:flex; gap:14px; overflow-x:auto; }
 .seller-import-images img { width:144px; height:144px; object-fit:contain; border:1px solid #e2e8f0; border-radius:12px; padding:8px; background:white; }
 .seller-import-new-brand { display:grid; gap:12px; padding:20px; background:#fff8f0; border:1px solid #fed7aa; border-radius:12px; }

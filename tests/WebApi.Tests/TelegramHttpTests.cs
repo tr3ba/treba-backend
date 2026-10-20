@@ -122,6 +122,35 @@ public sealed class TelegramHttpTests
     }
 
     [Theory]
+    [InlineData(false)] [InlineData(true)]
+    public async Task ImportRetry_WebsiteAndMiniAppAcceptCategory_AndLegacyRetryKeepsIt(bool telegram)
+    {
+        await using var server = await ServerAsync(); using var client = server.GetTestClient();
+        var clock = (TelegramTestData.Clock)server.Services.GetRequiredService<TimeProvider>(); Guid userId, categoryId, jobId;
+        using (var scope = server.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>(); var seed = await TelegramTestData.SeedAsync(db);
+            await TelegramTestData.AllowImportAsync(db, seed); userId = seed.User.Id; categoryId = seed.Category.Id;
+            if (telegram) await TelegramTestData.BindAsync(db, seed.User, clock);
+            jobId = Assert.Single(await scope.ServiceProvider.GetRequiredService<SellerImportQueue>().AddAsync(userId, new([new(TelegramTestData.SourceUrl)]), default)).Id;
+            (await db.SellerImportJobs.SingleAsync()).Status = "Failed"; await db.SaveChangesAsync();
+        }
+        if (telegram) client.DefaultRequestHeaders.Authorization = new("Tma", TelegramTestData.Signed(12345, clock.Now));
+        else { client.DefaultRequestHeaders.Add("X-Website-Role", Roles.Seller); client.DefaultRequestHeaders.Add("X-Website-User", userId.ToString()); }
+        var route = telegram ? "/api/telegram/mini/imports/queue" : "/api/v1/seller/imports/queue";
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync($"{route}/{jobId}/retry?categoryId=invalid", new { })).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await client.PostAsJsonAsync($"{route}/{jobId}/retry?categoryId={categoryId}", new { })).StatusCode);
+        var job = Assert.Single((await client.GetFromJsonAsync<List<ImportJobDto>>(route))!);
+        Assert.Equal(categoryId, job.CategoryId); Assert.Equal("Queued", job.Status);
+        using (var scope = server.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>(); (await db.SellerImportJobs.SingleAsync()).Status = "Failed"; await db.SaveChangesAsync();
+        }
+        Assert.Equal(HttpStatusCode.NoContent, (await client.PostAsync($"{route}/{jobId}/retry", null)).StatusCode);
+        Assert.Equal(categoryId, Assert.Single((await client.GetFromJsonAsync<List<ImportJobDto>>(route))!).CategoryId);
+    }
+
+    [Theory]
     [InlineData(Roles.Seller, HttpStatusCode.OK)] [InlineData(Roles.Moderator, HttpStatusCode.OK)]
     [InlineData(Roles.Customer, HttpStatusCode.Unauthorized)] [InlineData(Roles.Administrator, HttpStatusCode.OK)] [InlineData(Roles.Manager, HttpStatusCode.OK)]
     public async Task MiniApp_RequiresSignedTelegramData_AndCurrentEligibleBinding(string role, HttpStatusCode expected)

@@ -39,12 +39,19 @@ public sealed class SellerImportQueue(ApplicationDbContext db, SellerCategoryAcc
         return await Query(db.SellerImportJobs.AsNoTracking().Where(j => j.UserId == userId && ids.Contains(j.Id))).ToListAsync(ct);
     }
     public async Task<IReadOnlyList<ImportJobDto>> ListAsync(Guid userId, CancellationToken ct) => await Query(db.SellerImportJobs.AsNoTracking().Where(j => j.UserId == userId).OrderByDescending(j => j.CreatedAt).Take(100)).ToListAsync(ct);
-    public async Task RetryAsync(Guid userId, Guid id, CancellationToken ct)
+    public async Task RetryAsync(Guid userId, Guid id, CancellationToken ct, Guid? categoryId = null)
     {
         await RequireSeller(userId, ct);
         var job = await db.SellerImportJobs.SingleOrDefaultAsync(j => j.Id == id && j.UserId == userId, ct) ?? throw new KeyNotFoundException();
         var expired = job.PreviewId.HasValue && await db.ProductImportDrafts.AnyAsync(d => d.Id == job.PreviewId && d.SubmittedAt == null && d.ExpiresAt <= clock.GetUtcNow(), ct);
         if (job.Status != "Failed" && !(job.Status == "Ready" && expired)) throw new BusinessRuleException("Этот импорт нельзя повторить сейчас.");
+        if (categoryId.HasValue)
+        {
+            if (!await access.CanClassifyUnmappedImportsAsync(userId, ct))
+                throw new BusinessRuleException("Выбор категории импорта недоступен. Обратитесь к администратору.");
+            await access.EnsureAllowedAsync(userId, categoryId.Value, ct);
+            job.CategoryId = categoryId;
+        }
         job.Status = "Queued"; job.Attempts = 0; job.Error = null; job.PreviewId = null; job.LeaseUntil = null; job.UpdatedAt = clock.GetUtcNow(); job.Version = Guid.NewGuid();
         await db.SaveChangesAsync(ct);
     }
@@ -59,6 +66,6 @@ public sealed class SellerImportQueue(ApplicationDbContext db, SellerCategoryAcc
         return jobs.Select(j => new ImportJobDto(j.Id, j.BatchId, j.SourceUrl,
             db.ProductImportDrafts.Any(d => d.Id == j.PreviewId && d.SubmittedAt != null) ? "Submitted"
                 : j.Status == "Ready" && db.ProductImportDrafts.Any(d => d.Id == j.PreviewId && d.ExpiresAt <= now) ? "Expired" : j.Status,
-            j.Error, j.PreviewId, db.ProductImportDrafts.Where(d => d.Id == j.PreviewId).Select(d => d.ProductId).FirstOrDefault(), j.CreatedAt, j.Attempts));
+            j.Error, j.PreviewId, db.ProductImportDrafts.Where(d => d.Id == j.PreviewId).Select(d => d.ProductId).FirstOrDefault(), j.CreatedAt, j.Attempts) { CategoryId = j.CategoryId });
     }
 }
