@@ -92,7 +92,7 @@ public sealed class TelegramMiniAppController(ApplicationDbContext db, CatalogSe
     [HttpPost("imports/queue"), Authorize(Roles = Roles.Seller), EnableRateLimiting("telegram-import")]
     public Task<IReadOnlyList<ImportJobDto>> QueueImports(QueueImportsRequest request, [FromServices] SellerImportQueue queue, CancellationToken ct) => queue.AddAsync(UserId, request, ct);
     [HttpPost("imports/queue/{id:guid}/retry"), Authorize(Roles = Roles.Seller), EnableRateLimiting("telegram-import")]
-    public async Task<IActionResult> RetryImport(Guid id, [FromServices] SellerImportQueue queue, CancellationToken ct) { await queue.RetryAsync(UserId, id, ct); return NoContent(); }
+    public async Task<IActionResult> RetryImport(Guid id, [FromServices] SellerImportQueue queue, CancellationToken ct, [FromQuery] Guid? categoryId = null) { await queue.RetryAsync(UserId, id, ct, categoryId); return NoContent(); }
     [HttpGet("duplicates"), Authorize(Roles = Roles.Seller)]
     public Task<IReadOnlyList<ProductDuplicateDto>> Duplicates(Guid brandId, string? manufacturerPartNumber, string? barcode, Guid? excludeId,
         [FromServices] CatalogDuplicateService duplicates, CancellationToken ct) => duplicates.FindAsync(UserId, brandId, manufacturerPartNumber, barcode, excludeId, ct);

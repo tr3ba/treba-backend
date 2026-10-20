@@ -342,6 +342,7 @@ async function importPage() {
 async function importQueuePage() {
     if (!isSeller()) throw new Error('Очередь доступна продавцу.');
     const ticket = generation, panel = el('div', { class: 'stack' }), feedback = el('p', { class: 'hint', role: 'status' });
+    const retryCategories = new Map();
     const page = el('div', {}, back(() => navigate('import')), heading('Очередь импорта', 'Можно закрыть Telegram: загрузка продолжится на сервере.'), feedback, panel);
     async function refresh() {
         if (generation !== ticket) return;
@@ -349,12 +350,15 @@ async function importQueuePage() {
             const rows = await request('imports/queue'); if (generation !== ticket) return;
             feedback.textContent = 'Обновлено: ' + new Date().toLocaleTimeString();
             panel.replaceChildren(...(rows.length ? rows.map(row => {
-                const retry = button('Повторить загрузку', () => perform(retry, async () => { await request(`imports/queue/${row.id}/retry`, 'POST', {}); await refresh(); }), 'secondary wide', !!preview);
+                const canRetry = ['Failed', 'Expired'].includes(row.status);
+                let categoryId = retryCategories.has(row.id) ? retryCategories.get(row.id) : row.categoryId || '';
+                const category = canRetry && bootstrap.canClassifyImports ? field('Категория Treba', select([{ id: '', name: 'Выберите категорию' }, ...bootstrap.categories.filter(c => bootstrap.allowedCategoryIds.includes(c.id))], categoryId, value => { categoryId = value; retryCategories.set(row.id, value); })) : null;
+                const retry = button('Повторить загрузку', () => perform(retry, async () => { await request(`imports/queue/${row.id}/retry` + (bootstrap.canClassifyImports && categoryId ? '?categoryId=' + encodeURIComponent(categoryId) : ''), 'POST', {}); retryCategories.delete(row.id); await refresh(); }), 'secondary wide', !!preview);
                 return el('section', { class: 'card stack' }, el('strong', {}, { Queued: 'В очереди', Processing: 'Загружается…', Ready: 'Готов предпросмотр', Failed: 'Не удалось загрузить', Expired: 'Предпросмотр истёк', Submitted: 'Отправлен на модерацию' }[row.status] || row.status),
                     el('a', { class: 'source-link', href: row.sourceUrl, target: '_blank', rel: 'noopener noreferrer' }, row.sourceUrl), row.error ? el('p', { class: 'notice error' }, row.error) : null,
                     row.status === 'Ready' ? button('Проверить карточку', () => navigate('importPreview', { id: row.previewId }), 'primary wide')
                         : row.status === 'Submitted' && row.productId ? button('Открыть товар', () => navigate('product', { id: row.productId }), 'secondary wide')
-                        : ['Failed', 'Expired'].includes(row.status) ? retry : null);
+                        : canRetry ? el('div', { class: 'stack' }, category, retry) : null);
             }) : [empty('Очередь пуста', 'Добавьте ссылки на товары на экране импорта.')]));
             if (rows.some(row => ['Queued', 'Processing'].includes(row.status)) && !preview) workspaceTimer = setTimeout(refresh, 3000);
         } catch (error) { feedback.textContent = error.message; if (generation === ticket && !preview) workspaceTimer = setTimeout(refresh, 10000); }

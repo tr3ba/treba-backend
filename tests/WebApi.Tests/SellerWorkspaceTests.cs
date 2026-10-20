@@ -69,6 +69,37 @@ public sealed class SellerWorkspaceTests
     }
 
     [Fact]
+    public async Task Queue_RetryCanClassifyEachFailedLink_WithoutReaddingOrPublishing_AndRechecksAccess()
+    {
+        await using var db = TelegramTestData.Memory(); var seed = await TelegramTestData.SeedAsync(db);
+        seed.Category.Name = "Smartphones"; // Source says "Phones": no exact match and no administrator mapping.
+        var kitchen = new Domain.Entities.Category { Id = Guid.NewGuid(), ParentId = seed.Root.Id, Name = "Cookware", Slug = "cookware", IsActive = true };
+        db.Categories.Add(kitchen);
+        db.SellerCategoryGrants.Add(new() { SellerId = seed.Seller.Id, CategoryId = seed.Root.Id, IncludeDescendants = true });
+        await db.SaveChangesAsync();
+        var clock = new TelegramTestData.Clock(); var queue = new SellerImportQueue(db, new(db), clock);
+        var items = await queue.AddAsync(seed.User.Id, new([new(TelegramTestData.SourceUrl), new("https://rozetka.com.ua/test-pan/p234567/")]), default);
+        var runner = Runner(db, clock, new TelegramTestData.Source(), new Bot());
+        Assert.True(await runner.ImportOneAsync(default)); Assert.True(await runner.ImportOneAsync(default));
+        Assert.All(await queue.ListAsync(seed.User.Id, default), job => Assert.Equal("Failed", job.Status));
+        await Assert.ThrowsAsync<BusinessRuleException>(() => queue.RetryAsync(seed.User.Id, items[0].Id, default, Guid.NewGuid()));
+        await queue.RetryAsync(seed.User.Id, items[0].Id, default, seed.Category.Id);
+        await queue.RetryAsync(seed.User.Id, items[1].Id, default, kitchen.Id);
+        Assert.True(await runner.ImportOneAsync(default)); Assert.True(await runner.ImportOneAsync(default));
+        var jobs = await queue.ListAsync(seed.User.Id, default);
+        Assert.Equal(2, jobs.Count); Assert.All(jobs, job => Assert.Equal("Ready", job.Status));
+        foreach (var job in jobs) Assert.Equal(job.CategoryId, (await db.ProductImportDrafts.SingleAsync(d => d.Id == job.PreviewId)).CategoryId);
+        Assert.Equal(seed.Category.Id, jobs.Single(j => j.Id == items[0].Id).CategoryId);
+        Assert.Equal(kitchen.Id, jobs.Single(j => j.Id == items[1].Id).CategoryId);
+        Assert.Empty(await db.Products.ToListAsync()); Assert.Empty(await db.RozetkaCategoryMappings.ToListAsync());
+        clock.Now = clock.Now.AddHours(2);
+        db.SellerCategoryGrants.RemoveRange(await db.SellerCategoryGrants.ToListAsync()); await db.SaveChangesAsync();
+        await Assert.ThrowsAsync<BusinessRuleException>(() => queue.RetryAsync(seed.User.Id, items[0].Id, default, seed.Category.Id));
+        var other = await TelegramTestData.SeedAsync(db);
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => queue.RetryAsync(other.User.Id, items[0].Id, default, kitchen.Id));
+    }
+
+    [Fact]
     public async Task Bulk_RequiresExactPreviewActorScopeAndFreshVersions_AndCannotReplayOrPublish()
     {
         await using var db=TelegramTestData.Memory();var seed=await TelegramTestData.SeedAsync(db);await TelegramTestData.AllowImportAsync(db,seed);

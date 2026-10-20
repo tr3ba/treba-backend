@@ -13,8 +13,8 @@ public sealed class SellerImportsApiClient(HttpClient http)
     public Task<ImportPreviewDto> Preview(Guid id, CancellationToken ct = default) => Get<ImportPreviewDto>(id.ToString(), ct);
     public Task<List<ImportJobDto>> Add(QueueImportsRequest request, CancellationToken ct = default) => Post<List<ImportJobDto>>("queue", request, ct);
     public Task<CatalogLookupDto> CreateBrand(Guid id, string name, CancellationToken ct = default) => Post<CatalogLookupDto>($"{id}/brand", new CreateImportBrandRequest(name), ct);
-    public async Task Retry(Guid id, CancellationToken ct = default)
-    { using var response = await http.PostAsync(Root + $"queue/{id}/retry", null, ct); await CatalogApiClient.RequireSuccess(response); }
+    public async Task Retry(Guid id, CancellationToken ct = default, Guid? categoryId = null)
+    { using var response = await http.PostAsync(Root + $"queue/{id}/retry" + (categoryId.HasValue ? $"?categoryId={categoryId}" : ""), null, ct); await CatalogApiClient.RequireSuccess(response); }
     public async Task<Guid> Submit(Guid id, SubmitImportRequest request, CancellationToken ct = default)
     { var result = await Post<JsonElement>($"{id}/submit", request, ct); return result.GetProperty("productId").GetGuid(); }
     private async Task<T> Get<T>(string path, CancellationToken ct)

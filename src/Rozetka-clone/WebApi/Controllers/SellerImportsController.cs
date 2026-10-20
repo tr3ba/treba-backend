@@ -26,8 +26,8 @@ public sealed class SellerImportsController(ProductImportService imports, Seller
     public Task<IReadOnlyList<ImportJobDto>> Add(QueueImportsRequest request, CancellationToken ct) => queue.AddAsync(UserId, request, ct);
 
     [HttpPost("queue/{id:guid}/retry"), EnableRateLimiting("telegram-import")]
-    public async Task<IActionResult> Retry(Guid id, CancellationToken ct)
-    { await queue.RetryAsync(UserId, id, ct); return NoContent(); }
+    public async Task<IActionResult> Retry(Guid id, CancellationToken ct, [FromQuery] Guid? categoryId = null)
+    { await queue.RetryAsync(UserId, id, ct, categoryId); return NoContent(); }
 
     [HttpGet("{id:guid}")]
     public Task<ImportPreviewDto> Preview(Guid id, CancellationToken ct) => imports.GetAsync(UserId, id, ct);

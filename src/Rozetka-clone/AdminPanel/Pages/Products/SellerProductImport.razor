@@ -37,7 +37,16 @@ else if (preview is null)
                 <div><strong>@L["ImportStatus" + job.Status]</strong><a href="@job.SourceUrl" target="_blank" rel="noopener noreferrer">@job.SourceUrl</a>@if(job.Error is not null){<p class="feedback-error">@job.Error</p>}</div>
                 @if(job.ProductId.HasValue){<a class="secondary-button" href="/products">@L["BackToProducts"]</a>}
                 else if(job.Status == "Ready" && job.PreviewId.HasValue){<button class="primary-button" disabled="@busy" @onclick="() => OpenPreview(job.PreviewId.Value)">@L["ImportReview"]</button>}
-                @if(job.Status is "Failed" or "Expired"){<button class="secondary-button" disabled="@busy" @onclick="() => Retry(job.Id)">@L["Retry"]</button>}
+                @if(job.Status is "Failed" or "Expired")
+                {
+                    <div class="seller-import-retry">
+                        @if(options.CanClassifyImports)
+                        {
+                            <label class="field-group"><span>@L["Category"]</span><select class="form-control" disabled="@busy" value="@RetryCategory(job)" @onchange="e => SelectRetryCategory(job.Id, e.Value?.ToString())"><option value="">@L["SelectCategory"]</option>@foreach(var category in options.Categories){<option value="@category.Id">@category.Name</option>}</select></label>
+                        }
+                        <button class="secondary-button" disabled="@busy" @onclick="() => Retry(job)">@L["Retry"]</button>
+                    </div>
+                }
             </article>
         }
     </section>
@@ -94,6 +103,7 @@ else
     private string links = "", brandName = "";
     private string? error, notice;
     private Guid? categoryId;
+    private readonly Dictionary<Guid, Guid?> retryCategories = [];
     private bool busy, completed, disposed;
     private bool pollStarted;
     private string userScope = "";
@@ -140,7 +150,9 @@ else
         await Imports.Add(new(urls.Select(url => new ImportUrlRequest(url, categoryId)).ToList()), lifetime.Token);
         links = ""; jobs = await Imports.Jobs(lifetime.Token); notice = L["ImportQueued"];
     });
-    private Task Retry(Guid id) => Run(async () => { await Imports.Retry(id, lifetime.Token); jobs = await Imports.Jobs(lifetime.Token); });
+    private Guid? RetryCategory(ImportJobDto job) => retryCategories.TryGetValue(job.Id, out var selected) ? selected : job.CategoryId;
+    private void SelectRetryCategory(Guid id, string? value) => retryCategories[id] = Guid.TryParse(value, out var selected) ? selected : null;
+    private Task Retry(ImportJobDto job) => Run(async () => { await Imports.Retry(job.Id, lifetime.Token, options!.CanClassifyImports ? RetryCategory(job) : null); retryCategories.Remove(job.Id); jobs = await Imports.Jobs(lifetime.Token); });
     private Task OpenPreview(Guid id) => Run(async () =>
     {
         var data = await Imports.Preview(id, lifetime.Token);

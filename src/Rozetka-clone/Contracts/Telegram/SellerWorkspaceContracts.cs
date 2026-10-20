@@ -27,7 +27,10 @@ public sealed class CreateSellerWorkspaceRequest : IValidatableObject
 public sealed record SellerWorkspaceCreatedDto(Guid UserId, Guid SellerId, Guid StoreId, string Email, string Status);
 public sealed record QueueImportsRequest([Required, MinLength(1), MaxLength(20)] List<ImportUrlRequest> Items);
 public sealed record ImportJobDto(Guid Id, Guid BatchId, string SourceUrl, string Status, string? Error, Guid? PreviewId,
-    Guid? ProductId, DateTimeOffset CreatedAt, int Attempts);
+    Guid? ProductId, DateTimeOffset CreatedAt, int Attempts)
+{
+    public Guid? CategoryId { get; init; }
+}
 public sealed record ProductDuplicateDto(Guid Id, string Name, string StoreName, string Reason);
 public sealed class DuplicateLookupRequest
 {
