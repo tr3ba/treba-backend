@@ -7,7 +7,14 @@ printf 'HOST '; hostname
 printf 'HOST_RESOURCES\n'
 free -m
 df -h / /var/lib/docker
+df -i /var/lib/docker
 docker system df
+printf 'ALL_CONTAINERS\n'
+docker ps -a --format '{{.Names}} {{.Image}} {{.Status}}'
+printf 'IMAGE_INVENTORY\n'
+docker image ls --format '{{.ID}} {{.Repository}}:{{.Tag}} {{.Size}}'
+printf 'SSM_RESOURCE_ERRORS\n'
+grep -Eai 'no space|disk full|ipc messaging|panic|fatal|failed to create|failed to start|out of memory' /var/log/amazon/ssm/errors.log 2>/dev/null | tail -n 12 | cut -c 1-500 || true
 printf 'RECENT_RESOURCE_ERRORS\n'
 journalctl -k --since '-1 hour' --no-pager 2>/dev/null | grep -Ei 'out of memory|oom-kill|killed process|no space left|I/O error' | tail -n 15 || true
 printf 'FRONTEND_IMAGES\n'
