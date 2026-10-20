@@ -45,6 +45,14 @@ public sealed class AdminHttpTests
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentActor, WebApi.Authentication.HttpCurrentActor>();
         services.AddScoped<IReviewService, ReviewService>();
+        services.AddScoped<Application.Inventory.InventoryService>();
+        services.AddScoped<Application.Inventory.IInventoryService>(sp => sp.GetRequiredService<Application.Inventory.InventoryService>());
+        services.AddScoped<Application.Promotions.IDiscountService, Application.Promotions.DiscountService>();
+        services.AddScoped<Application.Orders.OrderService>();
+        services.AddScoped<Application.Orders.IOrderService>(sp => sp.GetRequiredService<Application.Orders.OrderService>());
+        services.AddScoped<PromotionManagementService>();
+        services.AddScoped<SupportService>();
+        services.AddScoped<OperationsService>();
         services.AddAuthentication("Test").AddScheme<AuthenticationSchemeOptions, TestAuthentication>("Test", _ => { });
         services.AddAuthorization();
         services.AddControllers().AddApplicationPart(typeof(AdminReviewsController).Assembly);

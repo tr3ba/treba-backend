@@ -28,15 +28,24 @@ public sealed class OrdersController : ControllerBase
         try
         {
             var order = await _orderService.CreateOrderAsync(request, cancellationToken);
-            return CreatedAtAction(nameof(GetOrderById), new { id = order.Id }, order);
+            return CreatedAtAction(nameof(GetOrderById), new
+            {
+                id = order.Id
+            }, order);
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new
+            {
+                message = ex.Message
+            });
         }
         catch (InvalidOperationException ex)
         {
-            return Conflict(new { message = ex.Message });
+            return Conflict(new
+            {
+                message = ex.Message
+            });
         }
     }
 
@@ -49,14 +58,17 @@ public sealed class OrdersController : ControllerBase
         var order = await _orderService.GetOrderByIdAsync(id, cancellationToken);
         if (order is null)
         {
-            return NotFound(new { message = $"Заказ с ID {id} не найден." });
+            return NotFound(new
+            {
+                message = $"Заказ с ID {id} не найден."
+            });
         }
 
         return Ok(order);
     }
 
     [HttpPost("{id:guid}/pay")]
-    [Authorize]
+    [Authorize(Roles = "Administrator,Manager")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> PayOrder(Guid id, CancellationToken cancellationToken)
@@ -68,7 +80,10 @@ public sealed class OrdersController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return Conflict(new { message = ex.Message });
+            return Conflict(new
+            {
+                message = ex.Message
+            });
         }
     }
 
@@ -88,7 +103,10 @@ public sealed class OrdersController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return Conflict(new { message = ex.Message });
+            return Conflict(new
+            {
+                message = ex.Message
+            });
         }
     }
 }

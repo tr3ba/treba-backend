@@ -11,5 +11,12 @@ namespace Application.Promotions
         bool FreeDelivery,
         Guid? CouponId,
         Guid? PromotionId
-    );
+    )
+    {
+        public Guid? PromotionVersion
+        {
+            get; init;
+        }
+        public IReadOnlyDictionary<Guid, decimal> LineDiscounts { get; init; } = new Dictionary<Guid, decimal>();
+    }
 }

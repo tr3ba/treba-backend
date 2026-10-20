@@ -21,9 +21,24 @@ public sealed partial class ApplicationDbContext
         ["Seller"] = ["CompanyName", "Status"],
         ["Store"] = ["Name", "Slug", "IsActive"],
         ["Review"] = ["Status"]
-        , ["TelegramBinding"] = ["UserId", "TelegramUserId", "Username"]
-        , ["SellerCategoryGrant"] = ["SellerId", "CategoryId", "IncludeDescendants"]
-        , ["RozetkaCategoryMapping"] = ["ExternalKey", "CategoryId"]
+        ,
+        ["Order"] = ["Status", "TotalAmount"]
+        ,
+        ["Promotion"] = ["Name", "Status", "Type", "StartAt", "EndAt"]
+        ,
+        ["Coupon"] = ["Code", "Active", "UsageLimit", "UsageLimitPerUser"]
+        ,
+        ["PromotionAction"] = ["DiscountType", "DiscountValue", "MaximumDiscount"]
+        ,
+        ["PromotionRule"] = ["RuleType", "RuleValue"]
+        ,
+        ["SupportTicket"] = ["Status", "Kind", "Subject"]
+        ,
+        ["TelegramBinding"] = ["UserId", "TelegramUserId", "Username"]
+        ,
+        ["SellerCategoryGrant"] = ["SellerId", "CategoryId", "IncludeDescendants"]
+        ,
+        ["RozetkaCategoryMapping"] = ["ExternalKey", "CategoryId"]
     };
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess) =>
@@ -48,12 +63,14 @@ public sealed partial class ApplicationDbContext
             audit = CreateAuditEntries();
             AdminAuditLogs.AddRange(audit);
             var result = await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
-            if (transaction is not null) await transaction.CommitAsync(cancellationToken);
+            if (transaction is not null)
+                await transaction.CommitAsync(cancellationToken);
             return result;
         }
         catch
         {
-            foreach (var log in audit) Entry(log).State = EntityState.Detached;
+            foreach (var log in audit)
+                Entry(log).State = EntityState.Detached;
             throw;
         }
     }
@@ -67,45 +84,60 @@ public sealed partial class ApplicationDbContext
 
         var adminId = await Roles.AsNoTracking().Where(role => role.Name == Domain.Entities.Users.Roles.Administrator)
             .Select(role => (Guid?)role.Id).SingleOrDefaultAsync(ct);
-        if (adminId is null) return;
+        if (adminId is null)
+            return;
         var lost = entries.Count(entry => (Guid)entry.OriginalValues[nameof(User.RoleId)]! == adminId
             && (UserStatus)entry.OriginalValues[nameof(User.Status)]! == UserStatus.Active
             && !(bool)entry.OriginalValues[nameof(User.IsDeleted)]!
             && (entry.State == EntityState.Deleted || entry.Entity.RoleId != adminId || entry.Entity.IsDeleted || entry.Entity.Status != UserStatus.Active));
-        if (lost == 0) return;
+        if (lost == 0)
+            return;
         var remaining = await Users.AsNoTracking().CountAsync(user => user.RoleId == adminId && user.Status == UserStatus.Active && !user.IsDeleted, ct);
-        if (remaining - lost < 1) throw new UserDomainException("The last active administrator cannot be blocked or demoted.");
+        if (remaining - lost < 1)
+            throw new UserDomainException("The last active administrator cannot be blocked or demoted.");
     }
 
     private List<AdminAuditLog> CreateAuditEntries()
     {
-        if (_actor?.UserId is not { } actorId || _actor.Role is not ("Administrator" or "Manager" or "Moderator" or "Seller")) return [];
+        if (_actor?.UserId is not { } actorId || _actor.Role is not ("Administrator" or "Manager" or "Moderator" or "Seller"))
+            return [];
         var result = new List<AdminAuditLog>();
         foreach (var entry in ChangeTracker.Entries().ToList())
         {
             var type = entry.Metadata.ClrType.Name;
             if (type == "Product" && AdminAuditLogs.Local.Any(log => log.EntityType == "Product" && log.EntityId == (Guid)entry.Property("Id").CurrentValue!
-                && log.Action == "Moderation" && Entry(log).State == EntityState.Added)) continue;
-            if (entry.State is not (EntityState.Added or EntityState.Modified or EntityState.Deleted) || !AuditFields.TryGetValue(type, out var fields)) continue;
+                && log.Action == "Moderation" && Entry(log).State == EntityState.Added))
+                continue;
+            if (entry.State is not (EntityState.Added or EntityState.Modified or EntityState.Deleted) || !AuditFields.TryGetValue(type, out var fields))
+                continue;
             var changes = new List<AuditChangeDto>();
             foreach (var field in fields)
             {
-                if (entry.Metadata.FindProperty(field) is null) continue;
+                if (entry.Metadata.FindProperty(field) is null)
+                    continue;
                 var property = entry.Property(field);
-                if (entry.State == EntityState.Modified && !property.IsModified) continue;
+                if (entry.State == EntityState.Modified && !property.IsModified)
+                    continue;
                 var before = entry.State == EntityState.Added ? null : Value(field, property.OriginalValue);
                 var after = entry.State == EntityState.Deleted ? null : Value(field, property.CurrentValue);
-                if (before != after) changes.Add(new(field, before, after));
+                if (before != after)
+                    changes.Add(new(field, before, after));
             }
-            if (changes.Count == 0) continue;
+            if (changes.Count == 0)
+                continue;
             var labelField = new[] { "Name", "CompanyName", "Email", "Sku", "AltText" }.FirstOrDefault(field => entry.Metadata.FindProperty(field) is not null);
             var label = labelField is null ? type : Convert.ToString(entry.Property(labelField).CurrentValue, CultureInfo.InvariantCulture) ?? type;
-            if (type == "ProductVariant") label += " · " + entry.Property("Sku").CurrentValue;
+            if (type == "ProductVariant")
+                label += " · " + entry.Property("Sku").CurrentValue;
             result.Add(new AdminAuditLog
             {
-                ActorId = actorId, ActorName = _actor.Name[..Math.Min(320, _actor.Name.Length)], ActorRole = _actor.Role,
+                ActorId = actorId,
+                ActorName = _actor.Name[..Math.Min(320, _actor.Name.Length)],
+                ActorRole = _actor.Role,
                 Action = entry.State switch { EntityState.Added => "Create", EntityState.Deleted => "Delete", _ => "Update" },
-                EntityType = type, EntityId = (Guid)entry.Property("Id").CurrentValue!, EntityName = label[..Math.Min(500, label.Length)],
+                EntityType = type,
+                EntityId = (Guid)entry.Property("Id").CurrentValue!,
+                EntityName = label[..Math.Min(500, label.Length)],
                 ChangesJson = JsonSerializer.Serialize(changes)
             });
         }

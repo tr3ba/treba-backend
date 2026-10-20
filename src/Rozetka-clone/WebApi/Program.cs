@@ -23,7 +23,10 @@ using WebApi.Extensions;
 using WebApi.Telegram;
 
 var deploymentCheck = args.Contains("--check-telegram-deployment", StringComparer.Ordinal);
-var builder = WebApplication.CreateBuilder(args.Where(argument => argument != "--check-telegram-deployment").ToArray());
+var operationsCheck = args.Contains("--check-admin-operations-deployment", StringComparer.Ordinal);
+var operationsMigrate = args.Contains("--migrate-admin-operations", StringComparer.Ordinal);
+var operatorFlags = new[] { "--check-telegram-deployment", "--check-admin-operations-deployment", "--migrate-admin-operations" };
+var builder = WebApplication.CreateBuilder(args.Where(argument => !operatorFlags.Contains(argument, StringComparer.Ordinal)).ToArray());
 
 builder.Services.AddScoped<Application.Catalog.CatalogService>();
 builder.Services.AddTrebaTelegram(builder.Configuration);
@@ -72,6 +75,14 @@ builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<IWishlistService, WishlistService>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddScoped<IDiscountService, DiscountService>();
+builder.Services.AddScoped<Application.Inventory.InventoryService>();
+builder.Services.AddScoped<Application.Inventory.IInventoryService>(sp => sp.GetRequiredService<Application.Inventory.InventoryService>());
+builder.Services.AddScoped<Application.Orders.OrderService>();
+builder.Services.AddScoped<Application.Orders.IOrderService>(sp => sp.GetRequiredService<Application.Orders.OrderService>());
+builder.Services.AddScoped<Application.Administration.PromotionManagementService>();
+builder.Services.AddScoped<Application.Administration.SupportService>();
+builder.Services.AddScoped<Application.Administration.OperationsService>();
+builder.Services.AddHostedService<OrderReservationWorker>();
 
 
 builder.Services.AddHostedService<PromotionActivationWorker>();
@@ -155,6 +166,12 @@ builder.Services.AddAuthorization();
 var app = builder.Build();
 
 app.UseExceptionHandler();
+if (operationsCheck || operationsMigrate)
+{
+    Environment.ExitCode = await WebApi.Administration.AdminOperationsDeployment.RunAsync(app.Services, operationsMigrate);
+    await app.DisposeAsync();
+    return;
+}
 if (deploymentCheck)
 {
     Environment.ExitCode = await TelegramDeploymentCheck.RunAsync(app.Services,

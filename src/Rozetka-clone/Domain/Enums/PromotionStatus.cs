@@ -9,6 +9,7 @@ namespace Domain.Enums
         DRAFT,
         ACTIVE,
         FINISHED,
-        CANCELLED
+        CANCELLED,
+        SCHEDULED
     }
 }

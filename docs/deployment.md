@@ -68,7 +68,13 @@ The deployment workflow pins the image to the source commit SHA and invokes
 the actual database migrations and bot token using `--check-telegram-deployment`,
 then tests a temporary loopback container before replacing the running API.
 The previous container and Caddy configuration are retained for rollback.
-Database migrations are not applied by this deployment command.
+Before switching HTTP, deployment applies the explicitly allowlisted, backwards-compatible
+operational migrations through `--migrate-admin-operations`. It verifies database ownership,
+the migration history, CRUD privileges and real schema reads, then checks the protected
+operational routes on both the candidate and public API. An unavailable migration or route
+stops deployment while the previous container is retained. If the runtime account cannot
+apply DDL, the database owner must apply the reviewed SQL before retrying. Other pending
+migrations require a separately reviewed update. See [admin operations](admin-operations.md).
 
 Server bot settings stay in the existing deployment environment. Never commit or
 print the bot token. See [Telegram handoff](telegram-server-handoff.md) for settings,

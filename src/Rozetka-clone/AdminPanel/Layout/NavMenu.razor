@@ -23,10 +23,9 @@
             @if (Can("/support")) { <div class="nav-item"><NavLink class="nav-link" href="support"><i class="bi bi-chat-dots"></i> @L["SupportAndReturns"]</NavLink></div> }
             @if (Can("/customer-activity")) { <div class="nav-item"><NavLink class="nav-link" href="customer-activity"><i class="bi bi-activity"></i> @L["CustomerActivity"]</NavLink></div> }
         }
-        @if (Can("/storefront") || Can("/loyalty"))
+        @if (Can("/loyalty"))
         {
             <p class="nav-section-label nav-section-label-spaced">@L["Growth"]</p>
-            @if (Can("/storefront")) { <div class="nav-item"><NavLink class="nav-link" href="storefront"><i class="bi bi-window-stack"></i> @L["Storefront"]</NavLink></div> }
             @if (Can("/loyalty")) { <div class="nav-item"><NavLink class="nav-link" href="loyalty"><i class="bi bi-gift"></i> @L["PromotionsAndLoyalty"]</NavLink></div> }
         }
         @if (Can("/settings"))

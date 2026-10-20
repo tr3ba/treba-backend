@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <data name="OrderNumber" xml:space="preserve"><value>Номер замовлення</value></data>
+  <data name="Customer" xml:space="preserve"><value>Покупець</value></data>
+  <data name="Items" xml:space="preserve"><value>Позиції</value></data>
+  <data name="Amount" xml:space="preserve"><value>Сума</value></data>
+  <data name="Created" xml:space="preserve"><value>Створено</value></data>
+  <data name="Updated" xml:space="preserve"><value>Оновлено</value></data>
+  <data name="NoResults" xml:space="preserve"><value>За вибраними умовами нічого не знайдено.</value></data>
+  <data name="OrderSearch" xml:space="preserve"><value>Номер, ім’я, телефон або email</value></data>
+  <data name="AllStatuses" xml:space="preserve"><value>Усі статуси</value></data>
+  <data name="From" xml:space="preserve"><value>Від дати</value></data>
+  <data name="ToInclusive" xml:space="preserve"><value>До дати включно</value></data>
+  <data name="ResultCount" xml:space="preserve"><value>Знайдено: {0}</value></data>
+  <data name="PartialOrder" xml:space="preserve"><value>Показано лише ваші позиції та їхню суму. Загальним статусом замовлення з кількома продавцями керує менеджер.</value></data>
+  <data name="CustomerHistory" xml:space="preserve"><value>Історія покупця</value></data>
+  <data name="DeliveryAddress" xml:space="preserve"><value>Адреса доставки</value></data>
+  <data name="CustomerComment" xml:space="preserve"><value>Коментар покупця</value></data>
+  <data name="OrderTotals" xml:space="preserve"><value>Суми замовлення</value></data>
+  <data name="Subtotal" xml:space="preserve"><value>Вартість товарів</value></data>
+  <data name="Discount" xml:space="preserve"><value>Знижка</value></data>
+  <data name="Delivery" xml:space="preserve"><value>Доставка</value></data>
+  <data name="NextStatus" xml:space="preserve"><value>Наступний статус</value></data>
+  <data name="Choose" xml:space="preserve"><value>Виберіть</value></data>
+  <data name="Reason" xml:space="preserve"><value>Причина / коментар</value></data>
+  <data name="ManualPayment" xml:space="preserve"><value>Підтвердьте, що фактично отримали оплату. Це ручний запис працівника без перевірки платіжного провайдера.</value></data>
+  <data name="ManualPaymentRecorded" xml:space="preserve"><value>Отримання оплати підтверджено працівником вручну.</value></data>
+  <data name="CreateTicket" xml:space="preserve"><value>Створити звернення</value></data>
+  <data name="Quantity" xml:space="preserve"><value>Кількість</value></data>
+  <data name="UnitPrice" xml:space="preserve"><value>Ціна за одиницю</value></data>
+  <data name="StatusHistory" xml:space="preserve"><value>Історія статусів</value></data>
+  <data name="ChangeStatus" xml:space="preserve"><value>Зміна статусу</value></data>
+  <data name="ConfirmStatus" xml:space="preserve"><value>Підтвердити зміну статусу?</value></data>
+  <data name="Order_CREATED" xml:space="preserve"><value>Створено</value></data>
+  <data name="Order_AWAITING_PAYMENT" xml:space="preserve"><value>Очікує оплати</value></data>
+  <data name="Order_PAID" xml:space="preserve"><value>Оплату підтверджено</value></data>
+  <data name="Order_CONFIRMED" xml:space="preserve"><value>Підтверджено</value></data>
+  <data name="Order_PROCESSING" xml:space="preserve"><value>В обробці</value></data>
+  <data name="Order_READY_FOR_SHIPMENT" xml:space="preserve"><value>Готове до відправлення</value></data>
+  <data name="Order_SHIPPED" xml:space="preserve"><value>Відправлено</value></data>
+  <data name="Order_DELIVERED" xml:space="preserve"><value>Доставлено</value></data>
+  <data name="Order_COMPLETED" xml:space="preserve"><value>Завершено</value></data>
+  <data name="Order_CANCELLED" xml:space="preserve"><value>Скасовано</value></data>
+  <data name="Order_RETURN_REQUESTED" xml:space="preserve"><value>Очікується повернення товару</value></data>
+  <data name="Order_RETURNED" xml:space="preserve"><value>Товар повернуто</value></data>
+  <data name="PromotionSearch" xml:space="preserve"><value>Назва або промокод</value></data>
+  <data name="NewPromotion" xml:space="preserve"><value>Створити акцію</value></data>
+  <data name="EditPromotion" xml:space="preserve"><value>Редагувати акцію</value></data>
+  <data name="PromotionName" xml:space="preserve"><value>Назва акції</value></data>
+  <data name="CouponCodes" xml:space="preserve"><value>Промокоди</value></data>
+  <data name="Period" xml:space="preserve"><value>Період</value></data>
+  <data name="UsageCount" xml:space="preserve"><value>Використань: {0}</value></data>
+  <data name="Disabled" xml:space="preserve"><value>Вимкнено</value></data>
+  <data name="Promotion_DRAFT" xml:space="preserve"><value>Чернетка</value></data>
+  <data name="Promotion_SCHEDULED" xml:space="preserve"><value>Заплановано</value></data>
+  <data name="Promotion_ACTIVE" xml:space="preserve"><value>Активна</value></data>
+  <data name="Promotion_FINISHED" xml:space="preserve"><value>Завершено</value></data>
+  <data name="Promotion_CANCELLED" xml:space="preserve"><value>Скасовано</value></data>
+  <data name="DiscountType" xml:space="preserve"><value>Тип знижки</value></data>
+  <data name="Percentage" xml:space="preserve"><value>Відсоток</value></data>
+  <data name="FixedAmount" xml:space="preserve"><value>Фіксована сума, ₴</value></data>
+  <data name="DiscountValue" xml:space="preserve"><value>Розмір знижки</value></data>
+  <data name="StartsLocal" xml:space="preserve"><value>Початок (місцевий час)</value></data>
+  <data name="EndsLocal" xml:space="preserve"><value>Кінець (місцевий час)</value></data>
+  <data name="MinimumOrder" xml:space="preserve"><value>Мінімальна сума товарів, ₴</value></data>
+  <data name="MaximumDiscount" xml:space="preserve"><value>Максимальна знижка, ₴</value></data>
+  <data name="DraftScheduleHint" xml:space="preserve"><value>Чернетка залишається неактивною. Для автоматичного запуску за датами виберіть «Заплановано». Акція застосовується під час введення промокоду.</value></data>
+  <data name="PromotionTargets" xml:space="preserve"><value>На що діє акція</value></data>
+  <data name="TargetsHint" xml:space="preserve"><value>Порожні поля означають увесь каталог. Вибрані обмеження застосовуються разом; категорія — точний збіг, без підкатегорій.</value></data>
+  <data name="All" xml:space="preserve"><value>Усі</value></data>
+  <data name="Seller" xml:space="preserve"><value>Продавець</value></data>
+  <data name="FindProduct" xml:space="preserve"><value>Знайти товар за назвою або SKU</value></data>
+  <data name="CouponLimitsHint" xml:space="preserve"><value>0 означає відсутність ліміту. Наявний код не можна перейменувати. Видалені з форми коди вимикаються, історія використання зберігається.</value></data>
+  <data name="CouponCode" xml:space="preserve"><value>Промокод</value></data>
+  <data name="GlobalLimit" xml:space="preserve"><value>Загальний ліміт</value></data>
+  <data name="PerUserLimit" xml:space="preserve"><value>Ліміт на покупця</value></data>
+  <data name="Enabled" xml:space="preserve"><value>Увімкнено</value></data>
+  <data name="Remove" xml:space="preserve"><value>Прибрати</value></data>
+  <data name="AddCoupon" xml:space="preserve"><value>Додати промокод</value></data>
+  <data name="TicketSearch" xml:space="preserve"><value>Тема, номер замовлення або покупець</value></data>
+  <data name="Kind" xml:space="preserve"><value>Тип звернення</value></data>
+  <data name="Kind_QUESTION" xml:space="preserve"><value>Питання щодо замовлення</value></data>
+  <data name="Kind_RETURN" xml:space="preserve"><value>Повернення</value></data>
+  <data name="FindOrder" xml:space="preserve"><value>Знайти замовлення за номером або покупцем</value></data>
+  <data name="Subject" xml:space="preserve"><value>Тема</value></data>
+  <data name="Message" xml:space="preserve"><value>Повідомлення</value></data>
+  <data name="FullReturnHint" xml:space="preserve"><value>Повернення оформлюється на все доставлене замовлення. Часткові повернення поки не підтримуються.</value></data>
+  <data name="Conversation" xml:space="preserve"><value>Листування</value></data>
+  <data name="RecentMessages" xml:space="preserve"><value>Показано останні 200 повідомлень.</value></data>
+  <data name="InternalNote" xml:space="preserve"><value>Внутрішня нотатка</value></data>
+  <data name="InternalNoteHint" xml:space="preserve"><value>Внутрішня нотатка, видима лише працівникам</value></data>
+  <data name="SendMessage" xml:space="preserve"><value>Додати повідомлення</value></data>
+  <data name="ReturnReceiptHint" xml:space="preserve"><value>Схвалення означає очікування товару. Закривайте схвалене повернення лише після фактичного приймання товару: залишки відновляться. Повернення коштів проводиться окремо.</value></data>
+  <data name="ConfirmReturnReceived" xml:space="preserve"><value>Підтвердьте, що всі повернені товари отримано та вони придатні до повторного продажу. Залишки буде відновлено. Ця дія не повертає кошти.</value></data>
+  <data name="NoActions" xml:space="preserve"><value>Доступних дій немає.</value></data>
+  <data name="Ticket_OPEN" xml:space="preserve"><value>Нове</value></data>
+  <data name="Ticket_IN_PROGRESS" xml:space="preserve"><value>В роботі</value></data>
+  <data name="Ticket_APPROVED" xml:space="preserve"><value>Повернення схвалено</value></data>
+  <data name="Ticket_REJECTED" xml:space="preserve"><value>Повернення відхилено</value></data>
+  <data name="Ticket_CLOSED" xml:space="preserve"><value>Закрито</value></data>
+  <data name="CustomerSearch" xml:space="preserve"><value>Ім’я або email покупця</value></data>
+  <data name="OrderedAmount" xml:space="preserve"><value>Сума замовлень, ₴</value></data>
+  <data name="LastOrder" xml:space="preserve"><value>Останнє замовлення</value></data>
+  <data name="RecentHundred" xml:space="preserve"><value>У кожному списку показано останні 100 записів. Суми виключають скасовані та повернені замовлення і не є підтвердженим виторгом.</value></data>
+  <data name="Rating" xml:space="preserve"><value>Оцінка</value></data>
+  <data name="Review_PENDING" xml:space="preserve"><value>На перевірці</value></data>
+  <data name="Review_PUBLISHED" xml:space="preserve"><value>Опубліковано</value></data>
+  <data name="Review_REJECTED" xml:space="preserve"><value>Відхилено</value></data>
+  <data name="BusinessOverview" xml:space="preserve"><value>Замовлення та робочі завдання</value></data>
+  <data name="MetricsHint" xml:space="preserve"><value>Замовлення та їхня сума — за вибраний період; відкриті завдання — на поточний момент. Скасування рахуються за датою скасування. Сума замовлень не є виторгом.</value></data>
+  <data name="MetricsFailed" xml:space="preserve"><value>Не вдалося завантажити показники.</value></data>
+  <data name="NewOrders" xml:space="preserve"><value>Нових замовлень</value></data>
+  <data name="CancelledOrders" xml:space="preserve"><value>Скасованих замовлень</value></data>
+  <data name="OpenTickets" xml:space="preserve"><value>Відкритих звернень</value></data>
+  <data name="OverdueTickets" xml:space="preserve"><value>Звернення без дій понад 48 год</value></data>
+  <data name="OutOfStock" xml:space="preserve"><value>Опубліковані товари без залишку</value></data>
+  <data name="OverdueModeration" xml:space="preserve"><value>Товари на перевірці понад 24 год</value></data>
+  <data name="WaitingTime" xml:space="preserve"><value>Очікування перевірки</value></data>
+  <data name="WaitingAll" xml:space="preserve"><value>Будь-який час</value></data>
+  <data name="Waiting24" xml:space="preserve"><value>Понад 24 години</value></data>
+  <data name="Waiting72" xml:space="preserve"><value>Понад 72 години</value></data>
+  <data name="SequentialReview" xml:space="preserve"><value>Показувати по одному товару</value></data>
+  <data name="SubmittedAt" xml:space="preserve"><value>Надіслано на перевірку</value></data>
+  <data name="RejectionTemplate" xml:space="preserve"><value>Шаблон причини</value></data>
+  <data name="ReasonPhotos" xml:space="preserve"><value>Додайте чіткі фотографії товару без сторонньої реклами.</value></data>
+  <data name="ReasonDescription" xml:space="preserve"><value>Уточніть опис і характеристики товару.</value></data>
+  <data name="ReasonCategory" xml:space="preserve"><value>Виберіть відповідну категорію товару.</value></data>
+  <data name="ReasonPrice" xml:space="preserve"><value>Перевірте ціну та доступність варіантів товару.</value></data>
+  <data name="ResubmissionChanges" xml:space="preserve"><value>Зміни після відхилення</value></data>
+  <data name="NoBaseline" xml:space="preserve"><value>Немає збереженої версії для порівняння. Знімки створюються під час нових відхилень товарів.</value></data>
+  <data name="NoChanges" xml:space="preserve"><value>Після відхилення змін не знайдено.</value></data>
+  <data name="Field" xml:space="preserve"><value>Поле</value></data>
+  <data name="Before" xml:space="preserve"><value>Було</value></data>
+  <data name="After" xml:space="preserve"><value>Стало</value></data>
+  <data name="BaselineAt" xml:space="preserve"><value>Версія від {0}</value></data>
+</root>

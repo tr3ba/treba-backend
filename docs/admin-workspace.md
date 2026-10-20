@@ -22,7 +22,7 @@ API routes:
 - `GET /api/v1/admin/reviews/pending-count`
 - `PUT /api/v1/admin/reviews/{id}/moderate` with `{"status":"PUBLISHED"}` or `{"status":"REJECTED"}`
 
-The navigation badge refreshes periodically and after decisions. API validation rejects unknown statuses and invalid pagination. The queue moderates existing reviews; the pre-existing customer review creation stub is outside this admin change.
+The navigation badge refreshes periodically and after decisions. API validation rejects unknown statuses and invalid pagination. Customer reviews are linked to an order item and the buyer's account.
 
 ## Dashboard
 
@@ -33,9 +33,9 @@ The navigation badge refreshes periodically and after decisions. API validation 
 - Moderators see review data and product changes. Seller and user data are omitted.
 - Sellers retain the existing catalog dashboard and cannot call the new administrative dashboard or review routes.
 
-Recent changes show the latest state of up to eight records; they are not a historical audit log. No order-management routes, contracts, screens or metrics were added.
+Recent changes show the latest state of up to eight records; they are not a historical audit log. Order management, promotions, support/returns and operational metrics are described in [admin-operations.md](admin-operations.md).
 
-No database migration is required. Deploy the WebApi and AdminPanel changes together.
+The original seller/review dashboard required no database migration. The operational modules require `AddAdminOperations`; see the linked deployment instructions. Deploy the WebApi and AdminPanel changes together.
 
 ## Verification
 

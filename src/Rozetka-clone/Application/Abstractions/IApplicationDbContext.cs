@@ -12,95 +12,257 @@ namespace Application.Abstractions
 {
     public interface IApplicationDbContext
     {
-        DbSet<Domain.Entities.Telegram.SellerImportJob> SellerImportJobs { get; }
-        DbSet<Domain.Entities.Telegram.TelegramNotification> TelegramNotifications { get; }
-        DbSet<Domain.Entities.Telegram.ProductIdentity> ProductIdentities { get; }
-        DbSet<Domain.Entities.Telegram.TelegramBotCursor> TelegramBotCursors { get; }
-        DbSet<Domain.Entities.Telegram.TelegramBinding> TelegramBindings { get; }
-        DbSet<Domain.Entities.Telegram.TelegramLinkChallenge> TelegramLinkChallenges { get; }
-        DbSet<Domain.Entities.Telegram.TelegramGuardChallenge> TelegramGuardChallenges { get; }
-        DbSet<Domain.Entities.Telegram.SellerCategoryGrant> SellerCategoryGrants { get; }
-        DbSet<Domain.Entities.Telegram.RozetkaCategoryMapping> RozetkaCategoryMappings { get; }
-        DbSet<Domain.Entities.Telegram.ProductImportDraft> ProductImportDrafts { get; }
-        DbSet<User> Users { get; }
+        DbSet<Domain.Entities.Support.SupportTicket> SupportTickets
+        {
+            get;
+        }
+        DbSet<Domain.Entities.Support.SupportMessage> SupportMessages
+        {
+            get;
+        }
+        DbSet<ProductReviewBaseline> ProductReviewBaselines
+        {
+            get;
+        }
+        DbSet<Domain.Entities.Telegram.SellerImportJob> SellerImportJobs
+        {
+            get;
+        }
+        DbSet<Domain.Entities.Telegram.TelegramNotification> TelegramNotifications
+        {
+            get;
+        }
+        DbSet<Domain.Entities.Telegram.ProductIdentity> ProductIdentities
+        {
+            get;
+        }
+        DbSet<Domain.Entities.Telegram.TelegramBotCursor> TelegramBotCursors
+        {
+            get;
+        }
+        DbSet<Domain.Entities.Telegram.TelegramBinding> TelegramBindings
+        {
+            get;
+        }
+        DbSet<Domain.Entities.Telegram.TelegramLinkChallenge> TelegramLinkChallenges
+        {
+            get;
+        }
+        DbSet<Domain.Entities.Telegram.TelegramGuardChallenge> TelegramGuardChallenges
+        {
+            get;
+        }
+        DbSet<Domain.Entities.Telegram.SellerCategoryGrant> SellerCategoryGrants
+        {
+            get;
+        }
+        DbSet<Domain.Entities.Telegram.RozetkaCategoryMapping> RozetkaCategoryMappings
+        {
+            get;
+        }
+        DbSet<Domain.Entities.Telegram.ProductImportDraft> ProductImportDrafts
+        {
+            get;
+        }
+        DbSet<User> Users
+        {
+            get;
+        }
 
-        DbSet<UserProfile> UserProfiles { get; }
+        DbSet<UserProfile> UserProfiles
+        {
+            get;
+        }
 
-        DbSet<Address> Addresses { get; }
+        DbSet<Address> Addresses
+        {
+            get;
+        }
 
-        DbSet<Role> Roles { get; }
+        DbSet<Role> Roles
+        {
+            get;
+        }
 
-        DbSet<AdminAuditLog> AdminAuditLogs { get; }
+        DbSet<AdminAuditLog> AdminAuditLogs
+        {
+            get;
+        }
 
-        DbSet<AuthenticationChallenge> AuthenticationChallenges { get; }
+        DbSet<AuthenticationChallenge> AuthenticationChallenges
+        {
+            get;
+        }
 
-        DbSet<Permission> Permissions { get; }
+        DbSet<Permission> Permissions
+        {
+            get;
+        }
 
-        DbSet<Product> Products { get; }
+        DbSet<Product> Products
+        {
+            get;
+        }
 
-        DbSet<ProductVariant> ProductVariants { get; }
+        DbSet<ProductVariant> ProductVariants
+        {
+            get;
+        }
 
-        DbSet<ProductImage> ProductImages { get; }
+        DbSet<ProductImage> ProductImages
+        {
+            get;
+        }
 
-        DbSet<ProductTag> ProductTags { get; }
+        DbSet<ProductTag> ProductTags
+        {
+            get;
+        }
 
-        DbSet<ProductTagRelation> ProductTagRelations { get; }
+        DbSet<ProductTagRelation> ProductTagRelations
+        {
+            get;
+        }
 
-        DbSet<Category> Categories { get; }
+        DbSet<Category> Categories
+        {
+            get;
+        }
 
-        DbSet<Brand> Brands { get; }
+        DbSet<Brand> Brands
+        {
+            get;
+        }
 
-        DbSet<DomainAttribute> Attributes { get; }
+        DbSet<DomainAttribute> Attributes
+        {
+            get;
+        }
 
-        DbSet<AttributeOption> AttributeOptions { get; }
+        DbSet<AttributeOption> AttributeOptions
+        {
+            get;
+        }
 
-        DbSet<ProductAttributeValue> ProductAttributeValues { get; }
+        DbSet<ProductAttributeValue> ProductAttributeValues
+        {
+            get;
+        }
 
-        DbSet<Wishlist> Wishlists { get; }
+        DbSet<Wishlist> Wishlists
+        {
+            get;
+        }
 
-        DbSet<Review> Reviews { get; }
+        DbSet<Review> Reviews
+        {
+            get;
+        }
 
-        DbSet<ReviewImage> ReviewImages { get; }
+        DbSet<ReviewImage> ReviewImages
+        {
+            get;
+        }
 
-        DbSet<ReviewVote> ReviewVotes { get; }
+        DbSet<ReviewVote> ReviewVotes
+        {
+            get;
+        }
 
-        DbSet<SellerReviewResponse> SellerReviewResponses { get; }
+        DbSet<SellerReviewResponse> SellerReviewResponses
+        {
+            get;
+        }
 
-        DbSet<Promotion> Promotions { get; }
+        DbSet<Promotion> Promotions
+        {
+            get;
+        }
 
-        DbSet<PromotionRule> PromotionRules { get; }
+        DbSet<PromotionRule> PromotionRules
+        {
+            get;
+        }
 
-        DbSet<PromotionAction> PromotionActions { get; }
+        DbSet<PromotionAction> PromotionActions
+        {
+            get;
+        }
 
-        DbSet<Coupon> Coupons { get; }
+        DbSet<Coupon> Coupons
+        {
+            get;
+        }
 
-        DbSet<CouponUsage> CouponUsages { get; }
+        DbSet<CouponUsage> CouponUsages
+        {
+            get;
+        }
 
-        DbSet<WishlistItem> WishlistItems { get; }
+        DbSet<WishlistItem> WishlistItems
+        {
+            get;
+        }
 
-        DbSet<Seller> Sellers { get; }
-      
-        DbSet<Store> Stores { get; }
+        DbSet<Seller> Sellers
+        {
+            get;
+        }
 
-        DbSet<Cart> Carts { get; }
+        DbSet<Store> Stores
+        {
+            get;
+        }
 
-        DbSet<CartItem> CartItems { get; }
+        DbSet<Cart> Carts
+        {
+            get;
+        }
 
-        public DbSet<Warehouse> Warehouses { get; }
+        DbSet<CartItem> CartItems
+        {
+            get;
+        }
 
-        public DbSet<Domain.Entities.Inventory.Inventory> Inventory { get; }
+        public DbSet<Warehouse> Warehouses
+        {
+            get;
+        }
 
-        public DbSet<StockMovement> StockMovements { get; }
+        public DbSet<Domain.Entities.Inventory.Inventory> Inventory
+        {
+            get;
+        }
 
-        public DbSet<InventoryReservation> InventoryReservations { get; }
+        public DbSet<StockMovement> StockMovements
+        {
+            get;
+        }
 
-        DbSet<Order> Orders { get; }
+        public DbSet<InventoryReservation> InventoryReservations
+        {
+            get;
+        }
 
-        DbSet<OrderItem> OrderItems { get; }
+        DbSet<Order> Orders
+        {
+            get;
+        }
 
-        DbSet<OrderAddress> OrderAddresses { get; }
+        DbSet<OrderItem> OrderItems
+        {
+            get;
+        }
 
-        DbSet<OrderStatusHistory> OrderStatusHistories { get; }
+        DbSet<OrderAddress> OrderAddresses
+        {
+            get;
+        }
+
+        DbSet<OrderStatusHistory> OrderStatusHistories
+        {
+            get;
+        }
 
         Task<int> SaveChangesAsync(
             CancellationToken cancellationToken = default

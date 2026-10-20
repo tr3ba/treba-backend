@@ -32,7 +32,10 @@ public sealed class CatalogController(
 
     [HttpPost("bulk/apply"), Authorize(Roles = Roles.Administrator + "," + Roles.Manager + "," + Roles.Seller)]
     public async Task<IActionResult> BulkApply(ApplyBulkCatalogRequest request, [FromServices] WebApi.Telegram.BulkCatalogService bulk, CancellationToken ct)
-        => Ok(new { updated = await bulk.ApplyAsync(Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!), SellerUserScope(), request.Token, ct) });
+        => Ok(new
+        {
+            updated = await bulk.ApplyAsync(Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!), SellerUserScope(), request.Token, ct)
+        });
     [HttpGet("products")]
     public async Task<PagedResponse<CatalogProductDto>> List(
         int page = 1,
@@ -46,6 +49,7 @@ public sealed class CatalogController(
         decimal? maxPrice = null,
         string? stock = null,
         string? sort = null,
+        int? waitingHours = null,
         CancellationToken ct = default
     )
     {
@@ -59,12 +63,14 @@ public sealed class CatalogController(
             sort,
             ct,
             SellerUserScope(),
-            new CatalogFilters { BrandId = brandId, SellerId = sellerId, MinPrice = minPrice, MaxPrice = maxPrice, Stock = stock }
+            new CatalogFilters { BrandId = brandId, SellerId = sellerId, MinPrice = minPrice, MaxPrice = maxPrice, Stock = stock, WaitingHours = waitingHours }
         );
     }
 
     [HttpGet("filter-options")]
     public Task<CatalogFilterOptionsDto> FilterOptions(CancellationToken ct) => catalog.FilterOptionsAsync(SellerUserScope(), ct);
+    [HttpGet("products/{id:guid}/resubmission-changes")]
+    public Task<ModerationComparisonDto> Changes(Guid id, CancellationToken ct) => new ModerationComparisonService(db).CompareAsync(id, SellerUserScope(), ct);
 
     [HttpGet("attributes")]
     public Task<IReadOnlyList<CatalogAttributeDefinitionDto>> Attributes(Guid categoryId, CancellationToken ct) => catalog.AttributeDefinitionsAsync(categoryId, ct);
@@ -73,10 +79,16 @@ public sealed class CatalogController(
     [Authorize(Roles = Roles.Administrator)]
     public async Task<IActionResult> CreateAttribute(CreateCatalogAttributeRequest request, [FromServices] Application.Attributes.IAttributeService attributes, CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(request.Name) || !await db.Categories.AnyAsync(c => c.Id == request.CategoryId && c.IsActive, ct)) return BadRequest();
-        var attribute = await attributes.CreateAsync(new Application.Attributes.CreateAttributeRequest {
-            CategoryId = request.CategoryId, Name = request.Name.Trim(), Code = "custom-" + Guid.NewGuid().ToString("N"),
-            Type = Domain.Enums.AttributeType.STRING, Unit = request.Unit?.Trim() }, ct);
+        if (string.IsNullOrWhiteSpace(request.Name) || !await db.Categories.AnyAsync(c => c.Id == request.CategoryId && c.IsActive, ct))
+            return BadRequest();
+        var attribute = await attributes.CreateAsync(new Application.Attributes.CreateAttributeRequest
+        {
+            CategoryId = request.CategoryId,
+            Name = request.Name.Trim(),
+            Code = "custom-" + Guid.NewGuid().ToString("N"),
+            Type = Domain.Enums.AttributeType.STRING,
+            Unit = request.Unit?.Trim()
+        }, ct);
         return Ok(attribute);
     }
 
