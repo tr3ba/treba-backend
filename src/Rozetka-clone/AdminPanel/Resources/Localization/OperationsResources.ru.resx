@@ -140,4 +140,6 @@
   <data name="Kind_CHAT" xml:space="preserve"><value>Личная поддержка</value></data>
   <data name="ReplyToCustomer" xml:space="preserve"><value>Ответ покупателю</value></data>
   <data name="UnreadMessages" xml:space="preserve"><value>Непрочитанные сообщения</value></data>
+  <data name="LinkedItem" xml:space="preserve"><value>Заказ / товар</value></data>
+  <data name="Product" xml:space="preserve"><value>Товар</value></data>
 </root>
