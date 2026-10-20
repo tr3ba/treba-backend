@@ -4,8 +4,85 @@
 set -euo pipefail
 
 printf 'HOST '; hostname
+printf 'HOST_RESOURCES\n'
+free -m
+df -h / /var/lib/docker
+df -i /var/lib/docker
+docker system df
+printf 'ALL_CONTAINERS\n'
+docker ps -a --format '{{.Names}} {{.Image}} {{.Status}}'
+printf 'IMAGE_INVENTORY\n'
+docker image ls --format '{{.ID}} {{.Repository}}:{{.Tag}} {{.Size}}'
+printf 'SSM_RESOURCE_ERRORS\n'
+grep -Eai 'no space|disk full|ipc messaging|panic|fatal|failed to create|failed to start|out of memory' /var/log/amazon/ssm/errors.log 2>/dev/null | tail -n 12 | cut -c 1-500 || true
+printf 'RECENT_RESOURCE_ERRORS\n'
+journalctl -k --since '-1 hour' --no-pager 2>/dev/null | grep -Ei 'out of memory|oom-kill|killed process|no space left|I/O error' | tail -n 15 || true
+printf 'FRONTEND_IMAGES\n'
+docker image ls --filter reference=019066823315.dkr.ecr.eu-west-1.amazonaws.com/treba-frontend --format '{{.ID}} {{.Tag}} {{.Size}}'
 printf 'CONTAINERS\n'
 docker ps --format '{{.Names}} {{.Image}} {{.Ports}}'
+
+if docker container inspect treba-frontend >/dev/null 2>&1; then
+    printf 'FRONTEND_IMAGE '
+    docker inspect --format '{{.Image}}' treba-frontend
+    printf 'FRONTEND_REVISION '
+    docker inspect --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' treba-frontend
+    docker exec treba-frontend node -e '
+const fs = require("node:fs");
+const paths = JSON.parse(fs.readFileSync("/app/.next/server/app-paths-manifest.json", "utf8"));
+console.log("FRONTEND_ADMIN_ENTRY=" + Boolean(paths["/shop-api/admin-entry/route"]));
+console.log("FRONTEND_BUILD=" + fs.readFileSync("/app/.next/BUILD_ID", "utf8").trim());
+'
+    for path in / /shop-api/session /shop-api/admin-entry; do
+        printf 'DIRECT_FRONTEND %s ' "$path"
+        curl -s -o /dev/null -w '%{http_code}\n' --max-time 5 "http://127.0.0.1$path" || true
+    done
+fi
+
+if [[ -n "${TREBA_INSPECT_ACCOUNT:-}" ]]; then
+    # No hashes, tokens, factor secrets or connection strings are printed.
+    # PostgreSQL itself enforces read-only queries for this diagnostic connection.
+    python3 - <<'PY'
+import json, os, re, subprocess
+email = os.environ['TREBA_INSPECT_ACCOUNT']
+if not re.fullmatch(r'[A-Za-z0-9._+@-]{3,320}', email):
+    raise SystemExit('Invalid diagnostic account email')
+container = json.loads(subprocess.check_output(['docker', 'inspect', 'treba-backend']))[0]
+values = dict(item.split('=', 1) for item in container['Config']['Env'] if '=' in item)
+connection = values.get('ConnectionStrings__DefaultConnection', '')
+if not connection or '"' in connection or "'" in connection:
+    raise SystemExit('Diagnostic connection format is not supported; no credentials were printed')
+fields = dict((key.strip().lower(), value.strip()) for part in connection.split(';') if '=' in part for key, value in [part.split('=', 1)])
+environment = dict(os.environ, PGHOST=fields['host'], PGPORT=fields.get('port', '5432'),
+    PGDATABASE=fields['database'], PGUSER=fields.get('username', fields.get('user id', '')),
+    PGPASSWORD=fields['password'], PGSSLMODE='require', PGCONNECT_TIMEOUT='10',
+    PGOPTIONS='-c default_transaction_read_only=on -c statement_timeout=10000')
+sql = '''SELECT u."Email", r."Name" AS "Role", u."Status", u."IsDeleted",
+u."AuthenticatorEnabled", u."EmailTwoFactorEnabled",
+EXISTS(SELECT 1 FROM telegram_bindings b WHERE b."UserId"=u."Id") AS "TelegramGuardLinked",
+(SELECT b."Username" FROM telegram_bindings b WHERE b."UserId"=u."Id") AS "TelegramUsername",
+(SELECT b."LinkedAt" FROM telegram_bindings b WHERE b."UserId"=u."Id") AS "TelegramLinkedAt",
+(SELECT right(b."TelegramUserId"::text,4) FROM telegram_bindings b WHERE b."UserId"=u."Id") AS "TelegramIdSuffix"
+FROM users u JOIN roles r ON r."Id"=u."RoleId" WHERE lower(u."Email")=lower(:'account_email');'''
+command = ['docker', 'run', '--rm', '-i', '--network', 'host']
+for key in ('PGHOST', 'PGPORT', 'PGDATABASE', 'PGUSER', 'PGPASSWORD', 'PGSSLMODE', 'PGCONNECT_TIMEOUT', 'PGOPTIONS'):
+    command += ['-e', key]
+command += ['postgres:18', 'psql', '-X', '--no-psqlrc', '-v', 'ON_ERROR_STOP=1', '-v', 'account_email=' + email]
+result = subprocess.run(command, input=sql, text=True, env=environment, capture_output=True, timeout=35)
+if result.returncode:
+    raise SystemExit('Read-only account inspection failed; no database credentials were printed')
+print('ACCOUNT_ACCESS_CHECK\n' + result.stdout)
+try:
+    import urllib.request
+    request = urllib.request.Request('https://api.telegram.org/bot' + values['Telegram__BotToken'] + '/getMe',
+        data=b'{}', headers={'Content-Type':'application/json'})
+    with urllib.request.urlopen(request, timeout=15) as response:
+        bot = json.load(response)
+    print('ACTUAL_BOT_USERNAME=' + bot.get('result', {}).get('username', '<missing>'))
+except Exception as error:
+    print('BOT_IDENTITY_CHECK_FAILED=' + type(error).__name__)
+PY
+fi
 
 if docker container inspect treba-backend >/dev/null 2>&1; then
     printf 'BACKEND_IMAGE '
