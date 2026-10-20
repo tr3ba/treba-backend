@@ -95,6 +95,11 @@ verify_mini_app() {
     curl -fsS --max-time 10 "$origin/telegram/" | grep 'app-shell' >/dev/null
     echo "Checking Mini App JavaScript: $origin/telegram/app.js"
     curl -fsS --max-time 10 "$origin/telegram/app.js" | grep 'Telegram' >/dev/null
+    local module content_type
+    for module in /telegram/app.js /telegram/ui.js /js/editor-drafts.js; do
+        content_type=$(curl -fsS --max-time 10 -o /dev/null -w '%{content_type}' "$origin$module")
+        [[ "$content_type" =~ ^(application|text)/javascript($|\;) ]] || { echo "Mini App module returned an invalid MIME type: $module ($content_type)"; return 1; }
+    done
     echo "Checking Telegram configuration: $origin/api/telegram/configuration"
     curl -fsS --max-time 10 "$origin/api/telegram/configuration" | python3 -c '
 import json, sys
@@ -174,6 +179,12 @@ elif source.count('/api/*') == 1:
 else:
     raise SystemExit('Caddy matcher differs from the inspected configuration; automatic edit cancelled.')
 source = path.read_text()
+if not re.search(r'(?<!\S)/js/editor-drafts\.js(?!\S)', source):
+    if source.count('/api/*') != 1:
+        raise SystemExit('Cannot identify the existing backend matcher for the shared Mini App module.')
+    source = source.replace('/api/*', '/js/editor-drafts.js /api/*', 1)
+    path.write_text(source)
+    print('Added the shared Mini App draft module to the backend matcher.')
 admin = '''\n# TREBA managed admin entry\nadmin.treba.duckdns.org {\n    reverse_proxy treba-admin:5100\n}\n'''
 if 'admin.treba.duckdns.org' not in source:
     path.write_text(source + admin)
