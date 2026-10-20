@@ -95,6 +95,7 @@ namespace Infrastructure
             services.AddScoped<ISecondFactorService, SecondFactorService>();
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<IIdentityService, IdentityService>();
+            services.AddScoped<AdminEntryService>();
 
             return services;
         }

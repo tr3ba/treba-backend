@@ -50,7 +50,9 @@ public sealed class SecondFactorService : ISecondFactorService
         CancellationToken cancellationToken = default
     )
     {
-        var methods = EnabledMethods(user);
+        var methods = EnabledMethods(user).ToList();
+        if (user.Role?.Name is Roles.Administrator or Roles.Manager or Roles.Moderator or Roles.Seller
+            && await _context.TelegramBindings.AnyAsync(b => b.UserId == user.Id, cancellationToken)) methods.Add(TwoFactorMethods.Telegram);
         if (methods.Count == 0)
         {
             return null;
@@ -114,6 +116,10 @@ public sealed class SecondFactorService : ISecondFactorService
                 challenge,
                 request.Code
             ),
+            TwoFactorMethods.Telegram => await _context.TelegramGuardChallenges.AnyAsync(g => g.LoginChallengeId == challenge.Id
+                && g.ApprovedUserId == user.Id && g.ApprovedAt != null && g.ConsumedAt != null
+                && g.DisplayCode.ToString() == request.Code && _context.TelegramBindings.Any(b => b.UserId == user.Id
+                    && b.TelegramUserId == g.ApprovedTelegramUserId && b.LinkedAt <= g.CreatedAt), cancellationToken),
             _ => false,
         };
 

@@ -6,9 +6,9 @@ namespace WebApi.Administration;
 // Operator-only commands: never start HTTP, workers, Telegram polling or notifications.
 public static class AdminOperationsDeployment
 {
-    public const string Migration = "20261020104554_AddSupportConversations";
+    public const string Migration = "20261020144055_AddWebsiteAdminLogin";
     private static readonly HashSet<string> AllowedPending =
-        ["20261017112413_AddPromotions", "20261019213326_AddReviewOrderItemRelation", "20261020093201_AddAdminOperations", Migration];
+        ["20261017112413_AddPromotions", "20261019213326_AddReviewOrderItemRelation", "20261020093201_AddAdminOperations", "20261020104554_AddSupportConversations", Migration];
 
     public static async Task<int> RunAsync(IServiceProvider services, bool migrate)
     {
@@ -56,6 +56,8 @@ public static class AdminOperationsDeployment
             await db.SupportTickets.AsNoTracking().Take(1).ToListAsync(timeout.Token);
             await db.SupportMessages.AsNoTracking().Take(1).ToListAsync(timeout.Token);
             await db.ProductReviewBaselines.AsNoTracking().Take(1).ToListAsync(timeout.Token);
+            await db.AuthenticationChallenges.AsNoTracking().Take(1).ToListAsync(timeout.Token);
+            await db.TelegramGuardChallenges.AsNoTracking().Take(1).ToListAsync(timeout.Token);
             Console.WriteLine("Operational schema and API database privileges: ready.");
             return 0;
         }

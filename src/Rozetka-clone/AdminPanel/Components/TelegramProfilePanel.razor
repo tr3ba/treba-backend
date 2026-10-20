@@ -48,7 +48,7 @@
     protected override async Task OnInitializedAsync()
     {
         var user=(await Authentication.GetAuthenticationStateAsync()).User;
-        eligible=user.IsInRole("Seller")||user.IsInRole("Moderator");
+        eligible=user.IsInRole("Seller")||user.IsInRole("Moderator")||user.IsInRole("Administrator")||user.IsInRole("Manager");
         if(eligible) await Load();
     }
     private async Task Load()

@@ -37,7 +37,7 @@ public sealed class TelegramTests
     }
 
     [Theory]
-    [InlineData(Roles.Customer)] [InlineData(Roles.Administrator)] [InlineData(Roles.Manager)]
+    [InlineData(Roles.Customer)]
     public async Task Link_RejectsOtherRoles(string role)
     {
         await using var db = TelegramTestData.Memory(); var user = await TelegramTestData.UserAsync(db, role);
@@ -65,7 +65,7 @@ public sealed class TelegramTests
 
     [Theory]
     [InlineData(false)] [InlineData(true)]
-    public async Task Guard_RequiresCorrectBrowserAndScannerSecrets_IsSingleUse_AndPreservesTwoFactor(bool twoFactor)
+    public async Task Guard_RequiresCorrectBrowserAndScannerSecrets_AndSatisfiesOneSelectedFactor(bool twoFactor)
     {
         await using var db = TelegramTestData.Memory(); var user = await TelegramTestData.UserAsync(db); var clock = new TelegramTestData.Clock();
         if (twoFactor) { user.EnableEmailTwoFactor(); await db.SaveChangesAsync(); }
@@ -82,8 +82,7 @@ public sealed class TelegramTests
         Assert.Equal("approved", (await guard.StatusAsync(start.Id, start.BrowserSecret, default)).Status);
         await Assert.ThrowsAsync<BusinessRuleException>(() => guard.ApproveAsync(start.QrPayload, user.Id, 12345, default));
         var result = await guard.CompleteAsync(start.Id, start.BrowserSecret, default);
-        if (twoFactor) { Assert.Null(result.Authentication); Assert.NotNull(result.Challenge); Assert.Single(await db.AuthenticationChallenges.ToListAsync()); Assert.Null(user.RefreshToken); }
-        else { Assert.NotNull(result.Authentication); Assert.Null(result.Challenge); Assert.Equal(user.Id.ToString(), new JwtSecurityTokenHandler().ReadJwtToken(result.Authentication.AccessToken).Subject); Assert.NotNull(user.RefreshToken); }
+        Assert.NotNull(result.Authentication); Assert.Null(result.Challenge); Assert.Equal(user.Id.ToString(), new JwtSecurityTokenHandler().ReadJwtToken(result.Authentication.AccessToken).Subject); Assert.NotNull(user.RefreshToken);
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() => guard.CompleteAsync(start.Id, start.BrowserSecret, default));
         Assert.Equal("consumed", (await guard.StatusAsync(start.Id, start.BrowserSecret, default)).Status);
     }

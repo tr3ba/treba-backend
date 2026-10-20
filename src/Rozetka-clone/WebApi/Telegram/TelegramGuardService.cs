@@ -15,11 +15,18 @@ namespace WebApi.Telegram;
 public sealed class TelegramGuardService(ApplicationDbContext db, TelegramLinkService links,
     IIdentityService identity, IOptions<TelegramOptions> options, TimeProvider clock)
 {
-    public async Task<GuardStartDto> CreateAsync(string? deviceName, string? clientIp, CancellationToken ct)
+    public async Task<GuardStartDto> CreateAsync(string? deviceName, string? clientIp, CancellationToken ct, Guid? loginChallengeId = null)
     {
         if (!options.Value.Configured) throw new BusinessRuleException("Telegram Guard ещё не подключён.");
+        if (loginChallengeId is {} loginId)
+        {
+            var login = await db.AuthenticationChallenges.SingleOrDefaultAsync(c => c.Id == loginId, ct);
+            if (login is null || login.Purpose != Domain.Entities.Users.AuthenticationChallengePurpose.Login || !login.IsActive(clock.GetUtcNow())
+                || !await db.TelegramBindings.AnyAsync(b => b.UserId == login.UserId && b.LinkedAt <= login.CreatedAt, ct)) throw new UnauthorizedAccessException("Запрос входа истёк или Guard не привязан.");
+            await links.RequireUserAsync(login.UserId, ct);
+        }
         var browser = TelegramSecrets.Create(); var approval = TelegramSecrets.Create(); var now = clock.GetUtcNow();
-        var challenge = new TelegramGuardChallenge { BrowserSecretHash = TelegramSecrets.Hash(browser), ApprovalSecretHash = TelegramSecrets.Hash(approval),
+        var challenge = new TelegramGuardChallenge { LoginChallengeId = loginChallengeId, BrowserSecretHash = TelegramSecrets.Hash(browser), ApprovalSecretHash = TelegramSecrets.Hash(approval),
             DeviceName = string.IsNullOrWhiteSpace(deviceName) ? "Веб-панель Treba" : deviceName[..Math.Min(200, deviceName.Length)],
             ClientIp = clientIp is { Length: <= 64 } ? clientIp : "", DisplayCode = RandomNumberGenerator.GetInt32(100000, 1000000), CreatedAt = now, ExpiresAt = now.AddMinutes(2) };
         db.TelegramGuardChallenges.Add(challenge); await db.SaveChangesAsync(ct);
@@ -38,6 +45,7 @@ public sealed class TelegramGuardService(ApplicationDbContext db, TelegramLinkSe
     {
         await links.RequireUserAsync(userId, ct);
         var challenge = await ScanAsync(payload, ct);
+        await CheckLoginOwner(challenge, userId, ct);
         return new(challenge.Id, challenge.DeviceName, challenge.DisplayCode.ToString(CultureInfo.InvariantCulture), challenge.ExpiresAt);
     }
     public async Task ApproveAsync(string payload, Guid userId, long telegramId, CancellationToken ct)
@@ -45,6 +53,7 @@ public sealed class TelegramGuardService(ApplicationDbContext db, TelegramLinkSe
         await links.RequireUserAsync(userId, ct);
         if (!await db.TelegramBindings.AnyAsync(b => b.UserId == userId && b.TelegramUserId == telegramId, ct)) throw new UnauthorizedAccessException();
         var challenge = await ScanAsync(payload, ct);
+        await CheckLoginOwner(challenge, userId, ct);
         if (challenge.ApprovedAt is not null) throw new BusinessRuleException("Этот QR-код уже подтверждён.");
         challenge.ApprovedUserId = userId; challenge.ApprovedTelegramUserId = telegramId; challenge.ApprovedAt = clock.GetUtcNow(); challenge.Version = Guid.NewGuid();
         await db.SaveChangesAsync(ct);
@@ -57,13 +66,24 @@ public sealed class TelegramGuardService(ApplicationDbContext db, TelegramLinkSe
             || challenge.ConsumedAt is not null || challenge.ApprovedAt is null || challenge.ApprovedUserId is null)
             throw new UnauthorizedAccessException("Вход Guard не подтверждён, уже завершён или истёк.");
         var user = await links.RequireUserAsync(challenge.ApprovedUserId.Value, ct);
+        await CheckLoginOwner(challenge, user.Id, ct);
         if (!await db.TelegramBindings.AnyAsync(b => b.UserId == user.Id && b.TelegramUserId == challenge.ApprovedTelegramUserId
             && b.LinkedAt <= challenge.ApprovedAt, ct)) throw new UnauthorizedAccessException("Привязка Telegram была отозвана.");
         challenge.ConsumedAt = clock.GetUtcNow(); challenge.Version = Guid.NewGuid();
         await db.SaveChangesAsync(ct); // The concurrency token makes completion single use.
-        var result = await identity.LoginWithGuardAsync(user.Id, ct); // Existing 2FA stays in force.
+        var result = challenge.LoginChallengeId is {} loginId
+            ? new LoginResponse(await identity.CompleteSecondFactorLoginAsync(new(loginId, TwoFactorMethods.Telegram, challenge.DisplayCode.ToString(CultureInfo.InvariantCulture)), ct), null)
+            : await identity.LoginWithGuardAsync(user.Id, ct);
         if (transaction is not null) await transaction.CommitAsync(ct);
         return result;
+    }
+    private async Task CheckLoginOwner(TelegramGuardChallenge guard, Guid userId, CancellationToken ct)
+    {
+        if (guard.LoginChallengeId is not {} loginId) return;
+        var login = await db.AuthenticationChallenges.SingleOrDefaultAsync(c => c.Id == loginId, ct);
+        if (login is null || login.UserId != userId || login.Purpose != Domain.Entities.Users.AuthenticationChallengePurpose.Login
+            || !login.IsActive(clock.GetUtcNow()) || !await db.TelegramBindings.AnyAsync(b => b.UserId == userId && b.LinkedAt <= guard.CreatedAt, ct))
+            throw new UnauthorizedAccessException("Подтвердите вход через Telegram того же аккаунта.");
     }
     private async Task<TelegramGuardChallenge> ScanAsync(string payload, CancellationToken ct)
     {

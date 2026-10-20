@@ -157,11 +157,10 @@ public sealed class IdentityService : IIdentityService
     public async Task<LoginResponse> LoginWithGuardAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var user = await _context.Users.Include(u => u.Role).SingleOrDefaultAsync(u => u.Id == userId, cancellationToken);
-        if (user is null || user.IsDeleted || user.Status != UserStatus.Active || user.Role?.Name is not (Roles.Moderator or Roles.Seller))
-            throw new UnauthorizedAccessException("Guard доступен только активным продавцам и модераторам.");
-        var challenge = await _secondFactorService.CreateLoginChallengeAsync(user, cancellationToken);
-        return challenge is not null ? new LoginResponse(null, challenge)
-            : new LoginResponse(await IssueLoginTokensAsync(user, cancellationToken), null);
+        if (user is null || user.IsDeleted || user.Status != UserStatus.Active || user.Role?.Name is not (Roles.Administrator or Roles.Manager or Roles.Moderator or Roles.Seller))
+            throw new UnauthorizedAccessException("Guard доступен только активным сотрудникам и продавцам.");
+        // A linked and approved Guard is itself one of the account's verification methods.
+        return new LoginResponse(await IssueLoginTokensAsync(user, cancellationToken), null);
     }
 
     public async Task<AuthResponse> CompleteSecondFactorLoginAsync(

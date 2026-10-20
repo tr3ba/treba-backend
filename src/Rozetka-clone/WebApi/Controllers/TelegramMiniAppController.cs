@@ -18,7 +18,7 @@ using WebApi.Telegram;
 namespace WebApi.Controllers;
 
 [ApiController, Route("api/telegram/mini"), ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-[Authorize(AuthenticationSchemes = TelegramAuthenticationHandler.SchemeName, Roles = Roles.Moderator + "," + Roles.Seller)]
+[Authorize(AuthenticationSchemes = TelegramAuthenticationHandler.SchemeName, Roles = "Administrator,Manager,Moderator,Seller")]
 public sealed class TelegramMiniAppController(ApplicationDbContext db, CatalogService catalog, IProductService products,
     TelegramGuardService guard, ProductImportService import, SellerCategoryAccess categories, AdminWorkspaceService workspace, IReviewService reviews) : ControllerBase
 {

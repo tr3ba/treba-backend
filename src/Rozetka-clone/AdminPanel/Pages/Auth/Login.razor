@@ -36,6 +36,10 @@
             <p class="eyebrow">@L["TwoFactorAuth"]</p><h2>@L["ChooseVerificationMethod"]</h2><p class="login-intro">@L["ChooseVerificationMethodDesc"]</p>
             @if (_error is not null) { <p class="feedback-error" role="alert">@_error</p> }
             <div class="login-methods">
+                @if (_challenge?.Methods.Contains(TwoFactorMethods.Telegram) == true)
+                {
+                    <GuardLoginPanel @key="_challenge.ChallengeId" LoginChallengeId="_challenge.ChallengeId" OnCompleted="ApplyLoginResult" />
+                }
                 @if (_challenge?.Methods.Contains(TwoFactorMethods.Authenticator) == true)
                 {
                     <button type="button" class="login-method" @onclick="() => SelectMethodAsync(TwoFactorMethods.Authenticator)" disabled="@_busy"><span><i class="bi bi-phone"></i></span><div><strong>Google Authenticator</strong><small>@L["AuthenticatorMethodDesc"]</small></div><i class="bi bi-chevron-right"></i></button>

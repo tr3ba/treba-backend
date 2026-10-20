@@ -9,7 +9,8 @@ let startupPreview = false;
 let preview = null, bootstrap, current = { view: 'home' }, generation = 0, dirty = false, mutating = false;
 let workspaceTimer, activeBackup = null, backupSafe = false, backupRevision = 0;
 const isSeller = () => bootstrap?.user.role === 'Seller';
-const roleName = () => isSeller() ? 'Продавец' : 'Модератор';
+const guardOnly = () => ['Administrator', 'Manager'].includes(bootstrap?.user.role);
+const roleName = () => ({ Seller: 'Продавец', Moderator: 'Модератор', Administrator: 'Администратор', Manager: 'Менеджер' })[bootstrap?.user.role] || 'Сотрудник';
 const emptyId = '00000000-0000-0000-0000-000000000000';
 function append(parent, ...children) { parent.append(...children.flat(Infinity).filter(child => child !== null && child !== undefined && child !== false)); }
 
@@ -77,7 +78,7 @@ async function perform(control, operation) {
     finally { mutating = false; control.disabled = false; control.replaceChildren(...before); }
 }
 function renderNavigation() {
-    const tabs = isSeller() ? [['home', 'home', 'Обзор'], ['products', 'box', 'Товары'], ['import', 'import', 'Импорт'], ['profile', 'person', 'Профиль']]
+    const tabs = guardOnly() ? [['home', 'guard', 'Guard'], ['profile', 'person', 'Профиль']] : isSeller() ? [['home', 'home', 'Обзор'], ['products', 'box', 'Товары'], ['import', 'import', 'Импорт'], ['profile', 'person', 'Профиль']]
         : [['home', 'home', 'Обзор'], ['moderation', 'guard', 'Проверка'], ['reviews', 'review', 'Отзывы'], ['profile', 'person', 'Профиль']];
     nav.replaceChildren(...tabs.map(([view, name, label]) => el('button', { class: current.view === view ? 'active' : '', type: 'button', onclick: () => navigate(view), 'aria-current': current.view === view ? 'page' : undefined }, icon(name), label)));
 }
@@ -114,6 +115,7 @@ function guardCard() { return el('button', { type: 'button', class: 'card guard-
 
 async function homePage() {
     bootstrap = await request('bootstrap'); renderNavigation();
+    if (guardOnly()) return el('div', {}, heading('Treba Guard', 'Подтверждайте вход в свой аккаунт.'), guardCard());
     const stats = bootstrap.stats;
     const page = el('div', {}, el('section', { class: 'welcome' }, el('div', {}, el('p', {}, 'ВАША РАБОЧАЯ ПАНЕЛЬ'), el('h1', {}, 'Привет, ' + bootstrap.user.name.split(' ')[0]), el('p', { style: 'margin-top:8px' }, isSeller() ? 'Всё важное для вашего магазина.' : 'Помогаем каталогу оставаться качественным.')),
         el('span', { class: 'avatar' }, bootstrap.user.name.slice(0, 1))), guardCard(),

@@ -30,6 +30,7 @@ public sealed class TelegramConfiguration : IEntityTypeConfiguration<TelegramBin
     public void Configure(EntityTypeBuilder<TelegramGuardChallenge> b)
     {
         b.ToTable("telegram_guard_challenges"); b.HasKey(x => x.Id); b.Property(x => x.Id).ValueGeneratedNever();
+        b.HasOne<AuthenticationChallenge>().WithMany().HasForeignKey(x => x.LoginChallengeId).OnDelete(DeleteBehavior.Cascade);
         b.Property(x => x.BrowserSecretHash).HasMaxLength(64).IsRequired(); b.Property(x => x.ApprovalSecretHash).HasMaxLength(64).IsRequired();
         b.Property(x => x.DeviceName).HasMaxLength(200); b.Property(x => x.ClientIp).HasMaxLength(64);
         b.HasIndex(x => x.ExpiresAt); b.Property(x => x.Version).IsConcurrencyToken();

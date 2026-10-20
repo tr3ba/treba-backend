@@ -35,6 +35,7 @@ public sealed class TelegramLinkChallenge
 public sealed class TelegramGuardChallenge
 {
     public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid? LoginChallengeId { get; set; }
     public string BrowserSecretHash { get; set; } = "";
     public string ApprovalSecretHash { get; set; } = "";
     public int DisplayCode { get; set; }
