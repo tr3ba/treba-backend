@@ -9,6 +9,7 @@
 @inject TokenStorageService Tokens
 @inject HttpClient Http
 @inject CurrentUserState CurrentUser
+@inject IConfiguration Configuration
 
 @{
     var currentCulture = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
@@ -22,6 +23,7 @@
         <header class="top-header">
             <label class="mobile-menu-button" for="admin-nav-toggle" aria-label="@L["OpenMenu"]"><i class="bi bi-list"></i></label>
             <div class="header-actions">
+                <StorefrontLink Url="@(Configuration["WebsiteLogin:StoreOrigin"] ?? "https://treba.duckdns.org/")" />
                 <div class="lang-selector" aria-label="@L["Language"]">
                     <a class="lang-btn @(currentCulture == "uk" ? "active" : "")" data-enhance-nav="false" href="/culture/set?culture=uk&redirectUri=@returnPath">UA</a>
                     <a class="lang-btn @(currentCulture == "en" ? "active" : "")" data-enhance-nav="false" href="/culture/set?culture=en&redirectUri=@returnPath">EN</a>

@@ -400,7 +400,7 @@ async function importPreviewPage(args) {
     const backupKey = 'import:' + data.id;
     let cached = null; try { cached = await draftStorage.get(bootstrap.user.id, backupKey); } catch { }
     if (cached && !args.restore) return recoveryPage(cached, () => navigate('importPreview', { ...args, restore: true }, true), async () => { await draftStorage.remove(bootstrap.user.id, backupKey); await navigate('importPreview', args, true); });
-    const model = (args.restore ? cached?.data?.model : null) || { name: data.name, description: data.description, manufacturerPartNumber: data.manufacturerPartNumber || '', barcode: data.barcode || '', duplicateConfirmed: false, brandId: bootstrap.brands.find(b => b.name.toLowerCase() === data.brandName.toLowerCase())?.id || '', storeId: bootstrap.stores[0]?.id || '',
+    const model = (args.restore ? cached?.data?.model : null) || { name: data.name, description: data.description, manufacturerPartNumber: data.manufacturerPartNumber || '', barcode: data.barcode || '', duplicateConfirmed: false, brandId: data.brandId || bootstrap.brands.find(b => b.name.toLowerCase() === data.brandName.toLowerCase())?.id || '', storeId: bootstrap.stores[0]?.id || '',
         sku: 'TRB-' + data.id.slice(0, 8).toUpperCase(), price: data.sourcePrice || 0, stockQuantity: 0, variants: [], attributes: [] };
     const definitions = await request('attributes?categoryId=' + data.categoryId); const attributePanel = el('div'); renderAttributes(attributePanel, model, definitions);
     const update = key => value => { model[key] = value; setDirty(true); };

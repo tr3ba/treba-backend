@@ -28,6 +28,7 @@ if (builder.Configuration["DataProtectionKeysPath"] is {} keys)
 builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<CatalogApiClient>();
+builder.Services.AddScoped<SellerImportsApiClient>();
 builder.Services.AddScoped<SecurityApiClient>();
 builder.Services.AddScoped<ReviewsApiClient>();
 builder.Services.AddScoped<DashboardApiClient>();

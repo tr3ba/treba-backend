@@ -90,6 +90,37 @@ public sealed class TelegramHttpTests
         }
     }
 
+    [Fact]
+    public async Task WebsiteSellerImports_UseWebsiteSession_WithoutTelegramBinding_AndKeepDraftsPrivate()
+    {
+        await using var server = await ServerAsync(); using var client = server.GetTestClient();
+        Guid sellerId, otherId, draftId, brandId;
+        using(var scope = server.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var seed = await TelegramTestData.SeedAsync(db); await TelegramTestData.AllowImportAsync(db, seed); sellerId = seed.User.Id;
+            otherId = (await TelegramTestData.SeedAsync(db)).User.Id;
+            draftId = (await scope.ServiceProvider.GetRequiredService<ProductImportService>().PreviewAsync(sellerId, TelegramTestData.SourceUrl, default)).Id;
+            brandId = seed.Brand.Id; Assert.Empty(await db.TelegramBindings.ToListAsync());
+        }
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/v1/seller/imports/options")).StatusCode);
+        client.DefaultRequestHeaders.Add("X-Website-Role", Roles.Seller); client.DefaultRequestHeaders.Add("X-Website-User", sellerId.ToString());
+        var options = await client.GetFromJsonAsync<SellerImportOptionsDto>("/api/v1/seller/imports/options");
+        Assert.NotEmpty(options!.Categories); Assert.Single(options.Stores);
+        var preview = await client.GetFromJsonAsync<ImportPreviewDto>($"/api/v1/seller/imports/{draftId}"); Assert.Equal(brandId, preview!.BrandId);
+        var created = await client.PostAsJsonAsync($"/api/v1/seller/imports/{draftId}/brand", new CreateImportBrandRequest("Website Brand"));
+        Assert.Equal(HttpStatusCode.OK, created.StatusCode);
+        client.DefaultRequestHeaders.Remove("X-Website-User"); client.DefaultRequestHeaders.Add("X-Website-User", otherId.ToString());
+        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"/api/v1/seller/imports/{draftId}")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await client.PostAsJsonAsync($"/api/v1/seller/imports/{draftId}/brand", new CreateImportBrandRequest("Foreign"))).StatusCode);
+        foreach(var role in new[] { Roles.Administrator, Roles.Manager, Roles.Moderator, Roles.Customer })
+        {
+            client.DefaultRequestHeaders.Remove("X-Website-Role"); client.DefaultRequestHeaders.Add("X-Website-Role", role);
+            Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync("/api/v1/seller/imports/options")).StatusCode);
+            Assert.Equal(HttpStatusCode.Forbidden, (await client.PostAsJsonAsync("/api/v1/seller/imports/queue", new QueueImportsRequest([new(TelegramTestData.SourceUrl)]))).StatusCode);
+        }
+    }
+
     [Theory]
     [InlineData(Roles.Seller, HttpStatusCode.OK)] [InlineData(Roles.Moderator, HttpStatusCode.OK)]
     [InlineData(Roles.Customer, HttpStatusCode.Unauthorized)] [InlineData(Roles.Administrator, HttpStatusCode.OK)] [InlineData(Roles.Manager, HttpStatusCode.OK)]

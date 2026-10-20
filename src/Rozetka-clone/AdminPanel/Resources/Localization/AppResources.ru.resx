@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <data name="Dashboard" xml:space="preserve"><value>Дашборд</value></data>
   <data name="Management" xml:space="preserve"><value>Управление</value></data>
@@ -729,4 +729,35 @@
   <data name="WorkspaceCreateSeparate" xml:space="preserve"><value>Создать отдельную карточку, несмотря на совпадение</value></data>
   <data name="AuditFieldBarcode" xml:space="preserve"><value>Штрихкод</value></data>
   <data name="WorkspaceOldPriceRemoved" xml:space="preserve"><value>Старая цена будет убрана</value></data>
+  <data name="BackToStorefront" xml:space="preserve"><value>На сайт</value></data>
+  <data name="ImportProducts" xml:space="preserve"><value>Импорт товаров</value></data>
+  <data name="ImportProductsHint" xml:space="preserve"><value>Перенесите карточки с Rozetka, Prom.ua или Эпицентра и проверьте их перед модерацией.</value></data>
+  <data name="ImportLinks" xml:space="preserve"><value>Ссылки на товары</value></data>
+  <data name="ImportLinksHint" xml:space="preserve"><value>От 1 до 20 ссылок, каждую с новой строки.</value></data>
+  <data name="ImportAutoCategory" xml:space="preserve"><value>Определить автоматически</value></data>
+  <data name="ImportLoadLinks" xml:space="preserve"><value>Загрузить товары</value></data>
+  <data name="ImportLoading" xml:space="preserve"><value>Подождите…</value></data>
+  <data name="ImportQueue" xml:space="preserve"><value>Очередь импорта</value></data>
+  <data name="ImportQueueEmpty" xml:space="preserve"><value>Добавьте ссылки, чтобы загрузить первые товары.</value></data>
+  <data name="ImportQueued" xml:space="preserve"><value>Ссылки добавлены. Загрузка продолжится, даже если закрыть эту страницу.</value></data>
+  <data name="ImportReview" xml:space="preserve"><value>Проверить карточку</value></data>
+  <data name="ImportNoImages" xml:space="preserve"><value>Источник не передал фотографий.</value></data>
+  <data name="ImportSourceBrand" xml:space="preserve"><value>Бренд в источнике</value></data>
+  <data name="ImportBrandMissing" xml:space="preserve"><value>Выберите существующий бренд или создайте новый.</value></data>
+  <data name="ImportCreateBrand" xml:space="preserve"><value>Создать бренд</value></data>
+  <data name="ImportSourceCharacteristics" xml:space="preserve"><value>Характеристики источника</value></data>
+  <data name="ImportDuplicates" xml:space="preserve"><value>В вашем каталоге есть похожие товары. Проверьте их перед созданием отдельной карточки.</value></data>
+  <data name="ImportViewSource" xml:space="preserve"><value>Посмотреть источник</value></data>
+  <data name="ImportReviewHint" xml:space="preserve"><value>Проверьте название, описание, бренд, цену и фотографии. Товар будет опубликован после модерации.</value></data>
+  <data name="ImportAlreadySubmitted" xml:space="preserve"><value>Этот товар уже отправлен на модерацию.</value></data>
+  <data name="ImportBrandSelected" xml:space="preserve"><value>Бренд выбран.</value></data>
+  <data name="ImportSubmitted" xml:space="preserve"><value>Товар создан и отправлен на модерацию.</value></data>
+  <data name="ImportRequestTimeout" xml:space="preserve"><value>Сервер не ответил вовремя. Попробуйте ещё раз.</value></data>
+  <data name="ImportLeaveConfirm" xml:space="preserve"><value>Выйти из предпросмотра? Последние изменения могут быть ещё не сохранены.</value></data>
+  <data name="ImportStatusQueued" xml:space="preserve"><value>В очереди</value></data>
+  <data name="ImportStatusProcessing" xml:space="preserve"><value>Загружается</value></data>
+  <data name="ImportStatusReady" xml:space="preserve"><value>Готов к проверке</value></data>
+  <data name="ImportStatusFailed" xml:space="preserve"><value>Ошибка загрузки</value></data>
+  <data name="ImportStatusExpired" xml:space="preserve"><value>Предпросмотр истёк</value></data>
+  <data name="ImportStatusSubmitted" xml:space="preserve"><value>На модерации</value></data>
 </root>

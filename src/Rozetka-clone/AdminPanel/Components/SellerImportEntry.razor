@@ -1,0 +1,8 @@
+@if (Role == "Seller" && IsNew)
+{
+    <a class="secondary-button seller-import-entry" href="/products/import" title="@L["ImportProducts"]" aria-label="@L["ImportProducts"]"><i class="bi bi-magic" aria-hidden="true"></i></a>
+}
+@code {
+    [Parameter] public string? Role { get; set; }
+    [Parameter] public bool IsNew { get; set; }
+}

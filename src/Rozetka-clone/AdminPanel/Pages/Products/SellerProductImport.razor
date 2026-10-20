@@ -1,0 +1,174 @@
+@page "/products/import"
+@implements IDisposable
+@using Contracts.Telegram
+@using Contracts.Catalog
+@using System.Text.Json
+@using Microsoft.JSInterop
+@inject SellerImportsApiClient Imports
+@inject CatalogApiClient Catalog
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider Authentication
+@inject Microsoft.JSInterop.IJSRuntime Js
+
+<PageTitle>@L["ImportProducts"] — Treba Admin</PageTitle>
+<NavigationLock ConfirmExternalNavigation="@(preview is not null && !completed)" OnBeforeInternalNavigation="BeforeNavigate" />
+<a class="users-back-link" href="/products/new"><i class="bi bi-arrow-left"></i> @L["NewProduct"]</a>
+<section class="page-hero"><div><p class="eyebrow">@L["CatalogWorkspace"]</p><h1>@L["ImportProducts"]</h1><p>@L["ImportProductsHint"]</p></div></section>
+@if (error is not null) { <p class="feedback-error" role="alert">@error</p> }
+@if (notice is not null) { <p class="feedback-success" role="status">@notice</p> }
+@if (options is null) { @if(error is null){<p role="status">@L["Loading"]</p>}else{<button class="secondary-button" @onclick="LoadOptions">@L["Retry"]</button>} }
+else if (preview is null)
+{
+    <section class="card-box seller-import-form">
+        <label class="field-group"><span>@L["ImportLinks"]</span><textarea class="form-control" rows="4" maxlength="30000" @bind="links" placeholder="https://rozetka.com.ua/…"></textarea><small>@L["ImportLinksHint"]</small></label>
+        @if (options.CanClassifyImports)
+        {
+            <label class="field-group"><span>@L["Category"]</span><select class="form-control" @bind="categoryId"><option value="">@L["ImportAutoCategory"]</option>@foreach(var category in options.Categories){<option value="@category.Id">@category.Name</option>}</select></label>
+        }
+        <button class="primary-button" type="button" disabled="@(busy || string.IsNullOrWhiteSpace(links) || options.Stores.Count == 0)" @onclick="AddLinks">@L[busy ? "ImportLoading" : "ImportLoadLinks"]</button>
+        @if(options.Stores.Count == 0){<p class="feedback-error">@L["NoAvailableStores"]</p>}
+    </section>
+    <section class="card-box seller-import-jobs">
+        <div class="seller-import-heading"><h2>@L["ImportQueue"]</h2><button class="secondary-button" disabled="@busy" @onclick="Refresh">@L["Refresh"]</button></div>
+        @if(jobs.Count == 0){<p class="muted-text">@L["ImportQueueEmpty"]</p>}
+        @foreach(var job in jobs)
+        {
+            <article class="seller-import-job" @key="job.Id">
+                <div><strong>@L["ImportStatus" + job.Status]</strong><a href="@job.SourceUrl" target="_blank" rel="noopener noreferrer">@job.SourceUrl</a>@if(job.Error is not null){<p class="feedback-error">@job.Error</p>}</div>
+                @if(job.ProductId.HasValue){<a class="secondary-button" href="/products">@L["BackToProducts"]</a>}
+                else if(job.Status == "Ready" && job.PreviewId.HasValue){<button class="primary-button" disabled="@busy" @onclick="() => OpenPreview(job.PreviewId.Value)">@L["ImportReview"]</button>}
+                @if(job.Status is "Failed" or "Expired"){<button class="secondary-button" disabled="@busy" @onclick="() => Retry(job.Id)">@L["Retry"]</button>}
+            </article>
+        }
+    </section>
+}
+else
+{
+    <EditorAutosave @key="preview.Id" @ref="autosave" UserScope="@userScope" DraftKey="@("import:" + preview.Id)" Snapshot="Snapshot" Photos="NoPhotos" HasChanges="true" Enabled="@(!busy)" OnRestore="RestoreBackup" />
+    <button type="button" class="secondary-button" disabled="@busy" @onclick="ClosePreview"><i class="bi bi-arrow-left"></i> @L["ImportQueue"]</button>
+    <p class="seller-import-category">@L["Category"]: <strong>@preview.CategoryName</strong></p>
+    <EditForm Model="model" OnValidSubmit="Submit" FormName="seller-import">
+        <DataAnnotationsValidator />
+        <fieldset disabled="@busy" class="editor-fieldset">
+            <section class="card-box seller-import-form">
+                <ValidationSummary />
+                <div class="seller-import-images">@foreach(var image in preview.Images){<img src="@image" alt="@preview.Name" loading="lazy" referrerpolicy="no-referrer" />}</div>
+                @if(preview.Images.Count == 0){<p class="muted-text">@L["ImportNoImages"]</p>}
+                <label class="field-group"><span>@L["ProductName"] *</span><InputText class="form-control" maxlength="250" @bind-Value="model.Name" /></label>
+                <label class="field-group"><span>@L["Description"]</span><InputTextArea class="form-control" rows="7" maxlength="10000" @bind-Value="model.Description" /></label>
+                <div class="editor-form-grid">
+                    <label class="field-group"><span>@L["Brand"] *</span><InputSelect class="form-control" @bind-Value="model.BrandId"><option value="@Guid.Empty">@L["SelectBrand"]</option>@foreach(var brand in brands){<option value="@brand.Id">@brand.Name</option>}</InputSelect><small>@L["ImportSourceBrand"]: @(string.IsNullOrWhiteSpace(preview.BrandName) ? "—" : preview.BrandName)</small></label>
+                    <label class="field-group"><span>@L["Store"] *</span><InputSelect class="form-control" @bind-Value="model.StoreId"><option value="@Guid.Empty">@L["SelectStore"]</option>@foreach(var store in options.Stores){<option value="@store.Id">@store.Name</option>}</InputSelect></label>
+                </div>
+                @if(model.BrandId == Guid.Empty)
+                {
+                    <section class="seller-import-new-brand"><p>@L["ImportBrandMissing"]</p><label class="field-group"><span>@L["Brand"]</span><input class="form-control" maxlength="200" @bind="brandName" /></label><button class="secondary-button" type="button" disabled="@(busy || string.IsNullOrWhiteSpace(brandName))" @onclick="CreateBrand">@L["ImportCreateBrand"]</button></section>
+                }
+                <div class="editor-form-grid">
+                    <label class="field-group"><span>@L["Sku"] *</span><InputText class="form-control" maxlength="100" @bind-Value="model.Sku" /></label>
+                    <label class="field-group"><span>@L["WorkspaceManufacturerPartNumber"]</span><InputText class="form-control" maxlength="100" @bind-Value="model.ManufacturerPartNumber" /></label>
+                    <label class="field-group"><span>@L["WorkspaceBarcode"]</span><InputText class="form-control" maxlength="100" @bind-Value="model.Barcode" /></label>
+                    <label class="field-group"><span>@L["Price"] (₴) *</span><InputNumber class="form-control" min="0.01" step="0.01" @bind-Value="model.Price" /></label>
+                    <label class="field-group"><span>@L["Stock"] *</span><InputNumber class="form-control" min="0" @bind-Value="model.StockQuantity" /></label>
+                </div>
+                <ProductCharacteristicsEditor Values="model.Attributes" Definitions="definitions" Variants="emptyVariants" />
+                @if(preview.Characteristics.Count > 0){<details><summary>@L["ImportSourceCharacteristics"]</summary><dl class="seller-import-characteristics">@foreach(var value in preview.Characteristics){<dt>@value.Name</dt><dd>@value.Value</dd>}</dl></details>}
+                @if(preview.Duplicates.Count > 0){<div class="feedback-error">@L["ImportDuplicates"]@foreach(var duplicate in preview.Duplicates){<p>@duplicate.Name · @duplicate.StoreName</p>}</div>}
+                <label class="settings-checkbox"><InputCheckbox @bind-Value="model.DuplicateConfirmed" /> @L["WorkspaceCreateSeparate"]</label>
+                <a href="@preview.SourceUrl" target="_blank" rel="noopener noreferrer">@L["ImportViewSource"] <i class="bi bi-arrow-up-right"></i></a>
+                <p class="muted-text">@L["ImportReviewHint"]</p>
+                <button class="primary-button" type="submit" disabled="@(busy || model.BrandId == Guid.Empty || model.StoreId == Guid.Empty)">@L[busy ? "ImportLoading" : "SendToModeration"]</button>
+            </section>
+        </fieldset>
+    </EditForm>
+}
+
+@code {
+    private SellerImportOptionsDto? options;
+    private List<CatalogLookupDto> brands = [];
+    private List<ImportJobDto> jobs = [];
+    private ImportPreviewDto? preview;
+    private SubmitImportRequest model = new();
+    private IReadOnlyList<CatalogAttributeDefinitionDto> definitions = [];
+    private readonly List<CatalogVariantInput> emptyVariants = [];
+    private string links = "", brandName = "";
+    private string? error, notice;
+    private Guid? categoryId;
+    private bool busy, completed, disposed;
+    private bool pollStarted;
+    private string userScope = "";
+    private EditorAutosave? autosave;
+    private readonly CancellationTokenSource lifetime = new();
+
+    protected override Task OnInitializedAsync() => LoadOptions();
+    private async Task LoadOptions()
+    {
+        error = null;
+        try { userScope = (await Authentication.GetAuthenticationStateAsync()).User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? ""; options = await Imports.Options(lifetime.Token); brands = options.Brands.ToList(); jobs = await Imports.Jobs(lifetime.Token); if(!pollStarted){pollStarted = true; _ = Poll();} }
+        catch(HttpRequestException ex){error = ex.Message;}
+        catch(OperationCanceledException) when(lifetime.IsCancellationRequested){}
+        catch(OperationCanceledException){error = L["ImportRequestTimeout"];}
+    }
+    private async Task Poll()
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(3));
+        try
+        {
+            while(await timer.WaitForNextTickAsync(lifetime.Token))
+            {
+                if(busy || !jobs.Any(j => j.Status is "Queued" or "Processing")) continue;
+                await InvokeAsync(async () => { await Refresh(); StateHasChanged(); });
+            }
+        }
+        catch(OperationCanceledException) when(lifetime.IsCancellationRequested){}
+    }
+    private async Task Run(Func<Task> operation)
+    {
+        if(busy || disposed) return;
+        busy = true; error = null; notice = null;
+        try { await operation(); }
+        catch(HttpRequestException ex){error = ex.Message;}
+        catch(OperationCanceledException) when(lifetime.IsCancellationRequested){}
+        catch(OperationCanceledException){error = L["ImportRequestTimeout"];}
+        finally { busy = false; }
+    }
+    private Task Refresh() => Run(async () => jobs = await Imports.Jobs(lifetime.Token));
+    private Task AddLinks() => Run(async () =>
+    {
+        var urls = links.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Distinct().ToList();
+        if(urls.Count is < 1 or > 20){error = L["ImportLinksHint"]; return;}
+        await Imports.Add(new(urls.Select(url => new ImportUrlRequest(url, categoryId)).ToList()), lifetime.Token);
+        links = ""; jobs = await Imports.Jobs(lifetime.Token); notice = L["ImportQueued"];
+    });
+    private Task Retry(Guid id) => Run(async () => { await Imports.Retry(id, lifetime.Token); jobs = await Imports.Jobs(lifetime.Token); });
+    private Task OpenPreview(Guid id) => Run(async () =>
+    {
+        var data = await Imports.Preview(id, lifetime.Token);
+        if(data.SubmittedAt.HasValue){notice = L["ImportAlreadySubmitted"]; jobs = await Imports.Jobs(lifetime.Token); return;}
+        definitions = await Catalog.AttributeDefinitions(data.CategoryId);
+        options = await Imports.Options(lifetime.Token); brands = options.Brands.ToList();
+        model = new() { Name = data.Name, Description = data.Description, BrandId = data.BrandId ?? Guid.Empty, StoreId = options.Stores.FirstOrDefault()?.Id ?? Guid.Empty,
+            Sku = "TRB-" + data.Id.ToString("N")[..8].ToUpperInvariant(), ManufacturerPartNumber = data.ManufacturerPartNumber, Barcode = data.Barcode, Price = data.SourcePrice ?? 0 };
+        foreach(var definition in definitions.Where(d => d.IsRequired)) model.Attributes.Add(new() { AttributeId = definition.Id });
+        brandName = data.BrandName; preview = data; completed = false;
+    });
+    private Task CreateBrand() => Run(async () =>
+    {
+        var brand = await Imports.CreateBrand(preview!.Id, brandName, lifetime.Token);
+        brands.RemoveAll(b => b.Id == brand.Id); brands.Add(brand); brands = brands.OrderBy(b => b.Name).ToList(); model.BrandId = brand.Id; notice = L["ImportBrandSelected"];
+    });
+    private Task Submit() => Run(async () =>
+    {
+        await Imports.Submit(preview!.Id, model, lifetime.Token); completed = true;
+        if(autosave is not null) await autosave.ClearAsync();
+        preview = null;
+        jobs = await Imports.Jobs(lifetime.Token); notice = L["ImportSubmitted"];
+    });
+    private string Snapshot() => JsonSerializer.Serialize(model);
+    private IReadOnlyList<EditorBackupPhoto> NoPhotos() => [];
+    private Task RestoreBackup(EditorRecovery backup){model = JsonSerializer.Deserialize<SubmitImportRequest>(backup.ModelJson) ?? throw new JsonException(); return Task.CompletedTask;}
+    private async Task ClosePreview(){if(autosave is not null)await autosave.CheckpointAsync(); preview = null; error = null; notice = null;}
+    private async Task BeforeNavigate(LocationChangingContext context)
+    { if(preview is not null && !completed && !await Js.InvokeAsync<bool>("confirm", L["ImportLeaveConfirm"].Value)) context.PreventNavigation(); }
+    public void Dispose(){disposed = true; lifetime.Cancel(); lifetime.Dispose();}
+}
