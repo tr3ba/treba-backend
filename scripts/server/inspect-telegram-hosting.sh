@@ -4,6 +4,14 @@
 set -euo pipefail
 
 printf 'HOST '; hostname
+printf 'HOST_RESOURCES\n'
+free -m
+df -h / /var/lib/docker
+docker system df
+printf 'RECENT_RESOURCE_ERRORS\n'
+journalctl -k --since '-1 hour' --no-pager 2>/dev/null | grep -Ei 'out of memory|oom-kill|killed process|no space left|I/O error' | tail -n 15 || true
+printf 'FRONTEND_IMAGES\n'
+docker image ls --filter reference=019066823315.dkr.ecr.eu-west-1.amazonaws.com/treba-frontend --format '{{.ID}} {{.Tag}} {{.Size}}'
 printf 'CONTAINERS\n'
 docker ps --format '{{.Names}} {{.Image}} {{.Ports}}'
 
