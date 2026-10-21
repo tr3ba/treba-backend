@@ -15,9 +15,9 @@ using Microsoft.EntityFrameworkCore;
 namespace Application.Orders;
 
 public sealed class OrderService(
-    IApplicationDbContext db, 
-    InventoryService inventory, 
-    IDiscountService discounts, 
+    IApplicationDbContext db,
+    InventoryService inventory,
+    IDiscountService discounts,
     ICurrentActor actor,
     IPaymentService paymentService) : IOrderService
 {
@@ -46,16 +46,16 @@ public sealed class OrderService(
             throw new ArgumentException("Provide between 1 and 100 items with positive quantities.");
         if (request.Items.Select(i => i.VariantId).Distinct().Count() != request.Items.Count)
             throw new ArgumentException("Duplicate variants are not allowed.");
-        
+
         ValidateText(request.RecipientName, 150, "Recipient name");
         ValidateText(request.RecipientPhone, 32, "Phone");
         ValidateText(request.RecipientEmail, 150, "Email");
-        
+
         if (!System.Net.Mail.MailAddress.TryCreate(request.RecipientEmail, out _))
             throw new ArgumentException("A valid email is required.");
         if (request.CustomerComment?.Length > 4000 || request.CouponCode?.Length > 100)
             throw new ArgumentException("Order text is too long.");
-            
+
         var a = request.Address ?? throw new ArgumentException("Address is required.");
         ValidateText(a.Country, 100, "Country");
         ValidateText(a.City, 100, "City");
@@ -63,7 +63,7 @@ public sealed class OrderService(
         ValidateText(a.Building, 50, "Building");
         ValidateText(a.RecipientName, 150, "Recipient name");
         ValidateText(a.RecipientPhone, 32, "Phone");
-        
+
         if (a.Region?.Length > 100 || a.Apartment?.Length > 50 || a.PostalCode?.Length > 20)
             throw new ArgumentException("Address text is too long.");
 
@@ -86,7 +86,7 @@ public sealed class OrderService(
 
         var discount = await discounts.CalculateDiscountAsync(customerId, request.Items.Select(i => new PriceItem(i.VariantId, i.Quantity)).ToList(), request.CouponCode, ct);
         var subtotal = request.Items.Sum(i => rows.Single(r => r.Variant.Id == i.VariantId).Variant.Price * i.Quantity);
-        
+
         if (subtotal > 9999999999999999.99m)
             throw new ArgumentException("The order amount is too large.");
         if (discount.Subtotal != subtotal)
@@ -171,7 +171,7 @@ public sealed class OrderService(
                     || coupon.UsageLimit > 0 && coupon.UsedCount >= coupon.UsageLimit
                     || coupon.UsageLimitPerUser > 0 && await db.CouponUsages.CountAsync(u => u.CouponId == couponId && u.UserId == customerId, ct) >= coupon.UsageLimitPerUser)
                     throw new BusinessRuleException("The coupon changed or its usage limit was reached. Refresh the order.");
-                
+
                 coupon.UsedCount++;
                 promotion.Version = Guid.NewGuid();
                 db.CouponUsages.Add(new()
@@ -217,7 +217,7 @@ public sealed class OrderService(
         ValidatePage(page, size);
         if (from > to)
             throw new ArgumentException("Invalid date range.");
-            
+
         var query = VisibleOrders().AsNoTracking();
         if (!string.IsNullOrWhiteSpace(status))
         {
@@ -236,13 +236,13 @@ public sealed class OrderService(
             query = query.Where(o => o.OrderNumber.ToLower().Contains(term) || o.RecipientName.ToLower().Contains(term)
                 || o.RecipientPhone.Contains(term) || o.RecipientEmail.ToLower().Contains(term));
         }
-        
+
         var total = await query.CountAsync(ct);
         var orders = await query.OrderByDescending(o => o.CreatedAt).ThenBy(o => o.Id).Skip((page - 1) * size).Take(size).ToListAsync(ct);
         var ids = orders.Select(o => o.Id).ToList();
         var items = await db.OrderItems.AsNoTracking().Where(i => ids.Contains(i.OrderId)).ToListAsync(ct);
         var sellers = await SellerIds(ct);
-        
+
         return new(orders.Select(o => Row(o, items.Where(i => i.OrderId == o.Id), sellers)).ToList(), page, size, total, (int)Math.Ceiling(total / (double)size));
     }
 
@@ -251,12 +251,12 @@ public sealed class OrderService(
         var order = await VisibleOrders().AsNoTracking().Include(o => o.Items).Include(o => o.Address).Include(o => o.StatusHistory).SingleOrDefaultAsync(o => o.Id == id, ct);
         if (order is null)
             return null;
-            
+
         var sellers = await SellerIds(ct);
         var items = order.Items.Where(i => sellers is null || sellers.Contains(i.SellerId)).ToList();
         var partial = items.Count != order.Items.Count;
         var a = order.Address;
-        
+
         return new(Row(order, order.Items, sellers), order.RecipientPhone, order.RecipientEmail, partial ? null : order.CustomerComment,
             partial ? items.Sum(i => i.UnitPrice * i.Quantity) : order.Subtotal,
             partial ? items.Sum(i => i.DiscountAmount) : order.DiscountAmount, partial ? 0 : order.DeliveryPrice,
@@ -279,12 +279,12 @@ public sealed class OrderService(
         var order = await VisibleOrders().Include(o => o.Items).SingleOrDefaultAsync(o => o.Id == id, ct) ?? throw new KeyNotFoundException();
         if (Convert.ToBase64String(order.Version) != request.ExpectedVersion)
             throw new BusinessRuleException("The order changed. Reload it before saving.");
-            
+
         var next = Parse(request.Status);
         var sellers = await SellerIds(ct);
         if (!Allowed(order.Status, sellers is not null && order.Items.Any(i => !sellers.Contains(i.SellerId))).Contains(next))
             throw new BusinessRuleException("This status transition is not allowed for your role.");
-            
+
         await StageTransitionAsync(order, next, request.Reason, ct);
         await db.SaveChangesAsync(ct);
     }
@@ -293,23 +293,23 @@ public sealed class OrderService(
     {
         if (reason?.Length > 500 || next == OrderStatus.CANCELLED && string.IsNullOrWhiteSpace(reason))
             throw new ArgumentException("A cancellation reason of at most 500 characters is required.");
-            
+
         var previous = order.Status;
         if (next == OrderStatus.PAID)
             await inventory.StageConfirmAsync(order.Id, ct);
         if (next is OrderStatus.CANCELLED or OrderStatus.RETURNED)
             await inventory.StageRestoreAsync(order.Id, ct);
-            
+
         order.Status = next;
         order.Version = Guid.NewGuid().ToByteArray();
-        
+
         if (next == OrderStatus.PAID)
             order.ConfirmedAt = DateTimeOffset.UtcNow;
         if (next == OrderStatus.CANCELLED)
             order.CancelledAt = DateTimeOffset.UtcNow;
         if (next == OrderStatus.COMPLETED)
             order.CompletedAt = DateTimeOffset.UtcNow;
-            
+
         db.OrderStatusHistories.Add(new()
         {
             Id = Guid.NewGuid(),
@@ -376,17 +376,18 @@ public sealed class OrderService(
     }
 
     private static Contracts.Orders.OrderDto Map(Order o) => new(
-        o.Id, 
-        o.OrderNumber, 
-        o.CustomerId, 
-        o.Status.ToString(), 
-        o.Currency, 
-        o.Subtotal, 
-        o.DiscountAmount, 
-        o.DeliveryPrice, 
-        o.TotalAmount, 
-        o.RecipientName, 
-        o.RecipientPhone, 
+        o.Id,
+        o.OrderNumber,
+        o.CustomerId,
+        o.Status.ToString(),
+        o.PaymentStatus.ToString(),
+        o.Currency,
+        o.Subtotal,
+        o.DiscountAmount,
+        o.DeliveryPrice,
+        o.TotalAmount,
+        o.RecipientName,
+        o.RecipientPhone,
         o.CreatedAt);
 
     internal static void ValidatePage(int page, int size)
