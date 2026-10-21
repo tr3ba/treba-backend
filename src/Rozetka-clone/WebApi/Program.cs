@@ -59,7 +59,7 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddSwaggerDocumentation();
 
-builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
 
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();

@@ -1,4 +1,5 @@
 using Domain.Enums;
+using Domain.Entities.Payments;
 
 namespace Domain.Entities.Orders;
 
@@ -17,9 +18,9 @@ public class Order
 
     public OrderStatus Status { get; set; } = OrderStatus.CREATED;
 
+    public PaymentStatus PaymentStatus { get; set; }
+
     // TODO: после добавления Payment и Delivery убрать коменты
-    // public PaymentStatus PaymentStatus { get; set; } = PaymentStatus.PENDING;
-    //
     // public DeliveryStatus DeliveryStatus { get; set; } = DeliveryStatus.CREATED;
 
     public string Currency { get; set; } = "UAH";
@@ -85,4 +86,6 @@ public class Order
     public ICollection<OrderItem> Items { get; set; } = [];
 
     public ICollection<OrderStatusHistory> StatusHistory { get; set; } = [];
+
+    public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
 }

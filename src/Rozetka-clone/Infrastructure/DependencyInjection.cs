@@ -1,9 +1,12 @@
 ﻿using Application.Abstractions;
+using Application.Payments;
 using Infrastructure.Authentication;
 using Infrastructure.Persistence;
+using Infrastructure.Payments;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace Infrastructure
 {
@@ -11,8 +14,8 @@ namespace Infrastructure
     {
         public static IServiceCollection AddInfrastructure(
             this IServiceCollection services,
-            IConfiguration configuration
-        )
+            IConfiguration configuration,
+            IHostEnvironment? environment = null)
         {
             var connectionString =
                 configuration.GetConnectionString("DefaultConnection")
@@ -96,6 +99,26 @@ namespace Infrastructure
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<IIdentityService, IdentityService>();
             services.AddScoped<AdminEntryService>();
+
+            // MockPaymentProvider is ONLY for Development environment.
+            // In Production/Staging, a real payment provider implementation must be registered instead.
+            // VerifyWebhook in MockPaymentProvider always returns true - this is a SECURITY RISK in production!
+            if (environment?.IsDevelopment() == true)
+            {
+                services.AddScoped<IPaymentProvider, MockPaymentProvider>();
+            }
+            else
+            {
+                // In non-Development environments, throw if no real provider is registered
+                // This forces explicit registration of a production payment provider
+                services.AddScoped<IPaymentProvider>(_ => throw new InvalidOperationException(
+                    "No production payment provider registered. " +
+                    "In non-Development environments, you must register a real IPaymentProvider implementation " +
+                    "(e.g., StripePaymentProvider, YooKassaPaymentProvider, etc.) in your DI container. " +
+                    "MockPaymentProvider is only available in Development environment."));
+            }
+
+            services.AddScoped<IPaymentService, PaymentService>();
 
             return services;
         }
