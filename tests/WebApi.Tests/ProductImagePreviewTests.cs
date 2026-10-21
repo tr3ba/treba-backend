@@ -2,11 +2,25 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using AdminPanel.Services.Implementations;
+using Microsoft.Extensions.Configuration;
 
 namespace WebApi.Tests;
 
 public sealed class ProductImagePreviewTests
 {
+    [Fact]
+    public void BrowserPhoto_UsesPublicOrigin_InsteadOfInternalDockerAddress()
+    {
+        using var http = new HttpClient { BaseAddress = new("http://host.docker.internal:5000/") };
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> {
+            ["PublicApiBaseUrl"] = "https://treba.duckdns.org/" }).Build();
+        var client = new CatalogApiClient(http, configuration);
+        Assert.Equal("https://treba.duckdns.org/uploads/products/photo.webp", client.ResolveImageUrl("/uploads/products/photo.webp"));
+        Assert.Equal("https://content.rozetka.com.ua/photo.webp", client.ResolveImageUrl("https://content.rozetka.com.ua/photo.webp"));
+        http.BaseAddress = new("http://localhost:5511/");
+        Assert.Equal("http://localhost:5511/uploads/products/photo.webp", new CatalogApiClient(http).ResolveImageUrl("/uploads/products/photo.webp"));
+    }
+
     [Fact]
     public async Task AvailablePhoto_ReturnsDataUrl()
     {

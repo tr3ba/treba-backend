@@ -3,6 +3,45 @@
 # Prints public Telegram settings and secret presence only. Never enable shell tracing.
 set -euo pipefail
 
+if [[ "${TREBA_INSPECT_CATALOG:-}" == 1 ]]; then
+    python3 - <<'PY'
+import json, os, subprocess, urllib.request
+container = json.loads(subprocess.check_output(['docker', 'inspect', 'treba-backend']))[0]
+values = dict(item.split('=', 1) for item in container['Config']['Env'] if '=' in item)
+connection = values.get('ConnectionStrings__DefaultConnection', '')
+if not connection or '"' in connection or "'" in connection:
+    raise SystemExit('Diagnostic connection format is not supported')
+fields = dict((key.strip().lower(), value.strip()) for part in connection.split(';') if '=' in part for key, value in [part.split('=', 1)])
+environment = dict(os.environ, PGHOST=fields['host'], PGPORT=fields.get('port', '5432'),
+    PGDATABASE=fields['database'], PGUSER=fields.get('username', fields.get('user id', '')),
+    PGPASSWORD=fields['password'], PGSSLMODE='require', PGCONNECT_TIMEOUT='10',
+    PGOPTIONS='-c default_transaction_read_only=on -c statement_timeout=10000')
+sql = '''SELECT count(*) AS categories, count(*) FILTER(WHERE "IsActive") AS active FROM categories;
+SELECT m."ExternalKey", c."Name", c."IsActive" FROM rozetka_category_mappings m JOIN categories c ON c."Id"=m."CategoryId" ORDER BY m."ExternalKey" LIMIT 60;
+SELECT c."Name", g."IncludeDescendants" FROM seller_category_grants g JOIN sellers s ON s."Id"=g."SellerId" JOIN users u ON u."Id"=s."UserId" JOIN categories c ON c."Id"=g."CategoryId" WHERE lower(u."Email")=lower(:'account_email') ORDER BY c."Name" LIMIT 25;
+SELECT "Error",count(*) FROM seller_import_jobs WHERE "Status"='Failed' GROUP BY "Error" ORDER BY count(*) DESC LIMIT 15;
+SELECT DISTINCT "SourceCategoryKey", "SourceCategoryName" FROM product_import_drafts ORDER BY "SourceCategoryName" LIMIT 30;
+SELECT i."ImageUrl" FROM product_images i JOIN products p ON p."Id"=i."ProductId" WHERE p."Name" ILIKE '%MacBook%' ORDER BY i."SortOrder" LIMIT 3;'''
+command = ['docker', 'run', '--rm', '-i', '--network', 'host']
+for key in ('PGHOST', 'PGPORT', 'PGDATABASE', 'PGUSER', 'PGPASSWORD', 'PGSSLMODE', 'PGCONNECT_TIMEOUT', 'PGOPTIONS'):
+    command += ['-e', key]
+command += ['postgres:18', 'psql', '-X', '--no-psqlrc', '-v', 'ON_ERROR_STOP=1', '-v', 'account_email=' + os.environ.get('TREBA_INSPECT_ACCOUNT', '')]
+result = subprocess.run(command, input=sql, text=True, env=environment, capture_output=True, timeout=40)
+print('CATALOG_INSPECTION\n' + result.stdout)
+if result.returncode:
+    # PostgreSQL diagnostics contain schema names, but may contain sensitive values in general.
+    raise SystemExit('Read-only catalog query failed; inspect table names in the reviewed diagnostic')
+for path in [line.strip() for line in result.stdout.splitlines() if line.strip().startswith('/uploads/products/')]:
+    for origin in ('http://127.0.0.1:5000', 'https://treba.duckdns.org'):
+        try:
+            with urllib.request.urlopen(origin + path, timeout=10) as response:
+                print('PRODUCT_MEDIA', origin, response.status, response.headers.get('Content-Type'), len(response.read()))
+        except Exception as error:
+            print('PRODUCT_MEDIA', origin, type(error).__name__, getattr(error, 'code', ''))
+PY
+    exit
+fi
+
 printf 'HOST '; hostname
 printf 'HOST_RESOURCES\n'
 free -m

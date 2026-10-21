@@ -58,6 +58,11 @@ public static class AdminOperationsDeployment
             await db.ProductReviewBaselines.AsNoTracking().Take(1).ToListAsync(timeout.Token);
             await db.AuthenticationChallenges.AsNoTracking().Take(1).ToListAsync(timeout.Token);
             await db.TelegramGuardChallenges.AsNoTracking().Take(1).ToListAsync(timeout.Token);
+            if (migrate)
+            {
+                await ImportCatalogDeployment.ApplyAsync(db, timeout.Token);
+                Console.WriteLine("Import catalog categories and mappings: ready.");
+            }
             Console.WriteLine("Operational schema and API database privileges: ready.");
             return 0;
         }

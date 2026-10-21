@@ -154,7 +154,7 @@ admin_switched=1
 docker run -d --name treba-admin --restart unless-stopped --network treba-admin-web \
     --add-host host.docker.internal:host-gateway -v treba-admin-keys:/keys \
     --label "org.opencontainers.image.revision=$revision" \
-    -e ASPNETCORE_URLS=http://+:5100 -e ApiBaseUrl=http://host.docker.internal:5000/ \
+    -e ASPNETCORE_URLS=http://+:5100 -e ApiBaseUrl=http://host.docker.internal:5000/ -e PublicApiBaseUrl=https://treba.duckdns.org/ \
     -e WebsiteLogin__Enabled=true -e WebsiteLogin__StoreOrigin=https://treba.duckdns.org \
     -e WebsiteLogin__AdminOrigin=https://admin.treba.duckdns.org -e DataProtectionKeysPath=/keys \
     --entrypoint dotnet "$image" /app/admin/AdminPanel.dll --contentRoot=/app/admin >/dev/null
