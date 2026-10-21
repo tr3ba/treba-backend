@@ -118,7 +118,7 @@ public sealed class OrderService : IOrderService
             await _context.SaveChangesAsync(cancellationToken);
 
             // Create payment for the order
-            await _paymentService.CreatePaymentAsync(order.Id, cancellationToken);
+            await _paymentService.CreatePaymentAsync(order.Id, request.CustomerId, cancellationToken);
 
             scope.Complete(); // Успешно завершаем транзакцию
 
@@ -186,6 +186,7 @@ public sealed class OrderService : IOrderService
 
         var previousStatus = order.Status;
         order.Status = OrderStatus.PAID;
+        order.PaymentStatus = PaymentStatus.SUCCEEDED;
         order.ConfirmedAt = DateTimeOffset.UtcNow;
 
         await _inventoryService.ConfirmReservationAsync(orderId, cancellationToken);

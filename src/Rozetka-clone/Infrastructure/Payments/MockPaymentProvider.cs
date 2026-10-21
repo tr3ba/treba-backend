@@ -3,6 +3,16 @@ using Application.Payments;
 
 namespace Infrastructure.Payments;
 
+/// <summary>
+/// Mock payment provider for DEVELOPMENT ONLY.
+///
+/// WARNING: This provider's VerifyWebhook() ALWAYS RETURNS TRUE.
+/// This means ANY webhook request will be accepted as valid.
+///
+/// DO NOT USE IN PRODUCTION/STAGING!
+/// In production, register a real payment provider implementation (Stripe, YooKassa, etc.)
+/// that properly verifies webhook signatures.
+/// </summary>
 public class MockPaymentProvider : IPaymentProvider
 {
     public Task<PaymentProviderResponse> CreatePaymentAsync(PaymentProviderRequest request, CancellationToken cancellationToken = default)
@@ -43,13 +53,17 @@ public class MockPaymentProvider : IPaymentProvider
             Status: "success",
             Amount: request.Amount,
             ErrorMessage: null,
-            RequestData: $"{{ \"amount\": {request.Amount} }}",
-            ResponseData: $"{{ \"status\": \"success\", \"transaction_id\": \"refund_txn_{Guid.NewGuid()}\" }}"
+            RequestData: $"{{\"amount\": {request.Amount}}}",
+            ResponseData: $"{{\"status\": \"success\", \"transaction_id\": \"refund_txn_{Guid.NewGuid()}\"}}"
         );
 
         return Task.FromResult(response);
     }
 
+    /// <summary>
+    /// WARNING: Always returns true - this is a SECURITY RISK in production!
+    /// Only use in Development environment for testing.
+    /// </summary>
     public bool VerifyWebhook(string payload, string signature)
     {
         return true;
