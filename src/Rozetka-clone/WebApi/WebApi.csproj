@@ -6,8 +6,10 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 	  <UserSecretsId>32ba8c1c-0ba6-4c43-86e6-2007e8d7fc80</UserSecretsId>
   </PropertyGroup>
+  <ItemGroup><EmbeddedResource Include="CatalogData/rozetka-categories.json" /></ItemGroup>
 
 	<ItemGroup>
+		<PackageReference Include="AngleSharp" Version="1.8.5" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.12" />
 		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.11" />
 
@@ -25,4 +27,7 @@
 		<ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
 	</ItemGroup>
 
+  <ItemGroup><Compile Include="..\Shared\LocalLauncherEndpoints.cs" Link="LocalLauncherEndpoints.cs" /></ItemGroup>
+  <ItemGroup><Content Remove="wwwroot/js/editor-drafts.js" /><Content Include="..\Shared\editor-drafts.js" Link="wwwroot\js\editor-drafts.js" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
+  <Target Name="PrepareEditorDraftModule" BeforeTargets="PrepareForBuild"><Copy SourceFiles="../Shared/editor-drafts.js" DestinationFiles="$(MSBuildProjectDirectory)/wwwroot/js/editor-drafts.js" SkipUnchangedFiles="true" /></Target>
 </Project>

@@ -6,10 +6,32 @@ using Contracts.Common;
 
 namespace AdminPanel.Services.Implementations;
 
-public sealed class CatalogApiClient(HttpClient http)
+public sealed class CatalogApiClient(HttpClient http, IConfiguration? configuration = null)
 {
-    public Task<PagedResponse<CatalogProductDto>> List(int page = 1, string? search = null, string? status = null) =>
-        Get<PagedResponse<CatalogProductDto>>($"api/v1/admin/catalog/products?page={page}&size=12&search={Uri.EscapeDataString(search ?? "")}&status={Uri.EscapeDataString(status ?? "")}");
+    public async Task<BulkCatalogPreviewDto> PreviewBulk(BulkCatalogRequest request)
+    { using var response = await http.PostAsJsonAsync("api/v1/admin/catalog/bulk/preview", request); await RequireSuccess(response); return (await response.Content.ReadFromJsonAsync<BulkCatalogPreviewDto>())!; }
+    public async Task ApplyBulk(string token)
+    { using var response = await http.PostAsJsonAsync("api/v1/admin/catalog/bulk/apply", new ApplyBulkCatalogRequest(token)); await RequireSuccess(response); }
+    public Task<List<Contracts.Telegram.ProductDuplicateDto>> Duplicates(Guid brandId, string part, string? barcode, Guid? excludeId) => Get<List<Contracts.Telegram.ProductDuplicateDto>>($"api/v1/admin/catalog/duplicates?brandId={brandId}&manufacturerPartNumber={Encode(part)}&barcode={Encode(barcode)}&excludeId={excludeId}");
+    public async Task<List<Contracts.Telegram.ProductDuplicateDto>> DuplicatesMany(Contracts.Telegram.DuplicateLookupRequest request)
+    { using var response = await http.PostAsJsonAsync("api/v1/admin/catalog/duplicates", request); await RequireSuccess(response); return (await response.Content.ReadFromJsonAsync<List<Contracts.Telegram.ProductDuplicateDto>>())!; }
+    public Task<PagedResponse<CatalogProductDto>> List(int page = 1, string? search = null, string? status = null,
+        Guid? categoryId = null, Guid? brandId = null, Guid? sellerId = null, decimal? minPrice = null, decimal? maxPrice = null, string? stock = null, string? sort = null, int? waitingHours = null) =>
+        Get<PagedResponse<CatalogProductDto>>($"api/v1/admin/catalog/products?page={page}&size=12&search={Encode(search)}&status={Encode(status)}"
+            + $"&categoryId={categoryId}&brandId={brandId}&sellerId={sellerId}&minPrice={Number(minPrice)}&maxPrice={Number(maxPrice)}&stock={Encode(stock)}&sort={Encode(sort)}&waitingHours={waitingHours}");
+    public Task<ModerationComparisonDto> Comparison(Guid id) => Get<ModerationComparisonDto>($"api/v1/admin/catalog/products/{id}/resubmission-changes");
+    private static string Encode(string? value) => Uri.EscapeDataString(value ?? "");
+    private static string Number(decimal? value) => value?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "";
+    public Task<CatalogFilterOptionsDto> FilterOptions() => Get<CatalogFilterOptionsDto>("api/v1/admin/catalog/filter-options");
+    public Task<List<CatalogAttributeDefinitionDto>> AttributeDefinitions(Guid categoryId) => Get<List<CatalogAttributeDefinitionDto>>($"api/v1/admin/catalog/attributes?categoryId={categoryId}");
+    public Task<List<ProductModerationDto>> ModerationHistory(Guid id) => Get<List<ProductModerationDto>>($"api/v1/admin/catalog/products/{id}/moderation-history");
+    public async Task<Guid> CreateAttribute(CreateCatalogAttributeRequest request)
+    {
+        using var response = await http.PostAsJsonAsync("api/v1/admin/catalog/attributes", request);
+        await RequireSuccess(response);
+        using var result = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        return result.RootElement.GetProperty("id").GetGuid();
+    }
     public Task<CatalogStatsDto> Stats() => Get<CatalogStatsDto>("api/v1/admin/catalog/stats");
     public Task<int> PendingCount() => Get<int>("api/v1/admin/catalog/moderation/pending-count");
     public Task<CatalogProductDto> GetProduct(Guid id) => Get<CatalogProductDto>($"api/v1/admin/catalog/products/{id}");
@@ -21,12 +43,14 @@ public sealed class CatalogApiClient(HttpClient http)
 
     public string ResolveImageUrl(string imageUrl)
     {
-        if (Uri.TryCreate(imageUrl, UriKind.Absolute, out var absolute))
+        if (Uri.TryCreate(imageUrl, UriKind.Absolute, out var absolute) && absolute.Scheme is "https" or "http")
             return absolute.ToString();
 
+        // ApiBaseUrl can be a Docker-only address. Image URLs are opened by the user's browser.
         return new Uri(
-            http.BaseAddress ?? throw new InvalidOperationException("API base address is missing."),
-            imageUrl.TrimStart('/')).ToString();
+            configuration?["PublicApiBaseUrl"] is { Length: > 0 } publicUrl ? new Uri(publicUrl) :
+                http.BaseAddress ?? throw new InvalidOperationException("API base address is missing."),
+            imageUrl).ToString();
     }
 
     public async Task<CatalogProductImageDto> UploadImage(
@@ -55,12 +79,32 @@ public sealed class CatalogApiClient(HttpClient http)
         await RequireSuccess(response);
     }
 
-    public async Task<string> ImageDataUrl(string imageUrl)
+    public async Task<string?> ImageDataUrl(string imageUrl)
     {
-        using var response = await http.GetAsync(imageUrl.TrimStart('/'));
-        await RequireSuccess(response);
-        var mediaType = response.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
-        return $"data:{mediaType};base64,{Convert.ToBase64String(await response.Content.ReadAsByteArrayAsync())}";
+        try
+        {
+            using var response = await http.GetAsync(imageUrl.TrimStart('/'));
+            if (!response.IsSuccessStatusCode
+                && response.StatusCode is not (System.Net.HttpStatusCode.Unauthorized or System.Net.HttpStatusCode.Forbidden))
+                return null;
+
+            await RequireSuccess(response);
+            var mediaType = response.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
+            if (!mediaType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+                return null;
+
+            var bytes = await response.Content.ReadAsByteArrayAsync();
+            return bytes.Length == 0 ? null : $"data:{mediaType};base64,{Convert.ToBase64String(bytes)}";
+        }
+        catch (HttpRequestException exception) when (
+            exception.StatusCode is not (System.Net.HttpStatusCode.Unauthorized or System.Net.HttpStatusCode.Forbidden))
+        {
+            return null;
+        }
+        catch (TaskCanceledException)
+        {
+            return null;
+        }
     }
     public async Task<CatalogProductDto> Save(Guid? id, SaveCatalogProductRequest request)
     {
@@ -68,10 +112,11 @@ public sealed class CatalogApiClient(HttpClient http)
         await RequireSuccess(response);
         return await response.Content.ReadFromJsonAsync<CatalogProductDto>() ?? throw new HttpRequestException("API returned an empty response.");
     }
-    public async Task Action(Guid id, string action)
+    public async Task Action(Guid id, string action, string? reason = null)
     {
         var prefix = action == "submit" ? "seller" : "admin";
-        using var response = await http.PostAsync($"api/v1/{prefix}/products/{id}/{action}", null);
+        var url = $"api/v1/{prefix}/products/{id}/{action}";
+        using var response = action == "reject" ? await http.PostAsJsonAsync(url, new RejectProductRequest(reason ?? "")) : await http.PostAsync(url, null);
         await RequireSuccess(response);
     }
     private async Task<T> Get<T>(string url)

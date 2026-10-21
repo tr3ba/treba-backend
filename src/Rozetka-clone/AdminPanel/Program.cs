@@ -4,6 +4,7 @@ using AdminPanel.Services.Implementations;
 using AdminPanel.State;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.DataProtection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,17 +13,35 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddLocalization();
-builder.Services.AddAuthentication();
+builder.Services.AddAuthentication(WebsiteLogin.Scheme).AddCookie(WebsiteLogin.Scheme, options =>
+{
+    options.Cookie.Name = "treba_admin_session";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = builder.Environment.IsDevelopment() ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
+    options.SlidingExpiration = false;
+});
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddHttpClient("website-login", client => client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"] ?? "https://localhost:7107/"));
+if (builder.Configuration["DataProtectionKeysPath"] is {} keys)
+    builder.Services.AddDataProtection().PersistKeysToFileSystem(new DirectoryInfo(keys)).SetApplicationName("Treba.AdminPanel");
 builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<CatalogApiClient>();
+builder.Services.AddScoped<SellerImportsApiClient>();
 builder.Services.AddScoped<SecurityApiClient>();
+builder.Services.AddScoped<ReviewsApiClient>();
+builder.Services.AddScoped<DashboardApiClient>();
+builder.Services.AddScoped<ReviewModerationState>();
+builder.Services.AddScoped<SettingsApiClient>();
+builder.Services.AddScoped<TelegramApiClient>();
+builder.Services.AddSingleton<UiTime>();
 
 builder.Services.AddScoped<TokenStorageService>();
 builder.Services.AddScoped<AuthorizedHttpMessageHandler>();
 
 builder.Services.AddScoped<AuthenticationStateProvider, JwtAuthenticationStateProvider>();
-builder.Services.AddScoped<JwtAuthenticationStateProvider>(sp => 
+builder.Services.AddScoped<JwtAuthenticationStateProvider>(sp =>
     (JwtAuthenticationStateProvider)sp.GetRequiredService<AuthenticationStateProvider>());
 
 builder.Services.AddScoped(sp =>
@@ -39,13 +58,12 @@ builder.Services.AddScoped(sp =>
 
 builder.Services.AddScoped<IUsersApiClient, UsersApiClient>();
 builder.Services.AddScoped<ISellersApiClient, SellersApiClient>();
-builder.Services.AddScoped<IOrdersApiClient, OrdersApiClient>();
+builder.Services.AddScoped<OperationsApiClient>();
 builder.Services.AddScoped<IProductsApiClient, ProductsApiClient>();
 builder.Services.AddScoped<ICategoriesApiClient, CategoriesApiClient>();
 
 builder.Services.AddScoped<UsersState>();
 builder.Services.AddScoped<SellersState>();
-builder.Services.AddScoped<OrdersState>();
 builder.Services.AddScoped<ProductsState>();
 builder.Services.AddScoped<CategoriesState>();
 builder.Services.AddScoped<CurrentUserState>();
@@ -67,7 +85,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-if (!app.Environment.IsDevelopment())
+if (!app.Environment.IsDevelopment() && !app.Configuration.GetValue<bool>("WebsiteLogin:Enabled"))
 {
     app.UseHttpsRedirection();
 }
@@ -98,4 +116,6 @@ app.MapRazorPages();
 app.MapRazorComponents<AdminPanel.App>()
     .AddInteractiveServerRenderMode();
 
+Treba.Development.LocalLauncherEndpoints.Map(app);
+WebsiteLogin.Map(app);
 app.Run();

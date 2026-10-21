@@ -1,0 +1,84 @@
+name: Inspect Telegram Hosting
+
+on:
+  workflow_dispatch:
+    inputs:
+      account_email:
+        description: Optional account email to check role and enabled verification methods (read-only)
+        required: false
+        type: string
+      ssm_command_id:
+        description: Optional failed frontend SSM command ID to inspect
+        required: false
+        type: string
+      catalog:
+        description: Inspect catalog mappings, import failures and product media (read-only)
+        required: false
+        type: boolean
+  push:
+    branches: [feat/admin-sellers-reviews-dashboard]
+    paths:
+      - .github/workflows/inspect-telegram-hosting.yml
+      - scripts/server/inspect-telegram-hosting.sh
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      AWS_REGION: eu-west-1
+      EC2_INSTANCE_ID: i-0d469acaa36d8d39d
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure existing deployment credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Read hosting state through the existing SSM deployment channel
+        env:
+          INSPECT_ACCOUNT: ${{ inputs.account_email }}
+          INSPECT_COMMAND: ${{ inputs.ssm_command_id }}
+          INSPECT_CATALOG: ${{ inputs.catalog }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, re, shlex
+          from pathlib import Path
+          account = os.environ.get('INSPECT_ACCOUNT', '')
+          command = os.environ.get('INSPECT_COMMAND', '')
+          if account and not re.fullmatch(r'[A-Za-z0-9._+@-]{3,320}', account):
+              raise SystemExit('Invalid account email')
+          if command and not re.fullmatch(r'[0-9a-f-]{36}', command):
+              raise SystemExit('Invalid SSM command ID')
+          script = Path('scripts/server/inspect-telegram-hosting.sh').read_text()
+          catalog = '1' if os.environ.get('INSPECT_CATALOG') == 'true' else ''
+          Path('ssm-parameters.json').write_text(json.dumps({'commands': ['TREBA_INSPECT_CATALOG=' + shlex.quote(catalog) + ' TREBA_INSPECT_ACCOUNT=' + shlex.quote(account) + ' bash <<\'TREBA_INSPECTION\'\n' + script + '\nTREBA_INSPECTION'], 'executionTimeout': ['120']}))
+          PY
+          if [ -n "$INSPECT_COMMAND" ]; then
+            aws ssm get-command-invocation --command-id "$INSPECT_COMMAND" --instance-id "$EC2_INSTANCE_ID" \
+              --query '{Status:Status,Output:StandardOutputContent,Error:StandardErrorContent}' --output json
+          fi
+          command_id=$(aws ssm send-command \
+            --instance-ids "$EC2_INSTANCE_ID" \
+            --document-name AWS-RunShellScript \
+            --comment 'Read-only Treba Telegram hosting inspection' \
+            --parameters file://ssm-parameters.json \
+            --query Command.CommandId --output text)
+          echo "SSM command: $command_id"
+          aws ssm wait command-executed --command-id "$command_id" --instance-id "$EC2_INSTANCE_ID" || true
+          aws ssm get-command-invocation --command-id "$command_id" --instance-id "$EC2_INSTANCE_ID" \
+            --query '{Status:Status,Output:StandardOutputContent,Error:StandardErrorContent}' --output json > ssm-report.json
+          cat ssm-report.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path('ssm-report.json').read_text())
+          if report['Status'] != 'Success':
+              raise SystemExit('SSM inspection did not complete successfully.')
+          PY

@@ -92,7 +92,8 @@ namespace Infrastructure.Persistence.Configurations
 
             builder
                 .Property(x => x.UpdatedAt)
-                .IsRequired();
+                .IsRequired()
+                .IsConcurrencyToken();
 
             builder
                 .HasOne<Domain.Entities.Category>()

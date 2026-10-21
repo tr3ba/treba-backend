@@ -12,73 +12,257 @@ namespace Application.Abstractions
 {
     public interface IApplicationDbContext
     {
-        DbSet<User> Users { get; }
+        DbSet<Domain.Entities.Support.SupportTicket> SupportTickets
+        {
+            get;
+        }
+        DbSet<Domain.Entities.Support.SupportMessage> SupportMessages
+        {
+            get;
+        }
+        DbSet<ProductReviewBaseline> ProductReviewBaselines
+        {
+            get;
+        }
+        DbSet<Domain.Entities.Telegram.SellerImportJob> SellerImportJobs
+        {
+            get;
+        }
+        DbSet<Domain.Entities.Telegram.TelegramNotification> TelegramNotifications
+        {
+            get;
+        }
+        DbSet<Domain.Entities.Telegram.ProductIdentity> ProductIdentities
+        {
+            get;
+        }
+        DbSet<Domain.Entities.Telegram.TelegramBotCursor> TelegramBotCursors
+        {
+            get;
+        }
+        DbSet<Domain.Entities.Telegram.TelegramBinding> TelegramBindings
+        {
+            get;
+        }
+        DbSet<Domain.Entities.Telegram.TelegramLinkChallenge> TelegramLinkChallenges
+        {
+            get;
+        }
+        DbSet<Domain.Entities.Telegram.TelegramGuardChallenge> TelegramGuardChallenges
+        {
+            get;
+        }
+        DbSet<Domain.Entities.Telegram.SellerCategoryGrant> SellerCategoryGrants
+        {
+            get;
+        }
+        DbSet<Domain.Entities.Telegram.RozetkaCategoryMapping> RozetkaCategoryMappings
+        {
+            get;
+        }
+        DbSet<Domain.Entities.Telegram.ProductImportDraft> ProductImportDrafts
+        {
+            get;
+        }
+        DbSet<User> Users
+        {
+            get;
+        }
 
-        DbSet<UserProfile> UserProfiles { get; }
+        DbSet<UserProfile> UserProfiles
+        {
+            get;
+        }
 
-        DbSet<Address> Addresses { get; }
+        DbSet<Address> Addresses
+        {
+            get;
+        }
 
-        DbSet<Role> Roles { get; }
+        DbSet<Role> Roles
+        {
+            get;
+        }
 
-        DbSet<AuthenticationChallenge> AuthenticationChallenges { get; }
+        DbSet<AdminAuditLog> AdminAuditLogs
+        {
+            get;
+        }
 
-        DbSet<Permission> Permissions { get; }
+        DbSet<AuthenticationChallenge> AuthenticationChallenges
+        {
+            get;
+        }
 
-        DbSet<Product> Products { get; }
+        DbSet<Permission> Permissions
+        {
+            get;
+        }
 
-        DbSet<ProductVariant> ProductVariants { get; }
+        DbSet<Product> Products
+        {
+            get;
+        }
 
-        DbSet<ProductImage> ProductImages { get; }
+        DbSet<ProductVariant> ProductVariants
+        {
+            get;
+        }
 
-        DbSet<ProductTag> ProductTags { get; }
+        DbSet<ProductImage> ProductImages
+        {
+            get;
+        }
 
-        DbSet<ProductTagRelation> ProductTagRelations { get; }
+        DbSet<ProductTag> ProductTags
+        {
+            get;
+        }
 
-        DbSet<Category> Categories { get; }
+        DbSet<ProductTagRelation> ProductTagRelations
+        {
+            get;
+        }
 
-        DbSet<Brand> Brands { get; }
+        DbSet<Category> Categories
+        {
+            get;
+        }
 
-        DbSet<DomainAttribute> Attributes { get; }
+        DbSet<Brand> Brands
+        {
+            get;
+        }
 
-        DbSet<AttributeOption> AttributeOptions { get; }
+        DbSet<DomainAttribute> Attributes
+        {
+            get;
+        }
 
-        DbSet<ProductAttributeValue> ProductAttributeValues { get; }
+        DbSet<AttributeOption> AttributeOptions
+        {
+            get;
+        }
 
-        DbSet<Wishlist> Wishlists { get; }
+        DbSet<ProductAttributeValue> ProductAttributeValues
+        {
+            get;
+        }
 
-        DbSet<Review> Reviews { get; }
+        DbSet<Wishlist> Wishlists
+        {
+            get;
+        }
 
-        DbSet<ReviewImage> ReviewImages { get; }
+        DbSet<Review> Reviews
+        {
+            get;
+        }
 
-        DbSet<ReviewVote> ReviewVotes { get; }
+        DbSet<ReviewImage> ReviewImages
+        {
+            get;
+        }
 
-        DbSet<SellerReviewResponse> SellerReviewResponses { get; }
+        DbSet<ReviewVote> ReviewVotes
+        {
+            get;
+        }
 
-        DbSet<WishlistItem> WishlistItems { get; }
+        DbSet<SellerReviewResponse> SellerReviewResponses
+        {
+            get;
+        }
 
-        DbSet<Seller> Sellers { get; }
-      
-        DbSet<Store> Stores { get; }
+        DbSet<Promotion> Promotions
+        {
+            get;
+        }
 
-        DbSet<Cart> Carts { get; }
+        DbSet<PromotionRule> PromotionRules
+        {
+            get;
+        }
 
-        DbSet<CartItem> CartItems { get; }
+        DbSet<PromotionAction> PromotionActions
+        {
+            get;
+        }
 
-        public DbSet<Warehouse> Warehouses { get; }
+        DbSet<Coupon> Coupons
+        {
+            get;
+        }
 
-        public DbSet<Domain.Entities.Inventory.Inventory> Inventory { get; }
+        DbSet<CouponUsage> CouponUsages
+        {
+            get;
+        }
 
-        public DbSet<StockMovement> StockMovements { get; }
+        DbSet<WishlistItem> WishlistItems
+        {
+            get;
+        }
 
-        public DbSet<InventoryReservation> InventoryReservations { get; }
+        DbSet<Seller> Sellers
+        {
+            get;
+        }
 
-        DbSet<Order> Orders { get; }
+        DbSet<Store> Stores
+        {
+            get;
+        }
 
-        DbSet<OrderItem> OrderItems { get; }
+        DbSet<Cart> Carts
+        {
+            get;
+        }
 
-        DbSet<OrderAddress> OrderAddresses { get; }
+        DbSet<CartItem> CartItems
+        {
+            get;
+        }
 
-        DbSet<OrderStatusHistory> OrderStatusHistories { get; }
+        public DbSet<Warehouse> Warehouses
+        {
+            get;
+        }
+
+        public DbSet<Domain.Entities.Inventory.Inventory> Inventory
+        {
+            get;
+        }
+
+        public DbSet<StockMovement> StockMovements
+        {
+            get;
+        }
+
+        public DbSet<InventoryReservation> InventoryReservations
+        {
+            get;
+        }
+
+        DbSet<Order> Orders
+        {
+            get;
+        }
+
+        DbSet<OrderItem> OrderItems
+        {
+            get;
+        }
+
+        DbSet<OrderAddress> OrderAddresses
+        {
+            get;
+        }
+
+        DbSet<OrderStatusHistory> OrderStatusHistories
+        {
+            get;
+        }
 
         DbSet<Domain.Entities.Payments.Payment> Payments { get; }
 

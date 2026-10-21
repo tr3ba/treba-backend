@@ -1,67 +1,125 @@
 @page "/products"
-@inject AdminPanel.Services.Implementations.CatalogApiClient Api
-@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject CatalogApiClient Api
+@inject AuthenticationStateProvider Authentication
+@inject NavigationManager Navigation
 @using Contracts.Catalog
 @using System.Security.Claims
 
-<PageTitle>@L["Products"] — Treba Admin</PageTitle>
+<PageTitle>@L["ProductManagement"] — Treba Admin</PageTitle>
 <section class="page-hero storefront-blue-hero">
     <div><p class="eyebrow">@L["CatalogWorkspace"]</p><h1>@L["ProductManagement"]</h1><p>@L["ProductsSubtitle"]</p></div>
-    @if (_canEdit) { <a class="storefront-action" href="/products/new"><i class="bi bi-plus-lg"></i>@L["AddProduct"]</a> }
+    @if (_canEdit) { <a class="storefront-action" href="@EditorUrl(null)"><i class="bi bi-plus-lg"></i>@L["AddProduct"]</a> }
 </section>
-@if (stats is not null)
+@if (_stats is not null)
 {
     <section class="store-kpi-grid">
-        <article><span class="store-kpi-icon blue"><i class="bi bi-box2"></i></span><div><small>@L["AllProducts"]</small><strong>@stats.Total</strong></div></article>
-        <article><span class="store-kpi-icon green"><i class="bi bi-check-circle"></i></span><div><small>@L["Published"]</small><strong>@stats.Active</strong></div></article>
-        <article><span class="store-kpi-icon amber"><i class="bi bi-hourglass-split"></i></span><div><small>@L["Moderation"]</small><strong>@stats.Pending</strong></div></article>
-        <article><span class="store-kpi-icon orange"><i class="bi bi-pencil-square"></i></span><div><small>@L["Drafts"]</small><strong>@stats.Drafts</strong></div></article>
+        <article><span class="store-kpi-icon blue"><i class="bi bi-box2"></i></span><div><small>@L["AllProducts"]</small><strong>@_stats.Total</strong></div></article>
+        <article><span class="store-kpi-icon green"><i class="bi bi-check-circle"></i></span><div><small>@L["Published"]</small><strong>@_stats.Active</strong></div></article>
+        <article><span class="store-kpi-icon amber"><i class="bi bi-hourglass-split"></i></span><div><small>@L["Moderation"]</small><strong>@_stats.Pending</strong></div></article>
+        <article><span class="store-kpi-icon orange"><i class="bi bi-pencil-square"></i></span><div><small>@L["Drafts"]</small><strong>@_stats.Drafts</strong></div></article>
     </section>
 }
 <section class="card-box product-catalog-card">
-    <form class="store-toolbar" @onsubmit="Search" @onsubmit:preventDefault>
-        <label class="workspace-search"><i class="bi bi-search"></i><input aria-label="@L["ProductSearchAria"]" placeholder="@L["ProductSearchPlaceholder"]" @bind="search" /></label>
-        <select class="form-control catalog-filter" aria-label="@L["Status"]" @bind="status"><option value="">@L["AllStatuses"]</option><option value="ACTIVE">@L["PublishedPlural"]</option><option value="DRAFT">@L["Drafts"]</option><option value="PENDING_MODERATION">@L["PendingModeration"]</option><option value="REJECTED">@L["RejectedPlural"]</option></select>
-        <button class="secondary-button" type="submit" disabled="@loading">@L["Search"]</button>
+    <form class="catalog-filter-panel" @onsubmit="Apply" @onsubmit:preventDefault>
+        <label class="workspace-search catalog-filter-search"><i class="bi bi-search"></i><input aria-label="@L["ProductSearchAria"]" placeholder="@L["ProductSearchPlaceholder"]" @bind="_search" /></label>
+        <label class="field-group"><span>@L["Status"]</span><select class="form-control" @bind="_status"><option value="">@L["AllStatuses"]</option><option value="ACTIVE">@L["PublishedPlural"]</option><option value="DRAFT">@L["Drafts"]</option><option value="PENDING_MODERATION">@L["PendingModeration"]</option><option value="REJECTED">@L["RejectedPlural"]</option></select></label>
+        <label class="field-group"><span>@L["Category"]</span><select class="form-control" @bind="_category"><option value="">@L["AllCategories"]</option>@foreach(var item in _options?.Categories ?? []){<option value="@item.Id">@item.Name</option>}</select></label>
+        <label class="field-group"><span>@L["Brand"]</span><select class="form-control" @bind="_brand"><option value="">@L["AllBrands"]</option>@foreach(var item in _options?.Brands ?? []){<option value="@item.Id">@item.Name</option>}</select></label>
+        <label class="field-group"><span>@L["Seller"]</span><select class="form-control" @bind="_seller"><option value="">@L["CatalogAllSellers"]</option>@foreach(var item in _options?.Sellers ?? []){<option value="@item.Id">@item.Name</option>}</select></label>
+        <label class="field-group"><span>@L["MinPrice"]</span><input class="form-control" type="number" min="0" step="0.01" @bind="_min" /></label>
+        <label class="field-group"><span>@L["MaxPrice"]</span><input class="form-control" type="number" min="0" step="0.01" @bind="_max" /></label>
+        <label class="field-group"><span>@L["Stock"]</span><select class="form-control" @bind="_stock"><option value="">@L["AllStock"]</option><option value="available">@L["InStock"]</option><option value="low">@L["StockUpToFive"]</option><option value="out">@L["OutOfStock"]</option></select></label>
+        <label class="field-group"><span>@L["SortCatalog"]</span><select class="form-control" @bind="_sort"><option value="newest">@L["SortNewest"]</option><option value="oldest">@L["SortOldest"]</option><option value="updated">@L["SortUpdated"]</option><option value="nameasc">@L["SortName"]</option><option value="priceasc">@L["SortPriceAsc"]</option><option value="pricedesc">@L["SortPriceDesc"]</option><option value="stockasc">@L["SortStock"]</option></select></label>
+        <div class="catalog-filter-actions"><button class="primary-button" disabled="@_loading">@L["ApplyFilters"]</button><button class="secondary-button" type="button" disabled="@_loading" @onclick="Reset">@L["ResetFilters"]</button></div>
     </form>
-    @if (error is not null) { <p class="feedback-error" role="alert">@error</p><button class="secondary-button" @onclick="Search">@L["Retry"]</button> }
-    @if (loading) { <p class="empty-state" role="status">@L["LoadingCatalog"]</p> }
-    else if (result is not null)
+    @if (_error is not null) { <p class="feedback-error" role="alert">@_error</p><button class="secondary-button" @onclick="Reload">@L["Retry"]</button> }
+    @if (_loading) { <p class="empty-state" role="status">@L["LoadingCatalog"]</p> }
+    else if (_result is not null)
     {
-        <div class="table-wrap"><table class="custom-table storefront-products-table"><thead><tr><th>@L["Product"]</th><th>@L["Category"]</th><th>@L["Brand"]</th><th>@L["Price"]</th><th>@L["Stock"]</th><th>@L["Status"]</th><th>@L["Actions"]</th></tr></thead><tbody>
-        @foreach (var product in result.Content)
+        @if(_canEdit){<BulkCatalogPanel ProductIds="@_selected.ToList()" OnApplied="Reload"/>}
+        <div class="table-wrap"><table class="custom-table storefront-products-table"><thead><tr>@if(_canEdit){<th><input type="checkbox" aria-label="@L["WorkspaceSelectPage"]" checked="@(_result.Content.Count>0&&_result.Content.All(p=>_selected.Contains(p.Id)))" @onchange="SelectPage"/></th>}<th>@L["Product"]</th><th>@L["Category"]</th><th>@L["Brand"]</th><th>@L["Price"]</th><th>@L["Stock"]</th><th>@L["Status"]</th><th>@L["Actions"]</th></tr></thead><tbody>
+        @foreach(var product in _result.Content)
         {
-            <tr><td><div class="catalog-product"><span class="product-thumb blue"><i class="bi bi-box-seam"></i></span><div><strong>@product.Name</strong><small>@product.Sku · @product.Slug</small></div></div></td>
-                <td>@product.CategoryName</td><td>@product.BrandName</td><td><strong>₴ @product.Price.ToString("N2")</strong></td><td>@product.StockQuantity</td>
+            <tr @key="product.Id">
+                @if(_canEdit){<td><input type="checkbox" aria-label="@(L["WorkspaceSelectProduct"].Value+": "+product.Name)" checked="@_selected.Contains(product.Id)" @onchange="args=>SelectProduct(product.Id,args)"/></td>}
+                <td><div class="catalog-product"><CatalogThumbnail ImageUrl="@(product.Images.OrderByDescending(i => i.IsMain).ThenBy(i => i.SortOrder).FirstOrDefault()?.ImageUrl)" CssClass="product-thumbnail" /><div><strong>@product.Name</strong><small>@product.Sku · @product.SellerName</small>@if(product.Variants.Count > 1){<small>@L["VariantCount", product.Variants.Count]</small>}</div></div></td>
+                <td>@product.CategoryName</td><td>@product.BrandName</td><td><strong>@if(product.Variants.Count(v => v.IsActive) > 1){<span>@L["PriceFrom"] </span>}₴ @product.Price.ToString("N2")</strong></td><td>@product.StockQuantity</td>
                 <td><span class="status-badge @(product.Status == "ACTIVE" ? "badge-paid" : "badge-pending")">@StatusLabel(product.Status)</span></td>
-                <td>@if (_canEdit && product.Status is ("DRAFT" or "REJECTED" or "ACTIVE")) { <a class="btn-link-action" href="@($"/products/{product.Id}/edit")">@L["Edit"]</a> } else if (_canModerate) { <a class="btn-link-action" href="/moderation">@L["View"]</a> } else { <span>—</span> }</td></tr>
+                <td><div class="catalog-row-actions">
+                    @if(_canEdit && product.Status is ("DRAFT" or "REJECTED" or "ACTIVE")){<a class="btn-link-action" href="@EditorUrl(product.Id)">@L["Edit"]</a>}
+                    else if(_canModerate && product.Status == "PENDING_MODERATION"){<a class="btn-link-action" href="/moderation">@L["View"]</a>}
+                    @if(_canEdit){<a class="btn-link-action" href="@CopyUrl(product.Id)">@L["CopyProduct"]</a>}
+                    <button type="button" class="btn-link-action" @onclick="() => _history = product">@L["ModerationHistory"]</button>
+                </div></td>
+            </tr>
         }
         </tbody></table></div>
-        @if (result.Content.Count == 0) { <div class="empty-state"><i class="bi bi-search"></i><h2>@L["ProductsNotFound"]</h2><p>@L["ProductsNotFoundDesc"]</p></div> }
-        <div class="catalog-pagination"><span>@L["Found"]: @result.TotalElements</span><PaginationControl CurrentPage="result.Page" TotalPages="Math.Max(1,result.TotalPages)" OnPageChanged="Load" /></div>
+        @if(_result.Content.Count == 0){<div class="empty-state"><i class="bi bi-search"></i><h2>@L["ProductsNotFound"]</h2><p>@L["ProductsNotFoundDesc"]</p></div>}
+        <div class="catalog-pagination"><span>@L["Found"]: @_result.TotalElements</span><PaginationControl CurrentPage="_result.Page" TotalPages="Math.Max(1,_result.TotalPages)" OnPageChanged="ChangePage" /></div>
     }
 </section>
+@if(_history is not null)
+{
+    <div class="security-modal-backdrop"><section class="security-modal catalog-history-modal" role="dialog" aria-modal="true" aria-labelledby="product-history-title">
+        <header class="security-modal-header"><h2 id="product-history-title">@_history.Name</h2><button type="button" class="security-modal-close" aria-label="@L["Close"]" @onclick="() => _history = null"><i class="bi bi-x-lg"></i></button></header>
+        <div class="security-modal-body"><ProductModerationHistory ProductId="_history.Id" Collapsed="false" /></div>
+    </section></div>
+}
 @code {
-    private PagedResponse<CatalogProductDto>? result;
-    private CatalogStatsDto? stats;
-    private string search = "", status = "";
-    private string? error;
-    private bool loading;
-    private bool _canEdit, _canModerate;
+    [SupplyParameterFromQuery(Name="page")] public int? QueryPage {get;set;}
+    [SupplyParameterFromQuery(Name="search")] public string? QuerySearch {get;set;}
+    [SupplyParameterFromQuery(Name="status")] public string? QueryStatus {get;set;}
+    [SupplyParameterFromQuery(Name="categoryId")] public Guid? QueryCategory {get;set;}
+    [SupplyParameterFromQuery(Name="brandId")] public Guid? QueryBrand {get;set;}
+    [SupplyParameterFromQuery(Name="sellerId")] public Guid? QuerySeller {get;set;}
+    [SupplyParameterFromQuery(Name="minPrice")] public decimal? QueryMin {get;set;}
+    [SupplyParameterFromQuery(Name="maxPrice")] public decimal? QueryMax {get;set;}
+    [SupplyParameterFromQuery(Name="stock")] public string? QueryStock {get;set;}
+    [SupplyParameterFromQuery(Name="sort")] public string? QuerySort {get;set;}
+    private CatalogFilterOptionsDto? _options;
+    private CatalogStatsDto? _stats;
+    private PagedResponse<CatalogProductDto>? _result;
+    private CatalogProductDto? _history;
+    private string _search="",_status="",_stock="",_sort="newest";
+    private Guid? _category,_brand,_seller;
+    private decimal? _min,_max;
+    private bool _loading=true,_canEdit,_canModerate;
+    private string? _error;
+    private HashSet<Guid> _selected=[];
+    private void SelectProduct(Guid id,ChangeEventArgs args){if(args.Value is true)_selected.Add(id);else _selected.Remove(id);}
+    private void SelectPage(ChangeEventArgs args){foreach(var product in _result?.Content??[]){if(args.Value is true)_selected.Add(product.Id);else _selected.Remove(product.Id);}}
     protected override async Task OnInitializedAsync()
     {
-        var role = (await AuthenticationStateProvider.GetAuthenticationStateAsync()).User.FindFirst(ClaimTypes.Role)?.Value;
-        _canEdit = AdminAccess.CanAccess(role, "/products/new");
-        _canModerate = AdminAccess.CanAccess(role, "/moderation");
-        await Load(1);
+        var role=(await Authentication.GetAuthenticationStateAsync()).User.FindFirst(ClaimTypes.Role)?.Value;
+        _canEdit=AdminAccess.CanAccess(role,"/products/new"); _canModerate=AdminAccess.CanAccess(role,"/moderation");
     }
-    private Task Search() => Load(1);
-    private async Task Load(int page)
+    protected override async Task OnParametersSetAsync()
     {
-        loading = true; error = null;
-        try { result = await Api.List(page, search, status); stats = await Api.Stats(); }
-        catch (HttpRequestException ex) { error = ex.Message; }
-        finally { loading = false; }
+        _search=QuerySearch??""; _status=QueryStatus??""; _category=QueryCategory; _brand=QueryBrand; _seller=QuerySeller;
+        _min=QueryMin; _max=QueryMax; _stock=QueryStock??""; _sort=QuerySort??"newest";
+        await Reload();
     }
-    private string StatusLabel(string status) => status switch { "ACTIVE" => L["Published"], "DRAFT" => L["Drafts"], "PENDING_MODERATION" => L["PendingModeration"], "REJECTED" => L["RejectedPlural"], _ => status };
+    private async Task Reload()
+    {
+        _selected.Clear();
+        _loading=true;_error=null;_result=null;
+        try { _options??=await Api.FilterOptions(); _result=await Api.List(QueryPage??1,QuerySearch,QueryStatus,QueryCategory,QueryBrand,QuerySeller,QueryMin,QueryMax,QueryStock,QuerySort); _stats=await Api.Stats(); }
+        catch(HttpRequestException ex){_error=ex.Message;} finally{_loading=false;}
+    }
+    private Task Apply()=>Navigate(1);
+    private Task ChangePage(int page)=>Navigate(page);
+    private async Task Navigate(int page)
+    {
+        if(_min<0 || _max<0 || _min>_max){_error=L["InvalidPriceRange"];return;}
+        var uri=Navigation.GetUriWithQueryParameters(new Dictionary<string,object?>{
+            ["page"]=page==1?null:page,["search"]=string.IsNullOrWhiteSpace(_search)?null:_search.Trim(),["status"]=Empty(_status),
+            ["categoryId"]=_category,["brandId"]=_brand,["sellerId"]=_seller,["minPrice"]=_min,["maxPrice"]=_max,["stock"]=Empty(_stock),["sort"]=_sort=="newest"?null:_sort});
+        if(uri==Navigation.Uri)await Reload();else Navigation.NavigateTo(uri);
+    }
+    private async Task Reset(){if(Navigation.ToBaseRelativePath(Navigation.Uri)=="products"){await Reload();}else Navigation.NavigateTo("/products");}
+    private static string? Empty(string value)=>value.Length==0?null:value;
+    private string ReturnUrl=>"/"+Navigation.ToBaseRelativePath(Navigation.Uri);
+    private string EditorUrl(Guid? id)=>(id.HasValue?$"/products/{id}/edit":"/products/new")+"?returnUrl="+Uri.EscapeDataString(ReturnUrl);
+    private string CopyUrl(Guid id)=>"/products/new?copyFrom="+id+"&returnUrl="+Uri.EscapeDataString(ReturnUrl);
+    private string StatusLabel(string status)=>L[status switch{"ACTIVE"=>"Published","DRAFT"=>"Drafts","PENDING_MODERATION"=>"PendingModeration","REJECTED"=>"RejectedPlural",_=>status}];
 }

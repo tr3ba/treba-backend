@@ -1,6 +1,8 @@
 @page "/moderation"
 @inject AdminPanel.Services.Implementations.CatalogApiClient Api
 @inject CatalogModerationState ModerationState
+@inject UiTime Time
+@inject NavigationManager Nav
 @using Contracts.Catalog
 @implements IDisposable
 
@@ -22,6 +24,7 @@
     </div>
 </section>
 
+<div class="operations-toolbar"><label class="field-group"><span>@O["WaitingTime"]</span><select class="form-control" @bind="waitingHours" @bind:after="Filter"><option value="">@O["WaitingAll"]</option><option value="24">@O["Waiting24"]</option><option value="72">@O["Waiting72"]</option></select></label><label class="operations-check"><input type="checkbox" @bind="sequential"/> @O["SequentialReview"]</label></div>
 @if (error is not null)
 {
     <p class="feedback-error" role="alert">@error</p>
@@ -47,7 +50,7 @@ else if (result is not null)
     }
 
     <div class="moderation-list">
-        @foreach (var product in result.Content)
+        @foreach (var product in (sequential ? result.Content.Take(1) : result.Content))
         {
             var currentImage = CurrentImage(product);
             <article class="moderation-card" @key="product.Id">
@@ -92,7 +95,7 @@ else if (result is not null)
                             <p class="moderation-category">@product.CategoryName <span></span> @product.BrandName</p>
                             <h2>@product.Name</h2>
                         </div>
-                        <span class="moderation-created">@product.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy")</span>
+                        <span class="moderation-created">@O["SubmittedAt"]: @Time.Local(new DateTimeOffset(DateTime.SpecifyKind(product.UpdatedAt, DateTimeKind.Utc))).ToString("g")</span>
                     </div>
 
                     <div class="moderation-product-meta">
@@ -118,7 +121,7 @@ else if (result is not null)
                     <div class="moderation-actions">
                         <button class="moderation-reject" type="button"
                                 disabled="@(reviewingId is not null)"
-                                @onclick="() => Review(product.Id, false)">
+                                @onclick="() => OpenRejection(product)">
                             <i class="bi bi-x-lg"></i>@L["Reject"]
                         </button>
                         <button class="moderation-approve" type="button"
@@ -135,6 +138,8 @@ else if (result is not null)
                             @L["Approve"]
                         </button>
                     </div>
+                    <ProductModerationHistory ProductId="product.Id" @key="product.Id" />
+                    <ProductModerationComparison ProductId="product.Id" />
                 </div>
             </article>
         }
@@ -146,18 +151,37 @@ else if (result is not null)
     }
 }
 
+@if(rejectingProduct is not null)
+{
+    <div class="security-modal-backdrop">
+        <section class="security-modal rejection-modal" role="dialog" aria-modal="true" aria-labelledby="reject-product-title">
+            <header class="security-modal-header"><h2 id="reject-product-title">@L["RejectProductTitle"]</h2><button type="button" class="security-modal-close" disabled="@(reviewingId is not null)" aria-label="@L["Close"]" @onclick="() => rejectingProduct = null"><i class="bi bi-x-lg"></i></button></header>
+            <div class="security-modal-body"><strong>@rejectingProduct.Name</strong><p>@L["RejectionReasonHint"]</p><label class="field-group"><span>@O["RejectionTemplate"]</span><select class="form-control" @onchange="Template"><option value="">@O["Choose"]</option>@foreach(var key in new[]{"ReasonPhotos","ReasonDescription","ReasonCategory","ReasonPrice"}){<option value="@key">@O[key]</option>}</select></label><label class="field-group"><span>@L["RejectionReason"] *</span><textarea class="form-control" rows="5" maxlength="2000" @bind="rejectionReason" @bind:event="oninput"></textarea><small>@rejectionReason.Length / 2000</small></label>@if(error is not null){<p class="feedback-error" role="alert">@error</p>}</div>
+            <footer class="security-modal-footer"><button type="button" class="secondary-button" disabled="@(reviewingId is not null)" @onclick="() => rejectingProduct = null">@L["Cancel"]</button><button type="button" class="primary-button" disabled="@(reviewingId is not null || string.IsNullOrWhiteSpace(rejectionReason))" @onclick="() => Review(rejectingProduct.Id, false)">@L["Reject"]</button></footer>
+        </section>
+    </div>
+}
+
 @code {
+    [SupplyParameterFromQuery(Name="waitingHours")]public int? QueryWaitingHours{get;set;}
+    private int? waitingHours;private bool sequential=true;
+    private void Template(ChangeEventArgs e){if(e.Value is string key&&new[]{"ReasonPhotos","ReasonDescription","ReasonCategory","ReasonPrice"}.Contains(key))rejectionReason=O[key];}
+    private void Filter()=>Nav.NavigateTo(Nav.GetUriWithQueryParameter("waitingHours",waitingHours));
     private PagedResponse<CatalogProductDto>? result;
     private readonly Dictionary<Guid, int> imageIndexes = [];
     private bool loading = true;
     private Guid? reviewingId;
     private string? error;
+    private CatalogProductDto? rejectingProduct;
+    private string rejectionReason = "";
+    private void OpenRejection(CatalogProductDto product){rejectingProduct=product;rejectionReason="";error=null;}
 
     protected override async Task OnInitializedAsync()
     {
         ModerationState.Changed += OnModerationChanged;
-        await Load(1);
+        await Task.CompletedTask;
     }
+    protected override async Task OnParametersSetAsync(){waitingHours=QueryWaitingHours;await Load(1);}
 
     private async Task Load(int page) => await Load(page, true);
 
@@ -169,8 +193,8 @@ else if (result is not null)
         error = null;
         try
         {
-            result = await Api.List(page, status: "PENDING_MODERATION");
-            ModerationState.SetPending((int)Math.Min(int.MaxValue, result.TotalElements));
+            result = await Api.List(page, status: "PENDING_MODERATION",sort:"waiting",waitingHours:waitingHours);
+            await ModerationState.RefreshAsync();
         }
         catch (HttpRequestException exception)
         {
@@ -189,7 +213,8 @@ else if (result is not null)
         error = null;
         try
         {
-            await Api.Action(id, approve ? "approve" : "reject");
+            await Api.Action(id, approve ? "approve" : "reject", approve ? null : rejectionReason);
+            rejectingProduct = null;
 
             if (result is not null)
             {
@@ -197,10 +222,10 @@ else if (result is not null)
                 var total = Math.Max(0, result.TotalElements - 1);
                 var totalPages = total == 0 ? 0 : (int)Math.Ceiling(total / (double)result.Size);
                 result = new(remaining, result.Page, result.Size, total, totalPages);
-                ModerationState.SetPending((int)Math.Min(int.MaxValue, total));
+                await ModerationState.RefreshAsync();
 
-                if (remaining.Count == 0 && result.Page > 1)
-                    await Load(result.Page - 1, false);
+                if (remaining.Count == 0)
+                    await Load(result.Page > 1 ? result.Page - 1 : 1, false);
             }
         }
         catch (HttpRequestException exception)

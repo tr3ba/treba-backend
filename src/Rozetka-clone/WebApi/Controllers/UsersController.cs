@@ -544,7 +544,8 @@ public class UsersController : ControllerBase
                             a.DefaultAddress
                         )
                 )
-                .ToList()
+                .ToList(),
+            user.Role?.Name
         );
     }
 }

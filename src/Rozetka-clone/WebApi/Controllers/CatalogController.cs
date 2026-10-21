@@ -15,15 +15,41 @@ namespace WebApi.Controllers;
 [Authorize(Roles = $"{Roles.Administrator},{Roles.Manager},{Roles.Moderator},{Roles.Seller}")]
 public sealed class CatalogController(
     CatalogService catalog,
-    IApplicationDbContext db
+    IApplicationDbContext db,
+    Microsoft.Extensions.Options.IOptions<WebApi.Telegram.TelegramOptions> telegram
 ) : ControllerBase
 {
+    [HttpGet("duplicates")]
+    public Task<IReadOnlyList<Contracts.Telegram.ProductDuplicateDto>> Duplicates(Guid brandId, string? manufacturerPartNumber, string? barcode, Guid? excludeId,
+        [FromServices] CatalogDuplicateService duplicates, CancellationToken ct) => duplicates.FindAsync(SellerUserScope(), brandId, manufacturerPartNumber, barcode, excludeId, ct);
+    [HttpPost("duplicates")]
+    public Task<IReadOnlyList<Contracts.Telegram.ProductDuplicateDto>> LookupDuplicates(Contracts.Telegram.DuplicateLookupRequest request,
+        [FromServices] CatalogDuplicateService duplicates, CancellationToken ct) => duplicates.FindManyAsync(SellerUserScope(), request.BrandId, request.ManufacturerPartNumber, request.Barcodes, request.ExcludeId, ct);
+
+    [HttpPost("bulk/preview"), Authorize(Roles = Roles.Administrator + "," + Roles.Manager + "," + Roles.Seller)]
+    public Task<BulkCatalogPreviewDto> BulkPreview(BulkCatalogRequest request, [FromServices] WebApi.Telegram.BulkCatalogService bulk, CancellationToken ct)
+        => bulk.PreviewAsync(Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!), SellerUserScope(), request, ct);
+
+    [HttpPost("bulk/apply"), Authorize(Roles = Roles.Administrator + "," + Roles.Manager + "," + Roles.Seller)]
+    public async Task<IActionResult> BulkApply(ApplyBulkCatalogRequest request, [FromServices] WebApi.Telegram.BulkCatalogService bulk, CancellationToken ct)
+        => Ok(new
+        {
+            updated = await bulk.ApplyAsync(Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!), SellerUserScope(), request.Token, ct)
+        });
     [HttpGet("products")]
     public async Task<PagedResponse<CatalogProductDto>> List(
         int page = 1,
         int size = 20,
         string? search = null,
         string? status = null,
+        Guid? categoryId = null,
+        Guid? brandId = null,
+        Guid? sellerId = null,
+        decimal? minPrice = null,
+        decimal? maxPrice = null,
+        string? stock = null,
+        string? sort = null,
+        int? waitingHours = null,
         CancellationToken ct = default
     )
     {
@@ -33,12 +59,42 @@ public sealed class CatalogController(
             search,
             status,
             false,
-            null,
-            null,
+            categoryId,
+            sort,
             ct,
-            SellerUserScope()
+            SellerUserScope(),
+            new CatalogFilters { BrandId = brandId, SellerId = sellerId, MinPrice = minPrice, MaxPrice = maxPrice, Stock = stock, WaitingHours = waitingHours }
         );
     }
+
+    [HttpGet("filter-options")]
+    public Task<CatalogFilterOptionsDto> FilterOptions(CancellationToken ct) => catalog.FilterOptionsAsync(SellerUserScope(), ct);
+    [HttpGet("products/{id:guid}/resubmission-changes")]
+    public Task<ModerationComparisonDto> Changes(Guid id, CancellationToken ct) => new ModerationComparisonService(db).CompareAsync(id, SellerUserScope(), ct);
+
+    [HttpGet("attributes")]
+    public Task<IReadOnlyList<CatalogAttributeDefinitionDto>> Attributes(Guid categoryId, CancellationToken ct) => catalog.AttributeDefinitionsAsync(categoryId, ct);
+
+    [HttpPost("attributes")]
+    [Authorize(Roles = Roles.Administrator)]
+    public async Task<IActionResult> CreateAttribute(CreateCatalogAttributeRequest request, [FromServices] Application.Attributes.IAttributeService attributes, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(request.Name) || !await db.Categories.AnyAsync(c => c.Id == request.CategoryId && c.IsActive, ct))
+            return BadRequest();
+        var attribute = await attributes.CreateAsync(new Application.Attributes.CreateAttributeRequest
+        {
+            CategoryId = request.CategoryId,
+            Name = request.Name.Trim(),
+            Code = "custom-" + Guid.NewGuid().ToString("N"),
+            Type = Domain.Enums.AttributeType.STRING,
+            Unit = request.Unit?.Trim()
+        }, ct);
+        return Ok(attribute);
+    }
+
+    [HttpGet("products/{id:guid}/moderation-history")]
+    public async Task<IActionResult> History(Guid id, CancellationToken ct)
+        => await catalog.GetAsync(id, ct, SellerUserScope()) is null ? NotFound() : Ok(await catalog.ModerationHistoryAsync(id, ct));
 
     [HttpGet("stats")]
     public async Task<CatalogStatsDto> Stats(
@@ -185,6 +241,9 @@ public sealed class CatalogController(
             );
         }
 
+        if (sellerUserId.HasValue && telegram.Value.Enabled && telegram.Value.EnforceSellerCategories)
+            await new SellerCategoryAccess(db).EnsureAllowedAsync(sellerUserId.Value, request.CategoryId, ct);
+
         var product = await catalog.SaveAsync(
             null,
             request.StoreId,
@@ -219,6 +278,9 @@ public sealed class CatalogController(
         {
             return NotFound();
         }
+
+        if (SellerUserScope() is { } sellerId && telegram.Value.Enabled && telegram.Value.EnforceSellerCategories)
+            await new SellerCategoryAccess(db).EnsureAllowedAsync(sellerId, request.CategoryId, ct);
 
         return await catalog.SaveAsync(
             id,

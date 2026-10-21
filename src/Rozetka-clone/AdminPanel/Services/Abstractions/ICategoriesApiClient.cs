@@ -12,6 +12,6 @@ public interface ICategoriesApiClient
 }
 
 public record CategoryDto(Guid Id, Guid? ParentId, string Name, string Slug, string? Description, string? ImageUrl, [property: JsonPropertyName("isActive")] bool Active, int SortOrder, int Level);
-public record CategoryTreeDto(Guid Id, string Name, string Slug, [property: JsonPropertyName("isActive")] bool Active, List<CategoryTreeDto> Children, int SortOrder = 0, int Level = 0, string? Description = null);
+public record CategoryTreeDto(Guid Id, string Name, string Slug, [property: JsonPropertyName("isActive")] bool Active, List<CategoryTreeDto> Children, int SortOrder = 0, int Level = 0, string? Description = null, string? ImageUrl = null);
 public record CreateCategoryRequest(Guid? ParentId, string Name, string Slug, string? Description, string? ImageUrl, [property: JsonPropertyName("isActive")] bool Active, int SortOrder);
 public record UpdateCategoryRequest(string Name, string Slug, string? Description, string? ImageUrl, [property: JsonPropertyName("isActive")] bool Active, int SortOrder);

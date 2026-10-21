@@ -23,6 +23,9 @@
     <article class="stat-card"><div class="stat-info"><p class="stat-title">@L["InModeration"]</p><p class="stat-value">@(_stats?.Pending.ToString() ?? "—")</p></div><div class="stat-icon icon-amber"><i class="bi bi-shield-check"></i></div></article>
 </section>
 
+<OperationsDashboard />
+<BusinessOperationsDashboard />
+
 <section class="section-grid dashboard-shortcuts">
     <article class="card-box">
         <div class="card-box-header"><h2 class="card-box-title">@L["ProductManagement"]</h2></div>

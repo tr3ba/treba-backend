@@ -1,4 +1,5 @@
 ﻿using Domain.Entities;
+using Domain.Entities.Orders;
 using Domain.Entities.Product;
 using Domain.Entities.Users;
 using Microsoft.EntityFrameworkCore;
@@ -87,6 +88,12 @@ namespace Infrastructure.Persistence.Configurations
                 .HasOne<User>()
                 .WithMany()
                 .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder
+                .HasOne<OrderItem>()
+                .WithMany()
+                .HasForeignKey(x => x.OrderItemId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasIndex(x => x.ProductId);

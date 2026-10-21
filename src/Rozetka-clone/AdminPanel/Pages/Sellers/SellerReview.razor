@@ -29,13 +29,15 @@ else if (_seller is null)
 }
 else
 {
+    @if (_actionFailed) { <p class="feedback-error" role="alert">@L["SellerActionFailed"]</p> }
+    @if (_actionSucceeded) { <p class="feedback-success" role="status">@L["SellerStatusSaved"]</p> }
     <section class="seller-review-hero">
         <div class="seller-review-identity">
             <div class="seller-logo orange large">@Initials(_seller.CompanyName)</div>
             <div>
                 <p class="eyebrow">@L["SellerProfile"]</p>
                 <h1>@_seller.CompanyName</h1>
-                <span>@L["Since"] @_seller.CreatedAt.ToString("d", CultureInfo.CurrentCulture)</span>
+                <span>@L["Since"] @_seller.CreatedAt.ToLocalTime().ToString("d", CultureInfo.CurrentCulture)</span>
             </div>
         </div>
         <span class="status-badge @StatusClass(_seller.Status)">@StatusLabel(_seller.Status)</span>
@@ -43,14 +45,15 @@ else
 
     <div class="seller-review-layout">
         <div class="seller-dossier">
+            <SellerCategoriesPanel SellerId="@Id" />
             <section class="card-box dossier-section">
                 <div class="card-box-header"><h2 class="card-box-title">@L["StoreDetails"]</h2></div>
                 <dl class="dossier-grid">
                     <div><dt>@L["TaxId"]</dt><dd>@_seller.TaxNumber</dd></div>
                     <div><dt>@L["Phone"]</dt><dd>@(_seller.Phone ?? L["NotSpecified"].Value)</dd></div>
                     <div><dt>Email</dt><dd>@(_seller.Email ?? L["NotSpecified"].Value)</dd></div>
-                    <div><dt>@L["SellerCreatedAt"]</dt><dd>@_seller.CreatedAt.ToString("g", CultureInfo.CurrentCulture)</dd></div>
-                    <div><dt>@L["SellerUpdatedAt"]</dt><dd>@_seller.UpdatedAt.ToString("g", CultureInfo.CurrentCulture)</dd></div>
+                    <div><dt>@L["SellerCreatedAt"]</dt><dd>@_seller.CreatedAt.ToLocalTime().ToString("g", CultureInfo.CurrentCulture)</dd></div>
+                    <div><dt>@L["SellerUpdatedAt"]</dt><dd>@_seller.UpdatedAt.ToLocalTime().ToString("g", CultureInfo.CurrentCulture)</dd></div>
                 </dl>
             </section>
             <section class="card-box dossier-section">
@@ -62,8 +65,23 @@ else
             <p class="eyebrow">@L["Status"]</p>
             <h2>@StatusLabel(_seller.Status)</h2>
             <p>@L["SellerStatusSource"]</p>
+            <div class="seller-decision-actions" aria-busy="@_busy">
+                @if (_seller.Status != 1)
+                {
+                    <button type="button" class="primary-button" disabled="@_busy" @onclick="ApproveAsync">
+                        <i class="bi bi-patch-check"></i>@(_busy ? L["Saving"] : _seller.Status == 2 ? L["ReactivateSeller"] : L["ApproveSeller"])
+                    </button>
+                }
+                @if (_seller.Status == 1)
+                {
+                    <button type="button" class="secondary-button danger-button" disabled="@_busy" @onclick="() => _confirmSuspend = true">
+                        <i class="bi bi-pause-circle"></i>@(_busy ? L["Saving"] : L["SuspendSeller"])
+                    </button>
+                }
+            </div>
         </aside>
     </div>
+    <ConfirmDialog IsOpen="@_confirmSuspend" Title="@L["SuspendSeller"]" Message="@L["SuspendSellerConfirm", _seller.CompanyName]" OnClose="ConfirmSuspendAsync" />
 }
 
 @code {
@@ -72,6 +90,10 @@ else
     private SellerDto? _seller;
     private bool _loading = true;
     private bool _loadFailed;
+    private bool _busy;
+    private bool _actionFailed;
+    private bool _actionSucceeded;
+    private bool _confirmSuspend;
 
     protected override Task OnParametersSetAsync() => LoadAsync();
 
@@ -97,4 +119,28 @@ else
         1 => "badge-active", 2 or 3 => "badge-deleted", _ => "badge-pending"
     };
     private static string Initials(string name) => string.Concat(name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(part => char.ToUpperInvariant(part[0])));
+
+    private Task ApproveAsync() => ChangeStatusAsync(false);
+
+    private async Task ConfirmSuspendAsync(bool confirmed)
+    {
+        _confirmSuspend = false;
+        if (confirmed) await ChangeStatusAsync(true);
+    }
+
+    private async Task ChangeStatusAsync(bool suspend)
+    {
+        if (_busy || _seller is null) return;
+        _busy = true; _actionFailed = false; _actionSucceeded = false;
+        try
+        {
+            _seller = suspend ? await SellersApi.SuspendAsync(Id) : await SellersApi.ApproveAsync(Id);
+            _actionSucceeded = true;
+        }
+        catch (Exception exception) when (exception is HttpRequestException or JsonException or TaskCanceledException)
+        {
+            _actionFailed = true;
+        }
+        finally { _busy = false; }
+    }
 }

@@ -1,4 +1,5 @@
 @inject CatalogModerationState ModerationState
+@inject ReviewModerationState ReviewModeration
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @using System.Security.Claims
 @implements IDisposable
@@ -18,14 +19,13 @@
             <p class="nav-section-label nav-section-label-spaced">@L["People"]</p>
             @if (Can("/users")) { <div class="nav-item"><NavLink class="nav-link" href="users"><i class="bi bi-people"></i> @L["Users"]</NavLink></div> }
             @if (Can("/sellers")) { <div class="nav-item"><NavLink class="nav-link" href="sellers"><i class="bi bi-shop"></i> @L["Sellers"]</NavLink></div> }
-            @if (Can("/reviews")) { <div class="nav-item"><NavLink class="nav-link" href="reviews"><i class="bi bi-star"></i> @L["Reviews"]</NavLink></div> }
-            @if (Can("/support")) { <div class="nav-item"><NavLink class="nav-link" href="support"><i class="bi bi-chat-dots"></i> @L["SupportAndReturns"]</NavLink></div> }
+            @if (Can("/reviews")) { <div class="nav-item"><NavLink class="nav-link" href="reviews"><i class="bi bi-star"></i> @L["Reviews"]@if (ReviewModeration.PendingCount > 0) { <span class="menu-counter">@ReviewModeration.PendingCount</span> }</NavLink></div> }
+            @if (Can("/support")) { <div class="nav-item"><NavLink class="nav-link" href="support"><i class="bi bi-chat-dots"></i> @(_role == "Seller" ? O["SellerQuestions"] : L["SupportAndReturns"])</NavLink></div> }
             @if (Can("/customer-activity")) { <div class="nav-item"><NavLink class="nav-link" href="customer-activity"><i class="bi bi-activity"></i> @L["CustomerActivity"]</NavLink></div> }
         }
-        @if (Can("/storefront") || Can("/loyalty"))
+        @if (Can("/loyalty"))
         {
             <p class="nav-section-label nav-section-label-spaced">@L["Growth"]</p>
-            @if (Can("/storefront")) { <div class="nav-item"><NavLink class="nav-link" href="storefront"><i class="bi bi-window-stack"></i> @L["Storefront"]</NavLink></div> }
             @if (Can("/loyalty")) { <div class="nav-item"><NavLink class="nav-link" href="loyalty"><i class="bi bi-gift"></i> @L["PromotionsAndLoyalty"]</NavLink></div> }
         }
         @if (Can("/settings"))
@@ -48,14 +48,9 @@
     {
         _role = (await AuthenticationStateProvider.GetAuthenticationStateAsync()).User.FindFirst(ClaimTypes.Role)?.Value;
         ModerationState.Changed += OnModerationChanged;
-        if (!Can("/moderation")) return;
-        try
-        {
-            await ModerationState.RefreshAsync();
-        }
-        catch (HttpRequestException)
-        {
-        }
+        ReviewModeration.Changed += OnModerationChanged;
+        if (!Can("/moderation") && !Can("/reviews")) return;
+        await RefreshCountsAsync();
 
         _refreshLoop = RefreshPeriodicallyAsync(_refreshCancellation.Token);
     }
@@ -67,13 +62,7 @@
         {
             while (await timer.WaitForNextTickAsync(cancellationToken))
             {
-                try
-                {
-                    await ModerationState.RefreshAsync();
-                }
-                catch (HttpRequestException)
-                {
-                }
+                await RefreshCountsAsync();
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -83,9 +72,18 @@
 
     private void OnModerationChanged() => _ = InvokeAsync(StateHasChanged);
 
+    private async Task RefreshCountsAsync()
+    {
+        try { if (Can("/moderation")) await ModerationState.RefreshAsync(); }
+        catch (Exception exception) when (exception is HttpRequestException or System.Text.Json.JsonException or TaskCanceledException) { }
+        try { if (Can("/reviews")) await ReviewModeration.RefreshAsync(); }
+        catch (Exception exception) when (exception is HttpRequestException or System.Text.Json.JsonException or TaskCanceledException) { }
+    }
+
     public void Dispose()
     {
         ModerationState.Changed -= OnModerationChanged;
+        ReviewModeration.Changed -= OnModerationChanged;
         _refreshCancellation.Cancel();
         _refreshCancellation.Dispose();
     }

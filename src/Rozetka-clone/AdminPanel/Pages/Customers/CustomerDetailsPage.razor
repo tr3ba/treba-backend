@@ -1,0 +1,14 @@
+@page "/customer-activity/{Id:guid}"
+@inject OperationsApiClient Api
+@inject UiTime Time
+<PageTitle>@O["CustomerHistory"] — Treba Admin</PageTitle>
+<a href="/customer-activity" class="users-back-link"><i class="bi bi-arrow-left" aria-hidden="true"></i>@L["CustomerActivity"]</a>
+@if(error is not null){<p class="feedback-error" role="alert">@error <button class="secondary-button" @onclick="Load">@L["TryAgain"]</button></p>}
+@if(loading){<p class="empty-state">@L["Loading"]</p>}else if(data is not null){
+<section class="page-hero"><div><p class="eyebrow">@O["CustomerHistory"]</p><h1>@data.Customer.Name</h1><p>@data.Customer.Email</p></div></section>
+<div class="operations-metrics"><article class="card-box"><span>@L["Orders"]</span><strong class="operations-number">@data.Customer.Orders</strong></article><article class="card-box"><span>@O["OrderedAmount"]</span><strong class="operations-number">@data.Customer.OrderedAmount.ToString("N2") ₴</strong></article><article class="card-box"><span>@L["Reviews"]</span><strong class="operations-number">@data.Customer.Reviews</strong></article></div>
+<p class="operations-caption">@O["RecentHundred"]</p>
+<section class="card-box"><h2>@L["Orders"]</h2><OrderTable Rows="data.Orders" /></section>
+<section class="card-box"><h2>@L["Reviews"]</h2>@if(data.Reviews.Count==0){<p class="empty-state">@O["NoResults"]</p>}else{<div class="table-wrap"><table class="custom-table"><thead><tr><th>@L["ProductsNav"]</th><th>@O["Rating"]</th><th>@L["Status"]</th><th>@O["Message"]</th></tr></thead><tbody>@foreach(var r in data.Reviews){<tr><td><a class="record-link" href="@($"/reviews?search={Uri.EscapeDataString(r.ProductName)}&status={r.Status}")">@r.ProductName<i class="bi bi-arrow-up-right" aria-hidden="true"></i></a></td><td>@r.Rating / 5</td><td><OperationsStatusBadge Domain="Review" Value="@r.Status" /></td><td class="operations-text">@r.Comment</td></tr>}</tbody></table></div>}</section>
+<section class="card-box"><h2>@L["SupportAndReturns"]</h2>@if(data.Tickets.Count==0){<p class="empty-state">@O["NoResults"]</p>}else{<ul class="operations-link-list">@foreach(var t in data.Tickets){<li><a class="record-link" href="@($"/support/{t.Id}")"><i class="bi bi-chat-dots" aria-hidden="true"></i>@t.Subject<i class="bi bi-arrow-up-right" aria-hidden="true"></i></a><span>@O["Ticket_"+t.Status] · @Time.Local(t.UpdatedAt).ToString("g")</span></li>}</ul>}</section>}
+@code{[Parameter]public Guid Id{get;set;}private CustomerDetails? data;private string? error;private bool loading;protected override Task OnParametersSetAsync()=>Load();private async Task Load(){loading=true;error=null;try{data=await Api.Customer(Id);}catch(HttpRequestException e){error=e.Message;data=null;}finally{loading=false;}}}

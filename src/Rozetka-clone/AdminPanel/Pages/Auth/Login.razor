@@ -11,7 +11,7 @@
 <PageTitle>@L["Login"] — Treba Admin</PageTitle>
 <section class="login-shell">
     <div class="login-brand-panel">
-        <div class="login-brand"><span>T</span><div><strong>TREBA</strong><small>@L["AdminPanel"]</small></div></div>
+        <div class="login-brand"><span class="login-brand-mark @(_busy ? "is-loading" : "")"><img src="images/favicon-admin.png" alt="" width="52" height="52" /></span><div><strong>TREBA</strong><small>@L["AdminPanel"]</small></div></div>
         <div class="login-brand-copy"><p class="eyebrow">@L["SecureWorkspace"]</p><h1>@L["OperateWithClarity"]</h1></div>
         <div class="login-security-note"><i class="bi bi-shield-check"></i><div><strong>@L["ProtectedAccess"]</strong><span>@L["LoginAreas"]</span></div></div>
         <div class="login-orbit orbit-one"></div><div class="login-orbit orbit-two"></div>
@@ -27,6 +27,7 @@
                 <label><span>@L["Password"]</span><div class="login-input"><i class="bi bi-lock"></i><InputText type="password" autocomplete="current-password" @bind-Value="_credentials.Password" /></div></label>
                 <button class="primary-button wide login-submit" type="submit" disabled="@_busy">@(_busy ? L["LoginInProgress"] : L["SignIn"])<i class="bi bi-arrow-right"></i></button>
             </EditForm>
+            <GuardLoginPanel OnCompleted="ApplyLoginResult" />
         }
         else if (_stage == LoginStage.ChooseMethod)
         {
@@ -35,6 +36,10 @@
             <p class="eyebrow">@L["TwoFactorAuth"]</p><h2>@L["ChooseVerificationMethod"]</h2><p class="login-intro">@L["ChooseVerificationMethodDesc"]</p>
             @if (_error is not null) { <p class="feedback-error" role="alert">@_error</p> }
             <div class="login-methods">
+                @if (_challenge?.Methods.Contains(TwoFactorMethods.Telegram) == true)
+                {
+                    <GuardLoginPanel @key="_challenge.ChallengeId" LoginChallengeId="_challenge.ChallengeId" OnCompleted="ApplyLoginResult" />
+                }
                 @if (_challenge?.Methods.Contains(TwoFactorMethods.Authenticator) == true)
                 {
                     <button type="button" class="login-method" @onclick="() => SelectMethodAsync(TwoFactorMethods.Authenticator)" disabled="@_busy"><span><i class="bi bi-phone"></i></span><div><strong>Google Authenticator</strong><small>@L["AuthenticatorMethodDesc"]</small></div><i class="bi bi-chevron-right"></i></button>
@@ -89,6 +94,13 @@
         }
         catch (HttpRequestException) { _error = L["ApiUnavailable"]; }
         finally { _busy = false; }
+    }
+
+    private async Task ApplyLoginResult(LoginResponse result)
+    {
+        if(result.Authentication is not null){await CompleteLoginAsync(result.Authentication);return;}
+        if(result.Challenge is null){_error=L["LoginFailed"];return;}
+        _challenge=result.Challenge;_stage=LoginStage.ChooseMethod;
     }
 
     private async Task SelectMethodAsync(string method)

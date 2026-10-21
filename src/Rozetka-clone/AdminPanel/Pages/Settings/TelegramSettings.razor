@@ -1,0 +1,45 @@
+@page "/settings/telegram"
+@rendermode InteractiveServer
+@using Contracts.Telegram
+@inject TelegramApiClient Telegram
+@inject CatalogApiClient Catalog
+
+<PageTitle>Telegram — Treba Admin</PageTitle>
+<a class="users-back-link" href="/settings"><i class="bi bi-arrow-left"></i>@L["Settings"]</a>
+<section class="page-hero"><div><p class="eyebrow">@L["Integrations"]</p><h1>Telegram · Treba</h1><p>@L["TelegramSettingsDescription"]</p></div></section>
+<section class="card-box dossier-section">
+    <h2>@L["TelegramConnection"]</h2>
+    <p>@L[configuration?.Configured==true?"TelegramConfigured":"TelegramNotConfigured"]</p>
+    @if(configuration?.Configured==true){<p><strong>@@@configuration.BotUsername</strong></p><a class="record-link" href="@configuration.MiniAppUrl" target="_blank" rel="noopener noreferrer">Mini App <i class="bi bi-box-arrow-up-right"></i></a>}
+</section>
+<section class="card-box dossier-section">
+    <h2>@L["RozetkaCategoryMapping"]</h2><p>@L["RozetkaCategoryMappingHint"]</p>
+    @if(error is not null){<p class="feedback-error" role="alert">@error</p>}
+    @if(saved){<p class="feedback-success" role="status">@L["Saved"]</p>}
+    <EditForm Model="model" OnValidSubmit="Save" FormName="telegram-mapping"><DataAnnotationsValidator/><ValidationSummary/>
+        <div class="profile-form-grid">
+            <label class="field-group"><span>@L["RozetkaCategoryCode"]</span><InputText class="form-control" @bind-Value="model.ExternalKey" placeholder="c80158"/></label>
+            <label class="field-group"><span>@L["Category"]</span><InputSelect class="form-control" @bind-Value="model.CategoryId"><option value="@Guid.Empty">@L["SelectCategory"]</option>
+                @foreach(var category in categories){<option value="@category.Id">@category.Name</option>}
+            </InputSelect></label>
+        </div>
+        <button class="primary-button" type="submit" disabled="@busy">@L["SaveChanges"]</button>
+    </EditForm>
+    <div class="table-responsive"><table class="catalog-table"><thead><tr><th>Rozetka</th><th>Treba</th><th></th></tr></thead><tbody>
+        @foreach(var mapping in mappings){<tr><td>@mapping.ExternalKey</td><td>@(categories.FirstOrDefault(c=>c.Id==mapping.CategoryId)?.Name??mapping.CategoryName)</td><td><button type="button" class="secondary-button" @onclick="()=>Edit(mapping)"><i class="bi bi-pencil" aria-hidden="true"></i>@L["Edit"]</button></td></tr>}
+    </tbody></table></div>
+</section>
+
+@code {
+    private TelegramConfigurationDto? configuration;
+    private IReadOnlyList<Contracts.Catalog.CatalogLookupDto> categories=[];
+    private IReadOnlyList<CategoryMappingDto> mappings=[];
+    private MappingModel model=new();
+    private bool busy,saved;
+    private string? error;
+    protected override async Task OnInitializedAsync(){busy=true;try{configuration=await Telegram.Get<TelegramConfigurationDto>("api/telegram/configuration");categories=(await Catalog.FilterOptions()).Categories;await LoadMappings();}catch(HttpRequestException ex){error=ex.Message;}finally{busy=false;}}
+    private async Task LoadMappings()=>mappings=await Telegram.Get<List<CategoryMappingDto>>("api/v1/admin/telegram/mappings");
+    private void Edit(CategoryMappingDto mapping){model=new(){ExternalKey=mapping.ExternalKey,CategoryId=mapping.CategoryId};saved=false;}
+    private async Task Save(){busy=true;saved=false;error=null;try{await Telegram.Put("api/v1/admin/telegram/mappings",new CategoryMappingInput(model.ExternalKey.Trim(),model.CategoryId));await LoadMappings();saved=true;}catch(HttpRequestException ex){error=ex.Message;}finally{busy=false;}}
+    private sealed class MappingModel{[System.ComponentModel.DataAnnotations.Required,System.ComponentModel.DataAnnotations.RegularExpression(@"^c[1-9][0-9]{0,11}$")]public string ExternalKey{get;set;}="";public Guid CategoryId{get;set;}}
+}

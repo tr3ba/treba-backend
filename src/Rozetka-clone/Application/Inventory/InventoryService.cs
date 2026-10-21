@@ -1,364 +1,118 @@
 using Application.Abstractions;
+using Application.Common;
 using Domain.Entities.Inventory;
 using Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace Application.Inventory;
 
-public sealed class InventoryService : IInventoryService
+// Catalog stock is available-to-sell. Reserve decrements it; cancel restores it once.
+public sealed class InventoryService(IApplicationDbContext db, ICurrentActor actor) : IInventoryService
 {
-    private readonly IApplicationDbContext _context;
-
-    public InventoryService(
-        IApplicationDbContext context
-    )
+    public async Task<InventoryDto?> GetInventoryAsync(Guid variantId, CancellationToken ct = default)
     {
-        _context = context;
-    }
-
-    public async Task<InventoryDto?> GetInventoryAsync(
-        Guid variantId,
-        CancellationToken cancellationToken = default
-    )
-    {
-        var inventory = await _context
-            .Inventory
-            .AsNoTracking()
-            .FirstOrDefaultAsync(
-                x => x.VariantId == variantId,
-                cancellationToken
-            );
-
-        if (inventory is null)
-        {
+        var variant = await db.ProductVariants.AsNoTracking().SingleOrDefaultAsync(v => v.Id == variantId, ct);
+        if (variant is null)
             return null;
-        }
-
-        return new InventoryDto(
-            inventory.Id,
-            inventory.WarehouseId,
-            inventory.VariantId,
-            inventory.AvailableQuantity,
-            inventory.ReservedQuantity,
-            inventory.AvailableForSale,
-            inventory.MinimumQuantity
-        );
+        var reserved = await db.InventoryReservations.Where(r => r.VariantId == variantId && r.Status == ReservationStatus.ACTIVE)
+            .SumAsync(r => (int?)r.Quantity, ct) ?? 0;
+        return new(variantId, Guid.Empty, variantId, variant.StockQuantity + reserved, reserved, variant.StockQuantity, 0);
     }
-
-    public async Task<bool> IsAvailableAsync(
-        Guid variantId,
-        int quantity,
-        CancellationToken cancellationToken = default
-    )
+    public Task<bool> IsAvailableAsync(Guid variantId, int quantity, CancellationToken ct = default) =>
+        quantity <= 0 ? Task.FromResult(false) : db.ProductVariants.AnyAsync(v => v.Id == variantId && v.IsActive && v.StockQuantity >= quantity, ct);
+    public Task IncreaseStockAsync(Guid variantId, Guid warehouseId, int quantity, CancellationToken ct = default) => Adjust(variantId, warehouseId, quantity, true, ct);
+    public Task DecreaseStockAsync(Guid variantId, Guid warehouseId, int quantity, CancellationToken ct = default) => Adjust(variantId, warehouseId, quantity, false, ct);
+    private async Task Adjust(Guid variantId, Guid warehouseId, int quantity, bool increase, CancellationToken ct)
     {
+        if (warehouseId != Guid.Empty)
+            throw new ArgumentException("Catalog stock is managed without warehouses; use an empty warehouse id.");
         if (quantity <= 0)
-        {
-            return false;
-        }
-
-        var totalAvailable =
-            await _context
-                .Inventory
-                .AsNoTracking()
-                .Where(x => x.VariantId == variantId)
-                .SumAsync(
-                    x => (int?)(x.AvailableQuantity - x.ReservedQuantity),
-                    cancellationToken
-                )
-            ?? 0;
-
-        return totalAvailable >= quantity;
+            throw new ArgumentException("Quantity must be positive.");
+        var variant = await db.ProductVariants.SingleOrDefaultAsync(v => v.Id == variantId, ct) ?? throw new KeyNotFoundException();
+        if (actor.Role == "Seller" && !await db.Products.AnyAsync(p => p.Id == variant.ProductId
+            && db.Stores.Any(s => s.Id == p.StoreId && db.Sellers.Any(seller => seller.Id == s.SellerId && seller.UserId == actor.UserId && seller.Status == SellerStatus.ACTIVE)), ct))
+            throw new KeyNotFoundException();
+        if (!increase && variant.StockQuantity < quantity)
+            throw new BusinessRuleException("Insufficient available stock.");
+        variant.SetStock(checked(variant.StockQuantity + (increase ? quantity : -quantity)));
+        await TouchProducts([variant.ProductId], ct);
+        await db.SaveChangesAsync(ct);
     }
-
-    public async Task IncreaseStockAsync(
-        Guid variantId,
-        Guid warehouseId,
-        int quantity,
-        CancellationToken cancellationToken = default
-    )
+    internal async Task<List<InventoryReservation>> StageReserveAsync(Guid orderId, List<OrderItemRequest> items, CancellationToken ct)
     {
-        if (quantity <= 0)
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(quantity),
-                "Количество пополнения должно быть больше нуля."
-            );
-        }
-
-        var inventory = await _context.Inventory.FirstOrDefaultAsync(
-            x =>
-                x.VariantId == variantId
-                && x.WarehouseId == warehouseId,
-            cancellationToken
-        );
-
-        if (inventory is null)
-        {
-            inventory = new Domain.Entities.Inventory.Inventory
-            {
-                Id = Guid.NewGuid(),
-                WarehouseId = warehouseId,
-                VariantId = variantId,
-                AvailableQuantity = quantity,
-                ReservedQuantity = 0,
-                MinimumQuantity = 0,
-            };
-
-            _context.Inventory.Add(inventory);
-        }
-        else
-        {
-            inventory.AvailableQuantity += quantity;
-        }
-
-        var movement = new StockMovement
-        {
-            Id = Guid.NewGuid(),
-            InventoryId = inventory.Id,
-            Type = StockMovementType.RECEIPT,
-            Quantity = quantity,
-            Reason = "Пополнение остатка на складе",
-            CreatedAt = DateTimeOffset.UtcNow,
-        };
-
-        _context.StockMovements.Add(movement);
-
-        await _context.SaveChangesAsync(cancellationToken);
-    }
-
-    public async Task DecreaseStockAsync(
-        Guid variantId,
-        Guid warehouseId,
-        int quantity,
-        CancellationToken cancellationToken = default
-    )
-    {
-        if (quantity <= 0)
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(quantity),
-                "Количество списания должно быть больше нуля."
-            );
-        }
-
-        var inventory =
-            await _context.Inventory.FirstOrDefaultAsync(
-                x =>
-                    x.VariantId == variantId
-                    && x.WarehouseId == warehouseId,
-                cancellationToken
-            )
-            ?? throw new InvalidOperationException($"Товар с вариантом {variantId} не найден на складе {warehouseId}.");
-
-        if (inventory.AvailableForSale < quantity)
-        {
-            throw new InvalidOperationException(
-                $"Недостаточно товара на складе. Доступно к списанию: {inventory.AvailableForSale}, запрошено: {quantity}."
-            );
-        }
-
-        inventory.AvailableQuantity -= quantity;
-
-        var movement = new StockMovement
-        {
-            Id = Guid.NewGuid(),
-            InventoryId = inventory.Id,
-            Type = StockMovementType.WRITE_OFF,
-            Quantity = quantity,
-            Reason = "Ручное списание со склада",
-            CreatedAt = DateTimeOffset.UtcNow,
-        };
-
-        _context.StockMovements.Add(movement);
-
-        await _context.SaveChangesAsync(cancellationToken);
-    }
-
-    public async Task<List<InventoryReservation>> ReserveItemsAsync(
-        Guid orderId,
-        List<OrderItemRequest> items,
-        CancellationToken cancellationToken = default
-    )
-    {
-        if (items is null
-            || items.Count == 0)
-        {
-            throw new ArgumentException(
-                "Список позиций для резервирования не может быть пустым.",
-                nameof(items)
-            );
-        }
-
-        var reservations = new List<InventoryReservation>();
-
+        if (items.Count == 0 || items.Any(i => i.Quantity <= 0) || items.Select(i => i.VariantId).Distinct().Count() != items.Count)
+            throw new ArgumentException("Order quantities must be positive and variants unique.");
+        var ids = items.Select(i => i.VariantId).ToList();
+        var variants = await db.ProductVariants.Where(v => ids.Contains(v.Id)).ToDictionaryAsync(v => v.Id, ct);
         foreach (var item in items)
+            if (!variants.TryGetValue(item.VariantId, out var v) || !v.IsActive || v.StockQuantity < item.Quantity)
+                throw new BusinessRuleException("Insufficient available stock. Refresh the order.");
+        var reservations = items.Select(i => new InventoryReservation
         {
-            var inventory = await _context
-                .Inventory
-                .Where(
-                    x =>
-                        x.VariantId == item.VariantId
-                        && (x.AvailableQuantity - x.ReservedQuantity) >= item.Quantity
-                )
-                .OrderByDescending(x => x.AvailableQuantity - x.ReservedQuantity)
-                .FirstOrDefaultAsync(cancellationToken);
-
-            if (inventory is null)
-            {
-                throw new InvalidOperationException(
-                    $"Недостаточно товара для варианта {item.VariantId} в количестве {item.Quantity}."
-                );
-            }
-
-            inventory.ReservedQuantity += item.Quantity;
-
-            var reservation = new InventoryReservation
-            {
-                Id = Guid.NewGuid(),
-                OrderId = orderId,
-                VariantId = item.VariantId,
-                WarehouseId = inventory.WarehouseId,
-                Quantity = item.Quantity,
-                Status = ReservationStatus.ACTIVE,
-                ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(30),
-            };
-
-            reservations.Add(reservation);
-            _context.InventoryReservations.Add(reservation);
-
-            var movement = new StockMovement
-            {
-                Id = Guid.NewGuid(),
-                InventoryId = inventory.Id,
-                Type = StockMovementType.RESERVATION,
-                Quantity = item.Quantity,
-                Reason = $"Резерв под заказ {orderId}",
-                ReferenceType = "Order",
-                ReferenceId = orderId,
-                CreatedAt = DateTimeOffset.UtcNow,
-            };
-
-            _context.StockMovements.Add(movement);
-        }
-
-        await _context.SaveChangesAsync(cancellationToken);
-
+            Id = Guid.NewGuid(),
+            OrderId = orderId,
+            VariantId = i.VariantId,
+            WarehouseId = Guid.Empty,
+            Quantity = i.Quantity,
+            Status = ReservationStatus.ACTIVE,
+            ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(30)
+        }).ToList();
+        foreach (var item in items)
+            variants[item.VariantId].SetStock(variants[item.VariantId].StockQuantity - item.Quantity);
+        await TouchProducts(variants.Values.Select(v => v.ProductId), ct);
+        db.InventoryReservations.AddRange(reservations);
         return reservations;
     }
-
-    public async Task ConfirmReservationAsync(
-        Guid orderId,
-        CancellationToken cancellationToken = default
-    )
+    internal async Task StageConfirmAsync(Guid orderId, CancellationToken ct)
     {
-        var reservations = await _context
-            .InventoryReservations
-            .Where(
-                r =>
-                    r.OrderId == orderId
-                    && r.Status == ReservationStatus.ACTIVE
-            )
-            .ToListAsync(cancellationToken);
-
-        if (reservations.Count == 0)
+        var reservations = await db.InventoryReservations.Where(r => r.OrderId == orderId && r.Status == ReservationStatus.ACTIVE).ToListAsync(ct);
+        await ValidateReservations(orderId, reservations, ct);
+        if (reservations.Any(r => r.ExpiresAt <= DateTimeOffset.UtcNow))
+            throw new BusinessRuleException("The stock reservation has expired. Cancel this order and place a new one.");
+        foreach (var r in reservations)
         {
-            return;
+            if (r.WarehouseId != Guid.Empty)
+                throw new BusinessRuleException("Reconcile this legacy warehouse reservation with catalog stock before processing the order.");
+            r.Status = ReservationStatus.CONFIRMED;
         }
-
-        foreach (var reservation in reservations)
-        {
-            var inventory = await _context.Inventory.FirstOrDefaultAsync(
-                x =>
-                    x.VariantId == reservation.VariantId
-                    && x.WarehouseId == reservation.WarehouseId,
-                cancellationToken
-            );
-
-            if (inventory is not null)
-            {
-                inventory.ReservedQuantity = Math.Max(
-                    0,
-                    inventory.ReservedQuantity - reservation.Quantity
-                );
-                inventory.AvailableQuantity = Math.Max(
-                    0,
-                    inventory.AvailableQuantity - reservation.Quantity
-                );
-
-                var movement = new StockMovement
-                {
-                    Id = Guid.NewGuid(),
-                    InventoryId = inventory.Id,
-                    Type = StockMovementType.SALE,
-                    Quantity = reservation.Quantity,
-                    Reason = $"Списание и продажа по заказу {orderId}",
-                    ReferenceType = "Order",
-                    ReferenceId = orderId,
-                    CreatedAt = DateTimeOffset.UtcNow,
-                };
-
-                _context.StockMovements.Add(movement);
-            }
-
-            reservation.Status = ReservationStatus.CONFIRMED;
-        }
-
-        await _context.SaveChangesAsync(cancellationToken);
     }
-
-    public async Task ReleaseReservationAsync(
-        Guid orderId,
-        CancellationToken cancellationToken = default
-    )
+    internal async Task StageRestoreAsync(Guid orderId, CancellationToken ct)
     {
-        var reservations = await _context
-            .InventoryReservations
-            .Where(
-                r =>
-                    r.OrderId == orderId
-                    && r.Status == ReservationStatus.ACTIVE
-            )
-            .ToListAsync(cancellationToken);
-
-        if (reservations.Count == 0)
+        var reservations = await db.InventoryReservations.Where(r => r.OrderId == orderId
+            && (r.Status == ReservationStatus.ACTIVE || r.Status == ReservationStatus.CONFIRMED)).ToListAsync(ct);
+        await ValidateReservations(orderId, reservations, ct);
+        var ids = reservations.Select(r => r.VariantId).ToList();
+        var variants = await db.ProductVariants.Where(v => ids.Contains(v.Id)).ToDictionaryAsync(v => v.Id, ct);
+        foreach (var r in reservations)
         {
-            return;
+            if (!variants.TryGetValue(r.VariantId, out var variant))
+                throw new BusinessRuleException("A reserved variant is missing; stock restoration requires investigation.");
+            if (r.WarehouseId != Guid.Empty)
+                throw new BusinessRuleException("Reconcile this legacy warehouse reservation with catalog stock before processing the order.");
+            variant.SetStock(checked(variant.StockQuantity + r.Quantity));
+            r.Status = ReservationStatus.RELEASED;
         }
-
-        foreach (var reservation in reservations)
-        {
-            var inventory = await _context.Inventory.FirstOrDefaultAsync(
-                x =>
-                    x.VariantId == reservation.VariantId
-                    && x.WarehouseId == reservation.WarehouseId,
-                cancellationToken
-            );
-
-            if (inventory is not null)
-            {
-                inventory.ReservedQuantity = Math.Max(
-                    0,
-                    inventory.ReservedQuantity - reservation.Quantity
-                );
-
-                var movement = new StockMovement
-                {
-                    Id = Guid.NewGuid(),
-                    InventoryId = inventory.Id,
-                    Type = StockMovementType.RELEASE,
-                    Quantity = reservation.Quantity,
-                    Reason = $"Освобождение резерва для заказа {orderId}",
-                    ReferenceType = "Order",
-                    ReferenceId = orderId,
-                    CreatedAt = DateTimeOffset.UtcNow,
-                };
-
-                _context.StockMovements.Add(movement);
-            }
-
-            reservation.Status = ReservationStatus.RELEASED;
-        }
-
-        await _context.SaveChangesAsync(cancellationToken);
+        await TouchProducts(variants.Values.Select(v => v.ProductId), ct);
     }
+    private async Task TouchProducts(IEnumerable<Guid> productIds, CancellationToken ct)
+    {
+        var ids = productIds.Distinct().ToList();
+        foreach (var product in await db.Products.Where(p => ids.Contains(p.Id)).ToListAsync(ct))
+            product.UpdatedAt = DateTime.UtcNow;
+    }
+    private async Task ValidateReservations(Guid orderId, List<InventoryReservation> reservations, CancellationToken ct)
+    {
+        var items = await db.OrderItems.Where(i => i.OrderId == orderId).Select(i => new { i.VariantId, i.Quantity }).ToListAsync(ct);
+        if (items.Count == 0 || reservations.Any(r => r.WarehouseId != Guid.Empty)
+            || items.GroupBy(i => i.VariantId).Any(g => reservations.Where(r => r.VariantId == g.Key).Sum(r => r.Quantity) != g.Sum(i => i.Quantity))
+            || reservations.Any(r => !items.Any(i => i.VariantId == r.VariantId)))
+            throw new BusinessRuleException("The order reservations require stock reconciliation before this operation.");
+    }
+    // Standalone reservation writes would bypass order totals, ownership and history.
+    public Task<List<InventoryReservation>> ReserveItemsAsync(Guid orderId, List<OrderItemRequest> items, CancellationToken ct = default) =>
+        throw new BusinessRuleException("Create an order to reserve stock.");
+    public Task ConfirmReservationAsync(Guid orderId, CancellationToken ct = default) =>
+        throw new BusinessRuleException("Confirm payment through the order workflow.");
+    public Task ReleaseReservationAsync(Guid orderId, CancellationToken ct = default) =>
+        throw new BusinessRuleException("Cancel the order to release its stock.");
 }

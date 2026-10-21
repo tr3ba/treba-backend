@@ -7,6 +7,7 @@ public enum AuthenticationChallengePurpose
     Login,
     EnableEmailTwoFactor,
     DisableEmailTwoFactor,
+    AdminEntry,
 }
 
 public sealed class AuthenticationChallenge : BaseEntity

@@ -7,6 +7,7 @@ using Application.ProductImages;
 using Application.Products;
 using Application.ProductTags;
 using Application.ProductVariants;
+using Application.Promotions;
 using Application.Reviews;
 using Application.Sellers;
 using Application.Stores;
@@ -17,11 +18,29 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using WebApi.BackgroundServices;
 using WebApi.Extensions;
+using WebApi.Telegram;
 
-var builder = WebApplication.CreateBuilder(args);
+var deploymentCheck = args.Contains("--check-telegram-deployment", StringComparer.Ordinal);
+var operationsCheck = args.Contains("--check-admin-operations-deployment", StringComparer.Ordinal);
+var operationsMigrate = args.Contains("--migrate-admin-operations", StringComparer.Ordinal);
+var operatorFlags = new[] { "--check-telegram-deployment", "--check-admin-operations-deployment", "--migrate-admin-operations" };
+var builder = WebApplication.CreateBuilder(args.Where(argument => !operatorFlags.Contains(argument, StringComparer.Ordinal)).ToArray());
 
 builder.Services.AddScoped<Application.Catalog.CatalogService>();
+builder.Services.AddTrebaTelegram(builder.Configuration);
+builder.Services.AddScoped<Application.Administration.AdminWorkspaceService>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<Application.Abstractions.ICurrentActor, WebApi.Authentication.HttpCurrentActor>();
+builder.Services.AddScoped<Infrastructure.Administration.StaffSettingsService>();
+builder.Services.AddOptions<WebApi.Media.ProductMediaOptions>().BindConfiguration("ProductMedia")
+    .Validate(options => options.Provider is "Local" or "Sftp", "ProductMedia:Provider must be Local or Sftp.")
+    .Validate(options => options.Provider != "Sftp" || (!string.IsNullOrWhiteSpace(options.SshHost)
+        && !string.IsNullOrWhiteSpace(options.SshUsername) && !string.IsNullOrWhiteSpace(options.SshKeyPath)
+        && options.RootPath.StartsWith('/') && options.SshPort is > 0 and <= 65535), "Shared media connection is incomplete.")
+    .ValidateOnStart();
+builder.Services.AddSingleton<Application.Abstractions.IProductMediaStorage, WebApi.Media.ProductMediaStorage>();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<WebApi.Errors.ApiExceptionHandler>();
 
@@ -55,6 +74,18 @@ builder.Services.AddScoped<IStoreService, StoreService>();
 builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<IWishlistService, WishlistService>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
+builder.Services.AddScoped<IDiscountService, DiscountService>();
+builder.Services.AddScoped<Application.Inventory.InventoryService>();
+builder.Services.AddScoped<Application.Inventory.IInventoryService>(sp => sp.GetRequiredService<Application.Inventory.InventoryService>());
+builder.Services.AddScoped<Application.Orders.OrderService>();
+builder.Services.AddScoped<Application.Orders.IOrderService>(sp => sp.GetRequiredService<Application.Orders.OrderService>());
+builder.Services.AddScoped<Application.Administration.PromotionManagementService>();
+builder.Services.AddScoped<Application.Administration.SupportService>();
+builder.Services.AddScoped<Application.Administration.OperationsService>();
+builder.Services.AddHostedService<OrderReservationWorker>();
+
+
+builder.Services.AddHostedService<PromotionActivationWorker>();
 
 var jwtSection = builder.Configuration.GetSection("Jwt");
 
@@ -119,6 +150,8 @@ builder
                             is Domain.Entities.Users.UserStatus.Blocked
                                 or Domain.Entities.Users.UserStatus.Deleted
                         || user.Role?.Name != context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value
+                        || !Infrastructure.Authentication.SessionTokenBinding.IsCurrent(
+                            context.Principal?.FindFirst(Infrastructure.Authentication.SessionTokenBinding.ClaimName)?.Value, user)
                     )
                     {
                         context.Fail("Account is unavailable or role has changed.");
@@ -133,6 +166,19 @@ builder.Services.AddAuthorization();
 var app = builder.Build();
 
 app.UseExceptionHandler();
+if (operationsCheck || operationsMigrate)
+{
+    Environment.ExitCode = await WebApi.Administration.AdminOperationsDeployment.RunAsync(app.Services, operationsMigrate);
+    await app.DisposeAsync();
+    return;
+}
+if (deploymentCheck)
+{
+    Environment.ExitCode = await TelegramDeploymentCheck.RunAsync(app.Services,
+        builder.Configuration.GetValue<bool>("verify-telegram-menu"));
+    await app.DisposeAsync();
+    return;
+}
 if (builder.Configuration.GetValue<bool>("ApplyMigrations"))
 {
     await using var scope = app.Services.CreateAsyncScope();
@@ -164,10 +210,12 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
+app.UseDefaultFiles();
 app.UseStaticFiles();
 app.UseCors("Frontend");
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 app.MapGet(
     "/health",
@@ -207,5 +255,7 @@ app.MapGet(
 );
 
 app.MapControllers();
+Treba.Development.LocalLauncherEndpoints.Map(app);
+TelegramPreviewEndpoints.Map(app);
 
 app.Run();

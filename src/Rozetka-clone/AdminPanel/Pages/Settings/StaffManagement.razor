@@ -1,0 +1,97 @@
+@page "/settings/staff"
+@using Contracts.Admin.Settings
+@inject AdminPanel.Services.Implementations.SettingsApiClient Api
+@inject AuthenticationStateProvider Authentication
+
+<PageTitle>@L["StaffAndRoles"] — Treba Admin</PageTitle>
+<a class="users-back-link" href="/settings"><i class="bi bi-arrow-left"></i>@L["Settings"]</a>
+<section class="page-hero"><div><p class="eyebrow">@L["Settings"]</p><h1>@L["StaffAndRoles"]</h1><p>@L["StaffAndRolesDescription"]</p></div><button class="primary-button" @onclick="() => _creating = !_creating"><i class="bi bi-person-plus" aria-hidden="true"></i>@L["AddStaff"]</button></section>
+@if (_error is not null) { <p class="feedback-error" role="alert">@_error</p> }
+@if (_success) { <p class="feedback-success" role="status">@L["StaffSaved"]</p> }
+@if (_creating)
+{
+    <section class="card-box settings-create">
+        <h2>@L["AddStaff"]</h2>
+        <EditForm Model="_new" OnValidSubmit="CreateAsync" FormName="create-staff"><DataAnnotationsValidator /><ValidationSummary />
+            <div class="settings-form-grid">
+                <label class="field-group"><span>Email</span><InputText type="email" class="form-control" @bind-Value="_new.Email" /></label>
+                <label class="field-group"><span>@L["FirstName"]</span><InputText class="form-control" @bind-Value="_new.FirstName" /></label>
+                <label class="field-group"><span>@L["LastName"]</span><InputText class="form-control" @bind-Value="_new.LastName" /></label>
+                <label class="field-group"><span>@L["StaffRole"]</span><InputSelect class="form-control" @bind-Value="_new.Role">@foreach (var role in Roles) { <option value="@role">@RoleLabel(role)</option> }</InputSelect></label>
+                <label class="field-group"><span>@L["Password"]</span><InputText type="password" autocomplete="new-password" class="form-control" @bind-Value="_new.Password" /><small>@L["StaffPasswordHint"]</small></label>
+            </div>
+            <button type="submit" class="primary-button" disabled="@_busy">@L["CreateUser"]</button>
+        </EditForm>
+    </section>
+}
+<section class="card-box">
+    <form class="store-toolbar" @onsubmit="SearchAsync" @onsubmit:preventDefault><label class="workspace-search"><i class="bi bi-search"></i><input @bind="_search" placeholder="@L["StaffSearch"]" aria-label="@L["StaffSearch"]" /></label><select class="form-control catalog-filter" @bind="_role" aria-label="@L["StaffRole"]"><option value="">@L["AllRoles"]</option>@foreach (var role in Roles) { <option value="@role">@RoleLabel(role)</option> }</select><button class="secondary-button" disabled="@_busy">@L["Search"]</button></form>
+    @if (_loading) { <p class="empty-state">@L["Loading"]</p> }
+    else if (_staff is not null)
+    {
+        <div class="table-wrap"><table class="custom-table"><thead><tr><th>@L["StaffMember"]</th><th>@L["StaffRole"]</th><th>@L["Status"]</th><th>@L["Actions"]</th></tr></thead><tbody>
+        @foreach (var person in _staff.Content)
+        {
+            <tr><td><strong>@person.FirstName @person.LastName</strong><small class="settings-email">@person.Email</small>@if(person.Id == _self) { <span class="settings-you">@L["YouLabel"]</span> }</td><td>@RoleLabel(person.Role)</td><td><span class="status-badge @(person.Status == "Blocked" ? "badge-deleted" : "badge-active")">@L[person.Status == "Blocked" ? "StaffBlocked" : "StaffActive"]</span></td><td><button class="secondary-button" disabled="@(_busy || person.Id == _self)" @onclick="() => Edit(person)"><i class="bi bi-shield-lock" aria-hidden="true"></i>@L["ChangeAccess"]</button></td></tr>
+        }
+        </tbody></table></div>
+        @if (_staff.Content.Count == 0) { <p class="empty-state">@L["NoStaffFound"]</p> }
+        @if (_staff.TotalPages > 1) { <PaginationControl CurrentPage="_staff.Page" TotalPages="_staff.TotalPages" OnPageChanged="LoadAsync" /> }
+    }
+</section>
+@if (_editing is not null)
+{
+    <div class="security-modal-backdrop" @onkeydown="AccessKey">
+        <section class="security-modal settings-access" role="dialog" aria-modal="true" aria-labelledby="staff-access-title">
+            <header class="security-modal-header"><h2 id="staff-access-title">@L["ChangeAccess"]</h2><button class="security-modal-close" disabled="@_busy" @onclick="() => _editing = null" aria-label="@L["Close"]"><i class="bi bi-x-lg"></i></button></header>
+            <div class="security-modal-body"><strong>@_editing.FirstName @_editing.LastName</strong><p>@L["AccessChangeHint"]</p><label class="field-group"><span>@L["StaffRole"]</span><select class="form-control" @bind="_editRole">@foreach (var role in Roles) { <option value="@role">@RoleLabel(role)</option> }</select></label><label class="settings-checkbox"><input type="checkbox" @bind="_editBlocked" />@L["BlockStaffAccess"]</label></div>
+            <footer class="security-modal-footer"><button class="secondary-button" disabled="@_busy" @onclick="() => _editing = null">@L["Cancel"]</button><button class="primary-button" disabled="@_busy" @onclick="() => _confirm = true">@L["Save"]</button></footer>
+        </section>
+    </div>
+}
+<ConfirmDialog IsOpen="@_confirm" Title="@L["ChangeAccess"]" Message="@L["ConfirmAccessChange"]" OnClose="ConfirmAsync" />
+
+@code {
+    private static readonly string[] Roles = ["Administrator", "Manager", "Moderator"];
+    private Contracts.Common.PagedResponse<StaffDto>? _staff;
+    private CreateStaffRequest _new = new();
+    private StaffDto? _editing;
+    private string _search = "", _role = "", _editRole = "Manager";
+    private string? _error;
+    private Guid _self;
+    private bool _creating, _loading = true, _busy, _success, _editBlocked, _confirm;
+    protected override async Task OnInitializedAsync()
+    {
+        var user = (await Authentication.GetAuthenticationStateAsync()).User;
+        Guid.TryParse(user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out _self);
+        await LoadAsync(1);
+    }
+    private string RoleLabel(string role) => L["Role" + role];
+    private Task SearchAsync() => LoadAsync(1);
+    private async Task LoadAsync(int page)
+    {
+        _loading = true; _error = null;
+        try { _staff = await Api.Staff(page, _search, _role); }
+        catch (HttpRequestException e) { _error = Error(e); }
+        finally { _loading = false; }
+    }
+    private async Task CreateAsync()
+    {
+        _busy = true; _success = false; _error = null;
+        try { await Api.Create(_new); _new = new(); _creating = false; _success = true; await LoadAsync(1); }
+        catch (HttpRequestException e) { _error = Error(e); }
+        finally { _busy = false; }
+    }
+    private void Edit(StaffDto staff) { _editing = staff; _editRole = staff.Role; _editBlocked = staff.Status == "Blocked"; _success = false; }
+    private string Error(HttpRequestException e) => e.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable ? L["SettingsDatabaseUpdateRequired"] : e.Message;
+    private void AccessKey(KeyboardEventArgs args) { if (args.Key == "Escape" && !_busy) _editing = null; }
+    private async Task ConfirmAsync(bool confirmed)
+    {
+        _confirm = false;
+        if (!confirmed || _editing is null) return;
+        _busy = true; _error = null;
+        try { await Api.Update(_editing.Id, new(_editRole, _editBlocked)); _editing = null; _success = true; await LoadAsync(_staff?.Page ?? 1); }
+        catch (HttpRequestException e) { _error = Error(e); }
+        finally { _busy = false; }
+    }
+}

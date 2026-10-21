@@ -11,16 +11,32 @@ using DomainAttribute = Domain.Entities.Attribute.Attribute;
 
 namespace Infrastructure.Persistence
 {
-    public sealed class ApplicationDbContext : DbContext, IApplicationDbContext
+    public sealed partial class ApplicationDbContext : DbContext, IApplicationDbContext
     {
+        private readonly ICurrentActor? _actor;
         public ApplicationDbContext(
-            DbContextOptions<ApplicationDbContext> options
+            DbContextOptions<ApplicationDbContext> options,
+            ICurrentActor? actor = null
         )
             : base(options)
         {
+            _actor = actor;
         }
 
         public DbSet<User> Users => Set<User>();
+        public DbSet<ProductReviewBaseline> ProductReviewBaselines => Set<ProductReviewBaseline>();
+        public DbSet<Domain.Entities.Support.SupportTicket> SupportTickets => Set<Domain.Entities.Support.SupportTicket>();
+        public DbSet<Domain.Entities.Support.SupportMessage> SupportMessages => Set<Domain.Entities.Support.SupportMessage>();
+        public DbSet<Domain.Entities.Telegram.SellerImportJob> SellerImportJobs => Set<Domain.Entities.Telegram.SellerImportJob>();
+        public DbSet<Domain.Entities.Telegram.TelegramNotification> TelegramNotifications => Set<Domain.Entities.Telegram.TelegramNotification>();
+        public DbSet<Domain.Entities.Telegram.ProductIdentity> ProductIdentities => Set<Domain.Entities.Telegram.ProductIdentity>();
+        public DbSet<Domain.Entities.Telegram.TelegramBotCursor> TelegramBotCursors => Set<Domain.Entities.Telegram.TelegramBotCursor>();
+        public DbSet<Domain.Entities.Telegram.TelegramBinding> TelegramBindings => Set<Domain.Entities.Telegram.TelegramBinding>();
+        public DbSet<Domain.Entities.Telegram.TelegramLinkChallenge> TelegramLinkChallenges => Set<Domain.Entities.Telegram.TelegramLinkChallenge>();
+        public DbSet<Domain.Entities.Telegram.TelegramGuardChallenge> TelegramGuardChallenges => Set<Domain.Entities.Telegram.TelegramGuardChallenge>();
+        public DbSet<Domain.Entities.Telegram.SellerCategoryGrant> SellerCategoryGrants => Set<Domain.Entities.Telegram.SellerCategoryGrant>();
+        public DbSet<Domain.Entities.Telegram.RozetkaCategoryMapping> RozetkaCategoryMappings => Set<Domain.Entities.Telegram.RozetkaCategoryMapping>();
+        public DbSet<Domain.Entities.Telegram.ProductImportDraft> ProductImportDrafts => Set<Domain.Entities.Telegram.ProductImportDraft>();
 
         public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
 
@@ -32,9 +48,21 @@ namespace Infrastructure.Persistence
 
         public DbSet<ReviewVote> ReviewVotes => Set<ReviewVote>();
 
+        public DbSet<Promotion> Promotions => Set<Promotion>();
+
+        public DbSet<PromotionRule> PromotionRules => Set<PromotionRule>();
+
+        public DbSet<PromotionAction> PromotionActions => Set<PromotionAction>();
+
+        public DbSet<Coupon> Coupons => Set<Coupon>();
+
+        public DbSet<CouponUsage> CouponUsages => Set<CouponUsage>();
+
         public DbSet<SellerReviewResponse> SellerReviewResponses => Set<SellerReviewResponse>();
 
         public DbSet<Role> Roles => Set<Role>();
+
+        public DbSet<AdminAuditLog> AdminAuditLogs => Set<AdminAuditLog>();
 
         public DbSet<AuthenticationChallenge> AuthenticationChallenges => Set<AuthenticationChallenge>();
 
@@ -99,6 +127,18 @@ namespace Infrastructure.Persistence
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+            modelBuilder.Entity<Product>().Property(p => p.UpdatedAt).IsConcurrencyToken();
+            modelBuilder.Entity<ProductVariant>().Property(v => v.Price).IsConcurrencyToken();
+            modelBuilder.Entity<ProductVariant>().Property(v => v.OldPrice).IsConcurrencyToken();
+            modelBuilder.Entity<ProductVariant>().Property(v => v.StockQuantity).IsConcurrencyToken();
+            modelBuilder.Entity<ProductVariant>().Property(v => v.IsActive).IsConcurrencyToken();
+            modelBuilder.Entity<Order>().Property(o => o.Status).IsConcurrencyToken();
+            modelBuilder.Entity<Promotion>().Property(p => p.Version).IsConcurrencyToken();
+            modelBuilder.Entity<Coupon>().Property(c => c.UsedCount).IsConcurrencyToken();
+            modelBuilder.Entity<Coupon>().Property(c => c.Active).IsConcurrencyToken();
+            modelBuilder.Entity<Coupon>().Property(c => c.UsageLimit).IsConcurrencyToken();
+            modelBuilder.Entity<Coupon>().Property(c => c.UsageLimitPerUser).IsConcurrencyToken();
+            modelBuilder.Entity<InventoryReservation>().Property(r => r.Status).IsConcurrencyToken();
         }
     }
 }

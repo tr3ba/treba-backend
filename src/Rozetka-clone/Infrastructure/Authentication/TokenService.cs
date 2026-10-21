@@ -37,6 +37,7 @@ public sealed class TokenService : ITokenService
 
         var claims = new List<Claim>
         {
+            new(SessionTokenBinding.ClaimName, SessionTokenBinding.Create(user)),
             new(
                 "sub",
                 user.Id.ToString()

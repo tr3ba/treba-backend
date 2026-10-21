@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <data name="OrderNumber" xml:space="preserve"><value>Номер заказа</value></data>
+  <data name="Customer" xml:space="preserve"><value>Покупатель</value></data>
+  <data name="Items" xml:space="preserve"><value>Позиции</value></data>
+  <data name="Amount" xml:space="preserve"><value>Сумма</value></data>
+  <data name="Created" xml:space="preserve"><value>Создан</value></data>
+  <data name="Updated" xml:space="preserve"><value>Обновлено</value></data>
+  <data name="NoResults" xml:space="preserve"><value>По выбранным условиям ничего не найдено.</value></data>
+  <data name="OrderSearch" xml:space="preserve"><value>Номер, имя, телефон или email</value></data>
+  <data name="AllStatuses" xml:space="preserve"><value>Все статусы</value></data>
+  <data name="From" xml:space="preserve"><value>С даты</value></data>
+  <data name="ToInclusive" xml:space="preserve"><value>По дату включительно</value></data>
+  <data name="ResultCount" xml:space="preserve"><value>Найдено: {0}</value></data>
+  <data name="PartialOrder" xml:space="preserve"><value>Показаны только ваши позиции и их сумма. Общим статусом заказа с несколькими продавцами управляет менеджер.</value></data>
+  <data name="CustomerHistory" xml:space="preserve"><value>История покупателя</value></data>
+  <data name="DeliveryAddress" xml:space="preserve"><value>Адрес доставки</value></data>
+  <data name="CustomerComment" xml:space="preserve"><value>Комментарий покупателя</value></data>
+  <data name="OrderTotals" xml:space="preserve"><value>Суммы заказа</value></data>
+  <data name="Subtotal" xml:space="preserve"><value>Стоимость товаров</value></data>
+  <data name="Discount" xml:space="preserve"><value>Скидка</value></data>
+  <data name="Delivery" xml:space="preserve"><value>Доставка</value></data>
+  <data name="NextStatus" xml:space="preserve"><value>Следующий статус</value></data>
+  <data name="Choose" xml:space="preserve"><value>Выберите</value></data>
+  <data name="Reason" xml:space="preserve"><value>Причина / комментарий</value></data>
+  <data name="ManualPayment" xml:space="preserve"><value>Подтвердите, что фактически получили оплату. Это ручная запись сотрудника, без проверки платёжного провайдера.</value></data>
+  <data name="ManualPaymentRecorded" xml:space="preserve"><value>Получение оплаты подтверждено сотрудником вручную.</value></data>
+  <data name="CreateTicket" xml:space="preserve"><value>Создать обращение</value></data>
+  <data name="Quantity" xml:space="preserve"><value>Количество</value></data>
+  <data name="UnitPrice" xml:space="preserve"><value>Цена за единицу</value></data>
+  <data name="StatusHistory" xml:space="preserve"><value>История статусов</value></data>
+  <data name="ChangeStatus" xml:space="preserve"><value>Изменение статуса</value></data>
+  <data name="ConfirmStatus" xml:space="preserve"><value>Подтвердить изменение статуса?</value></data>
+  <data name="Order_CREATED" xml:space="preserve"><value>Создан</value></data>
+  <data name="Order_AWAITING_PAYMENT" xml:space="preserve"><value>Ожидает оплаты</value></data>
+  <data name="Order_PAID" xml:space="preserve"><value>Оплата подтверждена</value></data>
+  <data name="Order_CONFIRMED" xml:space="preserve"><value>Подтверждён</value></data>
+  <data name="Order_PROCESSING" xml:space="preserve"><value>В обработке</value></data>
+  <data name="Order_READY_FOR_SHIPMENT" xml:space="preserve"><value>Готов к отправке</value></data>
+  <data name="Order_SHIPPED" xml:space="preserve"><value>Отправлен</value></data>
+  <data name="Order_DELIVERED" xml:space="preserve"><value>Доставлен</value></data>
+  <data name="Order_COMPLETED" xml:space="preserve"><value>Завершён</value></data>
+  <data name="Order_CANCELLED" xml:space="preserve"><value>Отменён</value></data>
+  <data name="Order_RETURN_REQUESTED" xml:space="preserve"><value>Ожидается возврат товара</value></data>
+  <data name="Order_RETURNED" xml:space="preserve"><value>Товар возвращён</value></data>
+  <data name="PromotionSearch" xml:space="preserve"><value>Название или промокод</value></data>
+  <data name="NewPromotion" xml:space="preserve"><value>Создать акцию</value></data>
+  <data name="EditPromotion" xml:space="preserve"><value>Редактировать акцию</value></data>
+  <data name="PromotionName" xml:space="preserve"><value>Название акции</value></data>
+  <data name="CouponCodes" xml:space="preserve"><value>Промокоды</value></data>
+  <data name="Period" xml:space="preserve"><value>Период</value></data>
+  <data name="UsageCount" xml:space="preserve"><value>Использований: {0}</value></data>
+  <data name="Disabled" xml:space="preserve"><value>Отключён</value></data>
+  <data name="Promotion_DRAFT" xml:space="preserve"><value>Черновик</value></data>
+  <data name="Promotion_SCHEDULED" xml:space="preserve"><value>Запланирована</value></data>
+  <data name="Promotion_ACTIVE" xml:space="preserve"><value>Активна</value></data>
+  <data name="Promotion_FINISHED" xml:space="preserve"><value>Завершена</value></data>
+  <data name="Promotion_CANCELLED" xml:space="preserve"><value>Отменена</value></data>
+  <data name="DiscountType" xml:space="preserve"><value>Тип скидки</value></data>
+  <data name="Percentage" xml:space="preserve"><value>Процент</value></data>
+  <data name="FixedAmount" xml:space="preserve"><value>Фиксированная сумма, ₴</value></data>
+  <data name="DiscountValue" xml:space="preserve"><value>Размер скидки</value></data>
+  <data name="StartsLocal" xml:space="preserve"><value>Начало (местное время)</value></data>
+  <data name="EndsLocal" xml:space="preserve"><value>Конец (местное время)</value></data>
+  <data name="MinimumOrder" xml:space="preserve"><value>Минимальная сумма товаров, ₴</value></data>
+  <data name="MaximumDiscount" xml:space="preserve"><value>Максимальная скидка, ₴</value></data>
+  <data name="DraftScheduleHint" xml:space="preserve"><value>Черновик остаётся неактивным. Для автоматического запуска по датам выберите «Запланирована». Акция применяется при вводе промокода.</value></data>
+  <data name="PromotionTargets" xml:space="preserve"><value>На что действует акция</value></data>
+  <data name="TargetsHint" xml:space="preserve"><value>Пустые поля означают весь каталог. Выбранные ограничения применяются вместе; категория — точное совпадение, без подкатегорий.</value></data>
+  <data name="All" xml:space="preserve"><value>Все</value></data>
+  <data name="Seller" xml:space="preserve"><value>Продавец</value></data>
+  <data name="FindProduct" xml:space="preserve"><value>Найти товар по названию или SKU</value></data>
+  <data name="CouponLimitsHint" xml:space="preserve"><value>0 означает отсутствие лимита. Существующий код нельзя переименовать. Удалённые из формы коды отключаются, история использования сохраняется.</value></data>
+  <data name="CouponCode" xml:space="preserve"><value>Промокод</value></data>
+  <data name="GlobalLimit" xml:space="preserve"><value>Общий лимит</value></data>
+  <data name="PerUserLimit" xml:space="preserve"><value>Лимит на покупателя</value></data>
+  <data name="Enabled" xml:space="preserve"><value>Включён</value></data>
+  <data name="Remove" xml:space="preserve"><value>Убрать</value></data>
+  <data name="AddCoupon" xml:space="preserve"><value>Добавить промокод</value></data>
+  <data name="TicketSearch" xml:space="preserve"><value>Тема, товар, номер заказа или покупатель</value></data>
+  <data name="Kind" xml:space="preserve"><value>Тип обращения</value></data>
+  <data name="Kind_QUESTION" xml:space="preserve"><value>Вопрос о товаре или заказе</value></data>
+  <data name="Kind_RETURN" xml:space="preserve"><value>Возврат</value></data>
+  <data name="FindOrder" xml:space="preserve"><value>Найти заказ по номеру или покупателю</value></data>
+  <data name="Subject" xml:space="preserve"><value>Тема</value></data>
+  <data name="Message" xml:space="preserve"><value>Сообщение</value></data>
+  <data name="FullReturnHint" xml:space="preserve"><value>Возврат оформляется на весь доставленный заказ. Частичные возвраты пока не поддерживаются.</value></data>
+  <data name="Conversation" xml:space="preserve"><value>Переписка</value></data>
+  <data name="RecentMessages" xml:space="preserve"><value>Показаны последние 200 сообщений.</value></data>
+  <data name="InternalNote" xml:space="preserve"><value>Внутренняя заметка</value></data>
+  <data name="InternalNoteHint" xml:space="preserve"><value>Внутренняя заметка, видна только сотрудникам</value></data>
+  <data name="SendMessage" xml:space="preserve"><value>Добавить сообщение</value></data>
+  <data name="ReturnReceiptHint" xml:space="preserve"><value>Одобрение означает ожидание товара. Закрывайте одобренный возврат только после фактического приёма товара: остатки восстановятся. Возврат денег проводится отдельно.</value></data>
+  <data name="ConfirmReturnReceived" xml:space="preserve"><value>Подтвердите, что все возвращаемые товары получены и пригодны для повторной продажи. Остатки будут восстановлены. Возврат денег этим действием не выполняется.</value></data>
+  <data name="NoActions" xml:space="preserve"><value>Доступных действий нет.</value></data>
+  <data name="Ticket_OPEN" xml:space="preserve"><value>Новое</value></data>
+  <data name="Ticket_IN_PROGRESS" xml:space="preserve"><value>В работе</value></data>
+  <data name="Ticket_APPROVED" xml:space="preserve"><value>Возврат одобрен</value></data>
+  <data name="Ticket_REJECTED" xml:space="preserve"><value>Возврат отклонён</value></data>
+  <data name="Ticket_CLOSED" xml:space="preserve"><value>Закрыто</value></data>
+  <data name="CustomerSearch" xml:space="preserve"><value>Имя или email покупателя</value></data>
+  <data name="OrderedAmount" xml:space="preserve"><value>Сумма заказов, ₴</value></data>
+  <data name="LastOrder" xml:space="preserve"><value>Последний заказ</value></data>
+  <data name="RecentHundred" xml:space="preserve"><value>В каждом списке показаны последние 100 записей. Суммы исключают отменённые и возвращённые заказы и не являются подтверждённой выручкой.</value></data>
+  <data name="Rating" xml:space="preserve"><value>Оценка</value></data>
+  <data name="Review_PENDING" xml:space="preserve"><value>На проверке</value></data>
+  <data name="Review_PUBLISHED" xml:space="preserve"><value>Опубликован</value></data>
+  <data name="Review_REJECTED" xml:space="preserve"><value>Отклонён</value></data>
+  <data name="BusinessOverview" xml:space="preserve"><value>Заказы и рабочие задачи</value></data>
+  <data name="MetricsHint" xml:space="preserve"><value>Заказы и их сумма — за выбранный период; открытые задачи — на текущий момент. Отмены считаются по дате отмены. Сумма заказов не является выручкой.</value></data>
+  <data name="MetricsFailed" xml:space="preserve"><value>Не удалось загрузить показатели.</value></data>
+  <data name="NewOrders" xml:space="preserve"><value>Новых заказов</value></data>
+  <data name="CancelledOrders" xml:space="preserve"><value>Отменённых заказов</value></data>
+  <data name="OpenTickets" xml:space="preserve"><value>Открытых обращений</value></data>
+  <data name="OverdueTickets" xml:space="preserve"><value>Обращения без действий более 48 ч</value></data>
+  <data name="OutOfStock" xml:space="preserve"><value>Опубликованные товары без остатка</value></data>
+  <data name="OverdueModeration" xml:space="preserve"><value>Товары на проверке более 24 ч</value></data>
+  <data name="WaitingTime" xml:space="preserve"><value>Ожидание проверки</value></data>
+  <data name="WaitingAll" xml:space="preserve"><value>Любое время</value></data>
+  <data name="Waiting24" xml:space="preserve"><value>Более 24 часов</value></data>
+  <data name="Waiting72" xml:space="preserve"><value>Более 72 часов</value></data>
+  <data name="SequentialReview" xml:space="preserve"><value>Показывать по одному товару</value></data>
+  <data name="SubmittedAt" xml:space="preserve"><value>Отправлено на проверку</value></data>
+  <data name="RejectionTemplate" xml:space="preserve"><value>Шаблон причины</value></data>
+  <data name="ReasonPhotos" xml:space="preserve"><value>Добавьте чёткие фотографии товара без посторонней рекламы.</value></data>
+  <data name="ReasonDescription" xml:space="preserve"><value>Уточните описание и характеристики товара.</value></data>
+  <data name="ReasonCategory" xml:space="preserve"><value>Выберите подходящую категорию товара.</value></data>
+  <data name="ReasonPrice" xml:space="preserve"><value>Проверьте цену и доступность вариантов товара.</value></data>
+  <data name="ResubmissionChanges" xml:space="preserve"><value>Изменения после отклонения</value></data>
+  <data name="NoBaseline" xml:space="preserve"><value>Нет сохранённой версии для сравнения. Снимки создаются при новых отклонениях товаров.</value></data>
+  <data name="NoChanges" xml:space="preserve"><value>После отклонения изменений не найдено.</value></data>
+  <data name="Field" xml:space="preserve"><value>Поле</value></data>
+  <data name="Before" xml:space="preserve"><value>Было</value></data>
+  <data name="After" xml:space="preserve"><value>Стало</value></data>
+  <data name="BaselineAt" xml:space="preserve"><value>Версия от {0}</value></data>
+  <data name="AutoRefreshChat" xml:space="preserve"><value>Новые сообщения появляются автоматически</value></data>
+  <data name="ConversationClosed" xml:space="preserve"><value>Переписка завершена.</value></data>
+  <data name="ConversationContext" xml:space="preserve"><value>Покупатель и контекст</value></data>
+  <data name="EarlierMessages" xml:space="preserve"><value>Предыдущие сообщения</value></data>
+  <data name="Kind_CHAT" xml:space="preserve"><value>Личная поддержка</value></data>
+  <data name="ReplyToCustomer" xml:space="preserve"><value>Ответ покупателю</value></data>
+  <data name="UnreadMessages" xml:space="preserve"><value>Непрочитанные сообщения</value></data>
+  <data name="LinkedItem" xml:space="preserve"><value>Заказ / товар</value></data>
+  <data name="Product" xml:space="preserve"><value>Товар</value></data>
+  <data name="SellerQuestions" xml:space="preserve"><value>Вопросы о товарах</value></data>
+  <data name="SellerQueueHint" xml:space="preserve"><value>Здесь только вопросы о ваших товарах. Отвечайте покупателям напрямую.</value></data>
+  <data name="TrebaQueueHint" xml:space="preserve"><value>В чате TREBA отвечают администраторы, менеджеры и модераторы. Вопросы о товарах поступают их продавцам.</value></data>
+  <data name="Inbox" xml:space="preserve"><value>Обращения</value></data>
+  <data name="InboxAll" xml:space="preserve"><value>Все обращения</value></data>
+  <data name="InboxUnread" xml:space="preserve"><value>Непрочитанные</value></data>
+  <data name="InboxOpen" xml:space="preserve"><value>Открытые</value></data>
+  <data name="InboxOverdue" xml:space="preserve"><value>Требуют внимания</value></data>
+  <data name="SendReply" xml:space="preserve"><value>Отправить</value></data>
+  <data name="KindShort_CHAT" xml:space="preserve"><value>Поддержка</value></data>
+  <data name="KindShort_QUESTION" xml:space="preserve"><value>Вопрос</value></data>
+  <data name="KindShort_RETURN" xml:space="preserve"><value>Возврат</value></data>
+</root>

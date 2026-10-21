@@ -12,7 +12,12 @@
     <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png" />
     <link rel="icon" href="favicon.ico" sizes="any" />
     <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png" />
-    <link rel="stylesheet" href="css/site.css" />
+    <link rel="stylesheet" href="@Assets["css/site.css"]" />
+    <link rel="stylesheet" href="@Assets["css/admin-workspace.css"]" />
+    <link rel="stylesheet" href="@Assets["css/telegram.css"]" />
+    <link rel="stylesheet" href="@Assets["css/seller-workspace.css"]" />
+    <link rel="stylesheet" href="@Assets["css/operations.css"]" />
+    <link rel="stylesheet" href="@Assets["css/admin-ui.css"]" />
     <HeadOutlet @rendermode="new InteractiveServerRenderMode(prerender: false)" />
 </head>
 
@@ -20,6 +25,9 @@
     <Routes @rendermode="new InteractiveServerRenderMode(prerender: false)" />
 
     <script src="_framework/blazor.web.js"></script>
+    <script src="@Assets["js/guard.js"]"></script>
+    <script src="@Assets["js/support.js"]"></script>
+    <script src="@Assets["js/site-login.js"]"></script>
 </body>
 
 </html>

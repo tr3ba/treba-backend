@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - main
+    paths:
+      - src/**
+      - tests/**
+      - docker/Dockerfile.backend
+      - .dockerignore
+      - .github/workflows/docker-publish.yml
   workflow_dispatch:
 
 permissions:
@@ -16,10 +22,31 @@ env:
 jobs:
   docker:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_DB: treba_tests
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: treba_ci_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d treba_tests"
+          --health-interval 5s --health-timeout 5s --health-retries 12
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Test the image source against PostgreSQL before publishing
+        env:
+          TREBA_TEST_POSTGRES: Host=127.0.0.1;Port=5432;Database=treba_tests;Username=postgres;Password=treba_ci_only
+        run: dotnet test tests/WebApi.Tests/WebApi.Tests.csproj -c Release
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -56,7 +83,7 @@ jobs:
             -e Security__OtpHashKey="$OTP_TEST_KEY" \
             "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
 
-          trap 'docker rm -f treba-backend-test >/dev/null 2>&1 || true' EXIT
+          trap 'docker rm -f treba-backend-test treba-admin-test treba-mini-proxy-test >/dev/null 2>&1 || true' EXIT
 
           echo "Waiting for backend /ping..."
           ready=false
@@ -83,10 +110,50 @@ jobs:
           fi
 
           echo "Backend /ping passed."
+          curl -fsS http://localhost:5050/telegram/ | grep 'app-shell' >/dev/null
+          curl -fsS http://localhost:5050/telegram/app.js | grep 'Telegram' >/dev/null
+          curl -fsS http://localhost:5050/telegram/ui.js >/dev/null
+          curl -fsS http://localhost:5050/telegram/mini.css >/dev/null
+          curl -fsS http://localhost:5050/telegram/brand-mark.png >/dev/null
+          curl -fsS http://localhost:5050/api/telegram/configuration >/dev/null
+          echo "Published Telegram HTML, assets and configuration route passed."
 
-          docker tag \
-            "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" \
-            "$ECR_REGISTRY/$ECR_REPOSITORY:latest"
+          # Reproduce the production split: API assets versus a storefront returning HTML 200.
+          python3 - <<'PY'
+          from pathlib import Path
+          source = Path('scripts/server/telegram-mini-app.Caddyfile.example').read_text()
+          source = source.replace('treba.duckdns.org {', 'http://:5052 {')
+          source = source.replace('host.docker.internal:5000', 'host.docker.internal:5050')
+          source = source.replace('reverse_proxy host.docker.internal:80', 'header Content-Type text/html\n        respond "Storefront fallback" 200')
+          Path('caddy-miniapp-smoke.Caddyfile').write_text(source)
+          PY
+          docker run -d --name treba-mini-proxy-test --add-host host.docker.internal:host-gateway \
+            -p 5052:5052 -v "$PWD/caddy-miniapp-smoke.Caddyfile:/etc/caddy/Caddyfile:ro" caddy:2-alpine
+          for attempt in $(seq 1 15); do
+            if curl -fsS http://localhost:5052/telegram/ >/dev/null 2>&1; then break; fi
+            sleep 1
+          done
+          python3 scripts/server/check-mini-app-modules.py http://localhost:5052
+
+          docker run -d --name treba-admin-test -p 5051:5100 \
+            -e ASPNETCORE_URLS=http://+:5100 -e WebsiteLogin__Enabled=true \
+            -e WebsiteLogin__StoreOrigin=https://treba.duckdns.org \
+            -e WebsiteLogin__AdminOrigin=https://admin.treba.duckdns.org \
+            --entrypoint dotnet "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" \
+            /app/admin/AdminPanel.dll --contentRoot=/app/admin
+          admin_ready=false
+          for attempt in $(seq 1 20); do
+            if curl -fsS http://localhost:5051/health >/dev/null 2>&1; then admin_ready=true; break; fi
+            sleep 1
+          done
+          [ "$admin_ready" = true ] || { echo 'Published AdminPanel did not start.'; exit 1; }
+          curl -fsS http://localhost:5051/ | grep 'blazor.web.js' >/dev/null
+          curl -fsS http://localhost:5051/js/site-login.js | grep 'trebaSiteLogin' >/dev/null
+          [ "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:5051/site-login/start)" = 302 ]
+          echo 'Published AdminPanel HTML, assets and website entry passed.'
 
           docker push "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
-          docker push "$ECR_REGISTRY/$ECR_REPOSITORY:latest"
+          if [ "$GITHUB_REF" = refs/heads/main ]; then
+            docker tag "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" "$ECR_REGISTRY/$ECR_REPOSITORY:latest"
+            docker push "$ECR_REGISTRY/$ECR_REPOSITORY:latest"
+          fi

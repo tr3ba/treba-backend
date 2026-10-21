@@ -32,6 +32,11 @@ EC2 завантажує Docker image з ECR та запускає backend conta
 
 ## Runtime
 
+The production AdminPanel is also published in the reviewed backend image and runs as
+`treba-admin` behind Caddy at `https://admin.treba.duckdns.org`. It has no published host port.
+Website sign-in and the separate development login are described in
+[website admin login](website-admin-login.md).
+
 Backend працює в Docker-контейнері.
 
 Backend port:
@@ -55,3 +60,32 @@ Runtime:
 {
   "status": "ok"
 }
+```
+
+## Telegram deployment
+
+Telegram Mini App is served by WebApi at `/telegram/`. Its shared draft-storage module
+at `/js/editor-drafts.js` must also reach WebApi: a storefront HTML response, even with
+HTTP 200, prevents the module graph from executing and leaves the startup screen visible.
+The image smoke test checks the module graph through Caddy with an HTML storefront fallback;
+deployment also verifies JavaScript MIME types on the public paths.
+The inspected EC2 uses Caddy
+(`treba-caddy`, `/opt/treba-caddy/Caddyfile`); that path must join the existing API
+matcher and keep the request path unchanged. The storefront continues at `/`.
+
+The deployment workflow pins the image to the source commit SHA and invokes
+`scripts/server/deploy-telegram-backend.sh` over the existing SSM channel. It checks
+the actual database migrations and bot token using `--check-telegram-deployment`,
+then tests a temporary loopback container before replacing the running API.
+The previous container and Caddy configuration are retained for rollback.
+Before switching HTTP, deployment applies the explicitly allowlisted, backwards-compatible
+operational migrations through `--migrate-admin-operations`. It verifies database ownership,
+the migration history, CRUD privileges and real schema reads, then checks the protected
+operational routes on both the candidate and public API. An unavailable migration or route
+stops deployment while the previous container is retained. If the runtime account cannot
+apply DDL, the database owner must apply the reviewed SQL before retrying. Other pending
+migrations require a separately reviewed update. See [admin operations](admin-operations.md).
+
+Server bot settings stay in the existing deployment environment. Never commit or
+print the bot token. See [Telegram handoff](telegram-server-handoff.md) for settings,
+database prerequisites, checks and the existing separate AdminPanel deployment.
