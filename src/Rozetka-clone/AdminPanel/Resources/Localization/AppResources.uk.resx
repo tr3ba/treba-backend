@@ -760,4 +760,5 @@
   <data name="ImportStatusFailed" xml:space="preserve"><value>Помилка завантаження</value></data>
   <data name="ImportStatusExpired" xml:space="preserve"><value>Термін попереднього перегляду минув</value></data>
   <data name="ImportStatusSubmitted" xml:space="preserve"><value>На модерації</value></data>
+  <data name="CategoryImageUrl" xml:space="preserve"><value>Зображення категорії (URL)</value></data>
 </root>

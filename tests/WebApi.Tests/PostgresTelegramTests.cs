@@ -37,6 +37,16 @@ public sealed class PostgresTelegramTests
             var mapping = await check.RozetkaCategoryMappings.SingleAsync();
             Assert.Equal("c4626754", mapping.ExternalKey);
             Assert.Equal("Сковороди", (await check.Categories.SingleAsync(c => c.Id == mapping.CategoryId)).Name);
+            // The full snapshot also uses the same transactional lock and real unique indexes.
+            var snapshot = new WebApi.Administration.RozetkaCategorySnapshot("test", "https://rozetka.com.ua/", [
+                new("c99", null, "New category", "https://rozetka.com.ua/ua/c99/", 0, null, null, "https://content.rozetka.com.ua/photo.png", "category")]);
+            async Task ApplyFull()
+            {
+                await using var db = new ApplicationDbContext(options);
+                await WebApi.Administration.RozetkaCatalogDeployment.ApplyAsync(db, snapshot, default);
+            }
+            await Task.WhenAll(ApplyFull(), ApplyFull());
+            Assert.Equal(10, await check.Categories.CountAsync()); Assert.Equal(2, await check.RozetkaCategoryMappings.CountAsync());
         }
         finally
         {

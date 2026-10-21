@@ -6,6 +6,7 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 	  <UserSecretsId>32ba8c1c-0ba6-4c43-86e6-2007e8d7fc80</UserSecretsId>
   </PropertyGroup>
+  <ItemGroup><EmbeddedResource Include="CatalogData/rozetka-categories.json" /></ItemGroup>
 
 	<ItemGroup>
 		<PackageReference Include="AngleSharp" Version="1.8.5" />
