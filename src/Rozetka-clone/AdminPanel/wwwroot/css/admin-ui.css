@@ -214,6 +214,14 @@
     .support-composer-actions { flex-direction: column; align-items: stretch; }
     .support-composer-actions .primary-button { width: 100%; }
 }
+.catalog-thumbnail { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; width: 52px; height: 52px; padding: 5px; border: 1px solid #e8edf3; border-radius: 12px; overflow: hidden; background: #fff; color: #9aa7b8; }
+.catalog-thumbnail img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.catalog-thumbnail > i { font-size: 20px; }
+.catalog-thumbnail.product-thumbnail { width: 64px; height: 64px; border-radius: 14px; }
+.category-tree-row .category-thumbnail { width: 44px; height: 44px; border-radius: 10px; }
+.category-tree-row { grid-template-columns: 44px minmax(0, 1fr); }
+.category-tree-row > span:last-child { min-width: 0; overflow-wrap: anywhere; }
+.category-image-preview .catalog-thumbnail { width: 124px; height: 124px; padding: 10px; }
 @media (prefers-reduced-motion: reduce) {
     .admin-interface *, .admin-interface *::before, .admin-interface *::after { scroll-behavior: auto; animation-duration: .01ms; transition-duration: .01ms; }
 }

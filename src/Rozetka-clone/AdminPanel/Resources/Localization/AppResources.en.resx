@@ -760,4 +760,5 @@
   <data name="ImportStatusFailed" xml:space="preserve"><value>Loading failed</value></data>
   <data name="ImportStatusExpired" xml:space="preserve"><value>Preview expired</value></data>
   <data name="ImportStatusSubmitted" xml:space="preserve"><value>Sent for moderation</value></data>
+  <data name="CategoryImageUrl" xml:space="preserve"><value>Category image (URL)</value></data>
 </root>

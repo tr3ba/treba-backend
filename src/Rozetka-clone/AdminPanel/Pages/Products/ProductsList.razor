@@ -42,7 +42,7 @@
         {
             <tr @key="product.Id">
                 @if(_canEdit){<td><input type="checkbox" aria-label="@(L["WorkspaceSelectProduct"].Value+": "+product.Name)" checked="@_selected.Contains(product.Id)" @onchange="args=>SelectProduct(product.Id,args)"/></td>}
-                <td><div class="catalog-product"><span class="product-thumb blue"><i class="bi bi-box-seam"></i></span><div><strong>@product.Name</strong><small>@product.Sku · @product.SellerName</small>@if(product.Variants.Count > 1){<small>@L["VariantCount", product.Variants.Count]</small>}</div></div></td>
+                <td><div class="catalog-product"><CatalogThumbnail ImageUrl="@(product.Images.OrderByDescending(i => i.IsMain).ThenBy(i => i.SortOrder).FirstOrDefault()?.ImageUrl)" CssClass="product-thumbnail" /><div><strong>@product.Name</strong><small>@product.Sku · @product.SellerName</small>@if(product.Variants.Count > 1){<small>@L["VariantCount", product.Variants.Count]</small>}</div></div></td>
                 <td>@product.CategoryName</td><td>@product.BrandName</td><td><strong>@if(product.Variants.Count(v => v.IsActive) > 1){<span>@L["PriceFrom"] </span>}₴ @product.Price.ToString("N2")</strong></td><td>@product.StockQuantity</td>
                 <td><span class="status-badge @(product.Status == "ACTIVE" ? "badge-paid" : "badge-pending")">@StatusLabel(product.Status)</span></td>
                 <td><div class="catalog-row-actions">

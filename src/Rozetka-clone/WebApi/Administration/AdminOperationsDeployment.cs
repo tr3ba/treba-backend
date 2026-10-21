@@ -62,6 +62,8 @@ public static class AdminOperationsDeployment
             {
                 await ImportCatalogDeployment.ApplyAsync(db, timeout.Token);
                 Console.WriteLine("Import catalog categories and mappings: ready.");
+                var catalog = await RozetkaCatalogDeployment.ApplyAsync(db, RozetkaCatalogDeployment.LoadSnapshot(), timeout.Token);
+                Console.WriteLine($"Rozetka category snapshot ready: added {catalog.AddedCategories} categories, {catalog.AddedMappings} mappings, {catalog.UpdatedImages} images; preserved {catalog.FullCatalogSellers} full-catalog seller scopes.");
             }
             Console.WriteLine("Operational schema and API database privileges: ready.");
             return 0;

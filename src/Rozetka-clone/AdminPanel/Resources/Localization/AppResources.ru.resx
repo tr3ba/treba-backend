@@ -760,4 +760,5 @@
   <data name="ImportStatusFailed" xml:space="preserve"><value>Ошибка загрузки</value></data>
   <data name="ImportStatusExpired" xml:space="preserve"><value>Предпросмотр истёк</value></data>
   <data name="ImportStatusSubmitted" xml:space="preserve"><value>На модерации</value></data>
+  <data name="CategoryImageUrl" xml:space="preserve"><value>Изображение категории (URL)</value></data>
 </root>
