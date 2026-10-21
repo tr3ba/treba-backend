@@ -89,9 +89,8 @@ public sealed class ProductImportService(ApplicationDbContext db, IMarketplaceSo
                 throw new BusinessRuleException("Категория источника " + data.CategoryKey + " ещё не сопоставлена с каталогом Treba. Обратитесь к администратору.");
             if (!categoryId.HasValue)
             {
-                var candidates = await db.Categories.AsNoTracking().Where(c => c.IsActive).Select(c => new { c.Id, c.Name }).ToListAsync(ct);
-                var matches = candidates.Where(c => NormalizeCategory(c.Name) == NormalizeCategory(data.CategoryName)).ToList();
-                if (matches.Count == 1) categoryId = matches[0].Id;
+                var candidates = await db.Categories.AsNoTracking().Where(c => c.IsActive).ToListAsync(ct);
+                categoryId = ImportCategoryResolver.Resolve(data, candidates);
             }
             if (!categoryId.HasValue) throw new BusinessRuleException("Выберите категорию Treba под ссылкой и повторите загрузку. Категория источника: " + data.CategoryName + ".");
         }
@@ -200,5 +199,4 @@ public sealed class ProductImportService(ApplicationDbContext db, IMarketplaceSo
         if (bytes.AsSpan().StartsWith("GIF87a"u8) || bytes.AsSpan().StartsWith("GIF89a"u8)) return ".gif";
         return null;
     }
-    private static string NormalizeCategory(string value) => string.Concat(value.ToLowerInvariant().Where(char.IsLetterOrDigit));
 }

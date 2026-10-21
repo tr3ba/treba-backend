@@ -6,7 +6,7 @@ using Contracts.Common;
 
 namespace AdminPanel.Services.Implementations;
 
-public sealed class CatalogApiClient(HttpClient http)
+public sealed class CatalogApiClient(HttpClient http, IConfiguration? configuration = null)
 {
     public async Task<BulkCatalogPreviewDto> PreviewBulk(BulkCatalogRequest request)
     { using var response = await http.PostAsJsonAsync("api/v1/admin/catalog/bulk/preview", request); await RequireSuccess(response); return (await response.Content.ReadFromJsonAsync<BulkCatalogPreviewDto>())!; }
@@ -43,12 +43,14 @@ public sealed class CatalogApiClient(HttpClient http)
 
     public string ResolveImageUrl(string imageUrl)
     {
-        if (Uri.TryCreate(imageUrl, UriKind.Absolute, out var absolute))
+        if (Uri.TryCreate(imageUrl, UriKind.Absolute, out var absolute) && absolute.Scheme is "https" or "http")
             return absolute.ToString();
 
+        // ApiBaseUrl can be a Docker-only address. Image URLs are opened by the user's browser.
         return new Uri(
-            http.BaseAddress ?? throw new InvalidOperationException("API base address is missing."),
-            imageUrl.TrimStart('/')).ToString();
+            configuration?["PublicApiBaseUrl"] is { Length: > 0 } publicUrl ? new Uri(publicUrl) :
+                http.BaseAddress ?? throw new InvalidOperationException("API base address is missing."),
+            imageUrl).ToString();
     }
 
     public async Task<CatalogProductImageDto> UploadImage(

@@ -11,6 +11,47 @@ namespace WebApi.Tests;
 
 public sealed class PostgresTelegramTests
 {
+    [PostgresFact]
+    public async Task ConcurrentCatalogDeployment_AddsCookwareAndMappingOnlyOnce()
+    {
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>().UseNpgsql(Environment.GetEnvironmentVariable("TREBA_TEST_POSTGRES")!).ReplaceService<IModelCustomizer, Model>().Options;
+        await using var sql = new NpgsqlConnection(Environment.GetEnvironmentVariable("TREBA_TEST_POSTGRES")!); await sql.OpenAsync();
+        string[] tables = [];
+        try
+        {
+            await using (var db = new ApplicationDbContext(options))
+            {
+                tables = db.Model.GetEntityTypes().Select(e => e.GetTableName()!).Distinct().ToArray();
+                await PostgresTestTables.CreateAsync(db, sql, Prefix);
+                db.Categories.Add(new() { Id = Guid.NewGuid(), Name = "Для приготування їжі", Slug = WebApi.Administration.ImportCatalogDeployment.CookwareSlug, IsActive = true });
+                await db.SaveChangesAsync();
+            }
+            async Task Apply()
+            {
+                await using var db = new ApplicationDbContext(options);
+                await WebApi.Administration.ImportCatalogDeployment.ApplyAsync(db, default);
+            }
+            await Task.WhenAll(Apply(), Apply());
+            await using var check = new ApplicationDbContext(options);
+            Assert.Equal(9, await check.Categories.CountAsync());
+            var mapping = await check.RozetkaCategoryMappings.SingleAsync();
+            Assert.Equal("c4626754", mapping.ExternalKey);
+            Assert.Equal("Сковороди", (await check.Categories.SingleAsync(c => c.Id == mapping.CategoryId)).Name);
+        }
+        finally
+        {
+            await using var owned = new NpgsqlCommand("SELECT tablename FROM pg_tables WHERE schemaname='public' AND tableowner=current_user AND tablename=ANY(@names)", sql);
+            owned.Parameters.AddWithValue("names", tables); var names = new List<string>();
+            await using (var reader = await owned.ExecuteReaderAsync()) { while (await reader.ReadAsync()) names.Add(reader.GetString(0)); }
+            if (names.Count > 0)
+            {
+                Assert.All(names, n => Assert.StartsWith(Prefix, n));
+                await using var drop = new NpgsqlCommand("DROP TABLE " + string.Join(',', names.Select(n => "public.\"" + n.Replace("\"", "\"\"") + "\"")) + " CASCADE", sql);
+                await drop.ExecuteNonQueryAsync();
+            }
+        }
+    }
+
     private static readonly string Prefix="treba_qa_tg_"+Guid.NewGuid().ToString("N")[..10]+"_";
     public sealed class Model(ModelCustomizerDependencies dependencies):ModelCustomizer(dependencies)
     {
