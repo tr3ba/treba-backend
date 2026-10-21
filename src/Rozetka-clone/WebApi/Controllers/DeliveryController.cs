@@ -69,6 +69,13 @@ namespace WebApi.Controllers
                     shipment
                 );
             }
+            catch (UnauthorizedAccessException)
+            {
+                return Unauthorized(new
+                {
+                    message = "Не удалось определить текущего пользователя."
+                });
+            }
             catch (KeyNotFoundException ex)
             {
                 return NotFound(new
@@ -111,6 +118,13 @@ namespace WebApi.Controllers
                 );
 
                 return Ok(tracking);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Unauthorized(new
+                {
+                    message = "Не удалось определить текущего пользователя."
+                });
             }
             catch (KeyNotFoundException ex)
             {
@@ -156,7 +170,7 @@ namespace WebApi.Controllers
 
 
         [HttpPatch("shipments/{shipmentId:guid}/status")]
-        [Authorize]
+        [Authorize(Policy = "AdminOnly")]
         [ProducesResponseType(typeof(ShipmentDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]

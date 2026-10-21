@@ -14,13 +14,16 @@ namespace Application.Delivery
         private readonly IApplicationDbContext _context;
         private readonly IDeliveryProvider _deliveryProvider;
 
+        private readonly ICurrentActor _currentActor;
+
         public DeliveryService(
             IApplicationDbContext context,
-            IDeliveryProvider deliveryProvider
-        )
+            IDeliveryProvider deliveryProvider,
+            ICurrentActor currentActor)
         {
             _context = context;
             _deliveryProvider = deliveryProvider;
+            _currentActor = currentActor;
         }
 
         public async Task<List<DeliveryOptionDto>> CalculateOptionsAsync(
@@ -92,12 +95,22 @@ namespace Application.Delivery
             CancellationToken cancellationToken = default
         )
         {
+            if (_currentActor.UserId is not Guid userId)
+            {
+                throw new UnauthorizedAccessException(
+                    "Не удалось определить текущего пользователя."
+                );
+            }
+
             var order = await _context.Orders
                 .Include(x => x.Address)
                 .Include(x => x.Items)
-                .FirstOrDefaultAsync(x => x.Id == orderId, cancellationToken)
+                .FirstOrDefaultAsync(
+                    x => x.Id == orderId && x.CustomerId == userId,
+                    cancellationToken
+                )
                 ?? throw new KeyNotFoundException(
-                    $"Заказ с ID {orderId} не найден."
+                    $"Заказ с ID {orderId} не найден или недоступен текущему пользователю."
                 );
 
             if (order.Status != OrderStatus.READY_FOR_SHIPMENT)
@@ -210,6 +223,13 @@ namespace Application.Delivery
                 return MapToDto(shipment);
             }
 
+            if (!IsValidStatusTransition(shipment.Status, status))
+            {
+                throw new InvalidOperationException(
+                    $"Недопустимый переход статуса отправления: {shipment.Status} -> {status}."
+                );
+            }
+
             shipment.Status = status;
 
             if (status == ShipmentStatus.SHIPPED && shipment.ShippedAt is null)
@@ -232,14 +252,27 @@ namespace Application.Delivery
             CancellationToken cancellationToken = default
         )
         {
+            if (_currentActor.UserId is not Guid userId)
+            {
+                throw new UnauthorizedAccessException(
+                    "Не удалось определить текущего пользователя."
+                );
+            }
+
             var shipment = await _context.Shipments
                 .AsNoTracking()
+                .Join(
+                    _context.Orders.Where(x => x.CustomerId == userId),
+                    shipment => shipment.OrderId,
+                    order => order.Id,
+                    (shipment, order) => shipment
+                )
                 .FirstOrDefaultAsync(
                     x => x.Id == shipmentId,
                     cancellationToken
                 )
                 ?? throw new KeyNotFoundException(
-                    $"Отправление с ID {shipmentId} не найдено."
+                    $"Отправление с ID {shipmentId} не найдено или недоступно текущему пользователю."
                 );
 
             if (string.IsNullOrWhiteSpace(shipment.TrackingNumber))
@@ -286,6 +319,39 @@ namespace Application.Delivery
                     x.Active
                 ))
                 .ToListAsync(cancellationToken);
+        }
+
+
+        private static bool IsValidStatusTransition(
+            ShipmentStatus current,
+            ShipmentStatus next)
+        {
+            return current switch
+            {
+                ShipmentStatus.CREATED =>
+                    next is ShipmentStatus.PREPARING or ShipmentStatus.FAILED,
+
+                ShipmentStatus.PREPARING =>
+                    next is ShipmentStatus.READY or ShipmentStatus.FAILED,
+
+                ShipmentStatus.READY =>
+                    next is ShipmentStatus.SHIPPED or ShipmentStatus.FAILED,
+
+                ShipmentStatus.SHIPPED =>
+                    next is ShipmentStatus.IN_TRANSIT
+                        or ShipmentStatus.DELIVERED
+                        or ShipmentStatus.FAILED,
+
+                ShipmentStatus.IN_TRANSIT =>
+                    next is ShipmentStatus.DELIVERED or ShipmentStatus.FAILED,
+
+                ShipmentStatus.FAILED =>
+                    next is ShipmentStatus.RETURNED,
+
+                ShipmentStatus.DELIVERED or ShipmentStatus.RETURNED => false,
+
+                _ => false
+            };
         }
 
 
