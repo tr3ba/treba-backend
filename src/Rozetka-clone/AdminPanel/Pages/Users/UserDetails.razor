@@ -45,7 +45,7 @@ else
                 <h1>@GetFullName(_user)</h1>
                 <span class="status-badge @GetStatusClass(_user.Status)">@GetStatusLabel(_user.Status)</span>
             </div>
-            <a href="mailto:@_user.Email">@_user.Email</a>
+            <a class="record-link" href="mailto:@_user.Email"><i class="bi bi-envelope" aria-hidden="true"></i>@_user.Email</a>
             <span class="table-muted">ID: @_user.Id</span>
         </div>
         <div class="user-details-actions">

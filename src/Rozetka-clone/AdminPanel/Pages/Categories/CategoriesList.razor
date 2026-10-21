@@ -9,7 +9,7 @@
 <section class="categories-workspace">
     <div class="category-tree-panel card-box"><div class="card-box-header"><h2>@L["CategoryTree"]</h2><span>@L["CategoriesCount", Flatten(tree).Count()]</span></div>
         <label class="workspace-search category-tree-search"><i class="bi bi-search"></i><input aria-label="@L["CategoryTreeSearch"]" placeholder="@L["CategoryTreeSearch"]" @bind="search" @bind:event="oninput" /></label>
-        <div class="category-tree-controls"><button class="btn-link-action" @onclick="ExpandAll">@L["ExpandAll"]</button><button class="btn-link-action" @onclick="() => expanded.Clear()">@L["CollapseAll"]</button></div>
+        <div class="category-tree-controls"><button class="secondary-button" @onclick="ExpandAll"><i class="bi bi-arrows-expand" aria-hidden="true"></i>@L["ExpandAll"]</button><button class="secondary-button" @onclick="() => expanded.Clear()"><i class="bi bi-arrows-collapse" aria-hidden="true"></i>@L["CollapseAll"]</button></div>
         @if (loading){ <p>@L["Loading"]</p> }
         <nav class="category-tree">
         @foreach(var row in CategoryTreePresentation.Visible(tree, expanded, search))

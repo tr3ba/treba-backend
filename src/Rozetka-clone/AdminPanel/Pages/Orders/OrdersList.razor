@@ -15,7 +15,7 @@
         <label class="field-group"><span>@L["Status"]</span><select class="form-control" @bind="status"><option value="">@O["AllStatuses"]</option>@foreach(var state in OperationsUi.OrderStatuses){<option value="@state">@O["Order_" + state]</option>}</select></label>
         <label class="field-group"><span>@O["From"]</span><input type="date" class="form-control" @bind="from" /></label>
         <label class="field-group"><span>@O["ToInclusive"]</span><input type="date" class="form-control" @bind="to" /></label>
-        <button class="primary-button" disabled="@loading">@L["Search"]</button>
+        <button class="primary-button" disabled="@loading"><i class="bi bi-search" aria-hidden="true"></i>@L["Search"]</button>
     </form>
     @if(error is not null){<p class="feedback-error" role="alert">@error <button class="secondary-button" @onclick="() => Load(page)">@L["TryAgain"]</button></p>}
     @if(loading){<p class="empty-state" role="status">@L["Loading"]</p>}

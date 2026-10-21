@@ -1,8 +1,8 @@
-<div class="pagination-container d-flex justify-content-between align-items-center">
-    <button class="btn btn-outline-secondary btn-sm" disabled="@(CurrentPage <= 1)" @onclick="PreviousPage">@L["Previous"]</button>
-    <span>@L["Page"] @CurrentPage @L["Of"] @TotalPages</span>
-    <button class="btn btn-outline-secondary btn-sm" disabled="@(CurrentPage >= TotalPages)" @onclick="NextPage">@L["Next"]</button>
-</div>
+<nav class="workspace-pagination" aria-label="@L["Page"]">
+    <button type="button" class="secondary-button" disabled="@(CurrentPage <= 1)" @onclick="PreviousPage"><i class="bi bi-chevron-left" aria-hidden="true"></i>@L["Previous"]</button>
+    <span>@L["Page"] <strong>@CurrentPage</strong> @L["Of"] <strong>@Math.Max(1, TotalPages)</strong></span>
+    <button type="button" class="secondary-button" disabled="@(CurrentPage >= TotalPages)" @onclick="NextPage">@L["Next"]<i class="bi bi-chevron-right" aria-hidden="true"></i></button>
+</nav>
 
 @code {
     [Parameter] public int CurrentPage { get; set; } = 1;

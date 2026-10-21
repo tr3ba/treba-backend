@@ -5,7 +5,7 @@
 
 <PageTitle>@L["StaffAndRoles"] — Treba Admin</PageTitle>
 <a class="users-back-link" href="/settings"><i class="bi bi-arrow-left"></i>@L["Settings"]</a>
-<section class="page-hero"><div><p class="eyebrow">@L["Settings"]</p><h1>@L["StaffAndRoles"]</h1><p>@L["StaffAndRolesDescription"]</p></div><button class="primary-button" @onclick="() => _creating = !_creating">@L["AddStaff"]</button></section>
+<section class="page-hero"><div><p class="eyebrow">@L["Settings"]</p><h1>@L["StaffAndRoles"]</h1><p>@L["StaffAndRolesDescription"]</p></div><button class="primary-button" @onclick="() => _creating = !_creating"><i class="bi bi-person-plus" aria-hidden="true"></i>@L["AddStaff"]</button></section>
 @if (_error is not null) { <p class="feedback-error" role="alert">@_error</p> }
 @if (_success) { <p class="feedback-success" role="status">@L["StaffSaved"]</p> }
 @if (_creating)
@@ -32,7 +32,7 @@
         <div class="table-wrap"><table class="custom-table"><thead><tr><th>@L["StaffMember"]</th><th>@L["StaffRole"]</th><th>@L["Status"]</th><th>@L["Actions"]</th></tr></thead><tbody>
         @foreach (var person in _staff.Content)
         {
-            <tr><td><strong>@person.FirstName @person.LastName</strong><small class="settings-email">@person.Email</small>@if(person.Id == _self) { <span class="settings-you">@L["YouLabel"]</span> }</td><td>@RoleLabel(person.Role)</td><td><span class="status-badge @(person.Status == "Blocked" ? "badge-deleted" : "badge-active")">@L[person.Status == "Blocked" ? "StaffBlocked" : "StaffActive"]</span></td><td><button class="secondary-button" disabled="@(_busy || person.Id == _self)" @onclick="() => Edit(person)">@L["ChangeAccess"]</button></td></tr>
+            <tr><td><strong>@person.FirstName @person.LastName</strong><small class="settings-email">@person.Email</small>@if(person.Id == _self) { <span class="settings-you">@L["YouLabel"]</span> }</td><td>@RoleLabel(person.Role)</td><td><span class="status-badge @(person.Status == "Blocked" ? "badge-deleted" : "badge-active")">@L[person.Status == "Blocked" ? "StaffBlocked" : "StaffActive"]</span></td><td><button class="secondary-button" disabled="@(_busy || person.Id == _self)" @onclick="() => Edit(person)"><i class="bi bi-shield-lock" aria-hidden="true"></i>@L["ChangeAccess"]</button></td></tr>
         }
         </tbody></table></div>
         @if (_staff.Content.Count == 0) { <p class="empty-state">@L["NoStaffFound"]</p> }

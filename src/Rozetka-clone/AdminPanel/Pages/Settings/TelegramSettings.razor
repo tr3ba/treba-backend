@@ -10,7 +10,7 @@
 <section class="card-box dossier-section">
     <h2>@L["TelegramConnection"]</h2>
     <p>@L[configuration?.Configured==true?"TelegramConfigured":"TelegramNotConfigured"]</p>
-    @if(configuration?.Configured==true){<p><strong>@@@configuration.BotUsername</strong></p><a href="@configuration.MiniAppUrl" target="_blank" rel="noopener noreferrer">Mini App <i class="bi bi-box-arrow-up-right"></i></a>}
+    @if(configuration?.Configured==true){<p><strong>@@@configuration.BotUsername</strong></p><a class="record-link" href="@configuration.MiniAppUrl" target="_blank" rel="noopener noreferrer">Mini App <i class="bi bi-box-arrow-up-right"></i></a>}
 </section>
 <section class="card-box dossier-section">
     <h2>@L["RozetkaCategoryMapping"]</h2><p>@L["RozetkaCategoryMappingHint"]</p>
@@ -26,7 +26,7 @@
         <button class="primary-button" type="submit" disabled="@busy">@L["SaveChanges"]</button>
     </EditForm>
     <div class="table-responsive"><table class="catalog-table"><thead><tr><th>Rozetka</th><th>Treba</th><th></th></tr></thead><tbody>
-        @foreach(var mapping in mappings){<tr><td>@mapping.ExternalKey</td><td>@(categories.FirstOrDefault(c=>c.Id==mapping.CategoryId)?.Name??mapping.CategoryName)</td><td><button type="button" class="secondary-button" @onclick="()=>Edit(mapping)">@L["Edit"]</button></td></tr>}
+        @foreach(var mapping in mappings){<tr><td>@mapping.ExternalKey</td><td>@(categories.FirstOrDefault(c=>c.Id==mapping.CategoryId)?.Name??mapping.CategoryName)</td><td><button type="button" class="secondary-button" @onclick="()=>Edit(mapping)"><i class="bi bi-pencil" aria-hidden="true"></i>@L["Edit"]</button></td></tr>}
     </tbody></table></div>
 </section>
 

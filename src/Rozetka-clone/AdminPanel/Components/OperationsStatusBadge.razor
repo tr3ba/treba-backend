@@ -1,0 +1,23 @@
+<span class="operation-status @Tone"><i class="bi @Icon" aria-hidden="true"></i>@O[Domain + "_" + Value]</span>
+
+@code {
+    [Parameter, EditorRequired] public string Domain { get; set; } = "";
+    [Parameter, EditorRequired] public string Value { get; set; } = "";
+
+    private string Tone => Value switch {
+        "CLOSED" or "COMPLETED" or "DELIVERED" or "PUBLISHED" or "ACTIVE" or "APPROVED" or "PAID" => "tone-success",
+        "REJECTED" or "CANCELLED" or "EXPIRED" => "tone-danger",
+        "OPEN" or "NEW" or "CREATED" or "AWAITING_PAYMENT" or "RETURN_REQUESTED" or "PENDING" or "PENDING_MODERATION" => "tone-warning",
+        "IN_PROGRESS" or "PROCESSING" or "SHIPPED" or "CONFIRMED" or "READY_FOR_SHIPMENT" or "SCHEDULED" => "tone-info",
+        _ => "tone-neutral"
+    };
+    private string Icon => Value switch {
+        "CLOSED" or "COMPLETED" or "DELIVERED" or "PUBLISHED" or "ACTIVE" or "APPROVED" => "bi-check2-circle",
+        "PAID" => "bi-credit-card",
+        "REJECTED" or "CANCELLED" => "bi-x-circle",
+        "SHIPPED" => "bi-truck",
+        "IN_PROGRESS" or "PROCESSING" => "bi-arrow-repeat",
+        "OPEN" or "NEW" => "bi-chat-dots",
+        _ => "bi-clock"
+    };
+}
