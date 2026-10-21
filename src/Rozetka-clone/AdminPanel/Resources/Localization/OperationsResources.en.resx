@@ -145,4 +145,13 @@
   <data name="SellerQuestions" xml:space="preserve"><value>Product questions</value></data>
   <data name="SellerQueueHint" xml:space="preserve"><value>Only questions about your products appear here. Reply directly to the customer.</value></data>
   <data name="TrebaQueueHint" xml:space="preserve"><value>TREBA chats are answered by administrators, managers and moderators. Product questions go to their sellers.</value></data>
+  <data name="Inbox" xml:space="preserve"><value>Inbox</value></data>
+  <data name="InboxAll" xml:space="preserve"><value>All conversations</value></data>
+  <data name="InboxUnread" xml:space="preserve"><value>Unread</value></data>
+  <data name="InboxOpen" xml:space="preserve"><value>Open</value></data>
+  <data name="InboxOverdue" xml:space="preserve"><value>Needs attention</value></data>
+  <data name="SendReply" xml:space="preserve"><value>Send</value></data>
+  <data name="KindShort_CHAT" xml:space="preserve"><value>Support</value></data>
+  <data name="KindShort_QUESTION" xml:space="preserve"><value>Question</value></data>
+  <data name="KindShort_RETURN" xml:space="preserve"><value>Return</value></data>
 </root>

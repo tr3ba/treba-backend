@@ -2,27 +2,27 @@
 @inject OperationsApiClient Api
 @inject UiTime Time
 <PageTitle>@O["OrderNumber"] — Treba Admin</PageTitle>
-<a href="/orders" class="users-back-link">← @L["Orders"]</a>
+<a href="/orders" class="users-back-link"><i class="bi bi-arrow-left" aria-hidden="true"></i>@L["Orders"]</a>
 @if(error is not null){<p class="feedback-error" role="alert">@error</p>}
 @if(loading){<p class="empty-state">@L["Loading"]</p>}
 else if(order is not null)
 {
-    <section class="page-hero"><div><p class="eyebrow">@L["Orders"]</p><h1>@order.Summary.OrderNumber</h1><span class="status-badge">@O["Order_"+order.Summary.Status]</span></div><button class="secondary-button" disabled="@busy" @onclick="Load">@L["RefreshData"]</button></section>
+    <section class="page-hero"><div><p class="eyebrow">@L["Orders"]</p><h1>@order.Summary.OrderNumber</h1><OperationsStatusBadge Domain="Order" Value="@order.Summary.Status" /></div><button class="secondary-button" disabled="@busy" @onclick="Load"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i>@L["RefreshData"]</button></section>
     @if(order.PartialOrder){<p class="feedback-success">@O["PartialOrder"]</p>}
     <div class="operations-two-column">
-        <section class="card-box"><h2>@O["Customer"]</h2><p>@order.Summary.CustomerName<br/>@order.RecipientPhone<br/>@order.RecipientEmail</p><AuthorizeView Roles="Administrator,Manager"><a href="@($"/customer-activity/{order.Summary.CustomerId}")">@O["CustomerHistory"]</a></AuthorizeView>
+        <section class="card-box"><h2><i class="bi bi-person" aria-hidden="true"></i> @O["Customer"]</h2><p>@order.Summary.CustomerName<br/>@order.RecipientPhone<br/>@order.RecipientEmail</p><AuthorizeView Roles="Administrator,Manager"><a class="record-link" href="@($"/customer-activity/{order.Summary.CustomerId}")"><i class="bi bi-person-lines-fill" aria-hidden="true"></i>@O["CustomerHistory"]<i class="bi bi-arrow-up-right" aria-hidden="true"></i></a></AuthorizeView>
         @if(order.Address is {} a){<h3>@O["DeliveryAddress"]</h3><p>@a.Country, @a.Region, @a.City<br/>@a.Street @a.Building @a.Apartment<br/>@a.PostalCode<br/>@a.RecipientName · @a.RecipientPhone</p>}
         @if(!string.IsNullOrWhiteSpace(order.CustomerComment)){<h3>@O["CustomerComment"]</h3><p class="operations-text">@order.CustomerComment</p>}
         </section>
-        <section class="card-box"><h2>@O["OrderTotals"]</h2><dl class="operations-totals"><dt>@O["Subtotal"]</dt><dd>@order.Subtotal.ToString("N2") ₴</dd><dt>@O["Discount"]</dt><dd>@order.DiscountAmount.ToString("N2") ₴</dd><dt>@O["Delivery"]</dt><dd>@order.DeliveryPrice.ToString("N2") ₴</dd><dt>@O["Amount"]</dt><dd><strong>@order.Summary.TotalAmount.ToString("N2") ₴</strong></dd></dl>
+        <section class="card-box"><h2><i class="bi bi-receipt" aria-hidden="true"></i> @O["OrderTotals"]</h2><dl class="operations-totals"><dt>@O["Subtotal"]</dt><dd>@order.Subtotal.ToString("N2") ₴</dd><dt>@O["Discount"]</dt><dd>@order.DiscountAmount.ToString("N2") ₴</dd><dt>@O["Delivery"]</dt><dd>@order.DeliveryPrice.ToString("N2") ₴</dd><dt>@O["Amount"]</dt><dd><strong>@order.Summary.TotalAmount.ToString("N2") ₴</strong></dd></dl>
         @if(order.AllowedStatuses.Count>0){<label class="field-group"><span>@O["NextStatus"]</span><select class="form-control" @bind="next"><option value="">@O["Choose"]</option>@foreach(var state in order.AllowedStatuses){<option value="@state">@O["Order_"+state]</option>}</select></label><label class="field-group"><span>@O["Reason"]</span><textarea class="form-control" maxlength="500" rows="3" @bind="reason"></textarea></label>
         @if(next=="PAID"){<p class="operations-caption">@O["ManualPayment"]</p>}
-        <button class="primary-button" disabled="@(busy||string.IsNullOrEmpty(next)||next=="CANCELLED"&&string.IsNullOrWhiteSpace(reason))" @onclick="()=>confirm=true">@L["Save"]</button>}
-        <AuthorizeView Roles="Administrator,Manager"><a class="secondary-button operations-block-link" href="@($"/support?orderId={Id}")">@O["CreateTicket"]</a></AuthorizeView>
+        <button class="primary-button" disabled="@(busy||string.IsNullOrEmpty(next)||next=="CANCELLED"&&string.IsNullOrWhiteSpace(reason))" @onclick="()=>confirm=true"><i class="bi bi-check2" aria-hidden="true"></i>@L["Save"]</button>}
+        <AuthorizeView Roles="Administrator,Manager"><a class="secondary-button operations-block-link" href="@($"/support?orderId={Id}")"><i class="bi bi-chat-square-text" aria-hidden="true"></i>@O["CreateTicket"]</a></AuthorizeView>
         </section>
     </div>
-    <section class="card-box"><h2>@O["Items"]</h2><div class="table-wrap"><table class="custom-table"><thead><tr><th>@L["ProductsNav"]</th><th>SKU</th><th>@O["Quantity"]</th><th>@O["UnitPrice"]</th><th>@O["Discount"]</th><th>@O["Amount"]</th></tr></thead><tbody>@foreach(var item in order.Items){<tr><td>@item.ProductName<small class="operations-muted">@item.VariantName</small></td><td>@item.Sku</td><td>@item.Quantity</td><td>@item.UnitPrice.ToString("N2")</td><td>@item.DiscountAmount.ToString("N2")</td><td>@item.TotalPrice.ToString("N2")</td></tr>}</tbody></table></div></section>
-    <section class="card-box"><h2>@O["StatusHistory"]</h2><ol class="operations-timeline">@foreach(var entry in order.History){<li><strong>@O["Order_"+entry.NewStatus]</strong><time>@Time.Local(entry.CreatedAt).ToString("g")</time><p class="operations-text">@entry.Comment</p></li>}</ol></section>
+    <section class="card-box"><h2><i class="bi bi-box-seam" aria-hidden="true"></i> @O["Items"]</h2><div class="table-wrap"><table class="custom-table"><thead><tr><th>@L["ProductsNav"]</th><th>SKU</th><th>@O["Quantity"]</th><th>@O["UnitPrice"]</th><th>@O["Discount"]</th><th>@O["Amount"]</th></tr></thead><tbody>@foreach(var item in order.Items){<tr><td>@item.ProductName<small class="operations-muted">@item.VariantName</small></td><td>@item.Sku</td><td>@item.Quantity</td><td>@item.UnitPrice.ToString("N2")</td><td>@item.DiscountAmount.ToString("N2")</td><td>@item.TotalPrice.ToString("N2")</td></tr>}</tbody></table></div></section>
+    <section class="card-box"><h2><i class="bi bi-clock-history" aria-hidden="true"></i> @O["StatusHistory"]</h2><ol class="operations-timeline">@foreach(var entry in order.History){<li><strong>@O["Order_"+entry.NewStatus]</strong><time>@Time.Local(entry.CreatedAt).ToString("g")</time><p class="operations-text">@entry.Comment</p></li>}</ol></section>
 }
 <ConfirmDialog IsOpen="confirm" Title="@O["ChangeStatus"]" Message="@(next=="PAID"?O["ManualPayment"]:O["ConfirmStatus"] )" OnClose="Confirm" />
 @code {

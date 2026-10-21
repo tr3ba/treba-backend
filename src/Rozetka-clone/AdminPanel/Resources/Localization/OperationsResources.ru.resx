@@ -145,4 +145,13 @@
   <data name="SellerQuestions" xml:space="preserve"><value>Вопросы о товарах</value></data>
   <data name="SellerQueueHint" xml:space="preserve"><value>Здесь только вопросы о ваших товарах. Отвечайте покупателям напрямую.</value></data>
   <data name="TrebaQueueHint" xml:space="preserve"><value>В чате TREBA отвечают администраторы, менеджеры и модераторы. Вопросы о товарах поступают их продавцам.</value></data>
+  <data name="Inbox" xml:space="preserve"><value>Обращения</value></data>
+  <data name="InboxAll" xml:space="preserve"><value>Все обращения</value></data>
+  <data name="InboxUnread" xml:space="preserve"><value>Непрочитанные</value></data>
+  <data name="InboxOpen" xml:space="preserve"><value>Открытые</value></data>
+  <data name="InboxOverdue" xml:space="preserve"><value>Требуют внимания</value></data>
+  <data name="SendReply" xml:space="preserve"><value>Отправить</value></data>
+  <data name="KindShort_CHAT" xml:space="preserve"><value>Поддержка</value></data>
+  <data name="KindShort_QUESTION" xml:space="preserve"><value>Вопрос</value></data>
+  <data name="KindShort_RETURN" xml:space="preserve"><value>Возврат</value></data>
 </root>
