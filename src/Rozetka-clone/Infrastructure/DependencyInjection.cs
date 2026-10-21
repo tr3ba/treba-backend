@@ -1,8 +1,10 @@
 ﻿using Application.Abstractions;
+using Application.Delivery;
 using Application.Payments;
 using Infrastructure.Authentication;
-using Infrastructure.Persistence;
+using Infrastructure.Delivery;
 using Infrastructure.Payments;
+using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -119,6 +121,9 @@ namespace Infrastructure
             }
 
             services.AddScoped<IPaymentService, PaymentService>();
+
+            services.AddScoped<IDeliveryProvider, MockDeliveryProvider>();
+            services.AddScoped<IDeliveryService, DeliveryService>();
 
             return services;
         }

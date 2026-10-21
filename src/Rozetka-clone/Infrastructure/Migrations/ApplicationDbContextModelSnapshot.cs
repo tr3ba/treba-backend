@@ -320,6 +320,41 @@ namespace Infrastructure.Migrations
                     b.ToTable("coupon_usages", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.Entities.DeliveryMethod", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal>("BasePrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("delivery_methods", (string)null);
+                });
+
             modelBuilder.Entity("Domain.Entities.Inventory.Inventory", b =>
                 {
                     b.Property<Guid>("Id")
@@ -823,6 +858,58 @@ namespace Infrastructure.Migrations
                     b.HasIndex("PaymentId");
 
                     b.ToTable("payment_transactions", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Entities.PickupPoint", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("ExternalId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<decimal?>("Latitude")
+                        .HasPrecision(9, 6)
+                        .HasColumnType("numeric(9,6)");
+
+                    b.Property<decimal?>("Longitude")
+                        .HasPrecision(9, 6)
+                        .HasColumnType("numeric(9,6)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("City");
+
+                    b.HasIndex("Provider", "ExternalId")
+                        .IsUnique();
+
+                    b.ToTable("pickup_points", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Entities.Product.Product", b =>
@@ -1414,6 +1501,83 @@ namespace Infrastructure.Migrations
                     b.HasIndex("SellerId");
 
                     b.ToTable("seller_review_responses", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Entities.Shipment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("DeliveredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("DeliveryMethodId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("EstimatedDeliveryDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Price")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTimeOffset?>("ShippedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("TrackingNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DeliveryMethodId");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("TrackingNumber");
+
+                    b.ToTable("shipments", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Entities.ShipmentItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("OrderItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("ShipmentId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderItemId");
+
+                    b.HasIndex("ShipmentId");
+
+                    b.HasIndex("ShipmentId", "OrderItemId")
+                        .IsUnique();
+
+                    b.ToTable("shipment_items", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Entities.Store", b =>
@@ -2755,6 +2919,42 @@ namespace Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Domain.Entities.Shipment", b =>
+                {
+                    b.HasOne("Domain.Entities.DeliveryMethod", "DeliveryMethod")
+                        .WithMany("Shipments")
+                        .HasForeignKey("DeliveryMethodId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.Orders.Order", null)
+                        .WithMany("Shipments")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DeliveryMethod");
+                });
+
+            modelBuilder.Entity("Domain.Entities.ShipmentItem", b =>
+                {
+                    b.HasOne("Domain.Entities.Orders.OrderItem", "OrderItem")
+                        .WithMany()
+                        .HasForeignKey("OrderItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.Shipment", "Shipment")
+                        .WithMany("Items")
+                        .HasForeignKey("ShipmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("OrderItem");
+
+                    b.Navigation("Shipment");
+                });
+
             modelBuilder.Entity("Domain.Entities.Store", b =>
                 {
                     b.HasOne("Domain.Entities.Seller", null)
@@ -2982,6 +3182,11 @@ namespace Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Domain.Entities.DeliveryMethod", b =>
+                {
+                    b.Navigation("Shipments");
+                });
+
             modelBuilder.Entity("Domain.Entities.Orders.Order", b =>
                 {
                     b.Navigation("Address");
@@ -2990,12 +3195,19 @@ namespace Infrastructure.Migrations
 
                     b.Navigation("Payments");
 
+                    b.Navigation("Shipments");
+
                     b.Navigation("StatusHistory");
                 });
 
             modelBuilder.Entity("Domain.Entities.Payments.Payment", b =>
                 {
                     b.Navigation("Transactions");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Shipment", b =>
+                {
+                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("Domain.Entities.Users.User", b =>
