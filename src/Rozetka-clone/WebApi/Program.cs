@@ -77,11 +77,13 @@ builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddScoped<IDiscountService, DiscountService>();
 builder.Services.AddScoped<Application.Inventory.InventoryService>();
 builder.Services.AddScoped<Application.Inventory.IInventoryService>(sp => sp.GetRequiredService<Application.Inventory.InventoryService>());
-builder.Services.AddScoped<Application.Orders.OrderService>();
-builder.Services.AddScoped<Application.Orders.IOrderService>(sp => sp.GetRequiredService<Application.Orders.OrderService>());
+Application.Orders.OrderRegistration.AddOrderServices(builder.Services);
 builder.Services.AddScoped<Application.Administration.PromotionManagementService>();
 builder.Services.AddScoped<Application.Administration.SupportService>();
 builder.Services.AddScoped<Application.Administration.OperationsService>();
+builder.Services.AddScoped<Application.Marketplace.SellerApplicationService>();
+builder.Services.AddScoped<Application.Marketplace.CustomerAccountService>();
+builder.Services.AddScoped<Application.Marketplace.NotificationService>();
 builder.Services.AddHostedService<OrderReservationWorker>();
 
 

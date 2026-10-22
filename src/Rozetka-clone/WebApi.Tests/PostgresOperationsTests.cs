@@ -61,7 +61,7 @@ public sealed class PostgresOperationsTests
             async Task<Exception?> Checkout()
             {
                 await using var db = new ApplicationDbContext(options); var actor = new OperationsTests.Actor(seed.Customer.Id);
-                var service = new OrderService(db, new Application.Inventory.InventoryService(db, actor), new SynchronizedDiscounts(new DiscountService(db), Rendezvous), actor, new TestPaymentService(db));
+                var service = new OrderService(db, new Application.Inventory.InventoryService(db, actor), new SynchronizedDiscounts(new DiscountService(db), Rendezvous), actor, () => new TestPaymentService(db));
                 return await Record.ExceptionAsync(() => service.CreateOrderAsync(OperationsTests.Request(seed, coupon: "LAST")));
             }
             var errors = await Task.WhenAll(Checkout(), Checkout()); Assert.Single(errors, e => e is null);

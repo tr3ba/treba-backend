@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <data name="Dashboard" xml:space="preserve"><value>Дашборд</value></data>
   <data name="Management" xml:space="preserve"><value>Керування</value></data>
@@ -761,4 +761,23 @@
   <data name="ImportStatusExpired" xml:space="preserve"><value>Термін попереднього перегляду минув</value></data>
   <data name="ImportStatusSubmitted" xml:space="preserve"><value>На модерації</value></data>
   <data name="CategoryImageUrl" xml:space="preserve"><value>Зображення категорії (URL)</value></data>
+  <data name="WorkflowApplications" xml:space="preserve"><value>Заявки продавців</value></data>
+  <data name="WorkflowApplicationsHint" xml:space="preserve"><value>Перевірте дані та відкрийте доступ до магазину.</value></data>
+  <data name="WorkflowRefresh" xml:space="preserve"><value>Оновити</value></data>
+  <data name="WorkflowNoApplications" xml:space="preserve"><value>Заявок не знайдено</value></data>
+  <data name="WorkflowContact" xml:space="preserve"><value>Контактна особа</value></data>
+  <data name="WorkflowWebsite" xml:space="preserve"><value>Сайт компанії</value></data>
+  <data name="WorkflowStoreSlug" xml:space="preserve"><value>Адреса магазину (латиницею)</value></data>
+  <data name="WorkflowReviewNote" xml:space="preserve"><value>Коментар / причина відмови</value></data>
+  <data name="WorkflowApprovalHint" xml:space="preserve"><value>Після схвалення буде створено магазин із доступом до активних категорій. Покупець має увійти знову.</value></data>
+  <data name="WorkflowApprove" xml:space="preserve"><value>Схвалити та створити магазин</value></data>
+  <data name="WorkflowReject" xml:space="preserve"><value>Відхилити заявку</value></data>
+  <data name="WorkflowPages" xml:space="preserve"><value>Сторінки</value></data>
+  <data name="WorkflowNotifications" xml:space="preserve"><value>Сповіщення</value></data>
+  <data name="WorkflowReadAll" xml:space="preserve"><value>Прочитати всі</value></data>
+  <data name="WorkflowNotificationHint" xml:space="preserve"><value>Останні події за 30 днів.</value></data>
+  <data name="WorkflowNoNotifications" xml:space="preserve"><value>Нових сповіщень немає</value></data>
+  <data name="WorkflowUnread" xml:space="preserve"><value>Не прочитано</value></data>
+  <data name="WorkflowAllNotifications" xml:space="preserve"><value>Усі сповіщення</value></data>
+  <data name="WorkflowNotificationError" xml:space="preserve"><value>Не вдалося завантажити сповіщення.</value></data>
 </root>

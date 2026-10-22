@@ -10,7 +10,7 @@ namespace WebApi.Controllers;
 public sealed class SupportController(SupportService support) : ControllerBase
 {
     [HttpGet]
-    public Task<PagedResponse<TicketRow>> List(int page = 1, string? status = null, string? kind = null, string? search = null, string? view = null, Guid? productId = null, CancellationToken ct = default) => support.ListAsync(page, status, kind, search, ct, view, productId);
+    public Task<PagedResponse<TicketRow>> List(int page = 1, string? status = null, string? kind = null, string? search = null, string? view = null, Guid? productId = null, Guid? orderId = null, CancellationToken ct = default) => support.ListAsync(page, status, kind, search, ct, view, productId, orderId);
     [HttpGet("{id:guid}/messages")]
     public Task<TicketMessagePage> Messages(Guid id, Guid? before = null, CancellationToken ct = default) => support.MessagesAsync(id, before, ct);
     [HttpPost("{id:guid}/read")]
