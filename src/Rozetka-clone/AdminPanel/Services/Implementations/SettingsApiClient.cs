@@ -6,6 +6,18 @@ namespace AdminPanel.Services.Implementations;
 
 public sealed class SettingsApiClient(HttpClient http, UiTime time)
 {
+    public async Task<IReadOnlyList<FeatureFlagDto>> Features()
+    {
+        using var response = await http.GetAsync("api/v1/admin/settings/features");
+        await CatalogApiClient.RequireSuccess(response);
+        return (await response.Content.ReadFromJsonAsync<List<FeatureFlagDto>>())!;
+    }
+    public async Task<FeatureFlagDto> SetFeature(string key, SetFeatureFlagRequest request)
+    {
+        using var response = await http.PutAsJsonAsync("api/v1/admin/settings/features/" + Uri.EscapeDataString(key), request);
+        await CatalogApiClient.RequireSuccess(response);
+        return (await response.Content.ReadFromJsonAsync<FeatureFlagDto>())!;
+    }
     private static string Encode(string? text) => Uri.EscapeDataString(text ?? "");
     public async Task<PagedResponse<StaffDto>> Staff(int page, string? search, string? role)
     {

@@ -30,8 +30,8 @@
 </section>
 
 @code {
-    private static readonly string[] Entities = ["User", "Product", "ProductVariant", "ProductImage", "ProductAttributeValue", "Category", "Brand", "Seller", "Store", "Review"];
-    private static readonly string[] Actions = ["Create", "Update", "Delete", "Moderation"];
+    private static readonly string[] Entities = ["User", "Product", "ProductVariant", "ProductImage", "ProductAttributeValue", "Category", "Brand", "Seller", "Store", "Review", "FeatureFlag", "SupportTicket"];
+    private static readonly string[] Actions = ["Create", "Update", "Delete", "Moderation", "Restore"];
     private Contracts.Common.PagedResponse<AuditLogDto>? _result;
     private string _search = "", _entity = "", _action = "";
     private DateOnly? _from, _to;

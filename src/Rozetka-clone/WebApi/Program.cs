@@ -80,6 +80,7 @@ builder.Services.AddScoped<Application.Inventory.IInventoryService>(sp => sp.Get
 Application.Orders.OrderRegistration.AddOrderServices(builder.Services);
 builder.Services.AddScoped<Application.Administration.PromotionManagementService>();
 builder.Services.AddScoped<Application.Administration.SupportService>();
+builder.Services.AddScoped<Application.Administration.FeatureSettingsService>();
 builder.Services.AddScoped<Application.Administration.OperationsService>();
 builder.Services.AddScoped<Application.Marketplace.SellerApplicationService>();
 builder.Services.AddScoped<Application.Marketplace.CustomerAccountService>();

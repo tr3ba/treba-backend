@@ -101,7 +101,10 @@ public sealed record ReadTicketRequest(Guid MessageId);
 public sealed record ChangeTicketStatusRequest([Required] string Status, Guid ExpectedVersion);
 public sealed record TicketRow(Guid Id, Guid? OrderId, string? OrderNumber, Guid CustomerId, string CustomerName,
     string Kind, string Subject, string Status, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt, Guid Version,
-    Guid? ProductId = null, string? ProductName = null, string? LastMessage = null, int UnreadCount = 0, string? ProductSlug = null);
+    Guid? ProductId = null, string? ProductName = null, string? LastMessage = null, int UnreadCount = 0, string? ProductSlug = null,
+    DateTimeOffset? DeletedAt = null);
+public sealed record TicketDeletionRequest(Guid ExpectedVersion);
+public sealed record TicketCapabilities(bool CanDelete, bool CanRestore);
 public sealed record TicketMessageView(Guid Id, string AuthorName, string AuthorRole, string Message, bool Internal, DateTimeOffset CreatedAt);
 public sealed record TicketDetails(TicketRow Summary, IReadOnlyList<TicketMessageView> Messages, IReadOnlyList<string> AllowedStatuses, bool HasEarlierMessages = false);
 public sealed record TicketMessagePage(IReadOnlyList<TicketMessageView> Messages, bool HasMore);

@@ -16,6 +16,7 @@
     <a href="/support?view=unread" class="@(QueueView == "unread" ? "active" : "")" aria-current="@(QueueView == "unread" ? "page" : null)"><i class="bi bi-envelope-paper" aria-hidden="true"></i>@O["InboxUnread"]</a>
     <a href="/support?view=open" class="@(QueueView == "open" ? "active" : "")" aria-current="@(QueueView == "open" ? "page" : null)"><i class="bi bi-chat-dots" aria-hidden="true"></i>@O["InboxOpen"]</a>
     <a href="/support?view=overdue" class="@(QueueView == "overdue" ? "active" : "")" aria-current="@(QueueView == "overdue" ? "page" : null)"><i class="bi bi-clock-history" aria-hidden="true"></i>@O["InboxOverdue"]</a>
+    @if(capabilities.CanRestore){<a href="/support/trash"><i class="bi bi-trash3" aria-hidden="true"></i>@L["ChatTrash"]</a>}
 </nav>
 
 <section class="card-box support-filters">
@@ -62,7 +63,7 @@
                         <td><span class="support-kind" title="@O["Kind_" + t.Kind]">@O["KindShort_" + t.Kind]</span></td>
                         <td><OperationsStatusBadge Domain="Ticket" Value="@t.Status" /></td>
                         <td><time class="table-date" datetime="@t.UpdatedAt.ToString("O")">@Time.Local(t.UpdatedAt).ToString("g")</time></td>
-                        <td><a class="icon-button" href="@($"/support/{t.Id}")" aria-label="@($"{L["Open"]}: {t.Subject}")"><i class="bi bi-arrow-up-right" aria-hidden="true"></i></a></td>
+                        <td><div class="feature-case-actions"><a class="icon-button" href="@($"/support/{t.Id}")" aria-label="@($"{L["Open"]}: {t.Subject}")"><i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>@if(capabilities.CanDelete && (t.Kind != "RETURN" || t.Status == "CLOSED")){<button type="button" class="icon-button feature-delete" disabled="@busy" aria-label="@($"{L["DeleteChat"]}: {t.Subject}")" title="@L["DeleteChat"]" @onclick="() => deleting = t"><i class="bi bi-trash3" aria-hidden="true"></i></button>}</div></td>
                     </tr>
                 }</tbody>
             </table></div>
@@ -70,15 +71,18 @@
         <PaginationControl CurrentPage="result.Page" TotalPages="result.TotalPages" OnPageChanged="Load" />
     }
 </section>
+<ConfirmDialog IsOpen="@(deleting is not null)" Title="@L["DeleteChat"]" Message="@L["DeleteChatConfirm"]" OnClose="DeleteConfirmed" />
 @code{private string? role;private bool CanCreate=>role is "Administrator" or "Manager";
+private TicketCapabilities capabilities = new(false, false); private TicketRow? deleting;
 protected override async Task OnInitializedAsync()=>role=(await Authentication.GetAuthenticationStateAsync()).User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
 [SupplyParameterFromQuery]public Guid? OrderId{get;set;}[SupplyParameterFromQuery(Name="view")]public string? QueueView{get;set;}private bool loading,busy,creating;private string? error;private int page=1;private string search="",status="",kind="",orderSearch="";private CreateTicketRequest model=new();private IReadOnlyList<OrderRow> orderOptions=[];private PagedResponse<TicketRow>? result;
 protected override async Task OnParametersSetAsync(){await Load(1);if(CanCreate&&OrderId.HasValue){try{var order=await Api.Order(OrderId.Value);orderOptions=[order.Summary];model.OrderId=OrderId.Value;creating=true;}catch(HttpRequestException e){error=e.Message;}}}
-private Task Search()=>Load(1);private Task Load(int p)=>LoadCore(p,false);private async Task LoadCore(int p,bool silent){page=p;if(!silent)loading=true;try{result=await Api.Tickets(p,status,kind,search,QueueView);error=null;}catch(HttpRequestException e){error=e.Message;if(!silent)result=null;}finally{loading=false;}}
+private Task Search()=>Load(1);private Task Load(int p)=>LoadCore(p,false);private async Task LoadCore(int p,bool silent){page=p;if(!silent)loading=true;try{capabilities=await Api.TicketCapabilities();result=await Api.Tickets(p,status,kind,search,QueueView);error=null;}catch(HttpRequestException e){error=e.Message;if(!silent)result=null;}finally{loading=false;}}
+private async Task DeleteConfirmed(bool yes){var row=deleting;deleting=null;if(!yes||row is null||busy)return;busy=true;error=null;try{await Api.DeleteTicket(row.Id,row.Version);await Load(Math.Max(1,result?.Content.Count==1&&page>1?page-1:page));}catch(HttpRequestException e){error=e.Message;}finally{busy=false;}}
 private async Task FindOrders(){busy=true;error=null;try{orderOptions=(await Api.Orders(search:orderSearch)).Content;}catch(HttpRequestException e){error=e.Message;}finally{busy=false;}}
 private async Task Create(){busy=true;error=null;try{var ticket=await Api.CreateTicket(model);Nav.NavigateTo($"/support/{ticket.Summary.Id}");}catch(HttpRequestException e){error=e.Message;}finally{busy=false;}}
 private readonly CancellationTokenSource lifetime=new();private Task? polling;
 protected override Task OnAfterRenderAsync(bool firstRender){if(firstRender)polling=Poll();return Task.CompletedTask;}
-private async Task Poll(){using var timer=new PeriodicTimer(TimeSpan.FromSeconds(5));try{while(await timer.WaitForNextTickAsync(lifetime.Token))if(!busy&&!loading)await InvokeAsync(()=>LoadCore(page,true));}catch(OperationCanceledException){}}
+private async Task Poll(){using var timer=new PeriodicTimer(TimeSpan.FromSeconds(5));try{while(await timer.WaitForNextTickAsync(lifetime.Token))if(!busy&&!loading&&deleting is null)await InvokeAsync(()=>LoadCore(page,true));}catch(OperationCanceledException){}}
 public async ValueTask DisposeAsync(){lifetime.Cancel();if(polling is not null)await polling;lifetime.Dispose();}
 }
