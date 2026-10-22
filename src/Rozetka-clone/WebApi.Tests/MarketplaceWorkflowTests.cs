@@ -184,6 +184,30 @@ public sealed class MarketplaceWorkflowTests
     }
 
     [Fact]
+    public async Task PublicCatalogHttp_BindsAttributesUnderTheirPrefix_AndAcceptsOrdinaryQueryParameters()
+    {
+        await using var server = await AdminHttpTests.ServerAsync(); using var client = server.GetTestClient();
+        OperationsTests.Seed seed; Guid attributeId;
+        using (var scope = server.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            seed = await OperationsTests.SeedAsync(db);
+            attributeId = Guid.NewGuid();
+            db.Attributes.Add(new Domain.Entities.Attribute.Attribute(attributeId, seed.Product.CategoryId, "Memory", "memory", AttributeType.NUMBER, false, true, false, "GB", 0));
+            db.ProductAttributeValues.Add(new() { Id = Guid.NewGuid(), ProductId = seed.Product.Id, AttributeId = attributeId, NumberValue = 16 });
+            await db.SaveChangesAsync();
+        }
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/api/v1/catalog?size=24&sort=priceasc")).StatusCode);
+        var matches = await client.GetAsync($"/api/v1/catalog?size=24&search=Product&attributes[{attributeId}]=16");
+        Assert.Equal(HttpStatusCode.OK, matches.StatusCode);
+        var matchJson = await matches.Content.ReadAsStringAsync();
+        Assert.Contains(seed.Product.Id.ToString(), matchJson);
+        var misses = await client.GetAsync($"/api/v1/catalog?size=24&attributes[{attributeId}]=32");
+        Assert.Equal(HttpStatusCode.OK, misses.StatusCode);
+        Assert.DoesNotContain(seed.Product.Id.ToString(), await misses.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
     public async Task CustomerHttpRoutes_UseSignedInOwnerAndDoNotExposeOtherOrders()
     {
         await using var server = await AdminHttpTests.ServerAsync(); using var client = server.GetTestClient();
