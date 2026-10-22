@@ -68,10 +68,10 @@ dotnet ef database update --project src/Rozetka-clone/Infrastructure --startup-p
 ## Проверки
 
 ```powershell
-dotnet test tests/WebApi.Tests/WebApi.Tests.csproj --configuration Release
+dotnet test src/Rozetka-clone/WebApi.Tests/WebApi.Tests.csproj --configuration Release
 # Для PostgreSQL используйте отдельную тестовую базу:
 $env:TREBA_TEST_POSTGRES = '<development/test connection>'
-dotnet test tests/WebApi.Tests/WebApi.Tests.csproj --configuration Release
+dotnet test src/Rozetka-clone/WebApi.Tests/WebApi.Tests.csproj --configuration Release
 ```
 
 Тесты проверяют цены на сервере, изоляцию продавцов и покупателей, переходы/версии, повторные действия, промокоды и распределение скидок, резервирование и его истечение, приём возврата, внутренние заметки, сравнение карточек, HTTP-права, PostgreSQL-транзакции и конфликты остатков. PostgreSQL-проверки создают уникальные таблицы с префиксом `treba_qa_` и удаляют только их; не направляйте тесты в рабочую базу.

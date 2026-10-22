@@ -128,7 +128,7 @@ Telegram__MiniAppUrl=https://treba.duckdns.org/telegram/
 ## Проверка реализации
 
 ```powershell
-dotnet test tests/WebApi.Tests/WebApi.Tests.csproj -c Release
+dotnet test src/Rozetka-clone/WebApi.Tests/WebApi.Tests.csproj -c Release
 .\tests\Launcher.Tests.ps1
 ```
 

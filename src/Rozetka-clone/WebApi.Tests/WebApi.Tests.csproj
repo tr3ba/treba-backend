@@ -5,6 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,10 +23,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Rozetka-clone\Application\Application.csproj" />
-    <ProjectReference Include="..\..\src\Rozetka-clone\Infrastructure\Infrastructure.csproj" />
-    <ProjectReference Include="..\..\src\Rozetka-clone\WebApi\WebApi.csproj" />
-    <ProjectReference Include="..\..\src\Rozetka-clone\AdminPanel\AdminPanel.csproj" />
+    <ProjectReference Include="..\Application\Application.csproj" />
+    <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
+    <ProjectReference Include="..\WebApi\WebApi.csproj" />
+    <ProjectReference Include="..\AdminPanel\AdminPanel.csproj" />
   </ItemGroup>
 
 </Project>
