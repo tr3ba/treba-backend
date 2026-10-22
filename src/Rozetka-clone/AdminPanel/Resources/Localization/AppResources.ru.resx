@@ -780,4 +780,28 @@
   <data name="WorkflowUnread" xml:space="preserve"><value>Не прочитано</value></data>
   <data name="WorkflowAllNotifications" xml:space="preserve"><value>Все уведомления</value></data>
   <data name="WorkflowNotificationError" xml:space="preserve"><value>Не удалось загрузить уведомления.</value></data>
+  <data name="Features" xml:space="preserve"><value>Фичи</value></data>
+  <data name="FeaturesDescription" xml:space="preserve"><value>Управляйте доступностью функций. Изменения сохраняются сразу и действуют для всей системы.</value></data>
+  <data name="FeatureChatDeletion" xml:space="preserve"><value>Удаление чатов</value></data>
+  <data name="FeatureChatDeletionDescription" xml:space="preserve"><value>Администраторы и менеджеры могут перемещать переписки своей очереди поддержки в корзину. История сообщений сохраняется.</value></data>
+  <data name="FeatureChatDeletionHint" xml:space="preserve"><value>Выключение запрещает новое удаление. Корзина и восстановление остаются доступны. Незавершённые возвраты сначала нужно обработать.</value></data>
+  <data name="FeatureEnabled" xml:space="preserve"><value>Включено</value></data>
+  <data name="FeatureDisabled" xml:space="preserve"><value>Выключено</value></data>
+  <data name="FeatureSaved" xml:space="preserve"><value>Изменение сохранено</value></data>
+  <data name="FeatureUpdated" xml:space="preserve"><value>Изменено:</value></data>
+  <data name="DeleteChat" xml:space="preserve"><value>Удалить чат</value></data>
+  <data name="DeleteChatConfirm" xml:space="preserve"><value>Переместить переписку в корзину? Она исчезнет из обычных списков, у покупателя и из уведомлений. Её можно будет восстановить.</value></data>
+  <data name="ChatTrash" xml:space="preserve"><value>Корзина чатов</value></data>
+  <data name="ChatTrashHint" xml:space="preserve"><value>Удалённые переписки вашей очереди. Восстановление сохраняет сообщения и прежний статус. Окончательного удаления нет.</value></data>
+  <data name="ChatTrashEmpty" xml:space="preserve"><value>В корзине пока пусто</value></data>
+  <data name="ChatDeletedAt" xml:space="preserve"><value>Удалено</value></data>
+  <data name="RestoreChat" xml:space="preserve"><value>Восстановить чат</value></data>
+  <data name="RestoreChatConfirm" xml:space="preserve"><value>Вернуть переписку и всю историю сообщений в поддержку?</value></data>
+  <data name="AuditEntityFeatureFlag" xml:space="preserve"><value>Функция системы</value></data>
+  <data name="AuditEntitySupportTicket" xml:space="preserve"><value>Переписка поддержки</value></data>
+  <data name="AuditActionRestore" xml:space="preserve"><value>Восстановление</value></data>
+  <data name="AuditFieldKey" xml:space="preserve"><value>Функция</value></data>
+  <data name="AuditFieldDeletedAt" xml:space="preserve"><value>Дата удаления</value></data>
+  <data name="AuditFieldDeletedBy" xml:space="preserve"><value>Кто удалил</value></data>
+  <data name="AuditFieldEnabled" xml:space="preserve"><value>Включено</value></data>
 </root>

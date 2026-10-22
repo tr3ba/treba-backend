@@ -780,4 +780,28 @@
   <data name="WorkflowUnread" xml:space="preserve"><value>Unread</value></data>
   <data name="WorkflowAllNotifications" xml:space="preserve"><value>All notifications</value></data>
   <data name="WorkflowNotificationError" xml:space="preserve"><value>Could not load notifications.</value></data>
+  <data name="Features" xml:space="preserve"><value>Features</value></data>
+  <data name="FeaturesDescription" xml:space="preserve"><value>Control feature availability. Changes are saved immediately and apply across the system.</value></data>
+  <data name="FeatureChatDeletion" xml:space="preserve"><value>Chat deletion</value></data>
+  <data name="FeatureChatDeletionDescription" xml:space="preserve"><value>Administrators and managers can move conversations from their support queue to the trash. Message history is retained.</value></data>
+  <data name="FeatureChatDeletionHint" xml:space="preserve"><value>Turning this off prevents new deletions. Trash and restoration remain available. Active returns must be completed first.</value></data>
+  <data name="FeatureEnabled" xml:space="preserve"><value>Enabled</value></data>
+  <data name="FeatureDisabled" xml:space="preserve"><value>Disabled</value></data>
+  <data name="FeatureSaved" xml:space="preserve"><value>Change saved</value></data>
+  <data name="FeatureUpdated" xml:space="preserve"><value>Updated:</value></data>
+  <data name="DeleteChat" xml:space="preserve"><value>Delete chat</value></data>
+  <data name="DeleteChatConfirm" xml:space="preserve"><value>Move this conversation to trash? It will disappear from normal lists, the customer's inbox and notifications. You can restore it.</value></data>
+  <data name="ChatTrash" xml:space="preserve"><value>Chat trash</value></data>
+  <data name="ChatTrashHint" xml:space="preserve"><value>Deleted conversations from your queue. Restoration preserves messages and the previous status. There is no permanent deletion.</value></data>
+  <data name="ChatTrashEmpty" xml:space="preserve"><value>The trash is empty</value></data>
+  <data name="ChatDeletedAt" xml:space="preserve"><value>Deleted</value></data>
+  <data name="RestoreChat" xml:space="preserve"><value>Restore chat</value></data>
+  <data name="RestoreChatConfirm" xml:space="preserve"><value>Return this conversation and its message history to the support inbox?</value></data>
+  <data name="AuditEntityFeatureFlag" xml:space="preserve"><value>System feature</value></data>
+  <data name="AuditEntitySupportTicket" xml:space="preserve"><value>Support conversation</value></data>
+  <data name="AuditActionRestore" xml:space="preserve"><value>Restore</value></data>
+  <data name="AuditFieldKey" xml:space="preserve"><value>Feature</value></data>
+  <data name="AuditFieldDeletedAt" xml:space="preserve"><value>Deleted at</value></data>
+  <data name="AuditFieldDeletedBy" xml:space="preserve"><value>Deleted by</value></data>
+  <data name="AuditFieldEnabled" xml:space="preserve"><value>Enabled</value></data>
 </root>

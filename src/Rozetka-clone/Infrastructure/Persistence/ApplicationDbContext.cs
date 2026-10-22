@@ -24,6 +24,7 @@ namespace Infrastructure.Persistence
         }
 
         public DbSet<User> Users => Set<User>();
+        public DbSet<FeatureFlag> FeatureFlags => Set<FeatureFlag>();
         public DbSet<SellerApplication> SellerApplications => Set<SellerApplication>();
         public DbSet<CustomerPreferences> CustomerPreferences => Set<CustomerPreferences>();
         public DbSet<NotificationReceipt> NotificationReceipts => Set<NotificationReceipt>();

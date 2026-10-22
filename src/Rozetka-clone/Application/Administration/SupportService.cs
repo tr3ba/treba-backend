@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Administration;
 
-public sealed class SupportService(IApplicationDbContext db, ICurrentActor actor, OrderService orders)
+public sealed partial class SupportService(IApplicationDbContext db, ICurrentActor actor, OrderService orders)
 {
     private bool Staff => actor.Role is "Administrator" or "Manager" or "Moderator";
     private bool OperationsStaff => actor.Role is "Administrator" or "Manager";
@@ -40,7 +40,7 @@ public sealed class SupportService(IApplicationDbContext db, ICurrentActor actor
             db.SupportMessages.Where(m => m.TicketId == t.Id && (Staff || !m.Internal)).OrderByDescending(m => m.CreatedAt).ThenByDescending(m => m.Id).Select(m => m.Message).FirstOrDefault(),
             db.SupportMessages.Count(m => m.TicketId == t.Id && !m.Internal &&
                 (Responder ? m.AuthorRole == "Customer" && (t.StaffReadAt == null || m.CreatedAt > t.StaffReadAt)
-                    : (m.AuthorRole == "Administrator" || m.AuthorRole == "Manager" || m.AuthorRole == "Moderator" || m.AuthorRole == "Seller") && (t.CustomerReadAt == null || m.CreatedAt > t.CustomerReadAt))), p == null ? null : p.Slug);
+                    : (m.AuthorRole == "Administrator" || m.AuthorRole == "Manager" || m.AuthorRole == "Moderator" || m.AuthorRole == "Seller") && (t.CustomerReadAt == null || m.CreatedAt > t.CustomerReadAt))), p == null ? null : p.Slug, t.DeletedAt);
 
     public async Task<PagedResponse<TicketRow>> ListAsync(int page, string? status, string? kind, string? search, CancellationToken ct, string? view = null, Guid? productId = null, Guid? orderId = null)
     {

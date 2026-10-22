@@ -780,4 +780,28 @@
   <data name="WorkflowUnread" xml:space="preserve"><value>Не прочитано</value></data>
   <data name="WorkflowAllNotifications" xml:space="preserve"><value>Усі сповіщення</value></data>
   <data name="WorkflowNotificationError" xml:space="preserve"><value>Не вдалося завантажити сповіщення.</value></data>
+  <data name="Features" xml:space="preserve"><value>Функції</value></data>
+  <data name="FeaturesDescription" xml:space="preserve"><value>Керуйте доступністю функцій. Зміни зберігаються одразу й діють для всієї системи.</value></data>
+  <data name="FeatureChatDeletion" xml:space="preserve"><value>Видалення чатів</value></data>
+  <data name="FeatureChatDeletionDescription" xml:space="preserve"><value>Адміністратори й менеджери можуть переміщувати переписки своєї черги підтримки до кошика. Історія повідомлень зберігається.</value></data>
+  <data name="FeatureChatDeletionHint" xml:space="preserve"><value>Вимкнення забороняє нове видалення. Кошик і відновлення залишаються доступними. Незавершені повернення спочатку потрібно обробити.</value></data>
+  <data name="FeatureEnabled" xml:space="preserve"><value>Увімкнено</value></data>
+  <data name="FeatureDisabled" xml:space="preserve"><value>Вимкнено</value></data>
+  <data name="FeatureSaved" xml:space="preserve"><value>Зміну збережено</value></data>
+  <data name="FeatureUpdated" xml:space="preserve"><value>Змінено:</value></data>
+  <data name="DeleteChat" xml:space="preserve"><value>Видалити чат</value></data>
+  <data name="DeleteChatConfirm" xml:space="preserve"><value>Перемістити переписку до кошика? Вона зникне зі звичайних списків, у покупця та зі сповіщень. Її можна буде відновити.</value></data>
+  <data name="ChatTrash" xml:space="preserve"><value>Кошик чатів</value></data>
+  <data name="ChatTrashHint" xml:space="preserve"><value>Видалені переписки вашої черги. Відновлення зберігає повідомлення й попередній статус. Остаточного видалення немає.</value></data>
+  <data name="ChatTrashEmpty" xml:space="preserve"><value>Кошик поки порожній</value></data>
+  <data name="ChatDeletedAt" xml:space="preserve"><value>Видалено</value></data>
+  <data name="RestoreChat" xml:space="preserve"><value>Відновити чат</value></data>
+  <data name="RestoreChatConfirm" xml:space="preserve"><value>Повернути переписку та всю історію повідомлень до підтримки?</value></data>
+  <data name="AuditEntityFeatureFlag" xml:space="preserve"><value>Функція системи</value></data>
+  <data name="AuditEntitySupportTicket" xml:space="preserve"><value>Переписка підтримки</value></data>
+  <data name="AuditActionRestore" xml:space="preserve"><value>Відновлення</value></data>
+  <data name="AuditFieldKey" xml:space="preserve"><value>Функція</value></data>
+  <data name="AuditFieldDeletedAt" xml:space="preserve"><value>Дата видалення</value></data>
+  <data name="AuditFieldDeletedBy" xml:space="preserve"><value>Хто видалив</value></data>
+  <data name="AuditFieldEnabled" xml:space="preserve"><value>Увімкнено</value></data>
 </root>

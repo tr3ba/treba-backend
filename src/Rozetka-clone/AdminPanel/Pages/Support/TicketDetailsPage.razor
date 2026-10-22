@@ -5,6 +5,7 @@
 @inject UiTime Time
 @inject IJSRuntime Js
 @inject AuthenticationStateProvider Authentication
+@inject NavigationManager Navigation
 
 <PageTitle>@L["SupportAndReturns"] — Treba Admin</PageTitle>
 <a href="/support" class="users-back-link"><i class="bi bi-arrow-left" aria-hidden="true"></i>@L["SupportAndReturns"]</a>
@@ -12,7 +13,7 @@
 @if(loading){<p class="empty-state" role="status">@L["Loading"]</p>}
 else if(ticket is not null)
 {
-    <section class="page-hero support-case-hero"><div><p class="eyebrow">@O["Kind_" + ticket.Summary.Kind]</p><h1>@ticket.Summary.Subject</h1><div class="support-case-meta"><span><i class="bi bi-person" aria-hidden="true"></i>@ticket.Summary.CustomerName</span><OperationsStatusBadge Domain="Ticket" Value="@ticket.Summary.Status" /></div></div><button class="secondary-button" disabled="@busy" @onclick="() => Load()"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i>@L["RefreshData"]</button></section>
+    <section class="page-hero support-case-hero"><div><p class="eyebrow">@O["Kind_" + ticket.Summary.Kind]</p><h1>@ticket.Summary.Subject</h1><div class="support-case-meta"><span><i class="bi bi-person" aria-hidden="true"></i>@ticket.Summary.CustomerName</span><OperationsStatusBadge Domain="Ticket" Value="@ticket.Summary.Status" /></div></div><div class="feature-case-actions"><button class="secondary-button" disabled="@busy" @onclick="() => Load()"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i>@L["RefreshData"]</button>@if(capabilities.CanDelete && (ticket.Summary.Kind != "RETURN" || ticket.Summary.Status == "CLOSED")){<button class="secondary-button feature-delete" disabled="@busy" @onclick="() => deleting = ticket.Summary"><i class="bi bi-trash3" aria-hidden="true"></i>@L["DeleteChat"]</button>}</div></section>
     <div class="support-workspace">
         <section class="card-box support-conversation">
             <header><div class="support-thread-heading"><span class="support-thread-icon"><i class="bi bi-chat-square-text" aria-hidden="true"></i></span><div><h2>@O["Conversation"]</h2><span class="support-live"><i class="bi bi-arrow-repeat" aria-hidden="true"></i>@O["AutoRefreshChat"]</span></div></div><span class="support-kind">@O["Kind_" + ticket.Summary.Kind]</span></header>
@@ -54,9 +55,12 @@ else if(ticket is not null)
     </div>
 }
 <ConfirmDialog IsOpen="confirm" Title="@O["ChangeStatus"]" Message="@(ticket?.Summary.Kind == "RETURN" && ticket.Summary.Status == "APPROVED" && next == "CLOSED" ? O["ConfirmReturnReceived"] : O["ConfirmStatus"])" OnClose="Confirm" />
+<ConfirmDialog IsOpen="@(deleting is not null)" Title="@L["DeleteChat"]" Message="@L["DeleteChatConfirm"]" OnClose="DeleteConfirmed" />
 @code {
     [Parameter] public Guid Id { get; set; }
     private TicketDetails? ticket;
+    private TicketRow? deleting;
+    private TicketCapabilities capabilities = new(false, false);
     private List<TicketMessageView> messages = [];
     private bool loading, busy, confirm, internalNote, hasEarlier;
     private string? error;
@@ -69,7 +73,7 @@ else if(ticket is not null)
     private readonly CancellationTokenSource lifetime = new();
     private Task? polling;
     protected override async Task OnParametersSetAsync() {
-        if (loadedId != Id) { ticket = null; messages.Clear(); message = next = ""; readId = Guid.Empty; loadedId = Id; }
+        if (loadedId != Id) { ticket = null; deleting = null; messages.Clear(); message = next = ""; readId = Guid.Empty; loadedId = Id; }
         await Load();
     }
     protected override async Task OnAfterRenderAsync(bool firstRender) {
@@ -78,12 +82,13 @@ else if(ticket is not null)
     }
     private async Task Poll() {
         using var timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
-        try { while(await timer.WaitForNextTickAsync(lifetime.Token)) if(!busy&&!confirm) await InvokeAsync(()=>Load(true)); }
+        try { while(await timer.WaitForNextTickAsync(lifetime.Token)) if(!busy&&!confirm&&deleting is null) await InvokeAsync(()=>Load(true)); }
         catch(OperationCanceledException) { }
     }
     private async Task Load(bool silent = false) {
         var id = Id; if(!silent)loading = true;
         try {
+            capabilities = await Api.TicketCapabilities();
             var result = await Api.Ticket(id); if(id != Id || lifetime.IsCancellationRequested)return;
             if(ticket is null)hasEarlier = result.HasEarlierMessages;
             ticket = result;
@@ -107,6 +112,13 @@ else if(ticket is not null)
     private async Task Confirm(bool yes) {
         confirm=false;if(!yes||ticket is null)return;busy=true;error=null;
         try{await Api.ChangeTicket(Id,new(next,ticket.Summary.Version));await Load(true);}catch(HttpRequestException e){error=e.Message;}finally{busy=false;}
+    }
+    private async Task DeleteConfirmed(bool yes) {
+        var row = deleting; deleting = null;
+        if(!yes || row is null || busy)return; busy = true; error = null;
+        try { await Api.DeleteTicket(row.Id, row.Version); Navigation.NavigateTo("/support"); }
+        catch(HttpRequestException e) { error = e.Message; }
+        finally { busy = false; }
     }
     public async ValueTask DisposeAsync(){lifetime.Cancel();if(polling is not null)await polling;lifetime.Dispose();}
 }
