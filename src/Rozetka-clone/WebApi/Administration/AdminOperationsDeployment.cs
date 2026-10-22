@@ -6,9 +6,9 @@ namespace WebApi.Administration;
 // Operator-only commands: never start HTTP, workers, Telegram polling or notifications.
 public static class AdminOperationsDeployment
 {
-    public const string Migration = "20261020144055_AddWebsiteAdminLogin";
+    public const string Migration = "20261022084526_AddMarketplaceWorkflows";
     private static readonly HashSet<string> AllowedPending =
-        ["20261017112413_AddPromotions", "20261019213326_AddReviewOrderItemRelation", "20261020093201_AddAdminOperations", "20261020104554_AddSupportConversations", Migration];
+        ["20261017112413_AddPromotions", "20261019213326_AddReviewOrderItemRelation", "20261020093201_AddAdminOperations", "20261020104554_AddSupportConversations", "20261020144055_AddWebsiteAdminLogin", Migration];
 
     public static async Task<int> RunAsync(IServiceProvider services, bool migrate)
     {
@@ -46,7 +46,8 @@ public static class AdminOperationsDeployment
                         ('public.order_status_history'), ('public.inventory_reservations'), ('public.promotions'),
                         ('public.promotion_rules'), ('public.promotion_actions'), ('public.coupons'),
                         ('public.coupon_usages'), ('public.support_tickets'), ('public.support_messages'),
-                        ('public.product_review_baselines')) AS t(name)
+                        ('public.product_review_baselines'), ('public.seller_applications'),
+                        ('public.customer_preferences'), ('public.notification_receipts')) AS t(name)
                      CROSS JOIN (VALUES ('SELECT'), ('INSERT'), ('UPDATE'), ('DELETE')) AS p(name)) AS "Value"
                 """).SingleAsync(timeout.Token);
             if (!privileges) throw new InvalidOperationException("The API database account lacks operational table privileges.");
@@ -57,6 +58,9 @@ public static class AdminOperationsDeployment
             await db.SupportMessages.AsNoTracking().Take(1).ToListAsync(timeout.Token);
             await db.ProductReviewBaselines.AsNoTracking().Take(1).ToListAsync(timeout.Token);
             await db.AuthenticationChallenges.AsNoTracking().Take(1).ToListAsync(timeout.Token);
+            await db.SellerApplications.AsNoTracking().Take(1).ToListAsync(timeout.Token);
+            await db.CustomerPreferences.AsNoTracking().Take(1).ToListAsync(timeout.Token);
+            await db.NotificationReceipts.AsNoTracking().Take(1).ToListAsync(timeout.Token);
             await db.TelegramGuardChallenges.AsNoTracking().Take(1).ToListAsync(timeout.Token);
             if (migrate)
             {

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <data name="Dashboard" xml:space="preserve"><value>Dashboard</value></data>
   <data name="Management" xml:space="preserve"><value>Management</value></data>
@@ -761,4 +761,23 @@
   <data name="ImportStatusExpired" xml:space="preserve"><value>Preview expired</value></data>
   <data name="ImportStatusSubmitted" xml:space="preserve"><value>Sent for moderation</value></data>
   <data name="CategoryImageUrl" xml:space="preserve"><value>Category image (URL)</value></data>
+  <data name="WorkflowApplications" xml:space="preserve"><value>Seller applications</value></data>
+  <data name="WorkflowApplicationsHint" xml:space="preserve"><value>Review applications and open a seller workspace.</value></data>
+  <data name="WorkflowRefresh" xml:space="preserve"><value>Refresh</value></data>
+  <data name="WorkflowNoApplications" xml:space="preserve"><value>No applications found</value></data>
+  <data name="WorkflowContact" xml:space="preserve"><value>Contact</value></data>
+  <data name="WorkflowWebsite" xml:space="preserve"><value>Company website</value></data>
+  <data name="WorkflowStoreSlug" xml:space="preserve"><value>Store address (Latin letters)</value></data>
+  <data name="WorkflowReviewNote" xml:space="preserve"><value>Review note / rejection reason</value></data>
+  <data name="WorkflowApprovalHint" xml:space="preserve"><value>Approval creates a store with access to active categories. The customer must sign in again.</value></data>
+  <data name="WorkflowApprove" xml:space="preserve"><value>Approve and create store</value></data>
+  <data name="WorkflowReject" xml:space="preserve"><value>Reject application</value></data>
+  <data name="WorkflowPages" xml:space="preserve"><value>Pages</value></data>
+  <data name="WorkflowNotifications" xml:space="preserve"><value>Notifications</value></data>
+  <data name="WorkflowReadAll" xml:space="preserve"><value>Mark all read</value></data>
+  <data name="WorkflowNotificationHint" xml:space="preserve"><value>Recent events from the last 30 days.</value></data>
+  <data name="WorkflowNoNotifications" xml:space="preserve"><value>No notifications yet</value></data>
+  <data name="WorkflowUnread" xml:space="preserve"><value>Unread</value></data>
+  <data name="WorkflowAllNotifications" xml:space="preserve"><value>All notifications</value></data>
+  <data name="WorkflowNotificationError" xml:space="preserve"><value>Could not load notifications.</value></data>
 </root>

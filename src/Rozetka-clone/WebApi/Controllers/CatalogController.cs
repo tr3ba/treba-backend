@@ -300,6 +300,11 @@ public sealed class CatalogController(
         string? search = null,
         Guid? categoryId = null,
         string? sort = null,
+        Guid? brandId = null,
+        decimal? minPrice = null,
+        decimal? maxPrice = null,
+        string? stock = null,
+        [FromQuery] Dictionary<Guid, string>? attributes = null,
         CancellationToken ct = default
     )
     {
@@ -311,9 +316,14 @@ public sealed class CatalogController(
             true,
             categoryId,
             sort,
-            ct
+            ct,
+            filters: new CatalogFilters { BrandId = brandId, MinPrice = minPrice, MaxPrice = maxPrice, Stock = stock, Attributes = attributes }
         );
     }
+
+    [HttpGet("/api/v1/catalog/facets"), AllowAnonymous]
+    public Task<Contracts.Marketplace.PublicCatalogFacets> Facets(Guid? categoryId = null, string? search = null, CancellationToken ct = default)
+        => catalog.PublicFacetsAsync(categoryId, search, ct);
 
     [HttpGet("/api/v1/catalog/{slug}")]
     [AllowAnonymous]

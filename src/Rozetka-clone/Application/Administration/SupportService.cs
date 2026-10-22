@@ -42,7 +42,7 @@ public sealed class SupportService(IApplicationDbContext db, ICurrentActor actor
                 (Responder ? m.AuthorRole == "Customer" && (t.StaffReadAt == null || m.CreatedAt > t.StaffReadAt)
                     : (m.AuthorRole == "Administrator" || m.AuthorRole == "Manager" || m.AuthorRole == "Moderator" || m.AuthorRole == "Seller") && (t.CustomerReadAt == null || m.CreatedAt > t.CustomerReadAt))), p == null ? null : p.Slug);
 
-    public async Task<PagedResponse<TicketRow>> ListAsync(int page, string? status, string? kind, string? search, CancellationToken ct, string? view = null, Guid? productId = null)
+    public async Task<PagedResponse<TicketRow>> ListAsync(int page, string? status, string? kind, string? search, CancellationToken ct, string? view = null, Guid? productId = null, Guid? orderId = null)
     {
         OrderService.ValidatePage(page, 12);
         var query = Visible.AsNoTracking();
@@ -63,6 +63,7 @@ public sealed class SupportService(IApplicationDbContext db, ICurrentActor actor
         if (!string.IsNullOrWhiteSpace(status)) { ValidateStatus(status); query = query.Where(t => t.Status == status); }
         if (!string.IsNullOrWhiteSpace(kind)) { ValidateKind(kind); query = query.Where(t => t.Kind == kind); }
         if (productId.HasValue) query = query.Where(t => t.ProductId == productId);
+        if (orderId.HasValue) query = query.Where(t => t.OrderId == orderId);
         if (!string.IsNullOrWhiteSpace(search))
         {
             var term = search.Trim().ToLowerInvariant();

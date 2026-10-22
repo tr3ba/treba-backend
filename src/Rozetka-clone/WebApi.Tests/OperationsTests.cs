@@ -44,7 +44,7 @@ public sealed class OperationsTests
         var v = new ProductVariant(Guid.NewGuid(), product.Id, "OPS-" + Guid.NewGuid().ToString("N"), null, "Main", 100, null, null, null, null, null, null, true); v.SetStock(10);
         db.AddRange(product, v); await db.SaveChangesAsync(); return new(seed, customer, product, v);
     }
-    internal static OrderService Service(ApplicationDbContext db, Actor actor) => new(db, new InventoryService(db, actor), new DiscountService(db), actor, new TestPaymentService(db));
+    internal static OrderService Service(ApplicationDbContext db, Actor actor) => new(db, new InventoryService(db, actor), new DiscountService(db), actor, () => new TestPaymentService(db));
     internal static CreateOrderRequest Request(Seed s, int quantity = 2, string? coupon = null) => new(s.Customer.Id, "Please call first", "Customer Fixture", "+380000000000", "fixture@example.test",
         new("Ukraine", null, "Kyiv", "Test street", "1", null, "01000", "Customer Fixture", "+380000000000"),
         [new(s.Product.Id, s.Variant.Id, s.Seller.Seller.Id, "Untrusted name", "Untrusted variant", "Untrusted SKU", quantity, .01m, 999m, "not json")], coupon);

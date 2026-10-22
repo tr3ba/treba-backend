@@ -246,6 +246,7 @@ public sealed class CatalogAttributeInput
 
 public sealed class CatalogFilters
 {
+    public Dictionary<Guid, string>? Attributes { get; set; }
     public Guid? BrandId
     {
         get; set;

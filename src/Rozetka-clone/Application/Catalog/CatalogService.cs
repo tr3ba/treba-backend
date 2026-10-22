@@ -136,6 +136,19 @@ public sealed partial class CatalogService(
             query = query.Where(p => db.ProductVariants.Where(v => v.ProductId == p.Id && v.IsActive).Sum(v => v.StockQuantity) > 0
             && db.ProductVariants.Where(v => v.ProductId == p.Id && v.IsActive).Sum(v => v.StockQuantity) <= 5);
 
+        if (filters.Attributes is { Count: > 20 }) throw new ArgumentException("Too many attribute filters.");
+        foreach (var filter in filters.Attributes ?? [])
+        {
+            var attributeId = filter.Key; var value = filter.Value;
+            if (string.IsNullOrWhiteSpace(value) || value.Length > 200 || !await db.Attributes.AnyAsync(a => a.Id == attributeId && a.IsFilterable, ct))
+                throw new ArgumentException("Invalid attribute filter.");
+            decimal? number = decimal.TryParse(value, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var parsed) ? parsed : null;
+            bool? boolean = bool.TryParse(value, out var parsedBool) ? parsedBool : null;
+            query = query.Where(p => db.ProductAttributeValues.Any(v => v.ProductId == p.Id && v.AttributeId == attributeId
+                && (v.StringValue == value || number.HasValue && v.NumberValue == number.Value || boolean.HasValue && v.BoolValue == boolean.Value
+                    || db.AttributeOptions.Any(o => o.Id == v.OptionId && o.Value == value))));
+        }
+
         var count = await query.CountAsync(ct);
 
         query = sort?.Trim().ToLowerInvariant() switch
