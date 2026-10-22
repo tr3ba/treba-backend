@@ -48,6 +48,7 @@ public sealed class AdminHttpTests
         services.AddScoped<Application.Inventory.InventoryService>();
         services.AddScoped<Application.Inventory.IInventoryService>(sp => sp.GetRequiredService<Application.Inventory.InventoryService>());
         services.AddScoped<Application.Promotions.IDiscountService, Application.Promotions.DiscountService>();
+        services.AddScoped<Application.Payments.IPaymentService, TestPaymentService>();
         services.AddScoped<Application.Orders.OrderService>();
         services.AddScoped<Application.Orders.IOrderService>(sp => sp.GetRequiredService<Application.Orders.OrderService>());
         services.AddScoped<PromotionManagementService>();

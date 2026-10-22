@@ -46,7 +46,7 @@ jobs:
       - name: Test the image source against PostgreSQL before publishing
         env:
           TREBA_TEST_POSTGRES: Host=127.0.0.1;Port=5432;Database=treba_tests;Username=postgres;Password=treba_ci_only
-        run: dotnet test tests/WebApi.Tests/WebApi.Tests.csproj -c Release
+        run: dotnet test src/Rozetka-clone/WebApi.Tests/WebApi.Tests.csproj -c Release
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4

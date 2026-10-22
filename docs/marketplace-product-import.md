@@ -25,7 +25,7 @@
 ## Проверка
 
 ```powershell
-dotnet test tests/WebApi.Tests/WebApi.Tests.csproj -c Release
+dotnet test src/Rozetka-clone/WebApi.Tests/WebApi.Tests.csproj -c Release
 ```
 
 Проверяются источники и URL, чтение API Rozetka и HTML других маркетплейсов, запрет непубличных адресов и внешних перенаправлений, отдельные ID товаров, классификация неизвестных категорий и повторная проверка прав перед отправкой. Формат стандартных данных товара: [Schema.org Product](https://schema.org/Product).
