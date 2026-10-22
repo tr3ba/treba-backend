@@ -304,7 +304,7 @@ public sealed class CatalogController(
         decimal? minPrice = null,
         decimal? maxPrice = null,
         string? stock = null,
-        [FromQuery] Dictionary<Guid, string>? attributes = null,
+        [FromQuery(Name = "attributes")] Dictionary<Guid, string>? attributes = null,
         CancellationToken ct = default
     )
     {
