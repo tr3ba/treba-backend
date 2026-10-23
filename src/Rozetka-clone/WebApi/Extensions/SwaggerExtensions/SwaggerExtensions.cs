@@ -26,7 +26,7 @@ public static class SwaggerExtensions
                     new OpenApiSecurityScheme
                     {
                         Name = "Authorization",
-                        Description = "Введите JWT токен",
+                        Description = "Введіть JWT токен",
                         In = ParameterLocation.Header,
                         Type = SecuritySchemeType.Http,
                         Scheme = "bearer",

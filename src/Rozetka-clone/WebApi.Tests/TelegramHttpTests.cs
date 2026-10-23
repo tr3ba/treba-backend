@@ -211,7 +211,7 @@ public sealed class TelegramHttpTests
         JsonElement Update(string text,string type="private")=>JsonSerializer.SerializeToElement(new {message=new {text,from=new {id=12345,is_bot=false,first_name="Telegram",username="test"},chat=new {id=12345,type}}});
         await worker.HandleUpdateAsync(Update("/start link_"+start.BotUrl.Split("link_")[1],"group"),default); Assert.Empty(bot.Messages);
         await worker.HandleUpdateAsync(Update("/start link_"+start.BotUrl.Split("link_")[1]),default);
-        Assert.Contains("Продавец",Assert.Single(bot.Messages));Assert.Contains(userId.ToString(),bot.Messages[0]);Assert.Contains("12345",bot.Messages[0]);Assert.Equal(0,bot.Menus);
+        Assert.Contains("Продавець",Assert.Single(bot.Messages));Assert.Contains(userId.ToString(),bot.Messages[0]);Assert.Contains("12345",bot.Messages[0]);Assert.Equal(0,bot.Menus);
         using(var scope=server.Services.CreateScope()) {
             var links=scope.ServiceProvider.GetRequiredService<TelegramLinkService>();Assert.False((await links.StatusAsync(userId,default)).Linked);
             await links.ConfirmAsync(userId,start.Id,default);

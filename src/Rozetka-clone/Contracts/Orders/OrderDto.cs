@@ -6,7 +6,7 @@ public sealed record OrderDto(
     Guid CustomerId,
     string Status,
     string PaymentStatus,
-    // TODO: после добавления Payment и Delivery убрать коменты
+    // TODO: Remove obsolete fields after implementing Payment and Delivery
     // string DeliveryStatus,
     string Currency,
     decimal Subtotal,

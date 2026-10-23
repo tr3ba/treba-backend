@@ -34,8 +34,11 @@ public sealed record ImportPreviewDto(Guid Id, string SourceUrl, string Name, st
     public string ManufacturerPartNumber { get; init; } = "";
     public string Barcode { get; init; } = "";
     public IReadOnlyList<ProductDuplicateDto> Duplicates { get; init; } = [];
+    public bool CanClassifyCategory { get; init; }
 }
 public sealed record CreateImportBrandRequest([Required, StringLength(200)] string Name);
+public sealed record CreateImportCategoryRequest([Required, StringLength(200)] string Name, Guid ParentId);
+public sealed record SelectImportCategoryRequest(Guid CategoryId);
 public sealed record SellerImportOptionsDto(IReadOnlyList<CatalogLookupDto> Categories, IReadOnlyList<CatalogLookupDto> Brands,
     IReadOnlyList<CatalogLookupDto> Stores, bool CanClassifyImports);
 public sealed class SubmitImportRequest

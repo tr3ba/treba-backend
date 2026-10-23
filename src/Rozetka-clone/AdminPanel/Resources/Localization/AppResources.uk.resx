@@ -362,7 +362,6 @@
   <data name="ContactsAndSettingsDesc" xml:space="preserve"><value>Фото профілю завантажується у блоці ліворуч.</value></data>
   <data name="ProfileLanguage" xml:space="preserve"><value>Мова профілю</value></data>
   <data name="Ukrainian" xml:space="preserve"><value>Українська</value></data>
-  <data name="Russian" xml:space="preserve"><value>Російська</value></data>
   <data name="MarketingEmailsDesc" xml:space="preserve"><value>Отримувати новини та пропозиції на email</value></data>
   <data name="ProfileSaved" xml:space="preserve"><value>Профіль збережено. Дані у шапці вже оновлено.</value></data>
   <data name="SaveChanges" xml:space="preserve"><value>Зберегти зміни</value></data>
@@ -804,4 +803,12 @@
   <data name="AuditFieldDeletedAt" xml:space="preserve"><value>Дата видалення</value></data>
   <data name="AuditFieldDeletedBy" xml:space="preserve"><value>Хто видалив</value></data>
   <data name="AuditFieldEnabled" xml:space="preserve"><value>Увімкнено</value></data>
+  <data name="DeleteProduct" xml:space="preserve"><value>Видалити товар</value></data>
+  <data name="DeleteProductConfirm" xml:space="preserve"><value>Видалити «{0}» з каталогу? Дані минулих замовлень та історія товару збережуться.</value></data>
+  <data name="ProductDeleted" xml:space="preserve"><value>Товар видалено з каталогу.</value></data>
+  <data name="ImportSourceCategory" xml:space="preserve"><value>Категорія у джерелі</value></data>
+  <data name="ImportCreateCategory" xml:space="preserve"><value>Створити категорію</value></data>
+  <data name="ImportCreateCategoryHint" xml:space="preserve"><value>Виберіть батьківський розділ і вкажіть назву нової категорії. Наявну категорію буде використано повторно.</value></data>
+  <data name="ImportCategorySelected" xml:space="preserve"><value>Категорію вибрано.</value></data>
+  <data name="CategoryName" xml:space="preserve"><value>Назва категорії</value></data>
 </root>

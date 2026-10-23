@@ -33,8 +33,8 @@ public sealed class TelegramBotClient(IOptions<TelegramOptions> options) : ITele
         var url = options.Value.MiniAppUrl;
         var guardUrl = url + (url.Contains('?') ? "&" : "?") + "view=guard";
         using var response = await CallAsync("sendMessage", new { chat_id = chatId, text, reply_markup = new { inline_keyboard = new[] {
-            new[] { new { text = "Открыть Treba", web_app = new { url } } },
-            new[] { new { text = "Вход через Guard", web_app = new { url = guardUrl } } } } } }, ct);
+            new[] { new { text = "Відкрити Treba", web_app = new { url } } },
+            new[] { new { text = "Вхід через Guard", web_app = new { url = guardUrl } } } } } }, ct);
     }
     public async Task SendTextAsync(long chatId, string text, CancellationToken ct)
     { using var response = await CallAsync("sendMessage", new { chat_id = chatId, text }, ct); }

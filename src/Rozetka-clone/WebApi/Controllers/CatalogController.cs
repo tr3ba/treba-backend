@@ -292,6 +292,11 @@ public sealed class CatalogController(
             : NotFound();
     }
 
+    [HttpDelete("products/{id:guid}")]
+    [Authorize(Roles = $"{Roles.Administrator},{Roles.Manager},{Roles.Seller}")]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
+        => await catalog.DeleteAsync(id, SellerUserScope(), ct) ? NoContent() : NotFound();
+
     [HttpGet("/api/v1/catalog")]
     [AllowAnonymous]
     public Task<PagedResponse<CatalogProductDto>> Public(

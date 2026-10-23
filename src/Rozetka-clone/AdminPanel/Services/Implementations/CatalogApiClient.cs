@@ -35,6 +35,11 @@ public sealed class CatalogApiClient(HttpClient http, IConfiguration? configurat
     public Task<CatalogStatsDto> Stats() => Get<CatalogStatsDto>("api/v1/admin/catalog/stats");
     public Task<int> PendingCount() => Get<int>("api/v1/admin/catalog/moderation/pending-count");
     public Task<CatalogProductDto> GetProduct(Guid id) => Get<CatalogProductDto>($"api/v1/admin/catalog/products/{id}");
+    public async Task DeleteProduct(Guid id)
+    {
+        using var response = await http.DeleteAsync($"api/v1/admin/catalog/products/{id}");
+        await RequireSuccess(response);
+    }
     public Task<List<CatalogLookupDto>> Categories() => Get<List<CatalogLookupDto>>("api/v1/admin/catalog/categories");
     public Task<List<CatalogLookupDto>> Brands() => Get<List<CatalogLookupDto>>("api/v1/admin/catalog/brands");
     public Task<List<CatalogLookupDto>> Stores() => Get<List<CatalogLookupDto>>("api/v1/admin/catalog/stores");

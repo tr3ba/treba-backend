@@ -37,7 +37,7 @@ public sealed class InventoryController : ControllerBase
             return NotFound(
                 new
                 {
-                    message = $"Остатки для варианта товара {variantId} не найдены."
+                    message = $"Залишки для варіанта товару {variantId} не знайдено."
                 }
             );
         }

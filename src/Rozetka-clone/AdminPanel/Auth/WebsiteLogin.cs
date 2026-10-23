@@ -37,7 +37,7 @@ public static class WebsiteLogin
             Private(context);
             var state = context.Request.Query["state"].ToString();
             var expected = context.Request.Cookies[StateCookie];
-            if (state.Length != 64 || expected is null || !CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(state), Encoding.UTF8.GetBytes(expected))) return Results.BadRequest("Начните вход с сайта заново.");
+            if (state.Length != 64 || expected is null || !CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(state), Encoding.UTF8.GetBytes(expected))) return Results.BadRequest("Почніть вхід із сайту знову.");
             context.Response.Cookies.Delete(StateCookie, stateOptions);
             var returnPath = SafeReturnPath(context.Request.Cookies[ReturnCookie]);
             context.Response.Cookies.Delete(ReturnCookie, stateOptions);

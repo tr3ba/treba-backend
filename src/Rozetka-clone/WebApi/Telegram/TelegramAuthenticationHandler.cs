@@ -23,10 +23,10 @@ public sealed class TelegramAuthenticationHandler(IOptionsMonitor<Authentication
                 TimeSpan.FromMinutes(Math.Clamp(options.Value.InitDataMaxAgeMinutes, 1, 60)));
             var binding = await db.TelegramBindings.AsNoTracking().SingleOrDefaultAsync(b => b.TelegramUserId == telegram.Id, Context.RequestAborted);
             if (binding is null || telegram.AuthenticatedAt.ToUnixTimeSeconds() < binding.LinkedAt.ToUnixTimeSeconds())
-                return AuthenticateResult.Fail("Привязка Telegram не подтверждена или сеанс отозван.");
+                return AuthenticateResult.Fail("Підключення Telegram не підтверджено або сеанс скасовано.");
             var user = await db.Users.AsNoTracking().Include(u => u.Role).SingleOrDefaultAsync(u => u.Id == binding.UserId, Context.RequestAborted);
             if (user is null || user.Status != UserStatus.Active || user.IsDeleted || !TelegramLinkService.EligibleRole(user.Role?.Name))
-                return AuthenticateResult.Fail("Доступ к Treba недоступен для этой учётной записи.");
+                return AuthenticateResult.Fail("Цей обліковий запис не має доступу до Treba.");
             var claims = new[] { new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()), new Claim(ClaimTypes.Role, user.Role!.Name),
                 new Claim("firstName", user.FirstName), new Claim("lastName", user.LastName), new Claim("telegram_id", telegram.Id.ToString(System.Globalization.CultureInfo.InvariantCulture)) };
             return AuthenticateResult.Success(new AuthenticationTicket(new ClaimsPrincipal(new ClaimsIdentity(claims, SchemeName)), SchemeName));

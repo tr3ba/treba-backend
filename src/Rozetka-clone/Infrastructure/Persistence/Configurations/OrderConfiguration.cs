@@ -29,7 +29,7 @@ public sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
             .HasMaxLength(32)
             .IsRequired();
 
-        // TODO: после добавления Payment и Delivery убрать коменты
+        // TODO: Remove obsolete fields after implementing Payment and Delivery
         builder.Property(x => x.PaymentStatus)
             .HasConversion<string>()
             .HasMaxLength(32)

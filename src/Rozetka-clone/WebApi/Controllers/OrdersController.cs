@@ -60,7 +60,7 @@ public sealed class OrdersController : ControllerBase
         {
             return NotFound(new
             {
-                message = $"Заказ с ID {id} не найден."
+                message = $"Замовлення з ID {id} не знайдено."
             });
         }
 

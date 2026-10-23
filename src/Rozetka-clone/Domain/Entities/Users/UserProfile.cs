@@ -134,9 +134,11 @@ namespace Domain.Entities.Users
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(language);
 
-            return language
-                .Trim()
-                .ToLowerInvariant();
+            return language.Trim().ToLowerInvariant() switch
+            {
+                "en" or "en-us" or "en-gb" => "en",
+                _ => "uk"
+            };
         }
 
         private static string? NormalizeOptional(

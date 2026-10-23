@@ -134,7 +134,8 @@ public sealed class TelegramTests
         var product = Assert.Single(await db.Products.ToListAsync()); Assert.Equal(ProductStatus.PENDING_MODERATION, product.Status);
         Assert.Equal(seed.Category.Id, product.CategoryId); Assert.Equal(250, (await db.ProductVariants.SingleAsync()).Price);
         Assert.Single(await db.ProductImages.ToListAsync()); Assert.Single(media.Files); Assert.Equal(1, source.Downloads);
-        await Assert.ThrowsAsync<BusinessRuleException>(() => importer.PreviewAsync(seed.User.Id, TelegramTestData.SourceUrl, default));
+        Assert.Equal(productId, (await importer.PreviewAsync(seed.User.Id, TelegramTestData.SourceUrl, default)).ProductId);
+        Assert.Single(await db.Products.ToListAsync());
     }
 
     [Theory]

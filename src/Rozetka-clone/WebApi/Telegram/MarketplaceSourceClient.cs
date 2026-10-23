@@ -35,7 +35,7 @@ public sealed class MarketplaceSourceClient : IMarketplaceSourceClient, IDisposa
                 var id = Regex.Match(uri.AbsolutePath, @"/p([0-9]+)/?$").Groups[1].Value;
                 var json = JsonNode.Parse(await DownloadAsync(RozetkaApiUri("get-main", id), "api", 2 * 1024 * 1024, ct)) as JsonObject;
                 if (!Successful(json) || json!["data"] is not JsonObject)
-                    throw new BusinessRuleException("Rozetka не вернула данные товара.");
+                    throw new BusinessRuleException("Rozetka не повернула дані товару.");
                 try
                 {
                     var details = JsonNode.Parse(await DownloadAsync(RozetkaApiUri("get-characteristic", id), "api", 2 * 1024 * 1024, ct));
@@ -59,11 +59,11 @@ public sealed class MarketplaceSourceClient : IMarketplaceSourceClient, IDisposa
         deadline.CancelAfter(TimeSpan.FromSeconds(30));
         try { return await DownloadCoreAsync(uri, kind, maxBytes, deadline.Token); }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
-        { throw new BusinessRuleException("Источник не ответил вовремя. Попробуйте позже или добавьте товар вручную."); }
+        { throw new BusinessRuleException("Джерело не відповіло вчасно. Спробуйте пізніше або додайте товар вручну."); }
         catch (HttpRequestException)
-        { throw new BusinessRuleException("Не удалось загрузить данные маркетплейса. Попробуйте позже или добавьте товар вручную."); }
+        { throw new BusinessRuleException("Не вдалося завантажити дані маркетплейсу. Спробуйте пізніше або додайте товар вручну."); }
         catch (IOException)
-        { throw new BusinessRuleException("Загрузка данных маркетплейса прервалась. Попробуйте ещё раз."); }
+        { throw new BusinessRuleException("Завантаження даних маркетплейсу перервано. Спробуйте ще раз."); }
     }
 
     private async Task<byte[]> DownloadCoreAsync(Uri uri, string kind, int maxBytes, CancellationToken ct)
@@ -74,40 +74,41 @@ public sealed class MarketplaceSourceClient : IMarketplaceSourceClient, IDisposa
             else if (kind == "page") ProductUri(uri.AbsoluteUri);
             else if (uri.Host != "product-api.rozetka.com.ua" || uri.Scheme != "https" || !uri.IsDefaultPort || uri.UserInfo.Length != 0
                 || !Regex.IsMatch(uri.PathAndQuery, @"^/v4/goods/(get-main|get-characteristic)\?goodsId=[1-9][0-9]{0,11}&lang=ua&country=UA$"))
-                throw new ArgumentException("Недопустимый адрес API источника.");
+                throw new ArgumentException("Неприпустима адреса API джерела.");
             using var request = new HttpRequestMessage(HttpMethod.Get, uri);
+            request.Headers.AcceptLanguage.ParseAdd("uk-UA, uk;q=0.9, en;q=0.5");
             request.Headers.Accept.ParseAdd(kind == "image" ? "image/jpeg, image/png, image/webp, image/gif" : kind == "api" ? "application/json" : "text/html");
             HttpResponseMessage response;
             try { response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct); }
             catch (Exception ex) when (ex is HttpRequestException || ex is TaskCanceledException && !ct.IsCancellationRequested)
-            { throw new BusinessRuleException("Не удалось загрузить данные маркетплейса. Попробуйте позже или добавьте товар вручную."); }
+            { throw new BusinessRuleException("Не вдалося завантажити дані маркетплейсу. Спробуйте пізніше або додайте товар вручну."); }
             using (response)
             {
                 if ((int)response.StatusCode is 301 or 302 or 303 or 307 or 308)
                 {
                     if (response.Headers.Location is null) break;
                     var next = new Uri(uri, response.Headers.Location);
-                    if (kind == "page" && Provider(ProductUri(next.AbsoluteUri)) != Provider(uri)) throw new ArgumentException("Источник перенаправил на другой маркетплейс.");
+                    if (kind == "page" && Provider(ProductUri(next.AbsoluteUri)) != Provider(uri)) throw new ArgumentException("Джерело перенаправило на інший маркетплейс.");
                     uri = next; continue;
                 }
                 if (response.StatusCode is HttpStatusCode.Forbidden or HttpStatusCode.TooManyRequests or HttpStatusCode.ServiceUnavailable)
-                    throw new BusinessRuleException("Маркетплейс ограничил автоматическую загрузку этой страницы. Попробуйте позже или заполните товар вручную.");
-                if (!response.IsSuccessStatusCode) throw new BusinessRuleException("Страница или фотография маркетплейса недоступна.");
+                    throw new BusinessRuleException("Маркетплейс обмежив автоматичне завантаження цієї сторінки. Спробуйте пізніше або заповніть товар вручну.");
+                if (!response.IsSuccessStatusCode) throw new BusinessRuleException("Сторінка або фотографія маркетплейсу недоступна.");
                 var type = response.Content.Headers.ContentType?.MediaType ?? "";
                 if (kind == "image" ? !type.StartsWith("image/", StringComparison.OrdinalIgnoreCase) : kind == "api" ? type != "application/json" : type is not ("text/html" or "application/xhtml+xml"))
-                    throw new BusinessRuleException("Источник вернул неподдерживаемый формат данных.");
-                if (response.Content.Headers.ContentLength > maxBytes) throw new BusinessRuleException("Данные источника превышают допустимый размер.");
+                    throw new BusinessRuleException("Джерело повернуло непідтримуваний формат даних.");
+                if (response.Content.Headers.ContentLength > maxBytes) throw new BusinessRuleException("Дані джерела перевищують допустимий розмір.");
                 await using var stream = await response.Content.ReadAsStreamAsync(ct);
                 using var buffer = new MemoryStream(); var chunk = new byte[16384]; int count;
                 while ((count = await stream.ReadAsync(chunk, ct)) != 0)
                 {
-                    if (buffer.Length + count > maxBytes) throw new BusinessRuleException("Данные источника превышают допустимый размер.");
+                    if (buffer.Length + count > maxBytes) throw new BusinessRuleException("Дані джерела перевищують допустимий розмір.");
                     buffer.Write(chunk, 0, count);
                 }
                 return buffer.ToArray();
             }
         }
-        throw new BusinessRuleException("Слишком много перенаправлений источника.");
+        throw new BusinessRuleException("Забагато перенаправлень джерела.");
     }
 
     public static Uri ProductUri(string value)
@@ -120,8 +121,10 @@ public sealed class MarketplaceSourceClient : IMarketplaceSourceClient, IDisposa
             "epic" => Regex.IsMatch(uri.AbsolutePath, @"^/(?:ua/)?shop/[^/]+\.html$"),
             _ => false
         };
-        if (!valid) throw new ArgumentException("Укажите HTTPS-ссылку на конкретный товар Rozetka, Prom.ua или Эпицентра.");
-        return new Uri(uri.GetLeftPart(UriPartial.Path));
+        if (!valid) throw new ArgumentException("Укажіть HTTPS-посилання на конкретний товар Rozetka, Prom.ua або Епіцентру.");
+        var path = uri.AbsolutePath;
+        if (!path.StartsWith("/ua/", StringComparison.OrdinalIgnoreCase)) path = "/ua" + path;
+        return new Uri(uri.GetLeftPart(UriPartial.Authority) + path);
     }
     public static string Provider(Uri uri) => uri.Host is "rozetka.com.ua" or "www.rozetka.com.ua" ? "rozetka"
         : uri.Host == "prom.ua" || uri.Host.EndsWith(".prom.ua", StringComparison.OrdinalIgnoreCase) ? "prom"
@@ -133,14 +136,14 @@ public sealed class MarketplaceSourceClient : IMarketplaceSourceClient, IDisposa
                 && uri.AbsolutePath.StartsWith("/goods/images/", StringComparison.OrdinalIgnoreCase)
             || uri.Host is "images.prom.ua" or "images.promcdn.ua"
             || uri.Host is "cdn.epicentrk.ua" or "cdn.27.ua" || uri.Host == "epicentrk.ua" && uri.AbsolutePath.StartsWith("/upload/", StringComparison.OrdinalIgnoreCase);
-        if (!allowed) throw new ArgumentException("Фотография должна находиться в хранилище поддерживаемого маркетплейса.");
+        if (!allowed) throw new ArgumentException("Фотографія має бути у сховищі підтримуваного маркетплейсу.");
         return uri;
     }
     private static Uri SecureUri(string value)
     {
         if (value.Length > 2048 || !Uri.TryCreate(value, UriKind.Absolute, out var uri) || uri.Scheme != "https"
             || !uri.IsDefaultPort || !string.IsNullOrEmpty(uri.UserInfo) || uri.HostNameType != UriHostNameType.Dns)
-            throw new ArgumentException("Разрешены только публичные HTTPS-ссылки поддерживаемых маркетплейсов.");
+            throw new ArgumentException("Дозволено лише публічні HTTPS-посилання підтримуваних маркетплейсів.");
         return uri;
     }
     public static bool IsPublicAddress(IPAddress ip)

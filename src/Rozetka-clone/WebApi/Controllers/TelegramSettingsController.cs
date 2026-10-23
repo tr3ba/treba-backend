@@ -19,7 +19,7 @@ public sealed class TelegramSettingsController(ApplicationDbContext db) : Contro
     [HttpPut("mappings")]
     public async Task<IActionResult> SaveMapping(CategoryMappingInput request, CancellationToken ct)
     {
-        if (!await db.Categories.AnyAsync(c => c.Id == request.CategoryId && c.IsActive, ct)) return BadRequest(new { message = "Выберите активную категорию Treba." });
+        if (!await db.Categories.AnyAsync(c => c.Id == request.CategoryId && c.IsActive, ct)) return BadRequest(new { message = "Виберіть активну категорію Treba." });
         var mapping = await db.RozetkaCategoryMappings.SingleOrDefaultAsync(m => m.ExternalKey == request.ExternalKey, ct);
         if (mapping is null) { mapping = new() { ExternalKey = request.ExternalKey }; db.RozetkaCategoryMappings.Add(mapping); }
         mapping.CategoryId = request.CategoryId; await db.SaveChangesAsync(ct); return NoContent();
@@ -38,7 +38,7 @@ public sealed class TelegramSettingsController(ApplicationDbContext db) : Contro
     {
         if (!await db.Sellers.AnyAsync(s => s.Id == sellerId, ct)) return NotFound();
         if (request.Grants.Any(g => g is null || g.CategoryId == Guid.Empty) || request.Grants.Select(g => g.CategoryId).Distinct().Count() != request.Grants.Count)
-            return BadRequest(new { message = "Каждую категорию можно выбрать только один раз." });
+            return BadRequest(new { message = "Кожну категорію можна вибрати лише один раз." });
         var ids = request.Grants.Select(g => g.CategoryId).ToArray();
         if (await db.Categories.CountAsync(c => ids.Contains(c.Id) && c.IsActive, ct) != ids.Length) return BadRequest();
         var previous = await db.SellerCategoryGrants.Where(g => g.SellerId == sellerId).ToListAsync(ct);
