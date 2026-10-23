@@ -79,8 +79,9 @@ the actual database migrations and bot token using `--check-telegram-deployment`
 then tests a temporary loopback container before replacing the running API.
 The previous container and Caddy configuration are retained for rollback.
 Before switching HTTP, deployment applies the explicitly allowlisted, backwards-compatible
-operational migrations through `--migrate-admin-operations`. It verifies database ownership,
-the migration history, CRUD privileges and real schema reads, then checks the protected
+operational migrations through `--migrate-admin-operations`, including the data-only
+`20261023110000_NormalizeProfileLanguages` update for legacy language preferences.
+It verifies database ownership, the migration history, CRUD privileges and real schema reads, then checks the protected
 operational routes on both the candidate and public API. An unavailable migration or route
 stops deployment while the previous container is retained. If the runtime account cannot
 apply DDL, the database owner must apply the reviewed SQL before retrying. Other pending

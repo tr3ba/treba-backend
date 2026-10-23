@@ -6,9 +6,16 @@ namespace WebApi.Administration;
 // Operator-only commands: never start HTTP, workers, Telegram polling or notifications.
 public static class AdminOperationsDeployment
 {
-    public const string Migration = "20261022132542_AddAdminFeaturesAndChatTrash";
+    public const string Migration = "20261023110000_NormalizeProfileLanguages";
     private static readonly HashSet<string> AllowedPending =
-        ["20261017112413_AddPromotions", "20261019213326_AddReviewOrderItemRelation", "20261020093201_AddAdminOperations", "20261020104554_AddSupportConversations", "20261020144055_AddWebsiteAdminLogin", "20261022084526_AddMarketplaceWorkflows", Migration];
+        ["20261017112413_AddPromotions", "20261019213326_AddReviewOrderItemRelation", "20261020093201_AddAdminOperations", "20261020104554_AddSupportConversations", "20261020144055_AddWebsiteAdminLogin", "20261022084526_AddMarketplaceWorkflows", "20261022132542_AddAdminFeaturesAndChatTrash", Migration];
+
+    public static void ValidatePendingMigrations(IEnumerable<string> migrations)
+    {
+        var pending = migrations.ToArray();
+        if (pending.Any(p => !AllowedPending.Contains(p)))
+            throw new InvalidOperationException("Unexpected pending migrations require a separate reviewed database update: " + string.Join(", ", pending));
+    }
 
     public static async Task<int> RunAsync(IServiceProvider services, bool migrate)
     {
@@ -18,8 +25,7 @@ public static class AdminOperationsDeployment
             await using var scope = services.CreateAsyncScope();
             var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             var pending = (await db.Database.GetPendingMigrationsAsync(timeout.Token)).ToArray();
-            if (pending.Any(p => !AllowedPending.Contains(p)))
-                throw new InvalidOperationException("Unexpected pending migrations require a separate reviewed database update: " + string.Join(", ", pending));
+            ValidatePendingMigrations(pending);
             if (pending.Length > 0)
             {
                 Console.WriteLine("Pending operational migrations: " + string.Join(", ", pending));
