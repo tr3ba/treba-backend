@@ -83,7 +83,7 @@ else
                 <div class="profile-form-grid">
                     <label class="field-group"><span>@L["Email"] <b>*</b></span><InputText class="form-control" type="email" @bind-Value="_model.Email" autocomplete="email" /><ValidationMessage For="@(() => _model.Email)" /></label>
                     <label class="field-group"><span>@L["Phone"]</span><InputText class="form-control" type="tel" @bind-Value="_model.Phone" autocomplete="tel" /><ValidationMessage For="@(() => _model.Phone)" /></label>
-                    <label class="field-group"><span>@L["ProfileLanguage"]</span><InputSelect class="form-control" @bind-Value="_model.Language"><option value="uk">@L["Ukrainian"]</option><option value="en">@L["English"]</option><option value="ru">@L["Russian"]</option></InputSelect></label>
+                    <label class="field-group"><span>@L["ProfileLanguage"]</span><InputSelect class="form-control" @bind-Value="_model.Language"><option value="uk">@L["Ukrainian"]</option><option value="en">@L["English"]</option></InputSelect></label>
                     <label class="profile-checkbox"><InputCheckbox @bind-Value="_model.MarketingEmailsEnabled" /><span><strong>@L["MarketingEmails"]</strong><small>@L["MarketingEmailsDesc"]</small></span></label>
                 </div>
 
@@ -145,7 +145,7 @@ else
             _model.Phone = user.Phone;
             _model.BirthDate = user.Profile?.BirthDate;
             _model.Gender = user.Profile?.Gender;
-            _model.Language = user.Profile?.Language ?? "uk";
+            _model.Language = user.Profile?.Language == "en" ? "en" : "uk";
             _loadedLanguage = _model.Language;
             _model.MarketingEmailsEnabled = user.Profile?.MarketingEmailsEnabled ?? false;
         }

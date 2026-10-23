@@ -44,7 +44,7 @@ public sealed class IdentityService : IIdentityService
 
         if (existingUser)
         {
-            throw new InvalidOperationException($"Пользователь с email '{request.Email}' уже существует.");
+            throw new InvalidOperationException($"Користувач з електронною адресою '{request.Email}' уже існує.");
         }
 
         var targetRoleName = Roles.Customer;
@@ -53,7 +53,7 @@ public sealed class IdentityService : IIdentityService
                 r => r.Name == targetRoleName,
                 cancellationToken
             )
-            ?? throw new InvalidOperationException($"Роль '{targetRoleName}' не найдена в системе.");
+            ?? throw new InvalidOperationException($"Роль '{targetRoleName}' не знайдено в системі.");
 
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
@@ -124,13 +124,13 @@ public sealed class IdentityService : IIdentityService
             )
         )
         {
-            throw new UnauthorizedAccessException("Неверный email или пароль.");
+            throw new UnauthorizedAccessException("Неправильна електронна адреса або пароль.");
         }
 
         if (user.Status == UserStatus.Blocked
             || user.Status == UserStatus.Deleted)
         {
-            throw new InvalidOperationException("Учетная запись заблокирована или удалена.");
+            throw new InvalidOperationException("Обліковий запис заблоковано або видалено.");
         }
 
         var challenge = await _secondFactorService.CreateLoginChallengeAsync(
@@ -158,7 +158,7 @@ public sealed class IdentityService : IIdentityService
     {
         var user = await _context.Users.Include(u => u.Role).SingleOrDefaultAsync(u => u.Id == userId, cancellationToken);
         if (user is null || user.IsDeleted || user.Status != UserStatus.Active || user.Role?.Name is not (Roles.Administrator or Roles.Manager or Roles.Moderator or Roles.Seller))
-            throw new UnauthorizedAccessException("Guard доступен только активным сотрудникам и продавцам.");
+            throw new UnauthorizedAccessException("Guard доступний лише активним працівникам і продавцям.");
         // A linked and approved Guard is itself one of the account's verification methods.
         return new LoginResponse(await IssueLoginTokensAsync(user, cancellationToken), null);
     }
@@ -198,7 +198,7 @@ public sealed class IdentityService : IIdentityService
             || user.Status is UserStatus.Blocked or UserStatus.Deleted
         )
         {
-            throw new UnauthorizedAccessException("Недействительный или просроченный refresh token.");
+            throw new UnauthorizedAccessException("Недійсний або прострочений токен оновлення.");
         }
 
         var roleName = user.Role?.Name ?? Roles.Customer;
@@ -262,7 +262,7 @@ public sealed class IdentityService : IIdentityService
         );
         if (existingUser)
         {
-            throw new InvalidOperationException($"Пользователь с email '{email}' уже существует.");
+            throw new InvalidOperationException($"Користувач з електронною адресою '{email}' уже існує.");
         }
 
         var customerRole =
@@ -270,7 +270,7 @@ public sealed class IdentityService : IIdentityService
                 r => r.Name == Roles.Customer,
                 cancellationToken
             )
-            ?? throw new InvalidOperationException("Роль Customer не найдена.");
+            ?? throw new InvalidOperationException("Роль Customer не знайдено.");
 
         var user = User.Create(
             Guid.NewGuid(),
@@ -319,14 +319,14 @@ public sealed class IdentityService : IIdentityService
                 u => u.Id == userId,
                 cancellationToken
             )
-            ?? throw new InvalidOperationException("Пользователь не найден.");
+            ?? throw new InvalidOperationException("Користувача не знайдено.");
 
         if (!BCrypt.Net.BCrypt.Verify(
             currentPassword,
             user.PasswordHash
         ))
         {
-            throw new InvalidOperationException("Текущий пароль неверен.");
+            throw new InvalidOperationException("Поточний пароль неправильний.");
         }
 
         user.SetPasswordHash(BCrypt.Net.BCrypt.HashPassword(newPassword));
@@ -364,14 +364,14 @@ public sealed class IdentityService : IIdentityService
                 u => u.Id == userId,
                 cancellationToken
             )
-            ?? throw new InvalidOperationException("Пользователь не найден.");
+            ?? throw new InvalidOperationException("Користувача не знайдено.");
 
         var dbRole =
             await _context.Roles.FirstOrDefaultAsync(
                 r => r.Name == role,
                 cancellationToken
             )
-            ?? throw new InvalidOperationException($"Роль '{role}' не найдена.");
+            ?? throw new InvalidOperationException($"Роль '{role}' не знайдено.");
 
         user.AssignRole(dbRole.Id);
         await _context.SaveChangesAsync(cancellationToken);

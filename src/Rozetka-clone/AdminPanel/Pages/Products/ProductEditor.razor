@@ -12,12 +12,6 @@
 @if(ready)
 {
     <EditorAutosave @key="draftKey" @ref="autosave" UserScope="@userScope" DraftKey="@draftKey" Snapshot="Snapshot" Photos="BackupPhotos" HasChanges="HasChanges" Enabled="@(!busy&&!allowNavigation)" OnRestore="RestoreBackup"/>
-    <section class="workspace-identifiers card-box">
-        <label class="field-group"><span>@L["WorkspaceManufacturerPartNumber"]</span><input class="form-control" maxlength="100" @bind="model.ManufacturerPartNumber"/></label>
-        <button type="button" class="secondary-button" @onclick="CheckDuplicates">@L["WorkspaceCheckDuplicates"]</button>
-        @foreach(var duplicate in duplicates){<p class="feedback-error">@duplicate.Reason: <a href="@($"/products/{duplicate.Id}/edit")">@duplicate.Name</a> · @duplicate.StoreName</p>}
-        @if(duplicates.Count>0){<label><input type="checkbox" @bind="duplicateAcknowledged"/> @L["WorkspaceCreateSeparate"]</label>}
-    </section>
 }
 
 <a class="users-back-link product-back-link" href="@BackUri">
@@ -111,6 +105,15 @@ else if (ready)
                             <span>@L["ShortDescription"]</span>
                             <InputText class="form-control" @bind-Value="model.ShortDescription" />
                         </label>
+                        <label class="field-group editor-full">
+                            <span>@L["WorkspaceManufacturerPartNumber"]</span>
+                            <InputText class="form-control" maxlength="100" @bind-Value="model.ManufacturerPartNumber" />
+                        </label>
+                        <div class="editor-full workspace-duplicate-check">
+                            <button type="button" class="secondary-button" disabled="@busy" @onclick="CheckDuplicates">@L["WorkspaceCheckDuplicates"]</button>
+                            @foreach(var duplicate in duplicates){<p class="feedback-error">@duplicate.Reason: <a href="@($"/products/{duplicate.Id}/edit")">@duplicate.Name</a> · @duplicate.StoreName</p>}
+                            @if(duplicates.Count>0){<label class="settings-checkbox"><input type="checkbox" @bind="duplicateAcknowledged"/> @L["WorkspaceCreateSeparate"]</label>}
+                        </div>
                         <label class="field-group editor-full">
                             <span>@L["Description"]</span>
                             <InputTextArea class="form-control" rows="5" @bind-Value="model.Description" />

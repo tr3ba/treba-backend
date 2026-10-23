@@ -73,6 +73,7 @@ public sealed class SellerWorkspaceTests
     {
         await using var db = TelegramTestData.Memory(); var seed = await TelegramTestData.SeedAsync(db);
         seed.Category.Name = "Smartphones"; // Source says "Phones": no exact match and no administrator mapping.
+        seed.Root.Name = "Devices"; // No matching ancestor either: exercise the manual retry path.
         var kitchen = new Domain.Entities.Category { Id = Guid.NewGuid(), ParentId = seed.Root.Id, Name = "Cookware", Slug = "cookware", IsActive = true };
         db.Categories.Add(kitchen);
         db.SellerCategoryGrants.Add(new() { SellerId = seed.Seller.Id, CategoryId = seed.Root.Id, IncludeDescendants = true });
@@ -144,7 +145,7 @@ public sealed class SellerWorkspaceTests
         var product=await Product(db,seed);var products=new ProductService(db);
         await products.SubmitForModerationAsync(product.Id);Assert.Equal(moderator.Id,(await db.TelegramNotifications.SingleAsync()).UserId);
         var bot=new Bot();clock.Now=clock.Now.AddSeconds(2);var runner=Runner(db,clock,new TelegramTestData.Source(),bot);
-        await runner.DeliverOneAsync(default);Assert.Single(bot.Messages);Assert.Contains("Открыть товар",JsonDocument.Parse(bot.Messages[0]).RootElement.GetProperty("reply_markup").GetProperty("inline_keyboard")[0][0].GetProperty("text").GetString());
+        await runner.DeliverOneAsync(default);Assert.Single(bot.Messages);Assert.Contains("Відкрити товар",JsonDocument.Parse(bot.Messages[0]).RootElement.GetProperty("reply_markup").GetProperty("inline_keyboard")[0][0].GetProperty("text").GetString());
         await products.RejectAsync(product.Id,"Добавьте фото");clock.Now=clock.Now.AddSeconds(2);await runner.DeliverOneAsync(default);
         Assert.Equal(2,bot.Messages.Count);Assert.Contains("Добавьте фото",JsonDocument.Parse(bot.Messages[1]).RootElement.GetProperty("text").GetString());
         await products.SubmitForModerationAsync(product.Id);clock.Now=clock.Now.AddSeconds(2);moderator.Block();await db.SaveChangesAsync();

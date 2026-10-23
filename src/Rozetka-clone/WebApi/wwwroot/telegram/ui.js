@@ -36,7 +36,7 @@ export function icon(name) {
 }
 export const money = value => new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH', maximumFractionDigits: 2 }).format(value || 0);
 export const when = value => value ? new Intl.DateTimeFormat('ru', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Europe/Vilnius' }).format(new Date(value)) : '';
-export const statusName = status => ({ DRAFT: 'Черновик', PENDING_MODERATION: 'На проверке', ACTIVE: 'Опубликован', PUBLISHED: 'Опубликован', REJECTED: 'Отклонён', ARCHIVED: 'В архиве' }[status] || status);
+export const statusName = status => ({ DRAFT: 'Чернетка', PENDING_MODERATION: 'На перевірці', ACTIVE: 'Опубліковано', PUBLISHED: 'Опубліковано', REJECTED: 'Відхилено', ARCHIVED: 'В архіві' }[status] || status);
 export const badge = status => el('span', { class: 'badge status-' + String(status).toLowerCase() }, statusName(status));
 export const button = (text, click, kind = 'primary', disabled = false) => el('button', { type: 'button', class: 'button ' + kind, onclick: click, disabled }, text);
 export const heading = (title, description) => el('div', { class: 'page-heading' }, el('h1', {}, title), description ? el('p', {}, description) : null);

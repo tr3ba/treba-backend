@@ -35,6 +35,7 @@ public sealed partial class CatalogService(
             throw new ArgumentException("Unknown catalog sort.");
 
         var query = db.Products.AsNoTracking();
+        if (status != nameof(ProductStatus.ARCHIVED)) query = query.Where(p => p.Status != ProductStatus.ARCHIVED);
         if (filters.WaitingHours.HasValue)
         {
             if (filters.WaitingHours is not (24 or 72))
@@ -260,7 +261,7 @@ public sealed partial class CatalogService(
         CancellationToken ct,
         Guid? sellerUserId = null)
     {
-        var query = db.Products.AsNoTracking();
+        var query = db.Products.AsNoTracking().Where(p => p.Status != ProductStatus.ARCHIVED);
 
         if (sellerUserId.HasValue)
         {

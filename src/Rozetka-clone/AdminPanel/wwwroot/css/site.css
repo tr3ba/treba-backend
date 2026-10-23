@@ -2553,7 +2553,7 @@ h1:focus {
 }
 .editor-form-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 15px;
 }
 .editor-full {
@@ -5758,6 +5758,8 @@ button:disabled { opacity:.5; cursor:wait; }
   display: grid;
   place-items: center;
   padding: 24px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   background: rgba(8, 15, 35, .62);
   backdrop-filter: blur(7px);
   animation: security-backdrop-in .18s ease-out;
@@ -5766,6 +5768,8 @@ button:disabled { opacity:.5; cursor:wait; }
   position: relative;
   width: min(680px, 100%);
   max-height: calc(100vh - 48px);
+  max-height: calc(100dvh - 48px);
+  min-width: 0;
   overflow: auto;
   border: 1px solid rgba(255,255,255,.55);
   border-radius: 24px;
@@ -5775,13 +5779,16 @@ button:disabled { opacity:.5; cursor:wait; }
 }
 .security-modal-header {
   display: grid;
-  grid-template-columns: 52px minmax(0,1fr) 36px;
+  grid-template-columns: minmax(0,1fr) 36px;
   align-items: center;
   gap: 15px;
   padding: 24px 26px 20px;
   border-bottom: 1px solid #edf1f6;
   background: linear-gradient(145deg,#fff 50%,#fff7ed);
 }
+.security-modal-header:has(.security-modal-icon) { grid-template-columns: 52px minmax(0,1fr) 36px; }
+.security-modal-header > :not(.security-modal-close) { min-width: 0; overflow-wrap: anywhere; }
+.security-modal-header .security-modal-close { align-self: start; }
 .security-modal-icon {
   display: grid;
   width: 52px;
@@ -5855,7 +5862,8 @@ button:disabled { opacity:.5; cursor:wait; }
 @media (max-width:640px) {
   .security-modal-backdrop { align-items:end; padding:10px; }
   .security-modal { max-height:calc(100vh - 20px); border-radius:20px; }
-  .security-modal-header { grid-template-columns:44px minmax(0,1fr) 34px; gap:11px; padding:18px; }
+  .security-modal-header { grid-template-columns:minmax(0,1fr) 36px; gap:11px; padding:18px; }
+  .security-modal-header:has(.security-modal-icon) { grid-template-columns:44px minmax(0,1fr) 36px; }
   .security-modal-icon { width:44px; height:44px; border-radius:14px; font-size:20px; }
   .security-modal-header h2 { font-size:17px; }
   .security-modal-body { padding:20px 18px; }

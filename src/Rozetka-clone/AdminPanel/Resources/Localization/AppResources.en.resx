@@ -362,7 +362,6 @@
   <data name="ContactsAndSettingsDesc" xml:space="preserve"><value>Upload the profile photo in the panel on the left.</value></data>
   <data name="ProfileLanguage" xml:space="preserve"><value>Profile language</value></data>
   <data name="Ukrainian" xml:space="preserve"><value>Ukrainian</value></data>
-  <data name="Russian" xml:space="preserve"><value>Russian</value></data>
   <data name="MarketingEmailsDesc" xml:space="preserve"><value>Receive news and offers by email</value></data>
   <data name="ProfileSaved" xml:space="preserve"><value>Profile saved. The header has already been updated.</value></data>
   <data name="SaveChanges" xml:space="preserve"><value>Save changes</value></data>
@@ -804,4 +803,12 @@
   <data name="AuditFieldDeletedAt" xml:space="preserve"><value>Deleted at</value></data>
   <data name="AuditFieldDeletedBy" xml:space="preserve"><value>Deleted by</value></data>
   <data name="AuditFieldEnabled" xml:space="preserve"><value>Enabled</value></data>
+  <data name="DeleteProduct" xml:space="preserve"><value>Delete product</value></data>
+  <data name="DeleteProductConfirm" xml:space="preserve"><value>Delete “{0}” from the catalog? Past orders and product history will be preserved.</value></data>
+  <data name="ProductDeleted" xml:space="preserve"><value>Product removed from the catalog.</value></data>
+  <data name="ImportSourceCategory" xml:space="preserve"><value>Source category</value></data>
+  <data name="ImportCreateCategory" xml:space="preserve"><value>Create category</value></data>
+  <data name="ImportCreateCategoryHint" xml:space="preserve"><value>Choose a parent section and enter the new category name. An existing category will be reused.</value></data>
+  <data name="ImportCategorySelected" xml:space="preserve"><value>Category selected.</value></data>
+  <data name="CategoryName" xml:space="preserve"><value>Category name</value></data>
 </root>

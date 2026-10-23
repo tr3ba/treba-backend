@@ -17,8 +17,8 @@ public sealed class ApiExceptionHandler(
     {
         var (status, title) = exception switch
         {
-            KeyNotFoundException => (404, "Запись не найдена."),
-            DbUpdateConcurrencyException when context.Request.Path.StartsWithSegments("/api/telegram") => (409, "Запрос уже обработан или данные изменились. Обновите страницу."),
+            KeyNotFoundException => (404, "Запис не знайдено."),
+            DbUpdateConcurrencyException when context.Request.Path.StartsWithSegments("/api/telegram") => (409, "Запит уже оброблено або дані змінилися. Оновіть сторінку."),
             ArgumentException => (400, exception.Message),
             UserDomainException => (409, exception.Message),
             DbUpdateConcurrencyException => (409, "Data changed while the request was being processed. Reload it before saving."),

@@ -31,14 +31,14 @@ public sealed class PaymentService : IPaymentService
         var order = await _context.Orders
             .AsNoTracking()
             .FirstOrDefaultAsync(o => o.Id == orderId && o.CustomerId == userId, cancellationToken)
-            ?? throw new InvalidOperationException($"Заказ с ID {orderId} не найден или не принадлежит пользователю.");
+            ?? throw new InvalidOperationException($"Замовлення з ID {orderId} не знайдено або воно не належить користувачу.");
 
         // Validate order status allows payment
         if (order.Status != OrderStatus.AWAITING_PAYMENT)
         {
             throw new InvalidOperationException(
-                $"Невозможно создать платеж для заказа в статусе '{order.Status}'. " +
-                $"Оплата разрешена только для заказов в статусе '{OrderStatus.AWAITING_PAYMENT}'.");
+                $"Неможливо створити платіж для замовлення у статусі '{order.Status}'. " +
+                $"Оплату дозволено лише для замовлень у статусі '{OrderStatus.AWAITING_PAYMENT}'.");
         }
 
         // Check for existing PENDING payment (idempotency)
@@ -107,7 +107,7 @@ public sealed class PaymentService : IPaymentService
                 o => o.Id,
                 (p, o) => p)
             .FirstOrDefaultAsync(cancellationToken)
-            ?? throw new InvalidOperationException($"Платеж с ID {paymentId} не найден или не принадлежит пользователю.");
+            ?? throw new InvalidOperationException($"Платіж з ID {paymentId} не знайдено або він не належить користувачу.");
 
         return MapToStatusDto(payment);
     }
@@ -133,17 +133,17 @@ public sealed class PaymentService : IPaymentService
 
         if (string.IsNullOrEmpty(externalPaymentId))
         {
-            throw new InvalidOperationException("Не удалось извлечь внешний ID платежа из payload вебхука.");
+            throw new InvalidOperationException("Не вдалося отримати зовнішній ID платежу з даних вебхука.");
         }
 
         var payment = await _context.Payments
             .FirstOrDefaultAsync(p => p.ExternalPaymentId == externalPaymentId, cancellationToken)
-            ?? throw new InvalidOperationException($"Платеж с внешним ID {externalPaymentId} не найден.");
+            ?? throw new InvalidOperationException($"Платіж із зовнішнім ID {externalPaymentId} не знайдено.");
 
         // Validate that the provider from route matches the payment's provider
         if (!string.Equals(payment.Provider, provider, StringComparison.OrdinalIgnoreCase))
         {
-            throw new InvalidOperationException($"Провайдер вебхука '{provider}' не соответствует провайдеру платежа '{payment.Provider}'.");
+            throw new InvalidOperationException($"Провайдер вебхука '{provider}' не відповідає провайдеру платежу '{payment.Provider}'.");
         }
 
         bool isValid = _paymentProvider.VerifyWebhook(
@@ -152,7 +152,7 @@ public sealed class PaymentService : IPaymentService
 
         if (!isValid)
         {
-            throw new InvalidOperationException("Недопустимая подпись вебхука");
+            throw new InvalidOperationException("Неприпустимий підпис вебхука");
         }
 
         using var scope = new TransactionScope(
@@ -168,7 +168,7 @@ public sealed class PaymentService : IPaymentService
         if (providerStatus.Amount != payment.Amount)
         {
             throw new InvalidOperationException(
-                $"Сумма в ответе провайдера ({providerStatus.Amount}) не соответствует сумме платежа ({payment.Amount}).");
+                $"Сума у відповіді провайдера ({providerStatus.Amount}) не відповідає сумі платежу ({payment.Amount}).");
         }
 
         // Terminal states that should not regress
@@ -292,12 +292,12 @@ public sealed class PaymentService : IPaymentService
         // Validate refund amount is positive
             if (amount <= 0)
             {
-                throw new ArgumentException("Сумма возврата должна быть больше нуля.", nameof(amount));
+                throw new ArgumentException("Сума повернення має бути більшою за нуль.", nameof(amount));
             }
 
             var payment = await _context.Payments
                 .FirstOrDefaultAsync(p => p.OrderId == orderId && p.Status == PaymentStatus.SUCCEEDED, cancellationToken)
-                ?? throw new InvalidOperationException($"Успешный платеж для заказа {orderId} не найден.");
+                ?? throw new InvalidOperationException($"Успішний платіж для замовлення {orderId} не знайдено.");
 
             // Calculate already refunded amount from successful REFUND transactions
             var alreadyRefunded = await _context.PaymentTransactions
@@ -308,7 +308,7 @@ public sealed class PaymentService : IPaymentService
 
             if (alreadyRefunded + amount > payment.Amount)
             {
-                throw new ArgumentException($"Сумма возврата ({alreadyRefunded + amount}) не может превышать сумму платежа ({payment.Amount}). Уже возвращено: {alreadyRefunded}.");
+                throw new ArgumentException($"Сума повернення ({alreadyRefunded + amount}) не може перевищувати суму платежу ({payment.Amount}). Уже повернуто: {alreadyRefunded}.");
             }
 
             var refundId = Guid.NewGuid();

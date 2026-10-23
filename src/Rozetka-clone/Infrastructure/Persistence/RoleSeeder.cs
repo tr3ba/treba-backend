@@ -8,11 +8,11 @@ public static class RoleSeeder
 {
     private static readonly (string Name, string Description)[] DefaultRoles =
     [
-        (Roles.Customer, "Покупатель маркетплейса"),
-        (Roles.Seller, "Продавец маркетплейса"),
-        (Roles.Manager, "Менеджер магазина"),
-        (Roles.Moderator, "Модератор контента"),
-        (Roles.Administrator, "Администратор платформы"),
+        (Roles.Customer, "Покупець маркетплейсу"),
+        (Roles.Seller, "Продавець маркетплейсу"),
+        (Roles.Manager, "Менеджер магазину"),
+        (Roles.Moderator, "Модератор контенту"),
+        (Roles.Administrator, "Адміністратор платформи"),
     ];
 
     public static async Task SeedRolesAsync(

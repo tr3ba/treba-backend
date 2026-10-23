@@ -20,7 +20,7 @@
 else if (preview is null)
 {
     <section class="card-box seller-import-form">
-        <label class="field-group"><span>@L["ImportLinks"]</span><textarea class="form-control" rows="4" maxlength="30000" @bind="links" placeholder="https://rozetka.com.ua/…"></textarea><small>@L["ImportLinksHint"]</small></label>
+        <label class="field-group"><span>@L["ImportLinks"]</span><textarea class="form-control" rows="4" maxlength="30000" @bind="links" @bind:event="oninput" placeholder="https://rozetka.com.ua/…"></textarea><small>@L["ImportLinksHint"]</small></label>
         @if (options.CanClassifyImports)
         {
             <label class="field-group"><span>@L["Category"]</span><select class="form-control" @bind="categoryId"><option value="">@L["ImportAutoCategory"]</option>@foreach(var category in options.Categories){<option value="@category.Id">@category.Name</option>}</select></label>
@@ -55,7 +55,22 @@ else
 {
     <EditorAutosave @key="preview.Id" @ref="autosave" UserScope="@userScope" DraftKey="@("import:" + preview.Id)" Snapshot="Snapshot" Photos="NoPhotos" HasChanges="true" Enabled="@(!busy)" OnRestore="RestoreBackup" />
     <button type="button" class="secondary-button" disabled="@busy" @onclick="ClosePreview"><i class="bi bi-arrow-left"></i> @L["ImportQueue"]</button>
-    <p class="seller-import-category">@L["Category"]: <strong>@preview.CategoryName</strong></p>
+    <section class="card-box seller-import-category">
+        <div><span class="muted-text">@L["ImportSourceCategory"]: @preview.SourceCategoryName</span><p>@L["Category"]: <strong>@preview.CategoryName</strong></p></div>
+        @if (preview.CanClassifyCategory)
+        {
+            <label class="field-group"><span>@L["Category"]</span><select class="form-control" disabled="@busy" value="@preview.CategoryId" @onchange="ChangeCategory">@foreach(var category in options.Categories){<option value="@category.Id">@category.Name</option>}</select></label>
+            <details class="seller-import-create-category">
+                <summary>@L["ImportCreateCategory"]</summary>
+                <div class="seller-import-new-brand">
+                    <p>@L["ImportCreateCategoryHint"]</p>
+                    <label class="field-group"><span>@L["CategoryName"]</span><input class="form-control" disabled="@busy" maxlength="200" @bind="newCategoryName" @bind:event="oninput" /></label>
+                    <label class="field-group"><span>@L["ParentCategory"]</span><select class="form-control" disabled="@busy" @bind="newCategoryParent">@foreach(var category in options.Categories){<option value="@category.Id">@category.Name</option>}</select></label>
+                    <button type="button" class="secondary-button" disabled="@(busy || string.IsNullOrWhiteSpace(newCategoryName))" @onclick="CreateCategory">@L["ImportCreateCategory"]</button>
+                </div>
+            </details>
+        }
+    </section>
     <EditForm Model="model" OnValidSubmit="Submit" FormName="seller-import">
         <DataAnnotationsValidator />
         <fieldset disabled="@busy" class="editor-fieldset">
@@ -71,7 +86,7 @@ else
                 </div>
                 @if(model.BrandId == Guid.Empty)
                 {
-                    <section class="seller-import-new-brand"><p>@L["ImportBrandMissing"]</p><label class="field-group"><span>@L["Brand"]</span><input class="form-control" maxlength="200" @bind="brandName" /></label><button class="secondary-button" type="button" disabled="@(busy || string.IsNullOrWhiteSpace(brandName))" @onclick="CreateBrand">@L["ImportCreateBrand"]</button></section>
+                    <section class="seller-import-new-brand"><p>@L["ImportBrandMissing"]</p><label class="field-group"><span>@L["Brand"]</span><input class="form-control" maxlength="200" @bind="brandName" @bind:event="oninput" /></label><button class="secondary-button" type="button" disabled="@(busy || string.IsNullOrWhiteSpace(brandName))" @onclick="CreateBrand">@L["ImportCreateBrand"]</button></section>
                 }
                 <div class="editor-form-grid">
                     <label class="field-group"><span>@L["Sku"] *</span><InputText class="form-control" maxlength="100" @bind-Value="model.Sku" /></label>
@@ -82,8 +97,7 @@ else
                 </div>
                 <ProductCharacteristicsEditor Values="model.Attributes" Definitions="definitions" Variants="emptyVariants" />
                 @if(preview.Characteristics.Count > 0){<details><summary>@L["ImportSourceCharacteristics"]</summary><dl class="seller-import-characteristics">@foreach(var value in preview.Characteristics){<dt>@value.Name</dt><dd>@value.Value</dd>}</dl></details>}
-                @if(preview.Duplicates.Count > 0){<div class="feedback-error">@L["ImportDuplicates"]@foreach(var duplicate in preview.Duplicates){<p>@duplicate.Name · @duplicate.StoreName</p>}</div>}
-                <label class="settings-checkbox"><InputCheckbox @bind-Value="model.DuplicateConfirmed" /> @L["WorkspaceCreateSeparate"]</label>
+                @if(preview.Duplicates.Count > 0){<section class="seller-import-duplicates"><p>@L["ImportDuplicates"]</p>@foreach(var duplicate in preview.Duplicates){<article><div><strong>@duplicate.Name</strong><small>@duplicate.StoreName</small></div><div class="seller-import-duplicate-actions"><a class="secondary-button" href="@("/products?search=" + Uri.EscapeDataString(duplicate.Name))">@L["View"]</a><button type="button" class="secondary-button danger-button" disabled="@busy" @onclick="() => deleteDuplicate = duplicate">@L["DeleteProduct"]</button></div></article>}<label class="settings-checkbox"><InputCheckbox @bind-Value="model.DuplicateConfirmed" /> @L["WorkspaceCreateSeparate"]</label></section>}
                 <a href="@preview.SourceUrl" target="_blank" rel="noopener noreferrer">@L["ImportViewSource"] <i class="bi bi-arrow-up-right"></i></a>
                 <p class="muted-text">@L["ImportReviewHint"]</p>
                 <button class="primary-button" type="submit" disabled="@(busy || model.BrandId == Guid.Empty || model.StoreId == Guid.Empty)">@L[busy ? "ImportLoading" : "SendToModeration"]</button>
@@ -91,6 +105,7 @@ else
         </fieldset>
     </EditForm>
 }
+<ConfirmDialog IsOpen="@(deleteDuplicate is not null)" Title="@L["DeleteProduct"]" Message="@L["DeleteProductConfirm", deleteDuplicate?.Name ?? ""]" OnClose="DeleteDuplicate" />
 
 @code {
     private SellerImportOptionsDto? options;
@@ -101,6 +116,9 @@ else
     private IReadOnlyList<CatalogAttributeDefinitionDto> definitions = [];
     private readonly List<CatalogVariantInput> emptyVariants = [];
     private string links = "", brandName = "";
+    private string newCategoryName = "";
+    private Guid newCategoryParent;
+    private ProductDuplicateDto? deleteDuplicate;
     private string? error, notice;
     private Guid? categoryId;
     private readonly Dictionary<Guid, Guid?> retryCategories = [];
@@ -148,22 +166,48 @@ else
         var urls = links.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Distinct().ToList();
         if(urls.Count is < 1 or > 20){error = L["ImportLinksHint"]; return;}
         await Imports.Add(new(urls.Select(url => new ImportUrlRequest(url, categoryId)).ToList()), lifetime.Token);
-        links = ""; jobs = await Imports.Jobs(lifetime.Token); notice = L["ImportQueued"];
+        links = ""; categoryId = null; jobs = await Imports.Jobs(lifetime.Token); notice = L["ImportQueued"];
     });
     private Guid? RetryCategory(ImportJobDto job) => retryCategories.TryGetValue(job.Id, out var selected) ? selected : job.CategoryId;
     private void SelectRetryCategory(Guid id, string? value) => retryCategories[id] = Guid.TryParse(value, out var selected) ? selected : null;
     private Task Retry(ImportJobDto job) => Run(async () => { await Imports.Retry(job.Id, lifetime.Token, options!.CanClassifyImports ? RetryCategory(job) : null); retryCategories.Remove(job.Id); jobs = await Imports.Jobs(lifetime.Token); });
     private Task OpenPreview(Guid id) => Run(async () =>
     {
+        options = await Imports.Options(lifetime.Token); brands = options.Brands.ToList();
         var data = await Imports.Preview(id, lifetime.Token);
         if(data.SubmittedAt.HasValue){notice = L["ImportAlreadySubmitted"]; jobs = await Imports.Jobs(lifetime.Token); return;}
         definitions = await Catalog.AttributeDefinitions(data.CategoryId);
-        options = await Imports.Options(lifetime.Token); brands = options.Brands.ToList();
         model = new() { Name = data.Name, Description = data.Description, BrandId = data.BrandId ?? Guid.Empty, StoreId = options.Stores.FirstOrDefault()?.Id ?? Guid.Empty,
             Sku = "TRB-" + data.Id.ToString("N")[..8].ToUpperInvariant(), ManufacturerPartNumber = data.ManufacturerPartNumber, Barcode = data.Barcode, Price = data.SourcePrice ?? 0 };
         foreach(var definition in definitions.Where(d => d.IsRequired)) model.Attributes.Add(new() { AttributeId = definition.Id });
         brandName = data.BrandName; preview = data; completed = false;
+        newCategoryName = data.SourceCategoryName; newCategoryParent = data.CategoryId;
     });
+    private Task ChangeCategory(ChangeEventArgs args) => Run(async () =>
+    {
+        if (!Guid.TryParse(args.Value?.ToString(), out var id)) return;
+        await ApplyCategory(await Imports.SelectCategory(preview!.Id, id, lifetime.Token));
+        newCategoryParent = id;
+    });
+    private Task CreateCategory() => Run(async () =>
+    {
+        await ApplyCategory(await Imports.CreateCategory(preview!.Id, newCategoryName, newCategoryParent, lifetime.Token));
+        options = await Imports.Options(lifetime.Token); notice = L["ImportCategorySelected"];
+    });
+    private async Task ApplyCategory(ImportPreviewDto data)
+    {
+        var nextDefinitions = await Catalog.AttributeDefinitions(data.CategoryId);
+        model.Attributes.RemoveAll(a => !nextDefinitions.Any(d => d.Id == a.AttributeId));
+        foreach (var definition in nextDefinitions.Where(d => d.IsRequired && !model.Attributes.Any(a => a.AttributeId == d.Id)))
+            model.Attributes.Add(new() { AttributeId = definition.Id });
+        definitions = nextDefinitions; preview = data;
+    }
+    private async Task DeleteDuplicate(bool confirmed)
+    {
+        var duplicate = deleteDuplicate; deleteDuplicate = null;
+        if (!confirmed || duplicate is null) return;
+        await Run(async () => { await Catalog.DeleteProduct(duplicate.Id); preview = await Imports.Preview(preview!.Id, lifetime.Token); model.DuplicateConfirmed = false; notice = L["ProductDeleted"]; });
+    }
     private Task CreateBrand() => Run(async () =>
     {
         var brand = await Imports.CreateBrand(preview!.Id, brandName, lifetime.Token);

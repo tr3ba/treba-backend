@@ -9,7 +9,7 @@ namespace Application.Wishlists
 {
     public sealed class WishlistService : IWishlistService
     {
-        private const string DefaultWishlistName = "Избранное";
+        private const string DefaultWishlistName = "Обране";
 
         private readonly IApplicationDbContext _dbContext;
 

@@ -67,6 +67,9 @@ public sealed class TelegramMiniAppController(ApplicationDbContext db, CatalogSe
         await categories.EnsureAllowedAsync(UserId, product.CategoryId, ct);
         await products.SubmitForModerationAsync(id, ct); return NoContent();
     }
+    [HttpDelete("products/{id:guid}"), Authorize(Roles = Roles.Seller)]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
+        => await catalog.DeleteAsync(id, UserId, ct) ? NoContent() : NotFound();
     [HttpPost("products/{id:guid}/approve"), Authorize(Roles = Roles.Moderator)]
     public async Task<IActionResult> Approve(Guid id, CancellationToken ct) => await products.ApproveAsync(id, ct) ? NoContent() : NotFound();
     [HttpPost("products/{id:guid}/reject"), Authorize(Roles = Roles.Moderator)]
@@ -92,7 +95,7 @@ public sealed class TelegramMiniAppController(ApplicationDbContext db, CatalogSe
     [HttpPost("imports/queue"), Authorize(Roles = Roles.Seller), EnableRateLimiting("telegram-import")]
     public Task<IReadOnlyList<ImportJobDto>> QueueImports(QueueImportsRequest request, [FromServices] SellerImportQueue queue, CancellationToken ct) => queue.AddAsync(UserId, request, ct);
     [HttpPost("imports/queue/{id:guid}/retry"), Authorize(Roles = Roles.Seller), EnableRateLimiting("telegram-import")]
-    public async Task<IActionResult> RetryImport(Guid id, [FromServices] SellerImportQueue queue, CancellationToken ct, [FromQuery] Guid? categoryId = null) { await queue.RetryAsync(UserId, id, ct, categoryId); return NoContent(); }
+    public async Task<IActionResult> RetryImport(Guid id, [FromServices] SellerImportQueue queue, CancellationToken ct, [FromQuery] Guid? categoryId = null, [FromQuery] bool resetCategory = false) { await queue.RetryAsync(UserId, id, ct, categoryId, resetCategory); return NoContent(); }
     [HttpGet("duplicates"), Authorize(Roles = Roles.Seller)]
     public Task<IReadOnlyList<ProductDuplicateDto>> Duplicates(Guid brandId, string? manufacturerPartNumber, string? barcode, Guid? excludeId,
         [FromServices] CatalogDuplicateService duplicates, CancellationToken ct) => duplicates.FindAsync(UserId, brandId, manufacturerPartNumber, barcode, excludeId, ct);
@@ -105,6 +108,12 @@ public sealed class TelegramMiniAppController(ApplicationDbContext db, CatalogSe
     public async Task<IActionResult> BulkApply(ApplyBulkCatalogRequest request, [FromServices] BulkCatalogService bulk, CancellationToken ct) => Ok(new { updated = await bulk.ApplyAsync(UserId, UserId, request.Token, ct) });
     [HttpGet("imports/{id:guid}"), Authorize(Roles = Roles.Seller)]
     public Task<ImportPreviewDto> Preview(Guid id, CancellationToken ct) => import.GetAsync(UserId, id, ct);
+    [HttpPost("imports/{id:guid}/brand"), Authorize(Roles = Roles.Seller), EnableRateLimiting("telegram-sensitive")]
+    public Task<CatalogLookupDto> ImportBrand(Guid id, CreateImportBrandRequest request, CancellationToken ct) => import.CreateBrandAsync(UserId, id, request.Name, ct);
+    [HttpPut("imports/{id:guid}/category"), Authorize(Roles = Roles.Seller)]
+    public Task<ImportPreviewDto> SelectImportCategory(Guid id, SelectImportCategoryRequest request, CancellationToken ct) => import.SelectCategoryAsync(UserId, id, request.CategoryId, ct);
+    [HttpPost("imports/{id:guid}/category"), Authorize(Roles = Roles.Seller), EnableRateLimiting("telegram-sensitive")]
+    public Task<ImportPreviewDto> CreateImportCategory(Guid id, CreateImportCategoryRequest request, CancellationToken ct) => import.CreateCategoryAsync(UserId, id, request, ct);
     [HttpPost("imports/{id:guid}/submit"), Authorize(Roles = Roles.Seller), EnableRateLimiting("telegram-import")]
     public async Task<IActionResult> SubmitImport(Guid id, SubmitImportRequest request, CancellationToken ct) => Ok(new { productId = await import.SubmitAsync(UserId, id, request, ct) });
     private Task<bool> OwnsStore(Guid id, CancellationToken ct) => db.Stores.AnyAsync(s => s.Id == id && s.IsActive && db.Sellers.Any(seller => seller.Id == s.SellerId && seller.UserId == UserId && seller.Status == SellerStatus.ACTIVE), ct);

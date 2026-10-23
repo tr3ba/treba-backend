@@ -11,9 +11,9 @@ public sealed class BulkCatalogRequest : IValidatableObject
     public bool? IsActive { get; set; }
     public IEnumerable<ValidationResult> Validate(ValidationContext context)
     {
-        if (Price.HasValue && PricePercent.HasValue) yield return new("Выберите фиксированную цену или изменение в процентах.");
-        if (!Price.HasValue && !PricePercent.HasValue && !StockQuantity.HasValue && !IsActive.HasValue) yield return new("Укажите хотя бы одно изменение.");
-        if (ProductIds is not null && (ProductIds.Any(id => id == Guid.Empty) || ProductIds.Distinct().Count() != ProductIds.Count)) yield return new("Каждый товар можно выбрать только один раз.");
+        if (Price.HasValue && PricePercent.HasValue) yield return new("Виберіть фіксовану ціну або зміну у відсотках.");
+        if (!Price.HasValue && !PricePercent.HasValue && !StockQuantity.HasValue && !IsActive.HasValue) yield return new("Укажіть хоча б одну зміну.");
+        if (ProductIds is not null && (ProductIds.Any(id => id == Guid.Empty) || ProductIds.Distinct().Count() != ProductIds.Count)) yield return new("Кожен товар можна вибрати лише один раз.");
     }
 }
 public sealed record BulkCatalogRowDto(Guid ProductId, Guid VariantId, string Name, string Sku, decimal BeforePrice, decimal AfterPrice,

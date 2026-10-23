@@ -13,7 +13,7 @@ public sealed class SellerImportQueue(ApplicationDbContext db, SellerCategoryAcc
 {
     public async Task<IReadOnlyList<ImportJobDto>> AddAsync(Guid userId, QueueImportsRequest request, CancellationToken ct)
     {
-        if (request.Items is null || request.Items.Count is < 1 or > 20 || request.Items.Any(i => i is null || string.IsNullOrWhiteSpace(i.Url) || i.Url.Length > 1500)) throw new ArgumentException("Добавьте от 1 до 20 ссылок.");
+        if (request.Items is null || request.Items.Count is < 1 or > 20 || request.Items.Any(i => i is null || string.IsNullOrWhiteSpace(i.Url) || i.Url.Length > 1500)) throw new ArgumentException("Додайте від 1 до 20 посилань.");
         await RequireSeller(userId, ct);
         var items = request.Items.Select(i => (Url: MarketplaceSourceClient.ProductUri(i.Url).AbsoluteUri, i.CategoryId)).Distinct().ToList();
         foreach (var id in items.Where(i => i.CategoryId.HasValue).Select(i => i.CategoryId!.Value).Distinct()) await access.EnsureAllowedAsync(userId, id, ct);
@@ -30,7 +30,7 @@ public sealed class SellerImportQueue(ApplicationDbContext db, SellerCategoryAcc
         var reused = previous.Where(j => items.Any(i => i.Url == j.SourceUrl && i.CategoryId == j.CategoryId)).ToList();
         items = items.Where(i => !reused.Any(j => j.SourceUrl == i.Url && j.CategoryId == i.CategoryId)).ToList();
         if (await db.SellerImportJobs.CountAsync(j => j.UserId == userId && (j.Status == "Queued" || j.Status == "Processing" || j.Status == "Ready" && db.ProductImportDrafts.Any(d => d.Id == j.PreviewId && d.SubmittedAt == null && d.ExpiresAt > clock.GetUtcNow())), ct) + items.Count > 50)
-            throw new BusinessRuleException("Завершите текущие импорты: одновременно доступно до 50 ссылок.");
+            throw new BusinessRuleException("Завершіть поточні імпорти: одночасно доступно до 50 посилань.");
         var batch = Guid.NewGuid();
         var jobs = items.Select(i => new SellerImportJob { UserId = userId, BatchId = batch, SourceUrl = i.Url, CategoryId = i.CategoryId, CreatedAt = now, UpdatedAt = now }).ToList();
         db.SellerImportJobs.AddRange(jobs); await db.SaveChangesAsync(ct);
@@ -39,26 +39,26 @@ public sealed class SellerImportQueue(ApplicationDbContext db, SellerCategoryAcc
         return await Query(db.SellerImportJobs.AsNoTracking().Where(j => j.UserId == userId && ids.Contains(j.Id))).ToListAsync(ct);
     }
     public async Task<IReadOnlyList<ImportJobDto>> ListAsync(Guid userId, CancellationToken ct) => await Query(db.SellerImportJobs.AsNoTracking().Where(j => j.UserId == userId).OrderByDescending(j => j.CreatedAt).Take(100)).ToListAsync(ct);
-    public async Task RetryAsync(Guid userId, Guid id, CancellationToken ct, Guid? categoryId = null)
+    public async Task RetryAsync(Guid userId, Guid id, CancellationToken ct, Guid? categoryId = null, bool resetCategory = false)
     {
         await RequireSeller(userId, ct);
         var job = await db.SellerImportJobs.SingleOrDefaultAsync(j => j.Id == id && j.UserId == userId, ct) ?? throw new KeyNotFoundException();
         var expired = job.PreviewId.HasValue && await db.ProductImportDrafts.AnyAsync(d => d.Id == job.PreviewId && d.SubmittedAt == null && d.ExpiresAt <= clock.GetUtcNow(), ct);
-        if (job.Status != "Failed" && !(job.Status == "Ready" && expired)) throw new BusinessRuleException("Этот импорт нельзя повторить сейчас.");
+        if (job.Status != "Failed" && !(job.Status == "Ready" && expired)) throw new BusinessRuleException("Цей імпорт зараз не можна повторити.");
         if (categoryId.HasValue)
         {
             if (!await access.CanClassifyUnmappedImportsAsync(userId, ct))
-                throw new BusinessRuleException("Выбор категории импорта недоступен. Обратитесь к администратору.");
+                throw new BusinessRuleException("Вибір категорії імпорту недоступний. Зверніться до адміністратора.");
             await access.EnsureAllowedAsync(userId, categoryId.Value, ct);
-            job.CategoryId = categoryId;
         }
+        if (categoryId.HasValue || resetCategory) job.CategoryId = categoryId;
         job.Status = "Queued"; job.Attempts = 0; job.Error = null; job.PreviewId = null; job.LeaseUntil = null; job.UpdatedAt = clock.GetUtcNow(); job.Version = Guid.NewGuid();
         await db.SaveChangesAsync(ct);
     }
     private async Task RequireSeller(Guid id, CancellationToken ct)
     {
-        if (!await db.Sellers.AnyAsync(s => s.UserId == id && s.Status == SellerStatus.ACTIVE, ct)) throw new BusinessRuleException("Импорт доступен активному продавцу.");
-        if (!await db.Users.AnyAsync(u => u.Id == id && !u.IsDeleted && u.Status == Domain.Entities.Users.UserStatus.Active && u.Role != null && u.Role.Name == Domain.Entities.Users.Roles.Seller, ct)) throw new BusinessRuleException("Доступ аккаунта продавца изменился.");
+        if (!await db.Sellers.AnyAsync(s => s.UserId == id && s.Status == SellerStatus.ACTIVE, ct)) throw new BusinessRuleException("Імпорт доступний активному продавцю.");
+        if (!await db.Users.AnyAsync(u => u.Id == id && !u.IsDeleted && u.Status == Domain.Entities.Users.UserStatus.Active && u.Role != null && u.Role.Name == Domain.Entities.Users.Roles.Seller, ct)) throw new BusinessRuleException("Доступ облікового запису продавця змінився.");
     }
     private IQueryable<ImportJobDto> Query(IQueryable<Domain.Entities.Telegram.SellerImportJob> jobs)
     {

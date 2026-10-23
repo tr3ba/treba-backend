@@ -26,14 +26,20 @@ public sealed class SellerImportsController(ProductImportService imports, Seller
     public Task<IReadOnlyList<ImportJobDto>> Add(QueueImportsRequest request, CancellationToken ct) => queue.AddAsync(UserId, request, ct);
 
     [HttpPost("queue/{id:guid}/retry"), EnableRateLimiting("telegram-import")]
-    public async Task<IActionResult> Retry(Guid id, CancellationToken ct, [FromQuery] Guid? categoryId = null)
-    { await queue.RetryAsync(UserId, id, ct, categoryId); return NoContent(); }
+    public async Task<IActionResult> Retry(Guid id, CancellationToken ct, [FromQuery] Guid? categoryId = null, [FromQuery] bool resetCategory = false)
+    { await queue.RetryAsync(UserId, id, ct, categoryId, resetCategory); return NoContent(); }
 
     [HttpGet("{id:guid}")]
     public Task<ImportPreviewDto> Preview(Guid id, CancellationToken ct) => imports.GetAsync(UserId, id, ct);
 
     [HttpPost("{id:guid}/brand"), EnableRateLimiting("telegram-sensitive")]
     public Task<CatalogLookupDto> Brand(Guid id, CreateImportBrandRequest request, CancellationToken ct) => imports.CreateBrandAsync(UserId, id, request.Name, ct);
+
+    [HttpPut("{id:guid}/category")]
+    public Task<ImportPreviewDto> SelectCategory(Guid id, SelectImportCategoryRequest request, CancellationToken ct) => imports.SelectCategoryAsync(UserId, id, request.CategoryId, ct);
+
+    [HttpPost("{id:guid}/category"), EnableRateLimiting("telegram-sensitive")]
+    public Task<ImportPreviewDto> CreateCategory(Guid id, CreateImportCategoryRequest request, CancellationToken ct) => imports.CreateCategoryAsync(UserId, id, request, ct);
 
     [HttpPost("{id:guid}/submit"), EnableRateLimiting("telegram-import")]
     public async Task<IActionResult> Submit(Guid id, SubmitImportRequest request, CancellationToken ct) => Ok(new { productId = await imports.SubmitAsync(UserId, id, request, ct) });

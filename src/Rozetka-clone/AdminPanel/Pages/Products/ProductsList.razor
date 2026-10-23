@@ -50,6 +50,7 @@
                     else if(_canModerate && product.Status == "PENDING_MODERATION"){<a class="btn-link-action" href="/moderation">@L["View"]</a>}
                     @if(_canEdit){<a class="btn-link-action" href="@CopyUrl(product.Id)">@L["CopyProduct"]</a>}
                     <button type="button" class="btn-link-action" @onclick="() => _history = product">@L["ModerationHistory"]</button>
+                    @if(_canEdit){<button type="button" class="btn-link-action catalog-delete-action" disabled="@_deleting" @onclick="() => _deleteProduct = product">@L["DeleteProduct"]</button>}
                 </div></td>
             </tr>
         }
@@ -58,6 +59,7 @@
         <div class="catalog-pagination"><span>@L["Found"]: @_result.TotalElements</span><PaginationControl CurrentPage="_result.Page" TotalPages="Math.Max(1,_result.TotalPages)" OnPageChanged="ChangePage" /></div>
     }
 </section>
+<ConfirmDialog IsOpen="@(_deleteProduct is not null)" Title="@L["DeleteProduct"]" Message="@L["DeleteProductConfirm", _deleteProduct?.Name ?? ""]" OnClose="ConfirmDelete" />
 @if(_history is not null)
 {
     <div class="security-modal-backdrop"><section class="security-modal catalog-history-modal" role="dialog" aria-modal="true" aria-labelledby="product-history-title">
@@ -80,6 +82,8 @@
     private CatalogStatsDto? _stats;
     private PagedResponse<CatalogProductDto>? _result;
     private CatalogProductDto? _history;
+    private CatalogProductDto? _deleteProduct;
+    private bool _deleting;
     private string _search="",_status="",_stock="",_sort="newest";
     private Guid? _category,_brand,_seller;
     private decimal? _min,_max;
@@ -107,6 +111,15 @@
         catch(HttpRequestException ex){_error=ex.Message;} finally{_loading=false;}
     }
     private Task Apply()=>Navigate(1);
+    private async Task ConfirmDelete(bool confirmed)
+    {
+        var product = _deleteProduct; _deleteProduct = null;
+        if (!confirmed || product is null || _deleting) return;
+        _deleting = true; _error = null;
+        try { await Api.DeleteProduct(product.Id); await Reload(); }
+        catch (HttpRequestException ex) { _error = ex.Message; }
+        finally { _deleting = false; }
+    }
     private Task ChangePage(int page)=>Navigate(page);
     private async Task Navigate(int page)
     {

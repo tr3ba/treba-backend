@@ -13,22 +13,22 @@ public sealed class TelegramInitDataValidator(TimeProvider clock)
     public VerifiedTelegramUser Validate(string initData, string botToken, TimeSpan maxAge)
     {
         if (string.IsNullOrWhiteSpace(botToken) || string.IsNullOrWhiteSpace(initData) || initData.Length > 16384)
-            throw new UnauthorizedAccessException("Откройте приложение из Telegram.");
+            throw new UnauthorizedAccessException("Відкрийте застосунок із Telegram.");
         var fields = QueryHelpers.ParseQuery(initData);
         if (fields.Any(f => f.Value.Count != 1) || !fields.TryGetValue("hash", out var hash) || hash.ToString().Length != 64)
-            throw new UnauthorizedAccessException("Недействительная подпись Telegram.");
+            throw new UnauthorizedAccessException("Недійсний підпис Telegram.");
         var check = string.Join('\n', fields.Where(f => f.Key != "hash").OrderBy(f => f.Key, StringComparer.Ordinal).Select(f => f.Key + "=" + f.Value));
         var secret = HMACSHA256.HashData(Encoding.UTF8.GetBytes("WebAppData"), Encoding.UTF8.GetBytes(botToken));
         var expected = HMACSHA256.HashData(secret, Encoding.UTF8.GetBytes(check));
         byte[] supplied;
         try { supplied = Convert.FromHexString(hash.ToString()); }
-        catch (FormatException) { throw new UnauthorizedAccessException("Недействительная подпись Telegram."); }
+        catch (FormatException) { throw new UnauthorizedAccessException("Недійсний підпис Telegram."); }
         if (!CryptographicOperations.FixedTimeEquals(expected, supplied)
             || !fields.TryGetValue("auth_date", out var date) || !long.TryParse(date, NumberStyles.None, CultureInfo.InvariantCulture, out var timestamp))
-            throw new UnauthorizedAccessException("Недействительная подпись Telegram.");
+            throw new UnauthorizedAccessException("Недійсний підпис Telegram.");
         var now = clock.GetUtcNow();
         if (timestamp < now.Subtract(maxAge).ToUnixTimeSeconds() || timestamp > now.AddSeconds(30).ToUnixTimeSeconds())
-            throw new UnauthorizedAccessException("Сеанс Telegram истёк. Откройте приложение заново.");
+            throw new UnauthorizedAccessException("Термін дії сеансу Telegram минув. Відкрийте застосунок знову.");
         try
         {
             using var json = JsonDocument.Parse(fields["user"].ToString());
@@ -39,7 +39,7 @@ public sealed class TelegramInitDataValidator(TimeProvider clock)
             return new(id, Get(user, "username"), name[..Math.Min(200, name.Length)], DateTimeOffset.FromUnixTimeSeconds(timestamp));
         }
         catch (Exception ex) when (ex is JsonException or KeyNotFoundException or InvalidOperationException or FormatException)
-        { throw new UnauthorizedAccessException("Недействительные данные пользователя Telegram."); }
+        { throw new UnauthorizedAccessException("Недійсні дані користувача Telegram."); }
     }
     private static string? Get(JsonElement item, string key) => item.TryGetProperty(key, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 }

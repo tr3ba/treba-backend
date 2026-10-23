@@ -32,7 +32,6 @@ public sealed class OperationsUiTests
     private static readonly TicketRow Ticket = new(TicketId, OrderId, Order.OrderNumber, CustomerId, Order.CustomerName, "RETURN", "Return fixture", "APPROVED", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, Guid.NewGuid());
 
     [Theory]
-    [InlineData("ru", "Следующий статус", "Черновик остаётся неактивным")]
     [InlineData("uk", "Наступний статус", "Чернетка залишається неактивною")]
     [InlineData("en", "Next status", "Drafts stay inactive")]
     public async Task OperationalPages_RenderLocalizedDataAndControls(string culture, string nextStatus, string draftHint)
@@ -92,7 +91,7 @@ public sealed class OperationsUiTests
     }
 
     [Theory]
-    [InlineData("ru", "Фичи", "Удаление чатов")] [InlineData("uk", "Функції", "Видалення чатів")] [InlineData("en", "Features", "Chat deletion")]
+    [InlineData("uk", "Функції", "Видалення чатів")] [InlineData("en", "Features", "Chat deletion")]
     public async Task FeatureSettingsAndTrash_RenderLocalizedSwitchAndRecovery(string culture, string title, string label)
     {
         var previous = CultureInfo.CurrentCulture; var previousUi = CultureInfo.CurrentUICulture;

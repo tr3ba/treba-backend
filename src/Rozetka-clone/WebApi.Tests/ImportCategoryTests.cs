@@ -16,10 +16,8 @@ public sealed class ImportCategoryTests
     private static Category Category(string name, bool active = true) => new() { Id = Guid.NewGuid(), Name = name, IsActive = active, Slug = Guid.NewGuid().ToString("N") };
 
     [Theory]
-    [InlineData("Сковороды", "Сковороди")]
     [InlineData("Frying pans", "Сковороди")]
     [InlineData("Laptops", "Ноутбуки")]
-    [InlineData("Мобильные телефоны", "Смартфони")]
     [InlineData("Мобільні телефони", "Смартфони")]
     public void EquivalentSourceNames_ResolveToExistingCategory(string source, string target)
     {
@@ -30,7 +28,7 @@ public sealed class ImportCategoryTests
     [Fact]
     public void InactiveAmbiguousOrUnrelatedCategories_AreNotGuessed()
     {
-        Assert.Null(ImportCategoryResolver.Resolve(Data("Сковороды"), [Category("Сковороди", false)]));
+        Assert.Null(ImportCategoryResolver.Resolve(Data("Сковороди"), [Category("Сковороди", false)]));
         Assert.Null(ImportCategoryResolver.Resolve(Data("Сковороди"), [Category("Сковороди"), Category("Сковороди")]));
         Assert.Null(ImportCategoryResolver.Resolve(Data("Посуд"), [Category("Сковороди")]));
         Assert.Null(ImportCategoryResolver.Resolve(Data("Мобільні телефони", "Nokia 105"), [Category("Смартфони")]));
