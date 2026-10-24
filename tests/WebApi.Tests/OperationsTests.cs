@@ -18,12 +18,41 @@ using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.TestHost;
+using Application.Payments;
 
 namespace WebApi.Tests;
 
 public sealed class OperationsTests
 {
     internal sealed record Actor(Guid? UserId, string Role = "Customer") : ICurrentActor { public string Name => "Operations fixture"; }
+
+    internal sealed class FakePaymentService : IPaymentService
+    {
+        public Task<PaymentDto> CreatePaymentAsync(
+            Guid orderId,
+            Guid userId,
+            CancellationToken cancellationToken = default)
+            => throw new NotSupportedException();
+
+        public Task<PaymentStatusDto> GetPaymentStatusAsync(
+            Guid paymentId,
+            Guid userId,
+            CancellationToken cancellationToken = default)
+            => throw new NotSupportedException();
+
+        public Task ProcessWebhookAsync(
+            string provider,
+            PaymentWebhookRequest request,
+            CancellationToken cancellationToken = default)
+            => throw new NotSupportedException();
+
+        public Task<RefundDto> RefundAsync(
+            Guid orderId,
+            decimal amount,
+            CancellationToken cancellationToken = default)
+            => throw new NotSupportedException();
+    }
+
     internal sealed record Seed(TelegramTestData.Seed Seller, User Customer, Product Product, ProductVariant Variant);
     internal static async Task<Seed> SeedAsync(ApplicationDbContext db, string suffix = "")
     {
@@ -44,7 +73,14 @@ public sealed class OperationsTests
         var v = new ProductVariant(Guid.NewGuid(), product.Id, "OPS-" + Guid.NewGuid().ToString("N"), null, "Main", 100, null, null, null, null, null, null, true); v.SetStock(10);
         db.AddRange(product, v); await db.SaveChangesAsync(); return new(seed, customer, product, v);
     }
-    internal static OrderService Service(ApplicationDbContext db, Actor actor) => new(db, new InventoryService(db, actor), new DiscountService(db), actor);
+    internal static OrderService Service(ApplicationDbContext db, Actor actor) =>
+        new(
+            db,
+            new InventoryService(db, actor),
+            new DiscountService(db),
+            actor,
+            new FakePaymentService()
+        );
     internal static CreateOrderRequest Request(Seed s, int quantity = 2, string? coupon = null) => new(s.Customer.Id, "Please call first", "Customer Fixture", "+380000000000", "fixture@example.test",
         new("Ukraine", null, "Kyiv", "Test street", "1", null, "01000", "Customer Fixture", "+380000000000"),
         [new(s.Product.Id, s.Variant.Id, s.Seller.Seller.Id, "Untrusted name", "Untrusted variant", "Untrusted SKU", quantity, .01m, 999m, "not json")], coupon);
