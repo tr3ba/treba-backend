@@ -11,7 +11,9 @@ try {
     Set-Content -LiteralPath $path -Value 'fixture content' -Encoding UTF8
     $owner = (Get-Acl -LiteralPath $path).Owner
     & icacls.exe $path /grant '*S-1-1-0:(R)' | Out-Null
-    if ($LASTEXITCODE -ne 0) { throw 'Could not prepare the explicit read rule for the fixture.' }
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Could not prepare the explicit read rule for the fixture.'
+    }
     & $protect -Path $path
     & $protect -Path $path
     $acl = Get-Acl -LiteralPath $path
@@ -21,12 +23,26 @@ try {
         $rules[0].AccessControlType -ne 'Allow' -or $rules[0].FileSystemRights -ne 'FullControl') {
         throw 'The launcher file must allow only the current user, without inherited or other explicit rules.'
     }
-    if ($acl.Owner -ne $owner) { throw 'Protecting a file must not change its owner.' }
-    if ((Get-Content -LiteralPath $path -Raw).Trim() -ne 'fixture content') { throw 'Protecting a file changed its content.' }
+    if ($acl.Owner -ne $owner) {
+        throw 'Protecting a file must not change its owner.'
+    }
+
+    if ((Get-Content -LiteralPath $path -Raw).Trim() -ne 'fixture content') {
+        throw 'Protecting a file changed its content.'
+    }
+
     Set-Content -LiteralPath $path -Value 'updated fixture' -Encoding UTF8
-    if ((Get-Content -LiteralPath $path -Raw).Trim() -ne 'updated fixture') { throw 'Protected launcher state cannot be updated.' }
-    Write-Host ('PASS launcher state protection on PowerShell ' + $PSVersionTable.PSVersion + ': current user only, owner and content preserved, repeated writes work')
+    if ((Get-Content -LiteralPath $path -Raw).Trim() -ne 'updated fixture') {
+        throw 'Protected launcher state cannot be updated.'
+    }
+
+    $successMessage = 'PASS launcher state protection on PowerShell {0}: ' -f $PSVersionTable.PSVersion
+    $successMessage += 'current user only, owner and content preserved, repeated writes work'
+    Write-Host $successMessage
 } finally {
-    if (Test-Path -LiteralPath $path) { Remove-Item -LiteralPath $path }
+    if (Test-Path -LiteralPath $path) {
+        Remove-Item -LiteralPath $path
+    }
+
     [IO.Directory]::Delete($directory)
 }

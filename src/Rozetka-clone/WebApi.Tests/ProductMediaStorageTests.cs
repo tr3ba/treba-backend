@@ -21,7 +21,8 @@ public sealed class ProductMediaStorageTests
     public async Task SharedRoot_RetainsPhotoAcrossApplicationInstances_AndDeletesIt()
     {
         var root = Path.Combine(Path.GetTempPath(), "treba-media-test-" + Guid.NewGuid().ToString("N"));
-        var id = Guid.NewGuid(); var file = Guid.NewGuid().ToString("N") + ".png";
+        var id = Guid.NewGuid();
+        var file = Guid.NewGuid().ToString("N") + ".png";
         var options = Options.Create(new ProductMediaOptions { RootPath = root });
         using var first = new ProductMediaStorage(options, new EnvironmentStub(root));
         using var second = new ProductMediaStorage(options, new EnvironmentStub(root));
@@ -29,13 +30,20 @@ public sealed class ProductMediaStorageTests
         {
             await first.SaveAsync(id, file, [1, 2, 3], default);
             var loaded = await second.ReadAsync(id, file, default);
-            Assert.NotNull(loaded); Assert.Equal("image/png", loaded.ContentType); Assert.Equal(new byte[] { 1, 2, 3 }, loaded.Bytes);
+            Assert.NotNull(loaded);
+            Assert.Equal("image/png", loaded.ContentType);
+            Assert.Equal(new byte[] { 1, 2, 3 }, loaded.Bytes);
             await second.DeleteAsync(id, file, default);
             Assert.Null(await second.ReadAsync(id, file, default));
         }
         finally
         {
-            if (Path.GetFullPath(root).StartsWith(Path.GetFullPath(Path.GetTempPath()), StringComparison.OrdinalIgnoreCase) && Directory.Exists(root)) Directory.Delete(root, true);
+            if (
+                Path.GetFullPath(root)
+                    .StartsWith(Path.GetFullPath(Path.GetTempPath()), StringComparison.OrdinalIgnoreCase)
+                && Directory.Exists(root)
+            )
+                Directory.Delete(root, true);
         }
     }
 
@@ -45,7 +53,10 @@ public sealed class ProductMediaStorageTests
     [InlineData("photo.png\nput /secret /public")]
     public async Task MediaPaths_RejectTraversalAndCommandInjection(string name)
     {
-        using var storage = new ProductMediaStorage(Options.Create(new ProductMediaOptions()), new EnvironmentStub(Path.GetTempPath()));
+        using var storage = new ProductMediaStorage(
+            Options.Create(new ProductMediaOptions()),
+            new EnvironmentStub(Path.GetTempPath())
+        );
         await Assert.ThrowsAsync<ArgumentException>(() => storage.ReadAsync(Guid.NewGuid(), name, default));
     }
 }

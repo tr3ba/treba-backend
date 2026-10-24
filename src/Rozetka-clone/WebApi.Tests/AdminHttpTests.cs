@@ -11,8 +11,8 @@ using Domain.Entities;
 using Domain.Entities.Product;
 using Domain.Entities.Users;
 using Domain.Enums;
-using Infrastructure.Persistence;
 using Infrastructure.Administration;
+using Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -46,7 +46,9 @@ public sealed class AdminHttpTests
         services.AddScoped<ICurrentActor, WebApi.Authentication.HttpCurrentActor>();
         services.AddScoped<IReviewService, ReviewService>();
         services.AddScoped<Application.Inventory.InventoryService>();
-        services.AddScoped<Application.Inventory.IInventoryService>(sp => sp.GetRequiredService<Application.Inventory.InventoryService>());
+        services.AddScoped<Application.Inventory.IInventoryService>(sp =>
+            sp.GetRequiredService<Application.Inventory.InventoryService>()
+        );
         services.AddScoped<Application.Promotions.IDiscountService, Application.Promotions.DiscountService>();
         services.AddScoped<Application.Payments.IPaymentService, TestPaymentService>();
         Application.Orders.OrderRegistration.AddOrderServices(services);
@@ -82,26 +84,49 @@ public sealed class AdminHttpTests
         using (var scope = server.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            var product = new Product { Id = Guid.NewGuid(), Name = "Product", Slug = "product" };
+            var product = new Product
+            {
+                Id = Guid.NewGuid(),
+                Name = "Product",
+                Slug = "product",
+            };
             db.Products.Add(product);
-            db.Reviews.Add(new Review { Id = id, ProductId = product.Id, Rating = 5, Status = ReviewStatus.PENDING });
+            db.Reviews.Add(
+                new Review
+                {
+                    Id = id,
+                    ProductId = product.Id,
+                    Rating = 5,
+                    Status = ReviewStatus.PENDING,
+                }
+            );
             await db.SaveChangesAsync();
         }
 
         using var invalid = await client.PutAsJsonAsync($"/api/v1/admin/reviews/{id}/moderate", new { });
         Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
-        using var published = await client.PutAsJsonAsync($"/api/v1/admin/reviews/{id}/moderate", new ModerateReviewRequest("PUBLISHED"));
+        using var published = await client.PutAsJsonAsync(
+            $"/api/v1/admin/reviews/{id}/moderate",
+            new ModerateReviewRequest("PUBLISHED")
+        );
         Assert.Equal(HttpStatusCode.NoContent, published.StatusCode);
         using (var scope = server.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             Assert.Equal(ReviewStatus.PUBLISHED, (await db.Reviews.SingleAsync()).Status);
             var product = await db.Products.SingleAsync();
-            Assert.Equal(1, product.ReviewCount); Assert.Equal(5, product.AverageRating);
+            Assert.Equal(1, product.ReviewCount);
+            Assert.Equal(5, product.AverageRating);
         }
-        using var missing = await client.PutAsJsonAsync($"/api/v1/admin/reviews/{Guid.NewGuid()}/moderate", new ModerateReviewRequest("REJECTED"));
+        using var missing = await client.PutAsJsonAsync(
+            $"/api/v1/admin/reviews/{Guid.NewGuid()}/moderate",
+            new ModerateReviewRequest("REJECTED")
+        );
         Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
-        using var invalidState = await client.PutAsJsonAsync($"/api/v1/admin/reviews/{id}/moderate", new ModerateReviewRequest("PENDING"));
+        using var invalidState = await client.PutAsJsonAsync(
+            $"/api/v1/admin/reviews/{id}/moderate",
+            new ModerateReviewRequest("PENDING")
+        );
         Assert.Equal(HttpStatusCode.BadRequest, invalidState.StatusCode);
     }
 
@@ -114,11 +139,14 @@ public sealed class AdminHttpTests
     [InlineData("Administrator", HttpStatusCode.OK)]
     public async Task AdministrativeRoutes_EnforceRolePolicies(string? role, HttpStatusCode expected)
     {
-        await using var server = await ServerAsync(); using var client = server.GetTestClient();
-        if (role is not null) client.DefaultRequestHeaders.Add("X-Test-Role", role);
+        await using var server = await ServerAsync();
+        using var client = server.GetTestClient();
+        if (role is not null)
+            client.DefaultRequestHeaders.Add("X-Test-Role", role);
         using var list = await client.GetAsync("/api/v1/admin/reviews");
         using var dashboard = await client.GetAsync("/api/v1/admin/dashboard");
-        Assert.Equal(expected, list.StatusCode); Assert.Equal(expected, dashboard.StatusCode);
+        Assert.Equal(expected, list.StatusCode);
+        Assert.Equal(expected, dashboard.StatusCode);
         if (expected == HttpStatusCode.OK)
         {
             var data = await dashboard.Content.ReadFromJsonAsync<AdminDashboardDto>();
@@ -137,22 +165,34 @@ public sealed class AdminHttpTests
     [InlineData("Administrator", HttpStatusCode.OK)]
     public async Task SettingsRoutes_AreAdministratorOnly(string? role, HttpStatusCode expected)
     {
-        await using var server = await ServerAsync(); using var client = server.GetTestClient();
-        if (role is not null) client.DefaultRequestHeaders.Add("X-Test-Role", role);
+        await using var server = await ServerAsync();
+        using var client = server.GetTestClient();
+        if (role is not null)
+            client.DefaultRequestHeaders.Add("X-Test-Role", role);
         using var staff = await client.GetAsync("/api/v1/admin/settings/staff");
         using var audit = await client.GetAsync("/api/v1/admin/settings/audit");
-        Assert.Equal(expected, staff.StatusCode); Assert.Equal(expected, audit.StatusCode);
+        Assert.Equal(expected, staff.StatusCode);
+        Assert.Equal(expected, audit.StatusCode);
     }
 
-    private sealed class TestAuthentication(IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder)
-        : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
+    private sealed class TestAuthentication(
+        IOptionsMonitor<AuthenticationSchemeOptions> options,
+        ILoggerFactory logger,
+        UrlEncoder encoder
+    ) : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
     {
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
         {
             if (!Request.Headers.TryGetValue("X-Test-Role", out var role))
                 return Task.FromResult(AuthenticateResult.NoResult());
-            var claims = new List<Claim> { new(ClaimTypes.Role, role.ToString()), new("firstName", "Test"), new("lastName", "Staff") };
-            if (Request.Headers.TryGetValue("X-Test-UserId", out var user)) claims.Add(new(ClaimTypes.NameIdentifier, user.ToString()));
+            var claims = new List<Claim>
+            {
+                new(ClaimTypes.Role, role.ToString()),
+                new("firstName", "Test"),
+                new("lastName", "Staff"),
+            };
+            if (Request.Headers.TryGetValue("X-Test-UserId", out var user))
+                claims.Add(new(ClaimTypes.NameIdentifier, user.ToString()));
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims, "Test"));
             return Task.FromResult(AuthenticateResult.Success(new AuthenticationTicket(principal, "Test")));
         }

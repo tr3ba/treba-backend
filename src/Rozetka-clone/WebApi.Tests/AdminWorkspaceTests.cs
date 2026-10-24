@@ -16,31 +16,50 @@ namespace WebApi.Tests;
 
 public sealed class AdminWorkspaceTests
 {
-    private static ApplicationDbContext Database() => new(new DbContextOptionsBuilder<ApplicationDbContext>()
-        .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+    private static ApplicationDbContext Database() =>
+        new(new DbContextOptionsBuilder<ApplicationDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
 
     private static async Task<(Product Product, User Author)> SeedAsync(ApplicationDbContext db)
     {
         var author = User.Create(Guid.NewGuid(), "shopper@example.com", null, "Anna", "Buyer");
-        var product = new Product { Id = Guid.NewGuid(), Name = "Coffee grinder", Slug = "coffee-grinder", UpdatedAt = DateTime.UtcNow };
-        db.Users.Add(author); db.Products.Add(product);
+        var product = new Product
+        {
+            Id = Guid.NewGuid(),
+            Name = "Coffee grinder",
+            Slug = "coffee-grinder",
+            UpdatedAt = DateTime.UtcNow,
+        };
+        db.Users.Add(author);
+        db.Products.Add(product);
         await db.SaveChangesAsync();
         return (product, author);
     }
 
-    private static Review Review(Product product, User author, ReviewStatus status, int rating = 4) => new()
-    {
-        Id = Guid.NewGuid(), ProductId = product.Id, UserId = author.Id, OrderItemId = Guid.NewGuid(),
-        Rating = rating, Title = "Useful product", Comment = "Works well", Status = status,
-        CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow
-    };
+    private static Review Review(Product product, User author, ReviewStatus status, int rating = 4) =>
+        new()
+        {
+            Id = Guid.NewGuid(),
+            ProductId = product.Id,
+            UserId = author.Id,
+            OrderItemId = Guid.NewGuid(),
+            Rating = rating,
+            Title = "Useful product",
+            Comment = "Works well",
+            Status = status,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+        };
 
     [Fact]
     public async Task ReviewQueue_FiltersByAuthorAndStatus_AndExcludesDeleted()
     {
         await using var db = Database();
         var (product, author) = await SeedAsync(db);
-        db.Reviews.AddRange(Review(product, author, ReviewStatus.PENDING), Review(product, author, ReviewStatus.PUBLISHED), Review(product, author, ReviewStatus.DELETED));
+        db.Reviews.AddRange(
+            Review(product, author, ReviewStatus.PENDING),
+            Review(product, author, ReviewStatus.PUBLISHED),
+            Review(product, author, ReviewStatus.DELETED)
+        );
         await db.SaveChangesAsync();
         var service = new AdminWorkspaceService(db);
         var pending = await service.ReviewsAsync(1, 12, "pending", " ANNA ");
@@ -58,7 +77,12 @@ public sealed class AdminWorkspaceTests
         await using var db = Database();
         var (product, author) = await SeedAsync(db);
         var time = DateTime.UtcNow;
-        for (var i = 0; i < 5; i++) { var review = Review(product, author, ReviewStatus.PENDING); review.CreatedAt = time; db.Reviews.Add(review); }
+        for (var i = 0; i < 5; i++)
+        {
+            var review = Review(product, author, ReviewStatus.PENDING);
+            review.CreatedAt = time;
+            db.Reviews.Add(review);
+        }
         await db.SaveChangesAsync();
         var service = new AdminWorkspaceService(db);
         var first = await service.ReviewsAsync(1, 2, "PENDING", null);
@@ -78,7 +102,9 @@ public sealed class AdminWorkspaceTests
     public async Task ReviewQueue_RejectsInvalidFilters(int page, int size, string status)
     {
         await using var db = Database();
-        await Assert.ThrowsAsync<ArgumentException>(() => new AdminWorkspaceService(db).ReviewsAsync(page, size, status, null));
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            new AdminWorkspaceService(db).ReviewsAsync(page, size, status, null)
+        );
     }
 
     [Fact]
@@ -87,7 +113,11 @@ public sealed class AdminWorkspaceTests
         await using var db = Database();
         var (product, author) = await SeedAsync(db);
         var pending = Review(product, author, ReviewStatus.PENDING, 5);
-        db.Reviews.AddRange(pending, Review(product, author, ReviewStatus.PUBLISHED, 3), Review(product, author, ReviewStatus.REJECTED, 1));
+        db.Reviews.AddRange(
+            pending,
+            Review(product, author, ReviewStatus.PUBLISHED, 3),
+            Review(product, author, ReviewStatus.REJECTED, 1)
+        );
         await db.SaveChangesAsync();
         var service = new ReviewService(db);
         await service.ModerateReviewAsync(pending.Id, ReviewStatus.PUBLISHED);
@@ -107,9 +137,11 @@ public sealed class AdminWorkspaceTests
         await using var db = Database();
         var (product, author) = await SeedAsync(db);
         var review = Review(product, author, ReviewStatus.PUBLISHED, 5);
-        db.Reviews.Add(review); await db.SaveChangesAsync();
+        db.Reviews.Add(review);
+        await db.SaveChangesAsync();
         await new ReviewService(db).ModerateReviewAsync(review.Id, ReviewStatus.REJECTED);
-        Assert.Equal(0, product.ReviewCount); Assert.Equal(0, product.AverageRating);
+        Assert.Equal(0, product.ReviewCount);
+        Assert.Equal(0, product.AverageRating);
     }
 
     [Fact]
@@ -118,11 +150,16 @@ public sealed class AdminWorkspaceTests
         await using var db = Database();
         var (product, author) = await SeedAsync(db);
         var review = Review(product, author, ReviewStatus.DELETED);
-        db.Reviews.Add(review); await db.SaveChangesAsync();
+        db.Reviews.Add(review);
+        await db.SaveChangesAsync();
         var service = new ReviewService(db);
-        await Assert.ThrowsAsync<BusinessRuleException>(() => service.ModerateReviewAsync(review.Id, ReviewStatus.PUBLISHED));
+        await Assert.ThrowsAsync<BusinessRuleException>(() =>
+            service.ModerateReviewAsync(review.Id, ReviewStatus.PUBLISHED)
+        );
         await Assert.ThrowsAsync<ArgumentException>(() => service.ModerateReviewAsync(review.Id, ReviewStatus.PENDING));
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => service.ModerateReviewAsync(Guid.NewGuid(), ReviewStatus.PUBLISHED));
+        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            service.ModerateReviewAsync(Guid.NewGuid(), ReviewStatus.PUBLISHED)
+        );
         Assert.Equal(ReviewStatus.DELETED, review.Status);
     }
 
@@ -135,7 +172,16 @@ public sealed class AdminWorkspaceTests
         await using var db = Database();
         var (product, author) = await SeedAsync(db);
         db.Reviews.Add(Review(product, author, ReviewStatus.PENDING));
-        db.Sellers.Add(new Seller { Id = Guid.NewGuid(), UserId = author.Id, CompanyName = "Store", Status = SellerStatus.PENDING, UpdatedAt = DateTime.UtcNow });
+        db.Sellers.Add(
+            new Seller
+            {
+                Id = Guid.NewGuid(),
+                UserId = author.Id,
+                CompanyName = "Store",
+                Status = SellerStatus.PENDING,
+                UpdatedAt = DateTime.UtcNow,
+            }
+        );
         await db.SaveChangesAsync();
         var dashboard = await new AdminWorkspaceService(db).DashboardAsync(7, sellers, users);
         Assert.Equal(1, dashboard.PendingReviews);
@@ -144,7 +190,10 @@ public sealed class AdminWorkspaceTests
         Assert.Equal(users ? 1 : (int?)null, dashboard.NewUsers);
         Assert.Equal(sellers, dashboard.RecentActivity.Any(x => x.Kind == "seller"));
         Assert.Equal(users, dashboard.RecentActivity.Any(x => x.Kind == "user"));
-        Assert.Equal(dashboard.RecentActivity.OrderByDescending(x => x.OccurredAt).Select(x => x.EntityId), dashboard.RecentActivity.Select(x => x.EntityId));
+        Assert.Equal(
+            dashboard.RecentActivity.OrderByDescending(x => x.OccurredAt).Select(x => x.EntityId),
+            dashboard.RecentActivity.Select(x => x.EntityId)
+        );
     }
 
     [Fact]
@@ -156,7 +205,10 @@ public sealed class AdminWorkspaceTests
         await db.SaveChangesAsync();
         var service = new AdminWorkspaceService(db);
         Assert.Empty((await service.DashboardAsync(7, false, false)).RecentActivity);
-        Assert.Contains((await service.DashboardAsync(90, false, false)).RecentActivity, item => item.Kind == "product");
+        Assert.Contains(
+            (await service.DashboardAsync(90, false, false)).RecentActivity,
+            item => item.Kind == "product"
+        );
         await Assert.ThrowsAsync<ArgumentException>(() => service.DashboardAsync(0, true, true));
     }
 
@@ -164,8 +216,14 @@ public sealed class AdminWorkspaceTests
     public async Task SellerDecisions_ArePersisted_AndMissingSellerReturnsNull()
     {
         await using var db = Database();
-        var seller = new Seller { Id = Guid.NewGuid(), CompanyName = "Store", Status = SellerStatus.PENDING };
-        db.Sellers.Add(seller); await db.SaveChangesAsync();
+        var seller = new Seller
+        {
+            Id = Guid.NewGuid(),
+            CompanyName = "Store",
+            Status = SellerStatus.PENDING,
+        };
+        db.Sellers.Add(seller);
+        await db.SaveChangesAsync();
         var service = new SellerService(db);
         Assert.Equal(SellerStatus.ACTIVE, (await service.ApproveAsync(seller.Id))!.Status);
         Assert.Equal(SellerStatus.SUSPENDED, (await service.SuspendAsync(seller.Id))!.Status);
@@ -185,7 +243,9 @@ public sealed class AdminWorkspaceTests
         Assert.Equal(allowed, AdminAccess.CanAccess(role, "/reviews"));
         foreach (var type in new[] { typeof(AdminReviewsController), typeof(AdminDashboardController) })
         {
-            var policy = Assert.Single(type.GetCustomAttributes(typeof(AuthorizeAttribute), false).Cast<AuthorizeAttribute>());
+            var policy = Assert.Single(
+                type.GetCustomAttributes(typeof(AuthorizeAttribute), false).Cast<AuthorizeAttribute>()
+            );
             Assert.Equal(allowed, policy.Roles!.Split(',').Contains(role));
         }
     }

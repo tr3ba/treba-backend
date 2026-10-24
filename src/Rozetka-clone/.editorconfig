@@ -1,4 +1,4 @@
-[{WebApi,Application,Infrastructure,Domain,Contracts}/**/*.cs]
+[{WebApi,WebApi.Tests,Application,Infrastructure,Domain,Contracts}/**/*.cs]
 indent_style = space
 indent_size = 4
 tab_width = 4

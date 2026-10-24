@@ -16,12 +16,17 @@ internal static class PostgresTestTables
     {
         Assert.StartsWith("treba_qa_", prefix);
         var model = db.GetService<IDesignTimeModel>().Model;
-        var operations = db.GetService<IMigrationsModelDiffer>().GetDifferences(null, model.GetRelationalModel())
-            .Where(operation => operation is CreateTableOperation table && table.Name.StartsWith(prefix, StringComparison.Ordinal)
-                || operation is CreateIndexOperation index && index.Table.StartsWith(prefix, StringComparison.Ordinal)).ToArray();
+        var operations = db.GetService<IMigrationsModelDiffer>()
+            .GetDifferences(null, model.GetRelationalModel())
+            .Where(operation =>
+                operation is CreateTableOperation table && table.Name.StartsWith(prefix, StringComparison.Ordinal)
+                || operation is CreateIndexOperation index && index.Table.StartsWith(prefix, StringComparison.Ordinal)
+            )
+            .ToArray();
         var tables = operations.OfType<CreateTableOperation>().ToArray();
         Assert.NotEmpty(tables);
-        foreach (var table in tables) table.ForeignKeys.Clear();
+        foreach (var table in tables)
+            table.ForeignKeys.Clear();
         foreach (var statement in db.GetService<IMigrationsSqlGenerator>().Generate(operations, model))
         {
             await using var command = new NpgsqlCommand(statement.CommandText, connection);

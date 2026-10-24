@@ -21,7 +21,9 @@ public sealed class AdminTelegramUiTests
     [InlineData(true)]
     public async Task Login_ShowsUsableGuardOnlyWhenConfigured_WithoutSetupInstructions(bool configured)
     {
-        using var api = new FixtureApi(new TelegramConfigurationDto(configured, configured ? "fixture_bot" : null, null));
+        using var api = new FixtureApi(
+            new TelegramConfigurationDto(configured, configured ? "fixture_bot" : null, null)
+        );
         var document = new HtmlParser().ParseDocument(await Render<GuardLoginPanel>(api));
         var panel = document.QuerySelector(".guard-login-panel");
         if (configured)
@@ -29,7 +31,8 @@ public sealed class AdminTelegramUiTests
             Assert.NotNull(panel);
             Assert.False(panel.QuerySelector("button")!.HasAttribute("disabled"));
         }
-        else Assert.Null(panel);
+        else
+            Assert.Null(panel);
         Assert.DoesNotContain("TelegramNotConfigured", document.Body!.TextContent);
     }
 
@@ -40,7 +43,9 @@ public sealed class AdminTelegramUiTests
     [InlineData("Manager")]
     public async Task Profile_LinkedAccountShowsItsIdentity_WithoutLinkingOrRefreshInstructions(string role)
     {
-        using var api = new FixtureApi(new TelegramLinkDto(true, true, "fixture_account", 12345, DateTimeOffset.UtcNow, null, null, null));
+        using var api = new FixtureApi(
+            new TelegramLinkDto(true, true, "fixture_account", 12345, DateTimeOffset.UtcNow, null, null, null)
+        );
         var document = new HtmlParser().ParseDocument(await Render<TelegramProfilePanel>(api, role));
         Assert.Contains("@fixture_account", document.QuerySelector(".feedback-success")!.TextContent);
         Assert.Single(document.QuerySelectorAll("button"));
@@ -62,7 +67,9 @@ public sealed class AdminTelegramUiTests
     [Fact]
     public async Task Profile_ClaimedTelegramRequestsExplicitIdentityConfirmationInTheProfile()
     {
-        using var api = new FixtureApi(new TelegramLinkDto(true, false, null, null, null, Guid.NewGuid(), "Fixture Telegram", "fixture_account"));
+        using var api = new FixtureApi(
+            new TelegramLinkDto(true, false, null, null, null, Guid.NewGuid(), "Fixture Telegram", "fixture_account")
+        );
         var document = new HtmlParser().ParseDocument(await Render<TelegramProfilePanel>(api));
         Assert.Contains("Fixture Telegram @fixture_account", document.QuerySelector("strong")!.TextContent);
         Assert.Single(document.QuerySelectorAll("button.primary-button"));
@@ -79,12 +86,15 @@ public sealed class AdminTelegramUiTests
         Assert.Equal(0, api.Calls);
     }
 
-    private static async Task<string> Render<T>(FixtureApi api, string role = "Seller") where T : IComponent
+    private static async Task<string> Render<T>(FixtureApi api, string role = "Seller")
+        where T : IComponent
     {
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddLocalization();
-        services.AddSingleton(new HttpClient(api, disposeHandler: false) { BaseAddress = new Uri("https://fixture.invalid/") });
+        services.AddSingleton(
+            new HttpClient(api, disposeHandler: false) { BaseAddress = new Uri("https://fixture.invalid/") }
+        );
         services.AddSingleton<TelegramApiClient>();
         services.AddSingleton<AuthenticationStateProvider>(new FixtureAuthentication(role));
         services.AddSingleton<IJSRuntime, NoJavaScript>();
@@ -100,23 +110,33 @@ public sealed class AdminTelegramUiTests
     private sealed class FixtureApi(object payload) : HttpMessageHandler
     {
         public int Calls { get; private set; }
+
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             Assert.Equal(HttpMethod.Get, request.Method);
             Calls++;
-            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = JsonContent.Create(payload) });
+            return Task.FromResult(
+                new HttpResponseMessage(HttpStatusCode.OK) { Content = JsonContent.Create(payload) }
+            );
         }
     }
 
     private sealed class FixtureAuthentication(string role) : AuthenticationStateProvider
     {
-        public override Task<AuthenticationState> GetAuthenticationStateAsync() => Task.FromResult(
-            new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.Role, role)], "fixture"))));
+        public override Task<AuthenticationState> GetAuthenticationStateAsync() =>
+            Task.FromResult(
+                new AuthenticationState(
+                    new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.Role, role)], "fixture"))
+                )
+            );
     }
 
     private sealed class NoJavaScript : IJSRuntime
     {
-        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => throw new InvalidOperationException("Static rendering must not call JavaScript.");
-        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken ct, object?[]? args) => InvokeAsync<TValue>(identifier, args);
+        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) =>
+            throw new InvalidOperationException("Static rendering must not call JavaScript.");
+
+        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken ct, object?[]? args) =>
+            InvokeAsync<TValue>(identifier, args);
     }
 }
