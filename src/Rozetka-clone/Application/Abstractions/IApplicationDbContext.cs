@@ -272,6 +272,14 @@ namespace Application.Abstractions
 
         DbSet<Domain.Entities.Payments.PaymentTransaction> PaymentTransactions { get; }
 
+        DbSet<DeliveryMethod> DeliveryMethods { get; }
+
+        DbSet<Shipment> Shipments { get; }
+
+        DbSet<ShipmentItem> ShipmentItems { get; }
+
+        DbSet<PickupPoint> PickupPoints { get; }
+
         Task<int> SaveChangesAsync(
             CancellationToken cancellationToken = default
         );

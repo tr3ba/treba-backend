@@ -68,7 +68,7 @@ public sealed class OperationsTests
     }
 
     internal static OrderService Service(ApplicationDbContext db, Actor actor) =>
-        new(db, new InventoryService(db, actor), new DiscountService(db), actor, () => new TestPaymentService(db));
+    new(db, new InventoryService(db, actor), new DiscountService(db), actor, () => new TestPaymentService(db));
 
     internal static CreateOrderRequest Request(Seed s, int quantity = 2, string? coupon = null) =>
         new(
