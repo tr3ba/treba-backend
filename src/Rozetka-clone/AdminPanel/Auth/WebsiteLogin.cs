@@ -12,6 +12,7 @@ public static class WebsiteLogin
     public const string AccessClaim = "treba_site_access";
     public const string RefreshClaim = "treba_site_refresh";
     private const string StateCookie = "treba_admin_state";
+    private const string ReturnCookie = "treba_admin_return";
 
     public static void Map(WebApplication app)
     {
@@ -26,6 +27,9 @@ public static class WebsiteLogin
             Private(context);
             var state = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
             context.Response.Cookies.Append(StateCookie, state, stateOptions);
+            var returnPath = SafeReturnPath(context.Request.Query["returnUrl"].ToString());
+            if (returnPath != "/") context.Response.Cookies.Append(ReturnCookie, returnPath, stateOptions);
+            else if (context.Request.Cookies.ContainsKey(ReturnCookie)) context.Response.Cookies.Delete(ReturnCookie, stateOptions);
             return Results.Redirect(store + "/shop-api/admin-entry?state=" + state);
         });
         app.MapGet("/site-login/callback", async (HttpContext context, IHttpClientFactory clients, CancellationToken ct) =>
@@ -33,8 +37,10 @@ public static class WebsiteLogin
             Private(context);
             var state = context.Request.Query["state"].ToString();
             var expected = context.Request.Cookies[StateCookie];
-            if (state.Length != 64 || expected is null || !CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(state), Encoding.UTF8.GetBytes(expected))) return Results.BadRequest("Начните вход с сайта заново.");
+            if (state.Length != 64 || expected is null || !CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(state), Encoding.UTF8.GetBytes(expected))) return Results.BadRequest("Почніть вхід із сайту знову.");
             context.Response.Cookies.Delete(StateCookie, stateOptions);
+            var returnPath = SafeReturnPath(context.Request.Cookies[ReturnCookie]);
+            context.Response.Cookies.Delete(ReturnCookie, stateOptions);
             var code = context.Request.Query["code"].ToString();
             if (code.Length > 100) return Results.BadRequest();
             try
@@ -47,7 +53,8 @@ public static class WebsiteLogin
                     new(ClaimTypes.NameIdentifier, auth.UserId.ToString()), new(ClaimTypes.Role, auth.Role),
                     new(AccessClaim, auth.AccessToken), new(RefreshClaim, auth.RefreshToken)], Scheme));
                 await context.SignInAsync(Scheme, principal, new AuthenticationProperties { ExpiresUtc = auth.ExpiresAt, IsPersistent = false, AllowRefresh = false });
-                return Results.Redirect(admin + "/");
+                var route = new Uri(admin + returnPath).AbsolutePath;
+                return Results.Redirect(admin + (AdminAccess.CanAccess(auth.Role, route) ? returnPath : "/"));
             }
             catch (HttpRequestException) { return Results.StatusCode(503); }
         });
@@ -67,4 +74,17 @@ public static class WebsiteLogin
     }
     private static void Private(HttpContext context)
     { context.Response.Headers.CacheControl = "no-store, private"; context.Response.Headers["Referrer-Policy"] = "no-referrer"; }
+
+    public static string SafeReturnPath(string? value)
+    {
+        if (string.IsNullOrEmpty(value) || value.Length > 2048 || !value.StartsWith('/') || value.StartsWith("//") || value.Any(c => char.IsControl(c) || c == '\\')) return "/";
+        try
+        {
+            var url = new Uri("https://admin.invalid" + value);
+            var path = Uri.UnescapeDataString(url.AbsolutePath);
+            if (url.Host != "admin.invalid" || path.StartsWith("//") || path.Contains('\\') || path.Any(char.IsControl) || path.StartsWith("/site-login", StringComparison.OrdinalIgnoreCase)) return "/";
+            return url.PathAndQuery;
+        }
+        catch (UriFormatException) { return "/"; }
+    }
 }

@@ -32,7 +32,9 @@ public sealed partial class ApplicationDbContext
         ,
         ["PromotionRule"] = ["RuleType", "RuleValue"]
         ,
-        ["SupportTicket"] = ["Status", "Kind", "Subject"]
+        ["SupportTicket"] = ["Status", "Kind", "Subject", "IsDeleted", "DeletedAt", "DeletedBy"]
+        ,
+        ["FeatureFlag"] = ["Key", "Enabled"]
         ,
         ["TelegramBinding"] = ["UserId", "TelegramUserId", "Username"]
         ,
@@ -125,7 +127,7 @@ public sealed partial class ApplicationDbContext
             }
             if (changes.Count == 0)
                 continue;
-            var labelField = new[] { "Name", "CompanyName", "Email", "Sku", "AltText" }.FirstOrDefault(field => entry.Metadata.FindProperty(field) is not null);
+            var labelField = new[] { "Name", "CompanyName", "Email", "Sku", "AltText", "Key" }.FirstOrDefault(field => entry.Metadata.FindProperty(field) is not null);
             var label = labelField is null ? type : Convert.ToString(entry.Property(labelField).CurrentValue, CultureInfo.InvariantCulture) ?? type;
             if (type == "ProductVariant")
                 label += " · " + entry.Property("Sku").CurrentValue;
@@ -134,7 +136,9 @@ public sealed partial class ApplicationDbContext
                 ActorId = actorId,
                 ActorName = _actor.Name[..Math.Min(320, _actor.Name.Length)],
                 ActorRole = _actor.Role,
-                Action = entry.State switch { EntityState.Added => "Create", EntityState.Deleted => "Delete", _ => "Update" },
+                Action = type == "SupportTicket" && entry.State == EntityState.Modified && entry.Property("IsDeleted").IsModified
+                    ? (bool)entry.Property("IsDeleted").CurrentValue! ? "Delete" : "Restore"
+                    : entry.State switch { EntityState.Added => "Create", EntityState.Deleted => "Delete", _ => "Update" },
                 EntityType = type,
                 EntityId = (Guid)entry.Property("Id").CurrentValue!,
                 EntityName = label[..Math.Min(500, label.Length)],

@@ -10,8 +10,9 @@ public static class AdminAccess
     {
         if (!IsStaff(role)) return false;
         var route = "/" + path.Trim('/').ToLowerInvariant();
-        if (route is "/" or "/profile") return true;
+        if (route is "/" or "/profile" or "/notifications") return true;
         if (route == "/products/import") return role == "Seller";
+        if (route == "/support/trash") return role is "Administrator" or "Manager";
 
         if (route.StartsWith("/users", StringComparison.Ordinal)) return role == "Administrator";
         if (route == "/settings" || route.StartsWith("/settings/", StringComparison.Ordinal)) return role == "Administrator";

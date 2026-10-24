@@ -1,0 +1,57 @@
+@page "/sellers/applications"
+@rendermode InteractiveServer
+@using Contracts.Marketplace
+@inject HttpClient Http
+@inject UiTime Time
+
+<PageTitle>@L["WorkflowApplications"] — TREBA</PageTitle>
+<section class="page-hero"><div><p class="eyebrow">@L["PartnerNetwork"]</p><h1>@L["WorkflowApplications"]</h1><p class="text-muted">@L["WorkflowApplicationsHint"]</p></div><a class="secondary-button" href="/sellers"><i class="bi bi-shop"></i>@L["Sellers"]</a></section>
+<section class="card-box workflow-toolbar"><label>@L["Status"]<select value="@_status" @onchange="Filter"><option value="pending">@L["PendingReview"]</option><option value="approved">@L["Verified"]</option><option value="rejected">@L["Rejected"]</option><option value="">@L["All"]</option></select></label><button class="secondary-button" @onclick="Load" disabled="@_busy"><i class="bi bi-arrow-clockwise"></i>@L["WorkflowRefresh"]</button></section>
+@if (_error is not null) { <div class="inline-feedback error" role="alert">@_error</div> }
+@if (_loading) { <p role="status">@L["Loading"]</p> }
+else if (_data?.Content.Count == 0) { <section class="card-box workspace-empty"><i class="bi bi-inbox"></i><h2>@L["WorkflowNoApplications"]</h2></section> }
+else if (_data is not null)
+{
+    <div class="workflow-cards">
+    @foreach (var row in _data.Content)
+    {
+        <article class="card-box workflow-application" @key="row.Id">
+            <div class="workflow-application-heading"><div><h2>@row.StoreName</h2><p class="text-muted">@row.CompanyName · @Time.Local(row.CreatedAt).ToString("g")</p></div><span class="status-badge">@Label(row.Status)</span></div>
+            <dl class="workflow-details"><div><dt>@L["TaxId"]</dt><dd>@row.TaxNumber</dd></div><div><dt>@L["WorkflowContact"]</dt><dd>@row.ContactName · @row.Position</dd></div><div><dt>Email</dt><dd>@row.Email</dd></div><div><dt>@L["Phone"]</dt><dd>@row.Phone</dd></div>@if (!string.IsNullOrWhiteSpace(row.Website)) { <div><dt>@L["WorkflowWebsite"]</dt><dd><a href="@row.Website" target="_blank" rel="noopener noreferrer">@row.Website <i class="bi bi-box-arrow-up-right"></i></a></dd></div> }</dl>
+            @if (row.Status == "pending")
+            {
+                <div class="workflow-review-fields"><label>@L["WorkflowStoreSlug"]<input @bind="_slugs[row.Id]" maxlength="100" /></label><label>@L["WorkflowReviewNote"]<textarea @bind="_notes[row.Id]" maxlength="2000" rows="3"></textarea></label></div>
+                <p class="text-muted">@L["WorkflowApprovalHint"]</p>
+                <div class="workflow-actions"><button class="primary-button" disabled="@_busy" @onclick="() => Review(row, true)"><i class="bi bi-check2-circle"></i>@L["WorkflowApprove"]</button><button class="secondary-button" disabled="@_busy" @onclick="() => Review(row, false)"><i class="bi bi-x-circle"></i>@L["WorkflowReject"]</button></div>
+            }
+            else { <p>@row.ReviewNote</p> @if (row.SellerId is { } sellerId) { <a class="secondary-button" href="@($"/sellers/review/{sellerId}")">@L["OpenProfile"] <i class="bi bi-arrow-right"></i></a> } }
+        </article>
+    }
+    </div>
+    <nav class="workflow-actions" aria-label="@L["WorkflowPages"]"><button class="secondary-button" disabled="@(_page == 1 || _busy)" @onclick="Previous">← @L["Previous"]</button><span>@_page / @Math.Max(1, _data.TotalPages)</span><button class="secondary-button" disabled="@(_page >= _data.TotalPages || _busy)" @onclick="Next">@L["Next"] →</button></nav>
+}
+
+@code {
+    private PagedResponse<SellerApplicationView>? _data;
+    private int _page = 1; private string _status = "pending"; private bool _loading = true, _busy; private string? _error;
+    private readonly Dictionary<Guid, string> _slugs = [], _notes = [];
+    protected override Task OnInitializedAsync() => Load();
+    private async Task Filter(ChangeEventArgs args) { _status = args.Value?.ToString() ?? ""; _page = 1; await Load(); }
+    private async Task Previous() { _page--; await Load(); }
+    private async Task Next() { _page++; await Load(); }
+    private string Label(string status) => status == "pending" ? L["PendingReview"] : status == "approved" ? L["Verified"] : L["Rejected"];
+    private async Task Load()
+    {
+        _loading = true; _error = null;
+        try { using var response = await Http.GetAsync($"api/v1/admin/seller-applications?page={_page}&status={_status}"); await CatalogApiClient.RequireSuccess(response); _data = await response.Content.ReadFromJsonAsync<PagedResponse<SellerApplicationView>>(); foreach (var row in _data?.Content ?? []) { _slugs.TryAdd(row.Id, "shop-" + row.Id.ToString("N")[..12]); _notes.TryAdd(row.Id, ""); } }
+        catch (Exception e) when (e is HttpRequestException or System.Text.Json.JsonException or TaskCanceledException) { _error = e.Message; }
+        finally { _loading = false; }
+    }
+    private async Task Review(SellerApplicationView row, bool approve)
+    {
+        if (_busy) return; _busy = true; _error = null;
+        try { using var response = await Http.PostAsJsonAsync($"api/v1/admin/seller-applications/{row.Id}/review", new ReviewSellerApplicationRequest(row.Version, approve, _notes[row.Id], _slugs[row.Id])); await CatalogApiClient.RequireSuccess(response); await Load(); }
+        catch (HttpRequestException e) { _error = e.Message; }
+        finally { _busy = false; }
+    }
+}

@@ -35,6 +35,7 @@ public sealed partial class CatalogService(
             throw new ArgumentException("Unknown catalog sort.");
 
         var query = db.Products.AsNoTracking();
+        if (status != nameof(ProductStatus.ARCHIVED)) query = query.Where(p => p.Status != ProductStatus.ARCHIVED);
         if (filters.WaitingHours.HasValue)
         {
             if (filters.WaitingHours is not (24 or 72))
@@ -135,6 +136,19 @@ public sealed partial class CatalogService(
         if (filters.Stock == "low")
             query = query.Where(p => db.ProductVariants.Where(v => v.ProductId == p.Id && v.IsActive).Sum(v => v.StockQuantity) > 0
             && db.ProductVariants.Where(v => v.ProductId == p.Id && v.IsActive).Sum(v => v.StockQuantity) <= 5);
+
+        if (filters.Attributes is { Count: > 20 }) throw new ArgumentException("Too many attribute filters.");
+        foreach (var filter in filters.Attributes ?? [])
+        {
+            var attributeId = filter.Key; var value = filter.Value;
+            if (string.IsNullOrWhiteSpace(value) || value.Length > 200 || !await db.Attributes.AnyAsync(a => a.Id == attributeId && a.IsFilterable, ct))
+                throw new ArgumentException("Invalid attribute filter.");
+            decimal? number = decimal.TryParse(value, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var parsed) ? parsed : null;
+            bool? boolean = bool.TryParse(value, out var parsedBool) ? parsedBool : null;
+            query = query.Where(p => db.ProductAttributeValues.Any(v => v.ProductId == p.Id && v.AttributeId == attributeId
+                && (v.StringValue == value || number.HasValue && v.NumberValue == number.Value || boolean.HasValue && v.BoolValue == boolean.Value
+                    || db.AttributeOptions.Any(o => o.Id == v.OptionId && o.Value == value))));
+        }
 
         var count = await query.CountAsync(ct);
 
@@ -247,7 +261,7 @@ public sealed partial class CatalogService(
         CancellationToken ct,
         Guid? sellerUserId = null)
     {
-        var query = db.Products.AsNoTracking();
+        var query = db.Products.AsNoTracking().Where(p => p.Status != ProductStatus.ARCHIVED);
 
         if (sellerUserId.HasValue)
         {

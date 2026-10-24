@@ -1,54 +1,72 @@
-# Импорт товаров в панели продавца
+# Seller product import
 
-В форме `/products/new` продавцу доступна кнопка только со значком волшебной палочки.
-Она открывает `/products/import`; в общем меню отдельного пункта нет. Название действия
-передаётся через `aria-label` и подсказку для доступности.
+The magic-wand button in `/products/new` opens `/products/import` for sellers.
+It has an accessible label and tooltip. Sellers can import up to 20 product
+links from Rozetka, Prom.ua and Epicentr without connecting Telegram.
+The server queue survives page refreshes and shares the source restrictions
+and category permissions used by the Telegram workspace.
 
-Можно добавить до 20 ссылок на товары Rozetka, Prom.ua и «Эпицентра». Используются
-существующие очередь, загрузчик, ограничения источников и разрешения на категории
-Telegram-интеграции. Привязывать Telegram для работы в панели не требуется.
-Загрузка продолжается на сервере; после обновления страницы очередь сохраняется.
-Неудачные и истёкшие задания можно повторить.
+Product pages use Ukrainian URLs and request Ukrainian content. Rozetka API
+requests use `lang=ua`. The admin panel supports Ukrainian and English;
+Telegram uses Ukrainian. The profile-language migration normalizes legacy
+preferences to these supported languages.
 
-Перед созданием товара продавец проверяет название, описание, фотографии,
-характеристики, магазин, цену, остаток и артикулы. Бренд выбирается по названию
-источника с учётом регистра, Unicode-нормализации и лишних пробелов.
-Если подходящего бренда нет, его можно явно создать в предпросмотре.
-Одновременные запросы создания одного бренда используют одну запись.
-Отключённый бренд не активируется повторно через импорт.
+## Categories
 
-Создание бренда требует активного продавца, доступного магазина, собственного
-действующего предпросмотра и текущего доступа к категории. Предпросмотры и очередь
-разделены по пользователям. Товар создаётся только после явной отправки на модерацию;
-повторная отправка завершённого импорта возвращает ту же карточку.
-Поля предпросмотра сохраняются локально существующим механизмом автосохранения.
+Existing administrator mappings take precedence. Otherwise a seller with
+full-catalog access can classify an import using an allowed category.
+Automatic matching uses Ukrainian and English category names, then the
+closest existing breadcrumb. Resistance bands can fall back to Fitness,
+Sports goods or the Sports section. Ambiguous matches need a manual choice.
+Mobile phones require smartphone evidence before matching Smartphones.
 
-JWT-маршруты находятся в `/api/v1/seller/imports`: `options`, `queue`,
-`queue/{id}/retry`, `{id}`, `{id}/brand`, `{id}/submit`.
-Новые таблицы или миграции не нужны.
+The preview allows changing an unmapped category and creating a missing child
+under an allowed parent. Creation reuses an existing normalized name under
+that parent, rejects disabled or ambiguous categories, and rechecks the
+seller, preview, category grants and administrator mappings. PostgreSQL locks
+serialize concurrent creation of the same child. Required attributes are
+refreshed when the category changes. The new category appears in subsequent
+imports and in category selectors with its full path.
 
-Если категория источника ещё не сопоставлена, продавец с доступом ко всему каталогу
-может выбрать категорию у каждой неудачной ссылки в очереди и нажать «Повторить».
-Выбор сохраняется в том же задании и используется серверной загрузкой. Это работает
-и в панели, и в Mini App; повтор без новой категории сохраняет предыдущий выбор.
-Произвольное глобальное сопоставление категорий при этом не создаётся.
+A manually selected category applies to the current batch. Adding links
+resets the next batch to automatic classification. Each failed or expired
+job also has a category selector. Choosing automatic explicitly resets an
+old override; older API callers that omit the reset flag retain their
+previous category.
 
-Автоматическое определение учитывает точные украинские, русские и английские
-названия распространённых категорий. Раздел Rozetka «Мобільні телефони» включает
-и кнопочные телефоны, поэтому выбор «Смартфони» требует признака смартфона
-в названии или характеристиках. Неоднозначные совпадения требуют ручного выбора;
-существующие сопоставления администратора имеют приоритет.
+## Brands and duplicates
 
-Команда публикации `--migrate-admin-operations` также выполняет идемпотентное
-добавление восьми категорий посуды под существующим разделом «Для приготування їжі»
-и проверенных сопоставлений Rozetka для ноутбуков и сковород. Она сохраняет
-существующие категории, отключённые записи, сопоставления и разрешения продавцов.
-Права на новые категории наследуются от ранее разрешённых родительских разделов.
+The preview reloads available brands each time it opens. Brand extraction
+uses structured brand data, manufacturer characteristics or a manufacturer
+part-number prefix present in the product title. If the source omits a brand,
+a unique existing brand mentioned in the title can be selected. Sellers can
+create a missing brand; normalized existing names are reused.
 
-В опубликованной админке `PublicApiBaseUrl` задаёт доступный браузеру адрес API
-для фотографий. Серверный `ApiBaseUrl` может оставаться внутренним Docker-адресом.
-На локальной разработке без этой настройки используется обычный `ApiBaseUrl`.
+Products are created only when the seller submits the preview for moderation.
+Submitting an already completed preview returns the existing product id.
+Importing an existing source product opens the existing catalog entry through
+the queue rather than producing a failed job.
 
-В верхней панели всех сотрудников есть ссылка «На сайт». Адрес берётся из
-`WebsiteLogin:StoreOrigin`, по умолчанию используется `https://treba.duckdns.org/`.
-Переход сохраняет существующие сессии и отдельный вход в панели разработки.
+The catalog and duplicate panel offer a confirmed delete action. It archives
+the product and deactivates its variants in one save. Orders, photos and audit
+history retain their references. Archived products disappear from default
+catalog results, counts and duplicate matches; the source product can then
+be imported again. Sellers can remove only their own products; managers and
+administrators can remove catalog products. Moderators cannot delete them.
+
+## API
+
+JWT seller endpoints under `/api/v1/seller/imports`:
+
+- `GET options`, `GET queue`, `POST queue`.
+- `POST queue/{id}/retry?categoryId={id}` selects a category.
+- `POST queue/{id}/retry?resetCategory=true` restores automatic classification.
+- `GET {id}`, `POST {id}/brand`, `PUT {id}/category`, `POST {id}/category`.
+- `POST {id}/submit`.
+
+Catalog deletion uses `DELETE /api/v1/admin/catalog/products/{id}`. Equivalent
+seller actions are available under `/api/telegram/mini` with Telegram auth.
+
+Local editor recovery preserves preview fields. `PublicApiBaseUrl` supplies
+browser-accessible image URLs when `ApiBaseUrl` is internal to Docker. The
+header storefront link uses `WebsiteLogin:StoreOrigin`.

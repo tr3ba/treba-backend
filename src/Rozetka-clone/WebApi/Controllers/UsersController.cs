@@ -38,7 +38,7 @@ public class UsersController : ControllerBase
             return Unauthorized(
                 new
                 {
-                    message = "Недействительный токен пользователя."
+                    message = "Недійсний токен користувача."
                 }
             );
         }
@@ -59,7 +59,7 @@ public class UsersController : ControllerBase
             return NotFound(
                 new
                 {
-                    message = "Пользователь не найден."
+                    message = "Користувача не знайдено."
                 }
             );
         }
@@ -83,7 +83,7 @@ public class UsersController : ControllerBase
             return Unauthorized(
                 new
                 {
-                    message = "Недействительный токен пользователя."
+                    message = "Недійсний токен користувача."
                 }
             );
         }
@@ -103,7 +103,7 @@ public class UsersController : ControllerBase
             return NotFound(
                 new
                 {
-                    message = "Пользователь не найден."
+                    message = "Користувача не знайдено."
                 }
             );
         }
@@ -123,7 +123,7 @@ public class UsersController : ControllerBase
             return Conflict(
                 new
                 {
-                    message = "Этот email уже используется другим пользователем."
+                    message = "Цю електронну адресу вже використовує інший користувач."
                 }
             );
         }
@@ -190,7 +190,7 @@ public class UsersController : ControllerBase
             return Unauthorized(
                 new
                 {
-                    message = "Недействительный токен пользователя."
+                    message = "Недійсний токен користувача."
                 }
             );
         }
@@ -249,7 +249,7 @@ public class UsersController : ControllerBase
             return NotFound(
                 new
                 {
-                    message = "Пользователь не найден."
+                    message = "Користувача не знайдено."
                 }
             );
         }
@@ -313,7 +313,7 @@ public class UsersController : ControllerBase
             return Unauthorized(
                 new
                 {
-                    message = "Недействительный токен пользователя."
+                    message = "Недійсний токен користувача."
                 }
             );
         }
@@ -333,7 +333,7 @@ public class UsersController : ControllerBase
             return NotFound(
                 new
                 {
-                    message = "Пользователь не найден."
+                    message = "Користувача не знайдено."
                 }
             );
         }

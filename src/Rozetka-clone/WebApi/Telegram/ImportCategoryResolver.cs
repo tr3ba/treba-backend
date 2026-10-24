@@ -9,29 +9,30 @@ public static class ImportCategoryResolver
     private static readonly string[][] Aliases =
     [
         ["Ноутбуки", "Ноутбуки та ультрабуки", "Laptops", "Notebooks"],
-        ["Смартфони", "Смартфоны", "Smartphones"],
-        ["Планшети", "Планшеты", "Tablets"],
-        ["Монітори", "Мониторы", "Monitors"],
-        ["Телевізори", "Телевизоры", "Televisions"],
-        ["Навушники", "Наушники", "Headphones"],
-        ["Клавіатури", "Клавиатуры", "Keyboards"],
-        ["Миші", "Мыши", "Комп'ютерні миші", "Компьютерные мыши"],
-        ["Відеокарти", "Видеокарты", "Graphics cards"],
-        ["Процесори", "Процессоры", "Processors"],
-        ["Материнські плати", "Материнские платы", "Motherboards"],
-        ["Оперативна пам'ять", "Оперативная память", "RAM"],
-        ["Powerbank", "Повербанки", "Павербанки", "Зовнішні акумулятори", "Внешние аккумуляторы"],
-        ["Пральні машини", "Стиральные машины", "Washing machines"],
+        ["Смартфони", "Smartphones"],
+        ["Планшети", "Tablets"],
+        ["Монітори", "Monitors"],
+        ["Телевізори", "Televisions"],
+        ["Навушники", "Headphones"],
+        ["Клавіатури", "Keyboards"],
+        ["Миші", "Комп'ютерні миші", "Computer mice"],
+        ["Відеокарти", "Graphics cards"],
+        ["Процесори", "Processors"],
+        ["Материнські плати", "Motherboards"],
+        ["Оперативна пам'ять", "RAM"],
+        ["Powerbank", "Повербанки", "Павербанки", "Зовнішні акумулятори"],
+        ["Пральні машини", "Washing machines"],
         ["Холодильники", "Refrigerators"],
-        ["Пилососи", "Пылесосы", "Vacuum cleaners"],
-        ["Сковороди", "Сковородки", "Сковороды", "Frying pans"],
-        ["Каструлі", "Кастрюли", "Saucepans"],
-        ["Ковші", "Ковши"],
+        ["Пилососи", "Vacuum cleaners"],
+        ["Сковороди", "Frying pans"],
+        ["Каструлі", "Saucepans"],
+        ["Ковші", "Milk pans"],
         ["Сотейники", "Сотейники та жаровні"],
-        ["Набори посуду для приготування їжі", "Наборы кухонной посуды", "Наборы посуды для приготовления пищи"],
-        ["Форми для випікання", "Формы для выпечки", "Bakeware"],
-        ["Дека для випікання", "Противни"],
-        ["Кришки для посуду", "Крышки для посуды"]
+        ["Набори посуду для приготування їжі", "Cookware sets"],
+        ["Форми для випікання", "Bakeware"],
+        ["Дека для випікання", "Baking trays"],
+        ["Кришки для посуду", "Cookware lids"],
+        ["Еспандери", "Гумові петлі", "Resistance bands", "Expanders"]
     ];
 
     public static Guid? Resolve(MarketplaceProductData data, IReadOnlyList<Category> categories)
@@ -41,10 +42,10 @@ public static class ImportCategoryResolver
         if (exact.Count > 0) return exact.Count == 1 ? exact[0].Id : null;
 
         // Rozetka's c80003 also contains button phones. Never classify those as smartphones by category alone.
-        if (new[] { "Мобільні телефони", "Мобильные телефоны", "Mobile phones" }.Any(n => Normalize(n) == name))
+        if (new[] { "Мобільні телефони", "Mobile phones" }.Any(n => Normalize(n) == name))
         {
             var classification = string.Join(' ', data.Characteristics.Where(c =>
-                new[] { "Клас", "Класс", "Тип", "Операційна система", "Операционная система", "Operating system" }.Contains(c.Name, StringComparer.OrdinalIgnoreCase)).Select(c => c.Value)).ToLowerInvariant();
+                new[] { "Клас", "Тип", "Операційна система", "Operating system" }.Contains(c.Name, StringComparer.OrdinalIgnoreCase)).Select(c => c.Value)).ToLowerInvariant();
             if (classification.Contains("кноп") || classification.Contains("feature phone")) return null;
             if (!(classification.Contains("смартфон") || classification.Contains("smartphone") || classification.Contains("android") || classification.Contains("ios")
                 || data.Name.Contains("iPhone", StringComparison.OrdinalIgnoreCase) || data.Name.Contains("смартфон", StringComparison.OrdinalIgnoreCase)
@@ -52,9 +53,24 @@ public static class ImportCategoryResolver
             name = Normalize("Смартфони");
         }
         var group = Aliases.SingleOrDefault(g => g.Any(alias => Normalize(alias) == name));
-        if (group is null) return null;
-        var matches = categories.Where(c => c.IsActive && group.Any(alias => Normalize(alias) == Normalize(c.Name))).ToList();
-        return matches.Count == 1 ? matches[0].Id : null;
+        if (group is not null)
+        {
+            var matches = categories.Where(c => c.IsActive && group.Any(alias => Normalize(alias) == Normalize(c.Name))).ToList();
+            if (matches.Count > 0) return matches.Count == 1 ? matches[0].Id : null;
+        }
+        // Prefer the closest breadcrumb already present in Treba, so a new leaf can be created there.
+        foreach (var parentName in data.CategoryPath.Reverse().Where(n => Normalize(n) != name))
+        {
+            var parents = categories.Where(c => c.IsActive && Normalize(c.Name) == Normalize(parentName)).ToList();
+            if (parents.Count > 0) return parents.Count == 1 ? parents[0].Id : null;
+        }
+        if (new[] { "Еспандери", "Гумові петлі", "Фітнес-резинки", "Гумові петлі для підтягування", "Resistance bands", "Expanders" }.Any(n => Normalize(n) == name))
+            foreach (var names in new[] { new[] { "Фітнес", "Fitness", "Тренажери та фітнес" }, new[] { "Спортивні товари" }, new[] { "Спорт і захоплення", "Спорт та захоплення", "Спорт і відпочинок", "Спорт" } })
+            {
+                var parents = categories.Where(c => c.IsActive && names.Any(n => Normalize(n) == Normalize(c.Name))).ToList();
+                if (parents.Count > 0) return parents.Count == 1 ? parents[0].Id : null;
+            }
+        return null;
     }
 
     private static string Normalize(string name) => string.Concat(name.Normalize(NormalizationForm.FormKC).ToLowerInvariant().Where(char.IsLetterOrDigit));

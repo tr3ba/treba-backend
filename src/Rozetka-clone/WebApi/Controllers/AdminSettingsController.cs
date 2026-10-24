@@ -1,4 +1,5 @@
 using Contracts.Admin.Settings;
+using Application.Administration;
 using Contracts.Common;
 using Domain.Entities.Users;
 using Infrastructure.Administration;
@@ -8,10 +9,17 @@ using Microsoft.AspNetCore.Mvc;
 namespace WebApi.Controllers;
 
 [ApiController]
+[ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 [Authorize(Roles = Roles.Administrator)]
 [Route("api/v1/admin/settings")]
-public sealed class AdminSettingsController(StaffSettingsService settings) : ControllerBase
+public sealed class AdminSettingsController(StaffSettingsService settings, FeatureSettingsService features) : ControllerBase
 {
+    [HttpGet("features")]
+    public Task<IReadOnlyList<FeatureFlagDto>> Features(CancellationToken ct) => features.ListAsync(ct);
+
+    [HttpPut("features/{key}")]
+    public Task<FeatureFlagDto> SetFeature(string key, SetFeatureFlagRequest request, CancellationToken ct) => features.SetAsync(key, request, ct);
+
     [HttpGet("staff")]
     public Task<PagedResponse<StaffDto>> Staff(int page = 1, string? search = null, string? role = null, CancellationToken ct = default) =>
         settings.ListAsync(page, search, role, ct);

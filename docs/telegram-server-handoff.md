@@ -40,7 +40,7 @@
 git apply --check /path/to/treba-admin-telegram.patch
 git apply /path/to/treba-admin-telegram.patch
 dotnet build src/Rozetka-clone/Rozetka-clone.sln -c Release
-dotnet test tests/WebApi.Tests/WebApi.Tests.csproj -c Release
+dotnet test src/Rozetka-clone/WebApi.Tests/WebApi.Tests.csproj -c Release
 ```
 
 Патч не содержит новые файлы управления заказами или оплатой. В общей БД ранее обнаружена миграция `20261017144804_AddPayment`, отсутствующая в этой локальной версии. Перед выпуском нужно согласовать код с её владельцем и сохранить изменения коллег. Если `git apply --check` сообщает конфликт, сначала объединить изменения в исходниках; не перезаписывать работающую версию набором локальных DLL.

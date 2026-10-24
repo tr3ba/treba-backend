@@ -20,7 +20,7 @@ public class Order
 
     public PaymentStatus PaymentStatus { get; set; }
 
-    // TODO: после добавления Payment и Delivery убрать коменты
+    // TODO: Remove obsolete fields after implementing Payment and Delivery
     // public DeliveryStatus DeliveryStatus { get; set; } = DeliveryStatus.CREATED;
 
     public string Currency { get; set; } = "UAH";

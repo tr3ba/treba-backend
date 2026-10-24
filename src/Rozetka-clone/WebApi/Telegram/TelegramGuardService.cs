@@ -17,12 +17,12 @@ public sealed class TelegramGuardService(ApplicationDbContext db, TelegramLinkSe
 {
     public async Task<GuardStartDto> CreateAsync(string? deviceName, string? clientIp, CancellationToken ct, Guid? loginChallengeId = null)
     {
-        if (!options.Value.Configured) throw new BusinessRuleException("Telegram Guard ещё не подключён.");
+        if (!options.Value.Configured) throw new BusinessRuleException("Telegram Guard ще не підключено.");
         if (loginChallengeId is {} loginId)
         {
             var login = await db.AuthenticationChallenges.SingleOrDefaultAsync(c => c.Id == loginId, ct);
             if (login is null || login.Purpose != Domain.Entities.Users.AuthenticationChallengePurpose.Login || !login.IsActive(clock.GetUtcNow())
-                || !await db.TelegramBindings.AnyAsync(b => b.UserId == login.UserId && b.LinkedAt <= login.CreatedAt, ct)) throw new UnauthorizedAccessException("Запрос входа истёк или Guard не привязан.");
+                || !await db.TelegramBindings.AnyAsync(b => b.UserId == login.UserId && b.LinkedAt <= login.CreatedAt, ct)) throw new UnauthorizedAccessException("Термін дії запиту входу минув або Guard не підключено.");
             await links.RequireUserAsync(login.UserId, ct);
         }
         var browser = TelegramSecrets.Create(); var approval = TelegramSecrets.Create(); var now = clock.GetUtcNow();
@@ -38,7 +38,7 @@ public sealed class TelegramGuardService(ApplicationDbContext db, TelegramLinkSe
     public async Task<GuardStatusDto> StatusAsync(Guid id, string secret, CancellationToken ct)
     {
         var challenge = await db.TelegramGuardChallenges.AsNoTracking().SingleOrDefaultAsync(c => c.Id == id, ct);
-        if (challenge is null || !TelegramSecrets.Matches(secret, challenge.BrowserSecretHash)) throw new UnauthorizedAccessException("Недействительный запрос Guard.");
+        if (challenge is null || !TelegramSecrets.Matches(secret, challenge.BrowserSecretHash)) throw new UnauthorizedAccessException("Недійсний запит Guard.");
         return new(challenge.ExpiresAt <= clock.GetUtcNow() ? "expired" : challenge.ConsumedAt is not null ? "consumed" : challenge.ApprovedAt is not null ? "approved" : "waiting", challenge.ExpiresAt);
     }
     public async Task<GuardPreviewDto> PreviewAsync(string payload, Guid userId, CancellationToken ct)
@@ -54,7 +54,7 @@ public sealed class TelegramGuardService(ApplicationDbContext db, TelegramLinkSe
         if (!await db.TelegramBindings.AnyAsync(b => b.UserId == userId && b.TelegramUserId == telegramId, ct)) throw new UnauthorizedAccessException();
         var challenge = await ScanAsync(payload, ct);
         await CheckLoginOwner(challenge, userId, ct);
-        if (challenge.ApprovedAt is not null) throw new BusinessRuleException("Этот QR-код уже подтверждён.");
+        if (challenge.ApprovedAt is not null) throw new BusinessRuleException("Цей QR-код уже підтверджено.");
         challenge.ApprovedUserId = userId; challenge.ApprovedTelegramUserId = telegramId; challenge.ApprovedAt = clock.GetUtcNow(); challenge.Version = Guid.NewGuid();
         await db.SaveChangesAsync(ct);
     }
@@ -64,11 +64,11 @@ public sealed class TelegramGuardService(ApplicationDbContext db, TelegramLinkSe
         var challenge = await db.TelegramGuardChallenges.SingleOrDefaultAsync(c => c.Id == id, ct);
         if (challenge is null || !TelegramSecrets.Matches(secret, challenge.BrowserSecretHash) || challenge.ExpiresAt <= clock.GetUtcNow()
             || challenge.ConsumedAt is not null || challenge.ApprovedAt is null || challenge.ApprovedUserId is null)
-            throw new UnauthorizedAccessException("Вход Guard не подтверждён, уже завершён или истёк.");
+            throw new UnauthorizedAccessException("Вхід через Guard не підтверджено, уже завершено або термін дії минув.");
         var user = await links.RequireUserAsync(challenge.ApprovedUserId.Value, ct);
         await CheckLoginOwner(challenge, user.Id, ct);
         if (!await db.TelegramBindings.AnyAsync(b => b.UserId == user.Id && b.TelegramUserId == challenge.ApprovedTelegramUserId
-            && b.LinkedAt <= challenge.ApprovedAt, ct)) throw new UnauthorizedAccessException("Привязка Telegram была отозвана.");
+            && b.LinkedAt <= challenge.ApprovedAt, ct)) throw new UnauthorizedAccessException("Підключення Telegram скасовано.");
         challenge.ConsumedAt = clock.GetUtcNow(); challenge.Version = Guid.NewGuid();
         await db.SaveChangesAsync(ct); // The concurrency token makes completion single use.
         var result = challenge.LoginChallengeId is {} loginId
@@ -83,16 +83,16 @@ public sealed class TelegramGuardService(ApplicationDbContext db, TelegramLinkSe
         var login = await db.AuthenticationChallenges.SingleOrDefaultAsync(c => c.Id == loginId, ct);
         if (login is null || login.UserId != userId || login.Purpose != Domain.Entities.Users.AuthenticationChallengePurpose.Login
             || !login.IsActive(clock.GetUtcNow()) || !await db.TelegramBindings.AnyAsync(b => b.UserId == userId && b.LinkedAt <= guard.CreatedAt, ct))
-            throw new UnauthorizedAccessException("Подтвердите вход через Telegram того же аккаунта.");
+            throw new UnauthorizedAccessException("Підтвердьте вхід через Telegram того самого облікового запису.");
     }
     private async Task<TelegramGuardChallenge> ScanAsync(string payload, CancellationToken ct)
     {
         var parts = payload.Split(':');
         if (parts.Length != 4 || parts[0] != "treba-guard" || parts[1] != "v1" || !Guid.TryParseExact(parts[2], "N", out var id))
-            throw new ArgumentException("Это не QR-код входа Treba Guard.");
+            throw new ArgumentException("Це не QR-код входу Treba Guard.");
         var challenge = await db.TelegramGuardChallenges.SingleOrDefaultAsync(c => c.Id == id, ct);
         if (challenge is null || !TelegramSecrets.Matches(parts[3], challenge.ApprovalSecretHash) || challenge.ExpiresAt <= clock.GetUtcNow() || challenge.ConsumedAt is not null)
-            throw new BusinessRuleException("QR-код истёк или уже использован. Обновите его на странице входа.");
+            throw new BusinessRuleException("Термін дії QR-коду минув або його вже використано. Оновіть його на сторінці входу.");
         return challenge;
     }
 }

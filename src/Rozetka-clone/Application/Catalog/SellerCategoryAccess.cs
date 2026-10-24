@@ -39,7 +39,7 @@ public sealed class SellerCategoryAccess(IApplicationDbContext db)
     public async Task EnsureAllowedAsync(Guid userId, Guid categoryId, CancellationToken ct)
     {
         if (!await IsAllowedAsync(userId, categoryId, ct))
-            throw new BusinessRuleException("Продажа товаров этой категории не разрешена. Обратитесь к администратору магазина.");
+            throw new BusinessRuleException("Продаж товарів цієї категорії не дозволено. Зверніться до адміністратора магазину.");
     }
 
     public async Task<bool> CanClassifyUnmappedImportsAsync(Guid userId, CancellationToken ct)

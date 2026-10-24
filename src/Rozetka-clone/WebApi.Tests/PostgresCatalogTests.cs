@@ -67,6 +67,12 @@ public sealed class PostgresCatalogTests
             {
                 Assert.Equal(ProductStatus.DRAFT, (await db.Products.SingleAsync()).Status);
                 Assert.Empty(await db.AdminAuditLogs.ToListAsync());
+                var catalog = new CatalogService(db);
+                Assert.False(await catalog.DeleteAsync(product.Id, Guid.NewGuid(), default));
+                Assert.True(await catalog.DeleteAsync(product.Id, seed.Seller.UserId, default));
+                Assert.Equal(ProductStatus.ARCHIVED, (await db.Products.SingleAsync()).Status);
+                Assert.All(await db.ProductVariants.ToListAsync(), v => Assert.False(v.IsActive));
+                Assert.Empty((await catalog.ListAsync(1, 12, null, null, false, null, null, default, seed.Seller.UserId)).Content);
             }
         }
         finally

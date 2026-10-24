@@ -49,7 +49,7 @@ public sealed class SellerWorkspaceRunner(ApplicationDbContext db, ProductImport
         var leaseVersion = job.Version;
         try
         {
-            if (job.Attempts > 3) throw new BusinessRuleException("Импорт был прерван несколько раз. Повторите загрузку вручную.");
+            if (job.Attempts > 3) throw new BusinessRuleException("Імпорт перервано кілька разів. Повторіть завантаження вручну.");
             await using var transaction = db.Database.IsRelational() ? await db.Database.BeginTransactionAsync(ct) : null;
             var preview = await importer.PreviewAsync(job.UserId, job.SourceUrl, ct, job.CategoryId);
             job.PreviewId = preview.Id; job.Status = "Ready"; job.Error = null; job.LeaseUntil = null; job.UpdatedAt = clock.GetUtcNow(); job.Version = Guid.NewGuid();
@@ -62,7 +62,7 @@ public sealed class SellerWorkspaceRunner(ApplicationDbContext db, ProductImport
             db.ChangeTracker.Clear();
             var current = await db.SellerImportJobs.SingleOrDefaultAsync(j => j.Id == job.Id && j.Version == leaseVersion, ct);
             if (current is null) return true;
-            current.Status = "Failed"; current.Error = ex is BusinessRuleException or ArgumentException ? ex.Message[..Math.Min(1900, ex.Message.Length)] : "Не удалось завершить импорт. Повторите загрузку.";
+            current.Status = "Failed"; current.Error = ex is BusinessRuleException or ArgumentException ? ex.Message[..Math.Min(1900, ex.Message.Length)] : "Не вдалося завершити імпорт. Повторіть завантаження.";
             current.LeaseUntil = null; current.UpdatedAt = clock.GetUtcNow(); current.Version = Guid.NewGuid();
             try { await db.SaveChangesAsync(ct); } catch (DbUpdateConcurrencyException) { }
         }
@@ -92,7 +92,7 @@ public sealed class SellerWorkspaceRunner(ApplicationDbContext db, ProductImport
             {
                 var url = options.Value.MiniAppUrl + (options.Value.MiniAppUrl.Contains('?') ? "&" : "?") + "view=" + item.View + "&id=" + item.ProductId;
                 using var response = await bot.CallAsync("sendMessage", new { chat_id = binding.ChatId, text = item.Text,
-                    reply_markup = new { inline_keyboard = new[] { new[] { new { text = "Открыть товар", web_app = new { url } } } } } }, ct);
+                    reply_markup = new { inline_keyboard = new[] { new[] { new { text = "Відкрити товар", web_app = new { url } } } } } }, ct);
                 item.CompletedAt = clock.GetUtcNow(); item.Result = "Sent";
             }
             catch (TelegramBotException ex)

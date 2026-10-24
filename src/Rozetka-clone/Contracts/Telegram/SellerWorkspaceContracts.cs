@@ -20,8 +20,8 @@ public sealed class CreateSellerWorkspaceRequest : IValidatableObject
     [MaxLength(500)] public List<Guid> CategoryIds { get; set; } = [];
     public IEnumerable<ValidationResult> Validate(ValidationContext context)
     {
-        if (!TestSeller && string.IsNullOrWhiteSpace(TaxNumber)) yield return new("Укажите ЕГРПОУ/ИНН или включите тестовый режим.", [nameof(TaxNumber)]);
-        if (!AllCategories && (CategoryIds is null || CategoryIds.Count == 0)) yield return new("Выберите разрешённые категории.", [nameof(CategoryIds)]);
+        if (!TestSeller && string.IsNullOrWhiteSpace(TaxNumber)) yield return new("Укажіть ЄДРПОУ/ІПН або ввімкніть тестовий режим.", [nameof(TaxNumber)]);
+        if (!AllCategories && (CategoryIds is null || CategoryIds.Count == 0)) yield return new("Виберіть дозволені категорії.", [nameof(CategoryIds)]);
     }
 }
 public sealed record SellerWorkspaceCreatedDto(Guid UserId, Guid SellerId, Guid StoreId, string Email, string Status);

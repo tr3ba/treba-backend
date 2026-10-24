@@ -379,7 +379,7 @@ namespace Application.Products
                 .Join(_dbContext.Sellers, s => s.SellerId, seller => seller.Id, (s, seller) => seller.UserId).Select(id => (Guid?)id).SingleOrDefaultAsync(ct);
             var users = await _dbContext.Users.Where(u => !u.IsDeleted && u.Status == UserStatus.Active && u.Role != null && u.Role.Name == role
                 && (decision == "Submitted" || u.Id == owner) && _dbContext.TelegramBindings.Any(b => b.UserId == u.Id)).Select(u => u.Id).ToListAsync(ct);
-            var title = decision == "Submitted" ? "Новый товар на модерации" : decision == "Approved" ? "Товар одобрен" : "Товар отклонён";
+            var title = decision == "Submitted" ? "Новий товар на модерації" : decision == "Approved" ? "Товар схвалено" : "Товар відхилено";
             var text = title + "\n" + product.Name + (reason is null ? "" : "\n\nПричина: " + reason);
             foreach (var userId in users)
                 _dbContext.TelegramNotifications.Add(new Domain.Entities.Telegram.TelegramNotification

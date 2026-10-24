@@ -69,7 +69,8 @@ Rozetka-clone
 ├── Domain
 ├── Infrastructure
 ├── WebApi
-└── AdminPanel
+├── AdminPanel
+└── WebApi.Tests
 ```
 
 ### Application
@@ -96,6 +97,23 @@ Main ASP.NET Core HTTP API.
 ### AdminPanel
 
 Administrative part of the backend solution.
+
+### WebApi.Tests
+
+Backend and admin-panel tests are a separate project in the same solution at
+`src/Rozetka-clone/WebApi.Tests`. Open `src/Rozetka-clone/Rozetka-clone.sln` to see
+the project and run tests from Visual Studio's Test Explorer.
+
+From the repository root, run the entire solution's tests with:
+
+```sh
+dotnet test src/Rozetka-clone/Rozetka-clone.sln --configuration Release
+```
+
+Set `TREBA_TEST_POSTGRES` to a connection string for a dedicated local/test
+PostgreSQL database to include the database integration tests. These tests
+create and clean up isolated test tables; PostgreSQL tests are skipped
+when the variable is not set.
 
 ---
 

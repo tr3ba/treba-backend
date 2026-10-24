@@ -5,6 +5,10 @@ namespace AdminPanel.Services.Implementations;
 
 public sealed class OperationsApiClient(HttpClient http)
 {
+    public Task<TicketCapabilities> TicketCapabilities() => Get<TicketCapabilities>("api/v1/support/capabilities");
+    public Task<PagedResponse<TicketRow>> DeletedTickets(int page, string? search) => Get<PagedResponse<TicketRow>>($"api/v1/support/deleted?page={page}&search={E(search)}");
+    public Task DeleteTicket(Guid id, Guid version) => Send(HttpMethod.Delete, $"api/v1/support/{id}", new TicketDeletionRequest(version));
+    public Task RestoreTicket(Guid id, Guid version) => Send(HttpMethod.Post, $"api/v1/support/{id}/restore", new TicketDeletionRequest(version));
     public Task<PagedResponse<OrderRow>> Orders(int page = 1, string? status = null, string? search = null, DateTimeOffset? from = null, DateTimeOffset? to = null, Guid? customerId = null) =>
         Get<PagedResponse<OrderRow>>($"api/v1/admin/orders?page={page}&size=20&status={E(status)}&search={E(search)}&from={E(from?.ToString("O"))}&to={E(to?.ToString("O"))}&customerId={customerId}");
     public Task<OrderDetails> Order(Guid id) => Get<OrderDetails>($"api/v1/admin/orders/{id}");

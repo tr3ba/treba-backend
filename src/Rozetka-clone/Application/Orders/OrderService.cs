@@ -19,7 +19,7 @@ public sealed class OrderService(
     InventoryService inventory,
     IDiscountService discounts,
     ICurrentActor actor,
-    IPaymentService paymentService) : IOrderService
+    Func<IPaymentService> paymentService) : IOrderService
 {
     public bool Staff => actor.Role is "Administrator" or "Manager";
     private Guid ActorId => actor.UserId ?? throw new UnauthorizedAccessException();
@@ -199,7 +199,7 @@ public sealed class OrderService(
             await db.SaveChangesAsync(ct);
 
             // Create payment for the order
-            await paymentService.CreatePaymentAsync(order.Id, customerId, ct);
+            await paymentService().CreatePaymentAsync(order.Id, customerId, ct);
 
             scope.Complete();
             return Map(order);

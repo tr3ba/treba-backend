@@ -113,6 +113,13 @@ verify_operations() {
     local origin="$1"
     local path code
     curl -fsS --max-time 10 "$origin/health" >/dev/null
+    # Exercise real catalog query binding before replacing the serving container.
+    curl -fsS --max-time 15 "$origin/api/v1/catalog?size=1&sort=priceasc" | python3 -c '
+import json, sys
+page = json.load(sys.stdin)
+if not isinstance(page.get("content"), list) or page.get("page") != 1 or "totalElements" not in page:
+    raise SystemExit("Public catalog returned an invalid page")
+'
     for path in /api/v1/admin/orders /api/v1/support /api/v1/admin/operations/customers /api/v1/admin/promotions; do
         code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$origin$path")
         [[ "$code" == 401 ]] || { echo "Operational route unavailable: $path (HTTP $code)"; return 1; }

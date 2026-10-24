@@ -66,7 +66,7 @@ public sealed class PostgresOperationsTests
                     new Application.Inventory.InventoryService(db, actor),
                     new SynchronizedDiscounts(new DiscountService(db), Rendezvous),
                     actor,
-                    new OperationsTests.FakePaymentService()
+                    () => new TestPaymentService(db)
                 );
                 return await Record.ExceptionAsync(() => service.CreateOrderAsync(OperationsTests.Request(seed, coupon: "LAST")));
             }

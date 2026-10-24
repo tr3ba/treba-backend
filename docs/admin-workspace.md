@@ -41,7 +41,7 @@ The original seller/review dashboard required no database migration. The operati
 
 ```powershell
 dotnet build src/Rozetka-clone/Rozetka-clone.sln --configuration Release
-dotnet test tests/WebApi.Tests/WebApi.Tests.csproj --configuration Release
+dotnet test src/Rozetka-clone/WebApi.Tests/WebApi.Tests.csproj --configuration Release
 ```
 
 Tests cover seller decisions, review search/filter/pagination, rating changes, deleted-review protection, dashboard scope/periods, HTTP body validation and endpoint authorization. Database-independent tests use EF Core InMemory; also verify the workflow against PostgreSQL when changing its queries.

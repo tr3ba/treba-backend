@@ -71,7 +71,7 @@ builder.Services.AddScoped<CatalogModerationState>();
 
 var app = builder.Build();
 
-var supportedCultures = new[] { "uk-UA", "uk", "en-US", "en", "ru-RU", "ru" };
+var supportedCultures = new[] { "uk-UA", "uk", "en-US", "en" };
 var localizationOptions = new RequestLocalizationOptions()
     .SetDefaultCulture("uk-UA")
     .AddSupportedCultures(supportedCultures)

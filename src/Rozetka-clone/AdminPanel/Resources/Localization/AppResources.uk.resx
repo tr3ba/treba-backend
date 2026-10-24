@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <data name="Dashboard" xml:space="preserve"><value>Дашборд</value></data>
   <data name="Management" xml:space="preserve"><value>Керування</value></data>
@@ -362,7 +362,6 @@
   <data name="ContactsAndSettingsDesc" xml:space="preserve"><value>Фото профілю завантажується у блоці ліворуч.</value></data>
   <data name="ProfileLanguage" xml:space="preserve"><value>Мова профілю</value></data>
   <data name="Ukrainian" xml:space="preserve"><value>Українська</value></data>
-  <data name="Russian" xml:space="preserve"><value>Російська</value></data>
   <data name="MarketingEmailsDesc" xml:space="preserve"><value>Отримувати новини та пропозиції на email</value></data>
   <data name="ProfileSaved" xml:space="preserve"><value>Профіль збережено. Дані у шапці вже оновлено.</value></data>
   <data name="SaveChanges" xml:space="preserve"><value>Зберегти зміни</value></data>
@@ -761,4 +760,55 @@
   <data name="ImportStatusExpired" xml:space="preserve"><value>Термін попереднього перегляду минув</value></data>
   <data name="ImportStatusSubmitted" xml:space="preserve"><value>На модерації</value></data>
   <data name="CategoryImageUrl" xml:space="preserve"><value>Зображення категорії (URL)</value></data>
+  <data name="WorkflowApplications" xml:space="preserve"><value>Заявки продавців</value></data>
+  <data name="WorkflowApplicationsHint" xml:space="preserve"><value>Перевірте дані та відкрийте доступ до магазину.</value></data>
+  <data name="WorkflowRefresh" xml:space="preserve"><value>Оновити</value></data>
+  <data name="WorkflowNoApplications" xml:space="preserve"><value>Заявок не знайдено</value></data>
+  <data name="WorkflowContact" xml:space="preserve"><value>Контактна особа</value></data>
+  <data name="WorkflowWebsite" xml:space="preserve"><value>Сайт компанії</value></data>
+  <data name="WorkflowStoreSlug" xml:space="preserve"><value>Адреса магазину (латиницею)</value></data>
+  <data name="WorkflowReviewNote" xml:space="preserve"><value>Коментар / причина відмови</value></data>
+  <data name="WorkflowApprovalHint" xml:space="preserve"><value>Після схвалення буде створено магазин із доступом до активних категорій. Покупець має увійти знову.</value></data>
+  <data name="WorkflowApprove" xml:space="preserve"><value>Схвалити та створити магазин</value></data>
+  <data name="WorkflowReject" xml:space="preserve"><value>Відхилити заявку</value></data>
+  <data name="WorkflowPages" xml:space="preserve"><value>Сторінки</value></data>
+  <data name="WorkflowNotifications" xml:space="preserve"><value>Сповіщення</value></data>
+  <data name="WorkflowReadAll" xml:space="preserve"><value>Прочитати всі</value></data>
+  <data name="WorkflowNotificationHint" xml:space="preserve"><value>Останні події за 30 днів.</value></data>
+  <data name="WorkflowNoNotifications" xml:space="preserve"><value>Нових сповіщень немає</value></data>
+  <data name="WorkflowUnread" xml:space="preserve"><value>Не прочитано</value></data>
+  <data name="WorkflowAllNotifications" xml:space="preserve"><value>Усі сповіщення</value></data>
+  <data name="WorkflowNotificationError" xml:space="preserve"><value>Не вдалося завантажити сповіщення.</value></data>
+  <data name="Features" xml:space="preserve"><value>Функції</value></data>
+  <data name="FeaturesDescription" xml:space="preserve"><value>Керуйте доступністю функцій. Зміни зберігаються одразу й діють для всієї системи.</value></data>
+  <data name="FeatureChatDeletion" xml:space="preserve"><value>Видалення чатів</value></data>
+  <data name="FeatureChatDeletionDescription" xml:space="preserve"><value>Адміністратори й менеджери можуть переміщувати переписки своєї черги підтримки до кошика. Історія повідомлень зберігається.</value></data>
+  <data name="FeatureChatDeletionHint" xml:space="preserve"><value>Вимкнення забороняє нове видалення. Кошик і відновлення залишаються доступними. Незавершені повернення спочатку потрібно обробити.</value></data>
+  <data name="FeatureEnabled" xml:space="preserve"><value>Увімкнено</value></data>
+  <data name="FeatureDisabled" xml:space="preserve"><value>Вимкнено</value></data>
+  <data name="FeatureSaved" xml:space="preserve"><value>Зміну збережено</value></data>
+  <data name="FeatureUpdated" xml:space="preserve"><value>Змінено:</value></data>
+  <data name="DeleteChat" xml:space="preserve"><value>Видалити чат</value></data>
+  <data name="DeleteChatConfirm" xml:space="preserve"><value>Перемістити переписку до кошика? Вона зникне зі звичайних списків, у покупця та зі сповіщень. Її можна буде відновити.</value></data>
+  <data name="ChatTrash" xml:space="preserve"><value>Кошик чатів</value></data>
+  <data name="ChatTrashHint" xml:space="preserve"><value>Видалені переписки вашої черги. Відновлення зберігає повідомлення й попередній статус. Остаточного видалення немає.</value></data>
+  <data name="ChatTrashEmpty" xml:space="preserve"><value>Кошик поки порожній</value></data>
+  <data name="ChatDeletedAt" xml:space="preserve"><value>Видалено</value></data>
+  <data name="RestoreChat" xml:space="preserve"><value>Відновити чат</value></data>
+  <data name="RestoreChatConfirm" xml:space="preserve"><value>Повернути переписку та всю історію повідомлень до підтримки?</value></data>
+  <data name="AuditEntityFeatureFlag" xml:space="preserve"><value>Функція системи</value></data>
+  <data name="AuditEntitySupportTicket" xml:space="preserve"><value>Переписка підтримки</value></data>
+  <data name="AuditActionRestore" xml:space="preserve"><value>Відновлення</value></data>
+  <data name="AuditFieldKey" xml:space="preserve"><value>Функція</value></data>
+  <data name="AuditFieldDeletedAt" xml:space="preserve"><value>Дата видалення</value></data>
+  <data name="AuditFieldDeletedBy" xml:space="preserve"><value>Хто видалив</value></data>
+  <data name="AuditFieldEnabled" xml:space="preserve"><value>Увімкнено</value></data>
+  <data name="DeleteProduct" xml:space="preserve"><value>Видалити товар</value></data>
+  <data name="DeleteProductConfirm" xml:space="preserve"><value>Видалити «{0}» з каталогу? Дані минулих замовлень та історія товару збережуться.</value></data>
+  <data name="ProductDeleted" xml:space="preserve"><value>Товар видалено з каталогу.</value></data>
+  <data name="ImportSourceCategory" xml:space="preserve"><value>Категорія у джерелі</value></data>
+  <data name="ImportCreateCategory" xml:space="preserve"><value>Створити категорію</value></data>
+  <data name="ImportCreateCategoryHint" xml:space="preserve"><value>Виберіть батьківський розділ і вкажіть назву нової категорії. Наявну категорію буде використано повторно.</value></data>
+  <data name="ImportCategorySelected" xml:space="preserve"><value>Категорію вибрано.</value></data>
+  <data name="CategoryName" xml:space="preserve"><value>Назва категорії</value></data>
 </root>

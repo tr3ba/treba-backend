@@ -32,7 +32,7 @@ public sealed class PaymentsController : ControllerBase
 
         if (!Guid.TryParse(userIdClaim, out var userId))
         {
-            return Unauthorized(new { message = "Не удалось определить пользователя." });
+            return Unauthorized(new { message = "Не вдалося визначити користувача." });
         }
 
         try
@@ -64,7 +64,7 @@ public sealed class PaymentsController : ControllerBase
 
         if (!Guid.TryParse(userIdClaim, out var userId))
         {
-            return Unauthorized(new { message = "Не удалось определить пользователя." });
+            return Unauthorized(new { message = "Не вдалося визначити користувача." });
         }
 
         try

@@ -24,10 +24,10 @@
             <label class="mobile-menu-button" for="admin-nav-toggle" aria-label="@L["OpenMenu"]"><i class="bi bi-list"></i></label>
             <div class="header-actions">
                 <StorefrontLink Url="@(Configuration["WebsiteLogin:StoreOrigin"] ?? "https://treba.duckdns.org/")" />
+                <div class="workflow-notification-anchor"><WorkflowNotifications /></div>
                 <div class="lang-selector" aria-label="@L["Language"]">
                     <a class="lang-btn @(currentCulture == "uk" ? "active" : "")" data-enhance-nav="false" href="/culture/set?culture=uk&redirectUri=@returnPath">UA</a>
                     <a class="lang-btn @(currentCulture == "en" ? "active" : "")" data-enhance-nav="false" href="/culture/set?culture=en&redirectUri=@returnPath">EN</a>
-                    <a class="lang-btn @(currentCulture == "ru" ? "active" : "")" data-enhance-nav="false" href="/culture/set?culture=ru&redirectUri=@returnPath">RU</a>
                 </div>
                 <div class="profile-menu-container">
                     <button class="user-profile-badge" type="button" @onclick="ToggleProfileMenu" aria-expanded="@_menuOpen" aria-haspopup="menu">

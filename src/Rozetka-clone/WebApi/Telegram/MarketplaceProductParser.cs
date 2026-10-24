@@ -11,20 +11,23 @@ using Contracts.Telegram;
 namespace WebApi.Telegram;
 
 public sealed record MarketplaceProductData(string Id, string Url, string Name, string Description, string BrandName,
-    string CategoryKey, string CategoryName, decimal? Price, IReadOnlyList<string> Images, IReadOnlyList<ImportedCharacteristicDto> Characteristics);
+    string CategoryKey, string CategoryName, decimal? Price, IReadOnlyList<string> Images, IReadOnlyList<ImportedCharacteristicDto> Characteristics)
+{
+    public IReadOnlyList<string> CategoryPath { get; init; } = [];
+}
 
 public sealed class MarketplaceProductParser
 {
     public MarketplaceProductData Parse(Uri source, string html)
     {
         source = MarketplaceSourceClient.ProductUri(source.AbsoluteUri);
-        if (html.Length > 4 * 1024 * 1024) throw new ArgumentException("Страница слишком большая.");
+        if (html.Length > 4 * 1024 * 1024) throw new ArgumentException("Сторінка надто велика.");
         var provider = MarketplaceSourceClient.Provider(source);
         if (provider == "rozetka" && html.AsSpan().TrimStart().StartsWith("{")) return ParseRozetkaApi(source, html);
         using var document = new HtmlParser().ParseDocument(html);
         if (document.QuerySelector("#challenge-running, #challenge-form, script[src*='challenge-platform']") is not null
             || document.Title?.Contains("Just a moment", StringComparison.OrdinalIgnoreCase) == true)
-            throw new BusinessRuleException("Маркетплейс ограничил автоматическую загрузку. Попробуйте позже или добавьте товар вручную.");
+            throw new BusinessRuleException("Маркетплейс обмежив автоматичне завантаження. Спробуйте пізніше або додайте товар вручну.");
         var documents = new List<JsonDocument>();
         try
         {
@@ -54,10 +57,11 @@ public sealed class MarketplaceProductParser
             if (product.ValueKind == JsonValueKind.Undefined) product = products.FirstOrDefault();
             if (product.ValueKind == JsonValueKind.Undefined && epicMetadata.ValueKind == JsonValueKind.Undefined
                 && document.QuerySelector("[itemtype*='schema.org/Product']") is null && Meta(document, "og:type") is not ("product" or "product.item"))
-                throw new BusinessRuleException("Источник не вернул карточку товара.");
+                throw new BusinessRuleException("Джерело не повернуло картку товару.");
             var name = Clean(Text(product, "name") ?? Text(epicMetadata, "productName") ?? document.QuerySelector("h1")?.TextContent ?? Meta(document, "og:title") ?? "", 250);
-            if (string.IsNullOrWhiteSpace(name)) throw new BusinessRuleException("Не удалось прочитать название товара.");
+            if (string.IsNullOrWhiteSpace(name)) throw new BusinessRuleException("Не вдалося прочитати назву товару.");
             var categoryKey = ""; var categoryName = "";
+            var categoryPath = new List<string>();
             foreach (var crumb in nodes.Where(n => Type(n, "BreadcrumbList")))
                 if (crumb.TryGetProperty("itemListElement", out var items) && items.ValueKind == JsonValueKind.Array)
                     foreach (var item in items.EnumerateArray())
@@ -65,24 +69,24 @@ public sealed class MarketplaceProductParser
                         var link = item.TryGetProperty("item", out var value) ? value : default;
                         var url = link.ValueKind == JsonValueKind.String ? link.GetString() : Text(link, "@id") ?? Text(link, "url");
                         var match = Regex.Match(url ?? "", @"/c([1-9][0-9]{0,11})(?:/|$)");
-                        if (provider == "rozetka" && match.Success) { categoryKey = "c" + match.Groups[1].Value; categoryName = Clean(Text(item, "name") ?? Text(link, "name") ?? "", 250); }
+                        if (provider == "rozetka" && match.Success) { categoryKey = "c" + match.Groups[1].Value; categoryName = Clean(Text(item, "name") ?? Text(link, "name") ?? "", 250); categoryPath.Add(categoryName); }
                         else if (provider != "rozetka" && Uri.TryCreate(source, url, out var categoryUri) && MarketplaceSourceClient.Provider(categoryUri) == provider
                             && !IsProduct(categoryUri) && categoryUri.AbsolutePath.Trim('/').Length > 2)
-                        { categoryKey = provider + ":" + Hash(categoryUri.AbsolutePath.Replace("/ua/", "/", StringComparison.Ordinal)); categoryName = Clean(Text(item, "name") ?? Text(link, "name") ?? "", 250); }
+                        { categoryKey = provider + ":" + Hash(categoryUri.AbsolutePath.Replace("/ua/", "/", StringComparison.Ordinal)); categoryName = Clean(Text(item, "name") ?? Text(link, "name") ?? "", 250); categoryPath.Add(categoryName); }
                     }
             if (categoryKey.Length == 0)
                 foreach (var link in document.QuerySelectorAll("[itemtype*='BreadcrumbList'] a[href], .breadcrumbs a[href], a.breadcrumbs__link[href]"))
                 {
                     var match = Regex.Match(link.GetAttribute("href") ?? "", @"/c([1-9][0-9]{0,11})(?:/|$)");
-                    if (provider == "rozetka" && match.Success) { categoryKey = "c" + match.Groups[1].Value; categoryName = Clean(link.TextContent, 250); }
+                    if (provider == "rozetka" && match.Success) { categoryKey = "c" + match.Groups[1].Value; categoryName = Clean(link.TextContent, 250); categoryPath.Add(categoryName); }
                     else if (provider != "rozetka" && Uri.TryCreate(source, link.GetAttribute("href"), out var categoryUri)
                         && MarketplaceSourceClient.Provider(categoryUri) == provider && !IsProduct(categoryUri) && categoryUri.AbsolutePath.Trim('/').Length > 2)
-                    { categoryKey = provider + ":" + Hash(categoryUri.AbsolutePath.Replace("/ua/", "/", StringComparison.Ordinal)); categoryName = Clean(link.TextContent, 250); }
+                    { categoryKey = provider + ":" + Hash(categoryUri.AbsolutePath.Replace("/ua/", "/", StringComparison.Ordinal)); categoryName = Clean(link.TextContent, 250); categoryPath.Add(categoryName); }
                 }
             if (Text(epicMetadata, "categoryId") is { } epicCategory)
             { categoryKey = "epic:" + Hash(epicCategory); categoryName = Clean(Text(epicMetadata, "categoryName") ?? "", 250); }
             if (categoryKey.Length == 0)
-            { categoryKey = provider + ":unknown"; categoryName = Clean(Text(product, "category") ?? "Категория источника не указана", 250); }
+            { categoryKey = provider + ":unknown"; categoryName = Clean(Text(product, "category") ?? "Категорію джерела не вказано", 250); }
             var description = Clean(Text(product, "description") ?? Meta(document, "og:description") ?? "", 10000);
             var pageDescription = Clean(document.QuerySelector(".product-about__description, [itemprop='description'], [data-qaid='product_description'], [data-qaid='descriptions']")?.InnerHtml ?? "", 10000);
             if (pageDescription.Length > description.Length) description = pageDescription;
@@ -110,7 +114,7 @@ public sealed class MarketplaceProductParser
                 var key = Clean(cells[0].TextContent, 200).TrimEnd(':'); var value = Clean(cells[1].TextContent, 2000);
                 if (key.Length > 0 && value.Length > 0 && characteristics.Count < 100 && !characteristics.Any(c => c.Name == key && c.Value == value)) characteristics.Add(new(key, value));
             }
-            AddIdentifier(characteristics, "Артикул производителя", Text(product, "mpn"));
+            AddIdentifier(characteristics, "Артикул виробника", Text(product, "mpn"));
             AddIdentifier(characteristics, "Штрихкод", Text(product, "gtin13") ?? Text(product, "gtin14") ?? Text(product, "gtin12") ?? Text(product, "gtin8") ?? Text(product, "gtin"));
             decimal? price = null;
             if (product.ValueKind == JsonValueKind.Object && product.TryGetProperty("offers", out var offers))
@@ -120,7 +124,7 @@ public sealed class MarketplaceProductParser
             if (price is null && (Meta(document, "product:price:currency") is null or "UAH")
                 && decimal.TryParse(Meta(document, "product:price:amount"), NumberStyles.Number, CultureInfo.InvariantCulture, out var metaPrice) && metaPrice is > 0 and <= 999999999.99m) price = decimal.Round(metaPrice, 2);
             if (price is null && decimal.TryParse(Text(epicMetadata, "productPrice"), NumberStyles.Number, CultureInfo.InvariantCulture, out var epicPrice) && epicPrice is > 0 and <= 999999999.99m) price = decimal.Round(epicPrice, 2);
-            return new(id, source.AbsoluteUri, name, Clean(description, 10000), Clean(brand ?? "", 200), categoryKey, categoryName, price, images.Take(8).ToList(), characteristics);
+            return new(id, source.AbsoluteUri, name, Clean(description, 10000), ResolveBrand(brand, name, characteristics), categoryKey, categoryName, price, images.Take(8).ToList(), characteristics) { CategoryPath = categoryPath };
         }
         finally { foreach (var json in documents) json.Dispose(); }
     }
@@ -143,10 +147,10 @@ public sealed class MarketplaceProductParser
         var root = document.RootElement;
         var expectedId = Regex.Match(source.AbsolutePath, @"/p([0-9]+)/?$").Groups[1].Value;
         if (!root.TryGetProperty("data", out var data) || Text(data, "id") != expectedId)
-            throw new BusinessRuleException("Rozetka вернула другой товар. Повторите импорт ссылки.");
+            throw new BusinessRuleException("Rozetka повернула інший товар. Повторіть імпорт посилання.");
         var name = Clean(Text(data, "title") ?? "", 250);
         var categoryId = Text(data, "category_id") ?? "";
-        if (name.Length == 0 || !Regex.IsMatch(categoryId, @"^[1-9][0-9]{0,11}$")) throw new BusinessRuleException("Rozetka вернула неполные данные товара.");
+        if (name.Length == 0 || !Regex.IsMatch(categoryId, @"^[1-9][0-9]{0,11}$")) throw new BusinessRuleException("Rozetka повернула неповні дані товару.");
         var categoryName = data.TryGetProperty("last_category", out var category) ? Text(category, "title") ?? "" : "";
         var images = new List<string>();
         if (data.TryGetProperty("images", out var imageList) && imageList.ValueKind == JsonValueKind.Array)
@@ -167,11 +171,24 @@ public sealed class MarketplaceProductParser
                         var value = Clean(values, 2000);
                         if (title.Length > 0 && value.Length > 0 && characteristics.Count < 100) characteristics.Add(new(title, value));
                     }
-        AddIdentifier(characteristics, "Артикул производителя", Text(data, "article"));
+        AddIdentifier(characteristics, "Артикул виробника", Text(data, "article"));
         AddIdentifier(characteristics, "Штрихкод", Text(data, "barcode") ?? Text(data, "gtin"));
         decimal? price = decimal.TryParse(Text(data, "price"), NumberStyles.Number, CultureInfo.InvariantCulture, out var amount) && amount is > 0 and <= 999999999.99m ? decimal.Round(amount, 2) : null;
-        return new(expectedId, source.AbsoluteUri, name, Clean(description ?? "", 10000), Clean(Text(data, "brand") ?? "", 200), "c" + categoryId,
+        var brand = Text(data, "brand") ?? (data.TryGetProperty("brand", out var brandNode) ? Text(brandNode, "name") ?? Text(brandNode, "title") : null);
+        return new(expectedId, source.AbsoluteUri, name, Clean(description ?? "", 10000), ResolveBrand(brand, name, characteristics), "c" + categoryId,
             Clean(categoryName, 250), price, images, characteristics);
+    }
+    private static string ResolveBrand(string? brand, string name, IReadOnlyList<ImportedCharacteristicDto> values)
+    {
+        if (string.IsNullOrWhiteSpace(brand))
+            brand = values.FirstOrDefault(v => new[] { "Бренд", "Виробник", "Торгова марка", "Brand", "Manufacturer" }.Contains(v.Name.Trim().TrimEnd(':'), StringComparer.OrdinalIgnoreCase))?.Value;
+        if (string.IsNullOrWhiteSpace(brand))
+        {
+            var part = values.FirstOrDefault(v => v.Name is "Артикул виробника" or "MPN")?.Value;
+            var prefix = Regex.Match(part ?? "", @"^[\p{L}][\p{L}\p{Nd}]{1,49}(?=[-_/])").Value;
+            if (prefix.Length > 0 && Regex.IsMatch(name, @"(?<![\p{L}\p{Nd}])" + Regex.Escape(prefix) + @"(?![\p{L}\p{Nd}])", RegexOptions.IgnoreCase)) brand = prefix;
+        }
+        return Clean(brand ?? "", 200);
     }
     private static void AddIdentifier(List<ImportedCharacteristicDto> values, string name, string? raw)
     {

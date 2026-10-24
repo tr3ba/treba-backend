@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <data name="Dashboard" xml:space="preserve"><value>Dashboard</value></data>
   <data name="Management" xml:space="preserve"><value>Management</value></data>
@@ -362,7 +362,6 @@
   <data name="ContactsAndSettingsDesc" xml:space="preserve"><value>Upload the profile photo in the panel on the left.</value></data>
   <data name="ProfileLanguage" xml:space="preserve"><value>Profile language</value></data>
   <data name="Ukrainian" xml:space="preserve"><value>Ukrainian</value></data>
-  <data name="Russian" xml:space="preserve"><value>Russian</value></data>
   <data name="MarketingEmailsDesc" xml:space="preserve"><value>Receive news and offers by email</value></data>
   <data name="ProfileSaved" xml:space="preserve"><value>Profile saved. The header has already been updated.</value></data>
   <data name="SaveChanges" xml:space="preserve"><value>Save changes</value></data>
@@ -761,4 +760,55 @@
   <data name="ImportStatusExpired" xml:space="preserve"><value>Preview expired</value></data>
   <data name="ImportStatusSubmitted" xml:space="preserve"><value>Sent for moderation</value></data>
   <data name="CategoryImageUrl" xml:space="preserve"><value>Category image (URL)</value></data>
+  <data name="WorkflowApplications" xml:space="preserve"><value>Seller applications</value></data>
+  <data name="WorkflowApplicationsHint" xml:space="preserve"><value>Review applications and open a seller workspace.</value></data>
+  <data name="WorkflowRefresh" xml:space="preserve"><value>Refresh</value></data>
+  <data name="WorkflowNoApplications" xml:space="preserve"><value>No applications found</value></data>
+  <data name="WorkflowContact" xml:space="preserve"><value>Contact</value></data>
+  <data name="WorkflowWebsite" xml:space="preserve"><value>Company website</value></data>
+  <data name="WorkflowStoreSlug" xml:space="preserve"><value>Store address (Latin letters)</value></data>
+  <data name="WorkflowReviewNote" xml:space="preserve"><value>Review note / rejection reason</value></data>
+  <data name="WorkflowApprovalHint" xml:space="preserve"><value>Approval creates a store with access to active categories. The customer must sign in again.</value></data>
+  <data name="WorkflowApprove" xml:space="preserve"><value>Approve and create store</value></data>
+  <data name="WorkflowReject" xml:space="preserve"><value>Reject application</value></data>
+  <data name="WorkflowPages" xml:space="preserve"><value>Pages</value></data>
+  <data name="WorkflowNotifications" xml:space="preserve"><value>Notifications</value></data>
+  <data name="WorkflowReadAll" xml:space="preserve"><value>Mark all read</value></data>
+  <data name="WorkflowNotificationHint" xml:space="preserve"><value>Recent events from the last 30 days.</value></data>
+  <data name="WorkflowNoNotifications" xml:space="preserve"><value>No notifications yet</value></data>
+  <data name="WorkflowUnread" xml:space="preserve"><value>Unread</value></data>
+  <data name="WorkflowAllNotifications" xml:space="preserve"><value>All notifications</value></data>
+  <data name="WorkflowNotificationError" xml:space="preserve"><value>Could not load notifications.</value></data>
+  <data name="Features" xml:space="preserve"><value>Features</value></data>
+  <data name="FeaturesDescription" xml:space="preserve"><value>Control feature availability. Changes are saved immediately and apply across the system.</value></data>
+  <data name="FeatureChatDeletion" xml:space="preserve"><value>Chat deletion</value></data>
+  <data name="FeatureChatDeletionDescription" xml:space="preserve"><value>Administrators and managers can move conversations from their support queue to the trash. Message history is retained.</value></data>
+  <data name="FeatureChatDeletionHint" xml:space="preserve"><value>Turning this off prevents new deletions. Trash and restoration remain available. Active returns must be completed first.</value></data>
+  <data name="FeatureEnabled" xml:space="preserve"><value>Enabled</value></data>
+  <data name="FeatureDisabled" xml:space="preserve"><value>Disabled</value></data>
+  <data name="FeatureSaved" xml:space="preserve"><value>Change saved</value></data>
+  <data name="FeatureUpdated" xml:space="preserve"><value>Updated:</value></data>
+  <data name="DeleteChat" xml:space="preserve"><value>Delete chat</value></data>
+  <data name="DeleteChatConfirm" xml:space="preserve"><value>Move this conversation to trash? It will disappear from normal lists, the customer's inbox and notifications. You can restore it.</value></data>
+  <data name="ChatTrash" xml:space="preserve"><value>Chat trash</value></data>
+  <data name="ChatTrashHint" xml:space="preserve"><value>Deleted conversations from your queue. Restoration preserves messages and the previous status. There is no permanent deletion.</value></data>
+  <data name="ChatTrashEmpty" xml:space="preserve"><value>The trash is empty</value></data>
+  <data name="ChatDeletedAt" xml:space="preserve"><value>Deleted</value></data>
+  <data name="RestoreChat" xml:space="preserve"><value>Restore chat</value></data>
+  <data name="RestoreChatConfirm" xml:space="preserve"><value>Return this conversation and its message history to the support inbox?</value></data>
+  <data name="AuditEntityFeatureFlag" xml:space="preserve"><value>System feature</value></data>
+  <data name="AuditEntitySupportTicket" xml:space="preserve"><value>Support conversation</value></data>
+  <data name="AuditActionRestore" xml:space="preserve"><value>Restore</value></data>
+  <data name="AuditFieldKey" xml:space="preserve"><value>Feature</value></data>
+  <data name="AuditFieldDeletedAt" xml:space="preserve"><value>Deleted at</value></data>
+  <data name="AuditFieldDeletedBy" xml:space="preserve"><value>Deleted by</value></data>
+  <data name="AuditFieldEnabled" xml:space="preserve"><value>Enabled</value></data>
+  <data name="DeleteProduct" xml:space="preserve"><value>Delete product</value></data>
+  <data name="DeleteProductConfirm" xml:space="preserve"><value>Delete “{0}” from the catalog? Past orders and product history will be preserved.</value></data>
+  <data name="ProductDeleted" xml:space="preserve"><value>Product removed from the catalog.</value></data>
+  <data name="ImportSourceCategory" xml:space="preserve"><value>Source category</value></data>
+  <data name="ImportCreateCategory" xml:space="preserve"><value>Create category</value></data>
+  <data name="ImportCreateCategoryHint" xml:space="preserve"><value>Choose a parent section and enter the new category name. An existing category will be reused.</value></data>
+  <data name="ImportCategorySelected" xml:space="preserve"><value>Category selected.</value></data>
+  <data name="CategoryName" xml:space="preserve"><value>Category name</value></data>
 </root>

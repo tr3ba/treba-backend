@@ -94,20 +94,20 @@ public sealed class TelegramBotWorker(IServiceScopeFactory scopes, IOptions<Tele
             if (binding is not null)
             {
                 var user = await links.RequireUserAsync(binding.UserId, ct);
-                await bot.SendMenuAsync(chatId, $"Добро пожаловать в Treba, {user.FirstName} {user.LastName}!\nРоль: {(user.Role!.Name == "Seller" ? "Продавец" : "Модератор")}\nID Treba: {user.Id}\nID Telegram: {telegramId}\n\nОткройте рабочее меню или подтвердите вход через Guard.", ct);
+                await bot.SendMenuAsync(chatId, $"Вітаємо в Treba, {user.FirstName} {user.LastName}!\nРоль: {(user.Role!.Name == "Seller" ? "Продавець" : "Модератор")}\nID Treba: {user.Id}\nID Telegram: {telegramId}\n\nВідкрийте робоче меню або підтвердьте вхід через Guard.", ct);
                 return;
             }
             if (text.StartsWith("/start link_", StringComparison.Ordinal))
             {
                 var name = string.Join(' ', new[] { String(from, "first_name"), String(from, "last_name") }.Where(x => !string.IsNullOrWhiteSpace(x)));
                 var user = await links.ClaimAsync(text[12..].Trim(), telegramId, chatId, String(from, "username"), name, ct);
-                await bot.SendTextAsync(chatId, $"Добро пожаловать в Treba, {user.Name}!\nРоль: {(user.Role == "Seller" ? "Продавец" : "Модератор")}\nID Treba: {user.Id}\nID Telegram: {telegramId}\n\nВернитесь в профиль на сайте и нажмите «Подтвердить привязку». Затем отправьте /menu — откроется рабочая панель.", ct);
+                await bot.SendTextAsync(chatId, $"Вітаємо в Treba, {user.Name}!\nРоль: {(user.Role == "Seller" ? "Продавець" : "Модератор")}\nID Treba: {user.Id}\nID Telegram: {telegramId}\n\nПоверніться до профілю на сайті та натисніть «Підтвердити підключення». Потім надішліть /menu — відкриється робоча панель.", ct);
             }
-            else await bot.SendTextAsync(chatId, "Привет! Это рабочий бот Treba для продавцов и модераторов.\nЧтобы начать, откройте свой профиль на сайте Treba и нажмите «Привязать Telegram».", ct);
+            else await bot.SendTextAsync(chatId, "Вітаємо! Це робочий бот Treba для продавців і модераторів.\nЩоб почати, відкрийте свій профіль на сайті Treba та натисніть «Підключити Telegram».", ct);
         }
         catch (Exception ex) when (ex is BusinessRuleException or UnauthorizedAccessException or ArgumentException)
         { await bot.SendTextAsync(chatId, ex.Message, ct); }
-        catch (DbUpdateConcurrencyException) { await bot.SendTextAsync(chatId, "Ссылка уже обработана. Проверьте привязку в профиле Treba.", ct); }
+        catch (DbUpdateConcurrencyException) { await bot.SendTextAsync(chatId, "Посилання вже оброблено. Перевірте підключення в профілі Treba.", ct); }
     }
     private static string? String(JsonElement node, string key) => node.TryGetProperty(key, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 }
