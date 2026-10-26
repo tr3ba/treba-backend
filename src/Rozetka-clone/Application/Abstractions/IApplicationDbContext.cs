@@ -77,6 +77,11 @@ namespace Application.Abstractions
             get;
         }
 
+        DbSet<UserExternalLogin> UserExternalLogins
+        {
+            get;
+        }
+
         DbSet<UserProfile> UserProfiles
         {
             get;

@@ -2,6 +2,9 @@ using Application.Abstractions;
 using Contracts.Authentication;
 using Domain.Entities.Users;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using System.Net.Http;
+using System.Text.Json;
 
 namespace Infrastructure.Authentication;
 
@@ -10,16 +13,22 @@ public sealed class IdentityService : IIdentityService
     private readonly IApplicationDbContext _context;
     private readonly ITokenService _tokenService;
     private readonly ISecondFactorService _secondFactorService;
+    private readonly IConfiguration _configuration;
+    private readonly HttpClient _httpClient;
 
     public IdentityService(
         IApplicationDbContext context,
         ITokenService tokenService,
-        ISecondFactorService secondFactorService
+        ISecondFactorService secondFactorService,
+        IConfiguration configuration,
+        HttpClient httpClient
     )
     {
         _context = context;
         _tokenService = tokenService;
         _secondFactorService = secondFactorService;
+        _configuration = configuration;
+        _httpClient = httpClient;
     }
 
     public async Task<AuthResponse> RegisterAsync(
@@ -376,6 +385,256 @@ public sealed class IdentityService : IIdentityService
         user.AssignRole(dbRole.Id);
         await _context.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task<LoginResponse> ExternalLoginAsync(
+        string provider,
+        string accessToken,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var (providerUserId, email, firstName, lastName, avatarUrl) = await GetExternalUserInfoAsync(provider, accessToken, cancellationToken);
+
+        var existingLink = await _context.UserExternalLogins
+            .Include(uel => uel.User)
+            .ThenInclude(u => u.Role)
+            .FirstOrDefaultAsync(
+                uel => uel.Provider == provider && uel.ProviderUserId == providerUserId,
+                cancellationToken
+            );
+
+        if (existingLink is not null)
+        {
+            var user = existingLink.User;
+            if (user.Status == UserStatus.Blocked || user.Status == UserStatus.Deleted)
+            {
+                throw new InvalidOperationException("Обліковий запис заблоковано або видалено.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(avatarUrl) && user.Profile is not null)
+            {
+                user.UpdateProfileDetails(
+                    user.Profile.BirthDate,
+                    user.Profile.Gender,
+                    avatarUrl,
+                    user.Profile.Language,
+                    user.Profile.MarketingEmailsEnabled
+                );
+            }
+
+            var challenge = await _secondFactorService.CreateLoginChallengeAsync(user, cancellationToken);
+            if (challenge is not null)
+            {
+                return new LoginResponse(null, challenge);
+            }
+
+            return new LoginResponse(await IssueLoginTokensAsync(user, cancellationToken), null);
+        }
+
+        var emailNormalized = email.Trim().ToLowerInvariant();
+        var userByEmail = await _context.Users
+            .Include(u => u.Role)
+            .FirstOrDefaultAsync(u => u.Email == emailNormalized, cancellationToken);
+
+        if (userByEmail is not null)
+        {
+            userByEmail.AddExternalLogin(provider, providerUserId);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            var challenge = await _secondFactorService.CreateLoginChallengeAsync(userByEmail, cancellationToken);
+            if (challenge is not null)
+            {
+                return new LoginResponse(null, challenge);
+            }
+
+            return new LoginResponse(await IssueLoginTokensAsync(userByEmail, cancellationToken), null);
+        }
+
+        var customerRole = await _context.Roles.FirstOrDefaultAsync(r => r.Name == Roles.Customer, cancellationToken)
+            ?? throw new InvalidOperationException("Роль Customer не знайдено.");
+
+        var newUser = User.Create(
+            Guid.NewGuid(),
+            emailNormalized,
+            null,
+            firstName,
+            lastName
+        );
+
+        newUser.AssignRole(customerRole.Id);
+        newUser.VerifyEmail();
+        newUser.AddExternalLogin(provider, providerUserId);
+
+        if (!string.IsNullOrWhiteSpace(avatarUrl))
+        {
+            newUser.CreateProfile(avatarUrl: avatarUrl);
+        }
+
+        _context.Users.Add(newUser);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        var newUserChallenge = await _secondFactorService.CreateLoginChallengeAsync(newUser, cancellationToken);
+        if (newUserChallenge is not null)
+        {
+            return new LoginResponse(null, newUserChallenge);
+        }
+
+        return new LoginResponse(await IssueLoginTokensAsync(newUser, cancellationToken), null);
+    }
+
+    public async Task<bool> LinkExternalProviderAsync(
+        Guid userId,
+        string provider,
+        string accessToken,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var (providerUserId, email, firstName, lastName, avatarUrl) = await GetExternalUserInfoAsync(provider, accessToken, cancellationToken);
+
+        var user = await _context.Users
+            .Include(u => u.ExternalLogins)
+            .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+
+        if (user is null)
+        {
+            throw new InvalidOperationException("Користувача не знайдено.");
+        }
+
+        if (user.ExternalLogins.Any(el => el.Provider == provider))
+        {
+            throw new InvalidOperationException($"Вже пов'язано з {provider}.");
+        }
+
+        var existingLink = await _context.UserExternalLogins
+            .FirstOrDefaultAsync(uel => uel.Provider == provider && uel.ProviderUserId == providerUserId, cancellationToken);
+
+        if (existingLink is not null)
+        {
+            throw new InvalidOperationException("Цей обліковий запис вже пов'язаний з іншим користувачем.");
+        }
+
+        user.AddExternalLogin(provider, providerUserId);
+        await _context.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
+    public async Task<bool> UnlinkExternalProviderAsync(
+        Guid userId,
+        string provider,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var user = await _context.Users
+            .Include(u => u.ExternalLogins)
+            .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+
+        if (user is null)
+        {
+            throw new InvalidOperationException("Користувача не знайдено.");
+        }
+
+        var externalLogin = user.ExternalLogins.FirstOrDefault(el => el.Provider == provider);
+        if (externalLogin is null)
+        {
+            throw new InvalidOperationException($"Обліковий запис {provider} не пов'язаний.");
+        }
+
+        if (string.IsNullOrEmpty(user.PasswordHash) && user.ExternalLogins.Count == 1)
+        {
+            throw new InvalidOperationException("Неможливо відв'язати єдиний спосіб входу. Встановіть пароль спочатку.");
+        }
+
+        user.RemoveExternalLogin(provider);
+        await _context.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
+    private async Task<(string ProviderUserId, string Email, string FirstName, string LastName, string? AvatarUrl)> GetExternalUserInfoAsync(
+        string provider,
+        string accessToken,
+        CancellationToken cancellationToken)
+    {
+        return provider.ToLowerInvariant() switch
+        {
+            "google" => await GetGoogleUserInfoAsync(accessToken, cancellationToken),
+            "facebook" => await GetFacebookUserInfoAsync(accessToken, cancellationToken),
+            _ => throw new InvalidOperationException($"Unsupported provider: {provider}")
+        };
+    }
+
+    private async Task<(string ProviderUserId, string Email, string FirstName, string LastName, string? AvatarUrl)> GetGoogleUserInfoAsync(
+        string accessToken,
+        CancellationToken cancellationToken)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://www.googleapis.com/oauth2/v2/userinfo");
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        var json = await response.Content.ReadAsStringAsync(cancellationToken);
+        var userInfo = JsonSerializer.Deserialize<GoogleUserInfo>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+        if (userInfo is null || string.IsNullOrEmpty(userInfo.Id) || string.IsNullOrEmpty(userInfo.Email))
+        {
+            throw new InvalidOperationException("Failed to get user info from Google.");
+        }
+
+        return (
+            userInfo.Id,
+            userInfo.Email,
+            userInfo.GivenName ?? "User",
+            userInfo.FamilyName ?? "",
+            userInfo.Picture
+        );
+    }
+
+    private async Task<(string ProviderUserId, string Email, string FirstName, string LastName, string? AvatarUrl)> GetFacebookUserInfoAsync(
+        string accessToken,
+        CancellationToken cancellationToken)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://graph.facebook.com/me?fields=id,email,first_name,last_name,picture.type(large)");
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        var json = await response.Content.ReadAsStringAsync(cancellationToken);
+        var userInfo = JsonSerializer.Deserialize<FacebookUserInfo>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+        if (userInfo is null || string.IsNullOrEmpty(userInfo.Id) || string.IsNullOrEmpty(userInfo.Email))
+        {
+            throw new InvalidOperationException("Failed to get user info from Facebook.");
+        }
+
+        return (
+            userInfo.Id,
+            userInfo.Email,
+            userInfo.FirstName ?? "User",
+            userInfo.LastName ?? "",
+            userInfo.Picture?.Data?.Url
+        );
+    }
+
+    private sealed record GoogleUserInfo(
+        string Id,
+        string Email,
+        string? GivenName,
+        string? FamilyName,
+        string? Picture,
+        bool VerifiedEmail
+    );
+
+    private sealed record FacebookUserInfo(
+        string Id,
+        string Email,
+        string? FirstName,
+        string? LastName,
+        FacebookPicture? Picture
+    );
+
+    private sealed record FacebookPicture(FacebookPictureData? Data);
+
+    private sealed record FacebookPictureData(string? Url);
 
     private async Task<AuthResponse> IssueLoginTokensAsync(
         User user,

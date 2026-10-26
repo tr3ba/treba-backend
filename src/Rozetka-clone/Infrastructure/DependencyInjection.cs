@@ -95,6 +95,8 @@ namespace Infrastructure
                 }
             );
 
+            services.AddHttpClient<IIdentityService, IdentityService>();
+
             services.AddSingleton<AesSecretProtector>();
             services.AddScoped<IEmailSender, SmtpEmailSender>();
             services.AddScoped<ISecondFactorService, SecondFactorService>();

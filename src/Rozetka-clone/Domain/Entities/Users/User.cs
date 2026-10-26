@@ -68,6 +68,16 @@ namespace Domain.Entities.Users
             }
         }
 
+        private readonly List<UserExternalLogin> _externalLogins = [];
+
+        public IReadOnlyCollection<UserExternalLogin> ExternalLogins
+        {
+            get
+            {
+                return _externalLogins.AsReadOnly();
+            }
+        }
+
         public string PasswordHash { get; private set; } = string.Empty;
 
         public Guid RoleId { get; private set; }
@@ -532,6 +542,39 @@ namespace Domain.Entities.Users
             EnsureCanBeModified();
             EmailTwoFactorEnabled = false;
             RevokeRefreshToken();
+            UpdatedAt = DateTimeOffset.UtcNow;
+        }
+
+        public void AddExternalLogin(
+            string provider,
+            string providerUserId)
+        {
+            EnsureCanBeModified();
+            ArgumentException.ThrowIfNullOrWhiteSpace(provider);
+            ArgumentException.ThrowIfNullOrWhiteSpace(providerUserId);
+
+            if (_externalLogins.Any(el => el.Provider == provider.ToLowerInvariant()))
+            {
+                throw new UserDomainException($"External login for {provider} already exists.");
+            }
+
+            var externalLogin = UserExternalLogin.Create(Id, provider, providerUserId);
+            _externalLogins.Add(externalLogin);
+            UpdatedAt = DateTimeOffset.UtcNow;
+        }
+
+        public void RemoveExternalLogin(string provider)
+        {
+            EnsureCanBeModified();
+            ArgumentException.ThrowIfNullOrWhiteSpace(provider);
+
+            var externalLogin = _externalLogins.FirstOrDefault(el => el.Provider == provider.ToLowerInvariant());
+            if (externalLogin is null)
+            {
+                throw new UserDomainException($"External login for {provider} not found.");
+            }
+
+            _externalLogins.Remove(externalLogin);
             UpdatedAt = DateTimeOffset.UtcNow;
         }
     }

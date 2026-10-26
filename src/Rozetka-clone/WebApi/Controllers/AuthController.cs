@@ -49,6 +49,139 @@ public sealed class AuthController : ControllerBase
         }
     }
 
+    [HttpPost("external")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> ExternalLogin(
+        [FromBody] ExternalLoginRequest request,
+        CancellationToken cancellationToken
+    )
+    {
+        try
+        {
+            var response = await _identityService.ExternalLoginAsync(
+                request.Provider,
+                request.AccessToken,
+                cancellationToken
+            );
+            return Ok(response);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(
+                new
+                {
+                    message = ex.Message
+                }
+            );
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(
+                new
+                {
+                    message = ex.Message
+                }
+            );
+        }
+        catch (HttpRequestException ex)
+        {
+            return BadRequest(
+                new
+                {
+                    message = $"Failed to validate token with {request.Provider}: {ex.Message}"
+                }
+            );
+        }
+    }
+
+    [HttpPost("external/link")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> LinkExternalProvider(
+        [FromBody] ExternalLoginRequest request,
+        CancellationToken cancellationToken
+    )
+    {
+        try
+        {
+            var userId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? throw new UnauthorizedAccessException());
+
+            var result = await _identityService.LinkExternalProviderAsync(
+                userId,
+                request.Provider,
+                request.AccessToken,
+                cancellationToken
+            );
+
+            return Ok(new { success = result });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(
+                new
+                {
+                    message = ex.Message
+                }
+            );
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized(
+                new
+                {
+                    message = "Unauthorized"
+                }
+            );
+        }
+    }
+
+    [HttpPost("external/unlink")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> UnlinkExternalProvider(
+        [FromBody] UnlinkExternalProviderRequest request,
+        CancellationToken cancellationToken
+    )
+    {
+        try
+        {
+            var userId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? throw new UnauthorizedAccessException());
+
+            var result = await _identityService.UnlinkExternalProviderAsync(
+                userId,
+                request.Provider,
+                cancellationToken
+            );
+
+            return Ok(new { success = result });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(
+                new
+                {
+                    message = ex.Message
+                }
+            );
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized(
+                new
+                {
+                    message = "Unauthorized"
+                }
+            );
+        }
+    }
+
     [HttpPost("2fa/email/send")]
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -194,3 +327,7 @@ public sealed class AuthController : ControllerBase
         return NoContent();
     }
 }
+
+public sealed record UnlinkExternalProviderRequest(
+    string Provider
+);
