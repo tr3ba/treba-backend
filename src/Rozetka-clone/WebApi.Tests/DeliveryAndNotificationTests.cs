@@ -31,21 +31,42 @@ public sealed class DeliveryAndNotificationTests
     internal static readonly Guid CityId = Guid.Parse("11111111-1111-1111-1111-111111111111");
     internal static readonly Guid PointId = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
-    private sealed class CarrierHttp(bool wrongCity = false, bool failed = false) : HttpMessageHandler
+    private sealed class CarrierHttp(bool wrongCity = false, bool failed = false, bool unfiltered = false) : HttpMessageHandler
     {
         internal readonly List<(string Model, string Method)> Requests = [];
+        internal readonly List<JsonElement> Properties = [];
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             Assert.Equal("https://api.novaposhta.ua/v2.0/json/", request.RequestUri!.AbsoluteUri);
             using var json = JsonDocument.Parse(await request.Content!.ReadAsStringAsync(ct));
             var root = json.RootElement; var method = root.GetProperty("calledMethod").GetString()!;
+            var properties = root.GetProperty("methodProperties");
+            Properties.Add(properties.Clone());
+            Assert.All(properties.EnumerateObject(), property => Assert.True(char.IsUpper(property.Name[0]), "Carrier property names must retain their PascalCase spelling."));
+            if (method == "getCities")
+            {
+                Assert.True(properties.TryGetProperty("FindByString", out _) || properties.TryGetProperty("Ref", out _));
+                Assert.True(properties.TryGetProperty("Limit", out _));
+            }
+            if (method == "getWarehouses") Assert.Equal(CityId, properties.GetProperty("CityRef").GetGuid());
+            if (method == "getDocumentPrice")
+            {
+                Assert.Equal(CityId, properties.GetProperty("CitySender").GetGuid());
+                Assert.Equal(CityId, properties.GetProperty("CityRecipient").GetGuid());
+                Assert.True(properties.TryGetProperty("ServiceType", out _));
+            }
+            var postomat = !properties.TryGetProperty("CategoryOfWarehouse", out var category) || category.GetString() != "Warehouse";
             Requests.Add((root.GetProperty("modelName").GetString()!, method));
             Assert.DoesNotContain(method, new[] { "save", "update", "delete" });
             var data = method switch
             {
+                "getCities" when unfiltered => JsonSerializer.Serialize(new[] {
+                    new { Ref = CityId, Description = "Авангард", AreaDescription = "Одеська" },
+                    new { Ref = Guid.NewGuid(), Description = "Абазівка", AreaDescription = "Полтавська" },
+                    new { Ref = PointId, Description = "Авангард (Дніпропетровська обл.)", AreaDescription = "Дніпропетровська" } }),
                 "getCities" => JsonSerializer.Serialize(new[] { new { Ref = CityId, Description = "Київ", AreaDescription = "Київська" } }),
                 "getWarehouses" => JsonSerializer.Serialize(new[] { new { Ref = PointId, CityRef = wrongCity ? Guid.NewGuid() : CityId,
-                    Description = "Поштомат №123", Number = "123", CategoryOfWarehouse = "Postomat", WarehouseStatus = "Working", TotalMaxWeightAllowed = "20" } }),
+                    Description = postomat ? "Поштомат №123" : "Відділення №123", Number = "123", CategoryOfWarehouse = postomat ? "Postomat" : "Branch", WarehouseStatus = "Working", TotalMaxWeightAllowed = "20" } }),
                 "getDocumentPrice" => "[{\"Cost\":\"95.50\"}]",
                 _ => throw new InvalidOperationException("Unexpected carrier call")
             };
@@ -55,6 +76,30 @@ public sealed class DeliveryAndNotificationTests
 
     private static NovaPoshtaClient Carrier(CarrierHttp handler, IMemoryCache cache) => new(new HttpClient(handler), Options.Create(new NovaPoshtaOptions
         { Enabled = true, ApiKey = "fixture-only", SenderCityRef = CityId }), cache);
+
+    [Fact]
+    public async Task Carrier_SearchPreservesWireCase_AndCannotReturnUnrelatedAlphabeticalCities()
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions()); var handler = new CarrierHttp(unfiltered: true);
+        var cities = await Carrier(handler, cache).CitiesAsync("аванг", default);
+        Assert.Equal(2, cities.Count);
+        Assert.All(cities, city => Assert.StartsWith("Авангард", city.Name));
+        Assert.Equal("аванг", Assert.Single(handler.Properties).GetProperty("FindByString").GetString());
+        Assert.Equal("20", handler.Properties[0].GetProperty("Limit").GetString());
+    }
+
+    [Fact]
+    public async Task Carrier_PickupTypesAreFilteredUpstream_AndHaveSeparateCachedPages()
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions()); var handler = new CarrierHttp(); var client = Carrier(handler, cache);
+        Assert.False(Assert.Single((await client.PickupPointsAsync(CityId, "123", "branch", 1, default)).Items).Postomat);
+        Assert.True(Assert.Single((await client.PickupPointsAsync(CityId, "123", "postomat", 1, default)).Items).Postomat);
+        await client.PickupPointsAsync(CityId, "123", "branch", 1, default);
+        Assert.Equal(2, handler.Requests.Count);
+        Assert.Equal("Warehouse", handler.Properties[0].GetProperty("CategoryOfWarehouse").GetString());
+        Assert.Equal("Postomat", handler.Properties[1].GetProperty("CategoryOfWarehouse").GetString());
+        Assert.All(handler.Properties, properties => Assert.Equal("123", properties.GetProperty("FindByString").GetString()));
+    }
 
     [Fact]
     public async Task Carrier_KeyOnlyConfiguration_EnablesDirectoryAndResolvesSenderCity()

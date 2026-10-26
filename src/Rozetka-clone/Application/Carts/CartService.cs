@@ -270,6 +270,9 @@ namespace Application.Carts
                     ProductId = product.Id,
                     ProductName = product.Name,
                     VariantName = variant.Name,
+                    ImageUrl = _dbContext.ProductImages.Where(image => image.ProductId == product.Id)
+                        .OrderByDescending(image => image.IsMain).ThenBy(image => image.SortOrder).ThenBy(image => image.Id)
+                        .Select(image => image.ImageUrl).FirstOrDefault(),
                     Price = variant.Price,
                     OldPrice = variant.OldPrice,
                     Quantity = cartItem.Quantity,

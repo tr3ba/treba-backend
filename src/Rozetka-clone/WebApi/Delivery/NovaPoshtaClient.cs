@@ -29,7 +29,10 @@ public sealed class NovaPoshtaClient(HttpClient http, IOptions<NovaPoshtaOptions
         query = Query(query);
         if (query.Length < 2) return [];
         var rows = await CachedAsync("cities:" + query, "Address", "getCities", new { FindByString = query, Limit = "20", Page = "1" }, ct);
-        return rows.Select(City).ToArray();
+        return rows.Select(City).Where(c => c.Ref != Guid.Empty && c.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(c => c.Name.Equals(query, StringComparison.OrdinalIgnoreCase))
+            .ThenByDescending(c => c.Name.StartsWith(query, StringComparison.OrdinalIgnoreCase))
+            .ThenBy(c => c.Name).ThenBy(c => c.Area).Take(20).ToArray();
     }
 
     public async Task<DeliveryPickupPage> PickupPointsAsync(Guid cityRef, string query, string kind, int page, CancellationToken ct)
@@ -37,8 +40,13 @@ public sealed class NovaPoshtaClient(HttpClient http, IOptions<NovaPoshtaOptions
         if (cityRef == Guid.Empty || page is < 1 or > 100 || kind is not ("all" or "branch" or "postomat"))
             throw new ArgumentException("Некоректний фільтр відділень.");
         query = Query(query);
-        var rows = await CachedAsync($"points:{cityRef}:{query}:{page}", "Address", "getWarehouses",
-            new { CityRef = cityRef, FindByString = query, Limit = "50", Page = page.ToString(CultureInfo.InvariantCulture), Language = "UA" }, ct);
+        var properties = new Dictionary<string, object>
+        {
+            ["CityRef"] = cityRef, ["FindByString"] = query, ["Limit"] = "50",
+            ["Page"] = page.ToString(CultureInfo.InvariantCulture), ["Language"] = "UA"
+        };
+        if (kind != "all") properties["CategoryOfWarehouse"] = kind == "postomat" ? "Postomat" : "Warehouse";
+        var rows = await CachedAsync($"points:{cityRef}:{kind}:{query}:{page}", "Address", "getWarehouses", properties, ct);
         return new(rows.Where(Working).Select(Point).Where(p => p.CityRef == cityRef
             && (kind == "all" || p.Postomat == (kind == "postomat"))).ToArray(), page, rows.Length == 50 && page < 100);
     }
@@ -92,8 +100,14 @@ public sealed class NovaPoshtaClient(HttpClient http, IOptions<NovaPoshtaOptions
         if (!Available) throw new DeliveryUnavailableException();
         try
         {
-            using var response = await http.PostAsJsonAsync("https://api.novaposhta.ua/v2.0/json/",
-                new { apiKey = options.ApiKey, modelName = model, calledMethod = method, methodProperties = properties }, ct);
+            // The carrier's methodProperties keys are case-sensitive. The HTTP JSON web defaults
+            // would turn FindByString/CityRef into findByString/cityRef and silently disable filters.
+            using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.novaposhta.ua/v2.0/json/")
+            {
+                Content = JsonContent.Create(new { apiKey = options.ApiKey, modelName = model, calledMethod = method, methodProperties = properties },
+                    options: JsonSerializerOptions.Default)
+            };
+            using var response = await http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
             response.EnsureSuccessStatusCode();
             await response.Content.LoadIntoBufferAsync(2 * 1024 * 1024, ct);
             using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct));
