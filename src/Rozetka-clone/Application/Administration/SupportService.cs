@@ -9,7 +9,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Administration;
 
-public sealed partial class SupportService(IApplicationDbContext db, ICurrentActor actor, OrderService orders)
+public sealed partial class SupportService(IApplicationDbContext db, ICurrentActor actor, OrderService orders,
+    Application.Marketplace.CustomerNotificationQueue? notifications = null)
 {
     private bool Staff => actor.Role is "Administrator" or "Manager" or "Moderator";
     private bool OperationsStaff => actor.Role is "Administrator" or "Manager";
@@ -138,7 +139,8 @@ public sealed partial class SupportService(IApplicationDbContext db, ICurrentAct
         }
         var ticket = new SupportTicket { Id = request.ClientRequestId ?? Guid.NewGuid(), OrderId = request.OrderId, ProductId = request.ProductId, CustomerId = customerId, Kind = request.Kind, Subject = request.Subject.Trim() };
         db.SupportTickets.Add(ticket);
-        AddMessage(ticket.Id, request.Message, false, request.ClientRequestId);
+        var firstMessage = AddMessage(ticket.Id, request.Message, false, request.ClientRequestId);
+        if (Responder && notifications is not null) await notifications.SupportAsync(ticket, firstMessage, ct);
         await db.SaveChangesAsync(ct);
         return (await DetailsAsync(ticket.Id, ct))!;
     }
@@ -154,7 +156,9 @@ public sealed partial class SupportService(IApplicationDbContext db, ICurrentAct
             throw new BusinessRuleException("Message identifier already used.");
         }
         if (ticket.Status == "CLOSED") throw new BusinessRuleException("Closed tickets cannot receive messages. Start a new conversation.");
-        AddMessage(id, request.Message, request.Internal, request.ClientMessageId);
+        var message = AddMessage(id, request.Message, request.Internal, request.ClientMessageId);
+        if (Responder && !request.Internal && notifications is not null)
+            await notifications.SupportAsync(ticket, message, ct);
         ticket.Version = Guid.NewGuid(); ticket.UpdatedAt = DateTimeOffset.UtcNow;
         if (Responder && !request.Internal && ticket.Status == "OPEN") ticket.Status = "IN_PROGRESS";
         await db.SaveChangesAsync(ct);
@@ -184,11 +188,13 @@ public sealed partial class SupportService(IApplicationDbContext db, ICurrentAct
         var previous = ticket.Status; ticket.Status = request.Status; ticket.UpdatedAt = DateTimeOffset.UtcNow; ticket.Version = Guid.NewGuid();
         AddMessage(id, $"{previous} → {request.Status}", false); await db.SaveChangesAsync(ct);
     }
-    private void AddMessage(Guid id, string text, bool internalNote, Guid? messageId = null) => db.SupportMessages.Add(new()
+    private SupportMessage AddMessage(Guid id, string text, bool internalNote, Guid? messageId = null)
     {
-        Id = messageId ?? Guid.NewGuid(), TicketId = id, AuthorId = actor.UserId ?? throw new UnauthorizedAccessException(),
-        AuthorName = actor.Name, AuthorRole = actor.Role, Message = text.Trim(), Internal = internalNote
-    });
+        var message = new SupportMessage { Id = messageId ?? Guid.NewGuid(), TicketId = id,
+            AuthorId = actor.UserId ?? throw new UnauthorizedAccessException(), AuthorName = actor.Name,
+            AuthorRole = actor.Role, Message = text.Trim(), Internal = internalNote };
+        db.SupportMessages.Add(message); return message;
+    }
     private static IReadOnlyList<string> Allowed(string kind, string status) => (kind, status) switch
     {
         ("RETURN", "OPEN") => ["IN_PROGRESS", "APPROVED", "REJECTED"], ("RETURN", "IN_PROGRESS") => ["APPROVED", "REJECTED"],

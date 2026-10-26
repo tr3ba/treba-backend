@@ -133,6 +133,10 @@ The current backend contains endpoints and services for marketplace areas includ
 - Administration
 - Authentication
 - Security / 2FA
+- Nova Poshta delivery calculation and TREBA courier delivery with managed shipment statuses
+- Optional customer email and Telegram notifications
+
+Delivery setup, customer subscriptions and deployment requirements: [delivery and notifications](docs/delivery-notifications.md).
 
 ---
 

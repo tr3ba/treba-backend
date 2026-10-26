@@ -8,4 +8,6 @@ public sealed record CreateOrderRequest(
     string RecipientEmail,
     CreateOrderAddressDto Address,
     List<CreateOrderItemDto> Items,
-    string? CouponCode = null);
+    string? CouponCode = null,
+    Guid? DeliveryQuoteId = null,
+    string? DeliveryMethod = null);

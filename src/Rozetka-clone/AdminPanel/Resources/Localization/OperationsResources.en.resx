@@ -154,4 +154,9 @@
   <data name="KindShort_CHAT" xml:space="preserve"><value>Support</value></data>
   <data name="KindShort_QUESTION" xml:space="preserve"><value>Question</value></data>
   <data name="KindShort_RETURN" xml:space="preserve"><value>Return</value></data>
+  <data name="NovaPoshtaDelivery" xml:space="preserve"><value>Nova Poshta delivery</value></data>
+  <data name="TrebaCourierDelivery" xml:space="preserve"><value>TREBA courier</value></data>
+  <data name="ShipmentReference" xml:space="preserve"><value>Shipment number</value></data>
+  <data name="ShipmentAfterPayment" xml:space="preserve"><value>The shipment number will be assigned after payment is confirmed.</value></data>
+  <data name="ShipmentCancelled" xml:space="preserve"><value>Shipment cancelled</value></data>
 </root>
