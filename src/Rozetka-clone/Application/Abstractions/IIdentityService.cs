@@ -63,4 +63,23 @@ public interface IIdentityService
         string role,
         CancellationToken cancellationToken = default
     );
+
+    Task<AuthResponse> ExternalLoginAsync(
+        string provider,
+        string accessToken,
+        CancellationToken cancellationToken = default
+    );
+
+    Task<bool> LinkExternalProviderAsync(
+        Guid userId,
+        string provider,
+        string providerUserId,
+        CancellationToken cancellationToken = default
+    );
+
+    Task<bool> UnlinkExternalProviderAsync(
+        Guid userId,
+        string provider,
+        CancellationToken cancellationToken = default
+    );
 }

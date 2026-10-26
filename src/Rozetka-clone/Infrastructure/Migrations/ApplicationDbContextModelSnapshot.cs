@@ -2661,6 +2661,33 @@ namespace Infrastructure.Migrations
                     b.ToTable("users", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.Entities.Users.UserExternalLogin", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ProviderUserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserExternalLogins");
+                });
+
             modelBuilder.Entity("Domain.Entities.Users.UserProfile", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3325,6 +3352,17 @@ namespace Infrastructure.Migrations
                     b.Navigation("Role");
                 });
 
+            modelBuilder.Entity("Domain.Entities.Users.UserExternalLogin", b =>
+                {
+                    b.HasOne("Domain.Entities.Users.User", "User")
+                        .WithMany("ExternalLogins")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Domain.Entities.Users.UserProfile", b =>
                 {
                     b.HasOne("Domain.Entities.Users.User", null)
@@ -3404,6 +3442,8 @@ namespace Infrastructure.Migrations
             modelBuilder.Entity("Domain.Entities.Users.User", b =>
                 {
                     b.Navigation("Addresses");
+
+                    b.Navigation("ExternalLogins");
 
                     b.Navigation("Profile");
                 });

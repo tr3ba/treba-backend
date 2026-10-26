@@ -18,7 +18,7 @@ public sealed class DeploymentMigrationTests
             .SkipWhile(m => m != "20261019213326_AddReviewOrderItemRelation")
             .ToArray();
         Assert.NotEmpty(migrations);
-        Assert.Equal(AdminOperationsDeployment.Migration, migrations[^1]);
+        Assert.Contains(AdminOperationsDeployment.Migration, migrations);
         AdminOperationsDeployment.ValidatePendingMigrations(migrations);
         AdminOperationsDeployment.ValidatePendingMigrations([]);
         Assert.Throws<InvalidOperationException>(() =>

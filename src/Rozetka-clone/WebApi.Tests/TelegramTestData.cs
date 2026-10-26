@@ -131,7 +131,9 @@ internal static class TelegramTestData
         return new(
             db,
             new TokenService(configuration),
-            new SecondFactorService(db, new NoEmail(), new AesSecretProtector(security), security)
+            new SecondFactorService(db, new NoEmail(), new AesSecretProtector(security), security),
+            configuration,
+            new HttpClient()
         );
     }
 

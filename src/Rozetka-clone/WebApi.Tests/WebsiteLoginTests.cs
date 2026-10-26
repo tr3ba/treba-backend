@@ -69,7 +69,7 @@ public sealed class WebsiteLoginTests
         await db.SaveChangesAsync();
         var mail = new Email();
         var second = new SecondFactorService(db, mail, new(Security), Security);
-        var identity = new IdentityService(db, Tokens(), second);
+        var identity = new IdentityService(db, Tokens(), second, new ConfigurationBuilder().Build(), new HttpClient());
         Assert.NotNull((await identity.LoginAsync(new(user.Email, "FixtureOnly2026!"))).Authentication);
         user.BeginAuthenticatorSetup(new AesSecretProtector(Security).Protect(Secret));
         user.EnableAuthenticator();
