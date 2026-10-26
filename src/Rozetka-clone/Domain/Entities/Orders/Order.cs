@@ -88,4 +88,6 @@ public class Order
     public ICollection<OrderStatusHistory> StatusHistory { get; set; } = [];
 
     public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
+
+    public ICollection<Shipment> Shipments { get; set; } = new List<Shipment>();
 }

@@ -34,7 +34,7 @@ Missing weights use the configured per-item default and the UI labels the result
 The quote assumes one parcel, honors pickup-point weight limits, and requires a separate arrangement for weight above 1000 kg.
 Real multi-origin or multi-parcel shipments require a separate implementation.
 
-Authenticated endpoints under `/api/v1/delivery`:
+Authenticated endpoints under `/api/v1/checkout-delivery`:
 
 - `GET capabilities` — availability and shipment mode, without credentials.
 - `GET cities?query=Київ` — up to 20 matching cities, minimum two characters.

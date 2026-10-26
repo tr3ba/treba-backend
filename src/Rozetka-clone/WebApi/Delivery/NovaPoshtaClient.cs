@@ -18,7 +18,7 @@ public sealed class NovaPoshtaOptions
 }
 
 // This client exposes directory and calculation methods only. It cannot register a carrier shipment.
-public sealed class NovaPoshtaClient(HttpClient http, IOptions<NovaPoshtaOptions> settings, IMemoryCache cache) : IDeliveryProvider
+public sealed class NovaPoshtaClient(HttpClient http, IOptions<NovaPoshtaOptions> settings, IMemoryCache cache) : ICheckoutDeliveryProvider
 {
     private readonly NovaPoshtaOptions options = settings.Value;
     public bool Available => options.Configured;

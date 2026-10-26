@@ -1,99 +1,375 @@
-using System.Security.Cryptography;
-using System.Text;
-using Application.Abstractions;
-using Application.Common;
-using Application.Promotions;
+﻿using Application.Abstractions;
 using Contracts.Delivery;
-using Domain.Entities.Orders;
+using Domain.Entities;
 using Domain.Enums;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Text;
 
-namespace Application.Delivery;
-
-public sealed class DeliveryService(IApplicationDbContext db, IDeliveryProvider provider,
-    IDiscountService discounts, ICurrentActor actor, TimeProvider clock)
+namespace Application.Delivery
 {
-    public DeliveryCapabilities Capabilities() => new(provider.Available);
-
-    public async Task<DeliveryQuoteView> QuoteAsync(DeliveryQuoteRequest request, CancellationToken ct)
+    public sealed class DeliveryService : IDeliveryService
     {
-        var userId = actor.UserId ?? throw new UnauthorizedAccessException();
-        if (!provider.Available) throw new DeliveryUnavailableException();
-        if (request.CityRef == Guid.Empty || request.PickupPointRef == Guid.Empty || request.Items is null
-            || request.Items.Count is < 1 or > 100 || request.Items.Any(i => i is null || i.Quantity is < 1 or > 1000000)
-            || request.Items.Select(i => i.VariantId).Distinct().Count() != request.Items.Count || request.CouponCode?.Length > 100)
-            throw new ArgumentException("Перевірте товари та відділення доставки.");
-        var ids = request.Items.Select(i => i.VariantId).ToArray();
-        var rows = await (from v in db.ProductVariants.AsNoTracking()
-                          join p in db.Products on v.ProductId equals p.Id
-                          join store in db.Stores on p.StoreId equals store.Id
-                          join seller in db.Sellers on store.SellerId equals seller.Id
-                          where ids.Contains(v.Id) && v.IsActive && v.Price > 0 && p.Status == ProductStatus.ACTIVE
-                              && store.IsActive && seller.Status == SellerStatus.ACTIVE
-                              && db.Categories.Any(c => c.Id == p.CategoryId && c.IsActive)
-                              && db.Brands.Any(b => b.Id == p.BrandId && b.IsActive)
-                          select new { Variant = v, Product = p, SellerId = seller.Id }).ToListAsync(ct);
-        if (rows.Count != ids.Length) throw new BusinessRuleException("Товари змінилися або недоступні. Оновіть кошик.");
-        decimal weight = 0;
-        var estimated = false;
-        var prices = new List<PriceItem>();
-        foreach (var item in request.Items)
+        private readonly IApplicationDbContext _context;
+        private readonly IDeliveryProvider _deliveryProvider;
+
+        private readonly ICurrentActor _currentActor;
+
+        public DeliveryService(
+            IApplicationDbContext context,
+            IDeliveryProvider deliveryProvider,
+            ICurrentActor currentActor)
         {
-            var row = rows.Single(r => r.Variant.Id == item.VariantId);
-            if (row.Variant.StockQuantity < item.Quantity) throw new BusinessRuleException("Недостатньо товару на складі.");
-            var kg = row.Variant.Weight;
-            var knownWeight = kg.HasValue && double.IsFinite(kg.Value) && kg.Value > 0 && kg.Value <= 1000;
-            estimated |= !knownWeight;
-            weight += (knownWeight ? (decimal)kg!.Value : provider.DefaultWeightKg) * item.Quantity;
-            prices.Add(new PriceItem(row.Variant.Id, item.Quantity));
+            _context = context;
+            _deliveryProvider = deliveryProvider;
+            _currentActor = currentActor;
         }
-        weight = decimal.Round(weight, 3, MidpointRounding.AwayFromZero);
-        if (weight is <= 0 or > 1000) throw new ArgumentException("Для цієї ваги потрібне окреме погодження доставки.");
-        var discount = await discounts.CalculateDiscountAsync(userId, prices, request.CouponCode, ct);
-        if (discount.TotalAmount > 100000000) throw new ArgumentException("The order amount is too large.");
-        var result = await provider.QuoteAsync(request.CityRef, request.PickupPointRef, weight,
-            Math.Max(1, discount.TotalAmount), ct);
-        var quote = new DeliveryQuote
+
+        public async Task<List<DeliveryOptionDto>> CalculateOptionsAsync(
+            DeliveryCalculationRequest request,
+            CancellationToken cancellationToken = default
+        )
         {
-            UserId = userId, Fingerprint = Fingerprint(request.Items, request.CouponCode),
-            CityRef = result.City.Ref, PickupPointRef = result.PickupPoint.Ref, City = result.City.Name,
-            PickupPoint = result.PickupPoint.Name, Postomat = result.PickupPoint.Postomat,
-            Price = discount.FreeDelivery ? 0 : result.Price, Subtotal = discount.Subtotal,
-            DeclaredValue = discount.TotalAmount, WeightKg = weight, EstimatedWeight = estimated,
-            ExpiresAt = clock.GetUtcNow().AddMinutes(10)
-        };
-        db.DeliveryQuotes.Add(quote); await db.SaveChangesAsync(ct);
-        return new(quote.Id, quote.Price, "UAH", quote.City, quote.PickupPoint, weight, estimated, quote.ExpiresAt);
+            if (string.IsNullOrWhiteSpace(request.City))
+            {
+                throw new ArgumentException(
+                    "Город доставки обязателен.",
+                    nameof(request)
+                );
+            }
+
+            if (request.OrderAmount < 0)
+            {
+                throw new ArgumentException(
+                    "Сумма заказа не может быть отрицательной.",
+                    nameof(request)
+                );
+            }
+
+            if (request.TotalQuantity <= 0)
+            {
+                throw new ArgumentException(
+                    "Количество товаров должно быть больше нуля.",
+                    nameof(request)
+                );
+            }
+
+            var deliveryMethods = await _context.DeliveryMethods
+                .AsNoTracking()
+                .Where(x => x.Active)
+                .OrderBy(x => x.BasePrice)
+                .ToListAsync(cancellationToken);
+
+            var providerRequest = new DeliveryProviderRequest(
+                request.City,
+                request.OrderAmount,
+                request.TotalQuantity
+            );
+
+            var providerPrice = await _deliveryProvider.CalculatePriceAsync(
+                providerRequest,
+                cancellationToken
+            );
+
+            var providerName = _deliveryProvider
+                .GetType()
+                .Name
+                .Replace("DeliveryProvider", "");
+
+            return deliveryMethods
+                .Select(method => new DeliveryOptionDto(
+                    method.Id,
+                    method.Name,
+                    method.Code,
+                    method.Description,
+                    method.BasePrice + providerPrice.Price,
+                    providerName
+                ))
+                .ToList();
+        }
+
+        public async Task<ShipmentDto> CreateShipmentAsync(
+            Guid orderId,
+            Guid deliveryMethodId,
+            CancellationToken cancellationToken = default
+        )
+        {
+            if (_currentActor.UserId is not Guid userId)
+            {
+                throw new UnauthorizedAccessException(
+                    "Не удалось определить текущего пользователя."
+                );
+            }
+
+            var order = await _context.Orders
+                .Include(x => x.Address)
+                .Include(x => x.Items)
+                .FirstOrDefaultAsync(
+                    x => x.Id == orderId && x.CustomerId == userId,
+                    cancellationToken
+                )
+                ?? throw new KeyNotFoundException(
+                    $"Заказ с ID {orderId} не найден или недоступен текущему пользователю."
+                );
+
+            if (order.Status != OrderStatus.READY_FOR_SHIPMENT)
+            {
+                throw new InvalidOperationException(
+                    $"Создать отправление можно только для заказа в статусе {OrderStatus.READY_FOR_SHIPMENT}."
+                );
+            }
+
+            if (order.Address is null)
+            {
+                throw new InvalidOperationException(
+                    "У заказа отсутствует адрес доставки."
+                );
+            }
+
+            if (order.Items.Count == 0)
+            {
+                throw new InvalidOperationException(
+                    "У заказа отсутствуют позиции."
+                );
+            }
+
+            var deliveryMethod = await _context.DeliveryMethods
+                .AsNoTracking()
+                .FirstOrDefaultAsync(
+                    x => x.Id == deliveryMethodId && x.Active,
+                    cancellationToken
+                )
+                ?? throw new KeyNotFoundException(
+                    $"Активный способ доставки с ID {deliveryMethodId} не найден."
+                );
+
+            var address = string.Join(
+                ", ",
+                new[]
+                {
+                    order.Address.Street,
+                    order.Address.Building,
+                    order.Address.Apartment
+                }.Where(x => !string.IsNullOrWhiteSpace(x))
+            );
+
+            var totalQuantity = order.Items.Sum(x => x.Quantity);
+
+            var providerResponse = await _deliveryProvider.CreateShipmentAsync(
+                new CreateShipmentRequest(
+                    order.Id,
+                    deliveryMethod.Id,
+                    order.Address.City,
+                    address,
+                    order.TotalAmount,
+                    totalQuantity
+                ),
+                cancellationToken
+            );
+
+            var providerName = _deliveryProvider
+                .GetType()
+                .Name
+                .Replace("DeliveryProvider", "");
+
+            var shipment = new Shipment
+            {
+                Id = Guid.NewGuid(),
+                OrderId = order.Id,
+                DeliveryMethodId = deliveryMethod.Id,
+                Provider = providerName,
+                TrackingNumber = providerResponse.TrackingNumber,
+                Status = ShipmentStatus.CREATED,
+                Price = providerResponse.Price,
+                EstimatedDeliveryDate = providerResponse.EstimatedDeliveryDate
+            };
+
+            foreach (var orderItem in order.Items)
+            {
+                shipment.Items.Add(new ShipmentItem
+                {
+                    Id = Guid.NewGuid(),
+                    ShipmentId = shipment.Id,
+                    OrderItemId = orderItem.Id,
+                    Quantity = orderItem.Quantity
+                });
+            }
+
+            _context.Shipments.Add(shipment);
+
+            await _context.SaveChangesAsync(cancellationToken);
+
+            return MapToDto(shipment);
+        }
+
+        public async Task<ShipmentDto> UpdateStatusAsync(
+            Guid shipmentId,
+            ShipmentStatus status,
+            CancellationToken cancellationToken = default
+        )
+        {
+            var shipment = await _context.Shipments
+                .FirstOrDefaultAsync(
+                    x => x.Id == shipmentId,
+                    cancellationToken
+                )
+                ?? throw new KeyNotFoundException(
+                    $"Отправление с ID {shipmentId} не найдено."
+                );
+
+            if (shipment.Status == status)
+            {
+                return MapToDto(shipment);
+            }
+
+            if (!IsValidStatusTransition(shipment.Status, status))
+            {
+                throw new InvalidOperationException(
+                    $"Недопустимый переход статуса отправления: {shipment.Status} -> {status}."
+                );
+            }
+
+            shipment.Status = status;
+
+            if (status == ShipmentStatus.SHIPPED && shipment.ShippedAt is null)
+            {
+                shipment.ShippedAt = DateTimeOffset.UtcNow;
+            }
+
+            if (status == ShipmentStatus.DELIVERED && shipment.DeliveredAt is null)
+            {
+                shipment.DeliveredAt = DateTimeOffset.UtcNow;
+            }
+
+            await _context.SaveChangesAsync(cancellationToken);
+
+            return MapToDto(shipment);
+        }
+
+        public async Task<TrackingDto> TrackShipmentAsync(
+            Guid shipmentId,
+            CancellationToken cancellationToken = default
+        )
+        {
+            if (_currentActor.UserId is not Guid userId)
+            {
+                throw new UnauthorizedAccessException(
+                    "Не удалось определить текущего пользователя."
+                );
+            }
+
+            var shipment = await _context.Shipments
+                .AsNoTracking()
+                .Join(
+                    _context.Orders.Where(x => x.CustomerId == userId),
+                    shipment => shipment.OrderId,
+                    order => order.Id,
+                    (shipment, order) => shipment
+                )
+                .FirstOrDefaultAsync(
+                    x => x.Id == shipmentId,
+                    cancellationToken
+                )
+                ?? throw new KeyNotFoundException(
+                    $"Отправление с ID {shipmentId} не найдено или недоступно текущему пользователю."
+                );
+
+            if (string.IsNullOrWhiteSpace(shipment.TrackingNumber))
+            {
+                throw new InvalidOperationException(
+                    "У отправления отсутствует трек-номер."
+                );
+            }
+
+            return await _deliveryProvider.TrackAsync(
+                shipment.TrackingNumber,
+                cancellationToken
+            );
+        }
+
+        public async Task<List<PickupPointDto>> GetPickupPointsAsync(
+            string city,
+            CancellationToken cancellationToken = default
+        )
+        {
+            if (string.IsNullOrWhiteSpace(city))
+            {
+                throw new ArgumentException(
+                    "Город обязателен.",
+                    nameof(city)
+                );
+            }
+
+            var normalizedCity = city.Trim();
+
+            return await _context.PickupPoints
+                .AsNoTracking()
+                .Where(x => x.Active && x.City == normalizedCity)
+                .OrderBy(x => x.Name)
+                .Select(x => new PickupPointDto(
+                    x.Id,
+                    x.Provider,
+                    x.ExternalId,
+                    x.Name,
+                    x.City,
+                    x.Address,
+                    x.Latitude,
+                    x.Longitude,
+                    x.Active
+                ))
+                .ToListAsync(cancellationToken);
+        }
+
+
+        private static bool IsValidStatusTransition(
+            ShipmentStatus current,
+            ShipmentStatus next)
+        {
+            return current switch
+            {
+                ShipmentStatus.CREATED =>
+                    next is ShipmentStatus.PREPARING or ShipmentStatus.FAILED,
+
+                ShipmentStatus.PREPARING =>
+                    next is ShipmentStatus.READY or ShipmentStatus.FAILED,
+
+                ShipmentStatus.READY =>
+                    next is ShipmentStatus.SHIPPED or ShipmentStatus.FAILED,
+
+                ShipmentStatus.SHIPPED =>
+                    next is ShipmentStatus.IN_TRANSIT
+                        or ShipmentStatus.DELIVERED
+                        or ShipmentStatus.FAILED,
+
+                ShipmentStatus.IN_TRANSIT =>
+                    next is ShipmentStatus.DELIVERED or ShipmentStatus.FAILED,
+
+                ShipmentStatus.FAILED =>
+                    next is ShipmentStatus.RETURNED,
+
+                ShipmentStatus.DELIVERED or ShipmentStatus.RETURNED => false,
+
+                _ => false
+            };
+        }
+
+
+        private static ShipmentDto MapToDto(Shipment shipment)
+        {
+            return new ShipmentDto(
+                shipment.Id,
+                shipment.OrderId,
+                shipment.DeliveryMethodId,
+                shipment.Provider,
+                shipment.TrackingNumber,
+                shipment.Status.ToString(),
+                shipment.Price,
+                shipment.EstimatedDeliveryDate,
+                shipment.ShippedAt,
+                shipment.DeliveredAt
+            );
+        }
     }
 
-    public async Task<DeliveryQuote> ValidateAsync(Guid id, Guid userId, IEnumerable<DeliveryQuoteItem> items,
-        string? coupon, decimal subtotal, decimal total, CancellationToken ct)
-    {
-        var quote = await db.DeliveryQuotes.SingleOrDefaultAsync(q => q.Id == id && q.UserId == userId, ct)
-            ?? throw new KeyNotFoundException();
-        if (quote.UsedByOrderId.HasValue || quote.ExpiresAt <= clock.GetUtcNow()
-            || quote.Fingerprint != Fingerprint(items, coupon) || quote.Subtotal != subtotal || quote.DeclaredValue != total)
-            throw new BusinessRuleException("Розрахунок доставки застарів. Розрахуйте доставку ще раз.");
-        var quantities = items.ToDictionary(i => i.VariantId, i => i.Quantity);
-        var weights = await db.ProductVariants.AsNoTracking().Where(v => quantities.Keys.Contains(v.Id))
-            .Select(v => new { v.Id, v.Weight }).ToListAsync(ct);
-        decimal currentWeight = 0; var estimated = false;
-        foreach (var variant in weights)
-        {
-            var known = variant.Weight.HasValue && double.IsFinite(variant.Weight.Value) && variant.Weight.Value > 0 && variant.Weight.Value <= 1000;
-            estimated |= !known;
-            currentWeight += (known ? (decimal)variant.Weight!.Value : provider.DefaultWeightKg) * quantities[variant.Id];
-        }
-        if (weights.Count != quantities.Count || decimal.Round(currentWeight, 3, MidpointRounding.AwayFromZero) != quote.WeightKg || estimated != quote.EstimatedWeight)
-            throw new BusinessRuleException("Вага товарів змінилася. Розрахуйте доставку ще раз.");
-        return quote;
-    }
-
-    public static string Fingerprint(IEnumerable<DeliveryQuoteItem> items, string? coupon) =>
-        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(
-            string.Join(";", items.OrderBy(i => i.VariantId).Select(i => $"{i.VariantId:N}:{i.Quantity}")) + "|" + coupon?.Trim())));
-
-    public static OrderDeliveryView View(OrderShipment shipment, string status) => new(shipment.Carrier, "Managed",
-        shipment.Reference, shipment.City, shipment.PickupPoint, shipment.Postomat, shipment.QuotedPrice,
-        shipment.WeightKg, shipment.EstimatedWeight, status, "");
 }

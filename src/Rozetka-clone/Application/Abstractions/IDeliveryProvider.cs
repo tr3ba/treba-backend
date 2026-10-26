@@ -1,19 +1,19 @@
-using Contracts.Delivery;
+﻿using Contracts.Delivery;
+using System;
+using System.Collections.Generic;
+using System.Text;
 
-namespace Application.Abstractions;
-
-public interface IDeliveryProvider
+namespace Application.Abstractions
 {
-    bool Available { get; }
-    decimal DefaultWeightKg { get; }
-    Task<IReadOnlyList<DeliveryCity>> CitiesAsync(string query, CancellationToken ct);
-    Task<DeliveryPickupPage> PickupPointsAsync(Guid cityRef, string query, string kind, int page, CancellationToken ct);
-    Task<(DeliveryCity City, DeliveryPickupPoint PickupPoint, decimal Price)> QuoteAsync(Guid cityRef,
-        Guid pickupPointRef, decimal weightKg, decimal declaredValue, CancellationToken ct);
-}
+    public interface IDeliveryProvider
+    {
+        Task<List<PickupPointDto>> GetPickupPointsAsync(string city, CancellationToken cancellationToken = default);
 
-public sealed class DeliveryUnavailableException : Exception
-{
-    public DeliveryUnavailableException() : base("Доставка Новою поштою тимчасово недоступна. Спробуйте пізніше.") { }
-}
+        Task<DeliveryPriceDto> CalculatePriceAsync(DeliveryProviderRequest request, CancellationToken cancellationToken = default);
 
+        Task<CreateShipmentResponse> CreateShipmentAsync(CreateShipmentRequest request, CancellationToken cancellationToken = default);
+
+        Task<TrackingDto> TrackAsync(string trackingNumber, CancellationToken cancellationToken = default);
+    }
+
+}

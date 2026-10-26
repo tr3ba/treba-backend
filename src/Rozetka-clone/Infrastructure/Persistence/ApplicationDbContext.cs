@@ -128,6 +128,14 @@ namespace Infrastructure.Persistence
 
         public DbSet<Domain.Entities.Payments.PaymentTransaction> PaymentTransactions => Set<Domain.Entities.Payments.PaymentTransaction>();
 
+        public DbSet<DeliveryMethod> DeliveryMethods => Set<DeliveryMethod>();
+
+        public DbSet<Shipment> Shipments => Set<Shipment>();
+
+        public DbSet<ShipmentItem> ShipmentItems => Set<ShipmentItem>();
+
+        public DbSet<PickupPoint> PickupPoints => Set<PickupPoint>();
+
         protected override void OnModelCreating(
             ModelBuilder modelBuilder
         )

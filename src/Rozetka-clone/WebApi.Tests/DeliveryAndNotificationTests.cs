@@ -120,7 +120,7 @@ public sealed class DeliveryAndNotificationTests
         Assert.DoesNotContain("secret", error.Message);
     }
 
-    internal sealed class Provider : IDeliveryProvider
+    internal sealed class Provider : ICheckoutDeliveryProvider
     {
         public bool Available => true;
         public decimal DefaultWeightKg => 1;
@@ -130,8 +130,8 @@ public sealed class DeliveryAndNotificationTests
             Task.FromResult<(DeliveryCity, DeliveryPickupPoint, decimal)>((new(CityId, "Київ", "Київська"), new(PointId, CityId, "Поштомат №123", "123", true), 95.50m));
     }
 
-    internal static DeliveryService Delivery(ApplicationDbContext db, OperationsTests.Actor actor, TimeProvider clock) => new(db, new Provider(), new DiscountService(db), actor, clock);
-    internal static OrderService Orders(ApplicationDbContext db, OperationsTests.Actor actor, DeliveryService delivery) =>
+    internal static CheckoutDeliveryService Delivery(ApplicationDbContext db, OperationsTests.Actor actor, TimeProvider clock) => new(db, new Provider(), new DiscountService(db), actor, clock);
+    internal static OrderService Orders(ApplicationDbContext db, OperationsTests.Actor actor, CheckoutDeliveryService delivery) =>
         new(db, new InventoryService(db, actor), new DiscountService(db), actor, delivery, new CustomerNotificationQueue(db));
 
     [Fact]
@@ -347,16 +347,16 @@ public sealed class DeliveryAndNotificationTests
         await using var server = await AdminHttpTests.ServerAsync(services =>
         {
             services.AddDeliveryNotifications(new ConfigurationBuilder().Build());
-            services.AddSingleton(TimeProvider.System); services.AddScoped<IDeliveryProvider, Provider>();
+            services.AddSingleton(TimeProvider.System); services.AddScoped<ICheckoutDeliveryProvider, Provider>();
         });
         using var client = server.GetTestClient();
-        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/v1/delivery/capabilities")).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/v1/checkout-delivery/capabilities")).StatusCode);
         OperationsTests.Seed seed;
         using (var scope = server.Services.CreateScope()) seed = await OperationsTests.SeedAsync(scope.ServiceProvider.GetRequiredService<ApplicationDbContext>());
         client.DefaultRequestHeaders.Add("X-Test-Role", "Customer"); client.DefaultRequestHeaders.Add("X-Test-UserId", seed.Customer.Id.ToString());
-        Assert.True((await client.GetFromJsonAsync<DeliveryCapabilities>("/api/v1/delivery/capabilities"))!.Available);
+        Assert.True((await client.GetFromJsonAsync<DeliveryCapabilities>("/api/v1/checkout-delivery/capabilities"))!.Available);
         var request = new DeliveryQuoteRequest(CityId, PointId, [new(seed.Variant.Id, 2)]);
-        var quoted = await client.PostAsJsonAsync("/api/v1/delivery/quotes", request);
+        var quoted = await client.PostAsJsonAsync("/api/v1/checkout-delivery/quotes", request);
         Assert.Equal(HttpStatusCode.OK, quoted.StatusCode);
         var quote = (await quoted.Content.ReadFromJsonAsync<DeliveryQuoteView>())!;
         var order = await client.PostAsJsonAsync("/api/v1/orders", OperationsTests.Request(seed) with { DeliveryQuoteId = quote.Id });

@@ -18,7 +18,7 @@ public sealed class OrderService(
     InventoryService inventory,
     IDiscountService discounts,
     ICurrentActor actor,
-    Application.Delivery.DeliveryService? delivery = null,
+    Application.Delivery.CheckoutDeliveryService? delivery = null,
     Application.Marketplace.CustomerNotificationQueue? notifications = null) : IOrderService
 {
     public bool Staff => actor.Role is "Administrator" or "Manager";
@@ -293,7 +293,7 @@ public sealed class OrderService(
             items.Select(i => new OrderLine(i.Id, i.ProductId, i.VariantId, i.SellerId, i.ProductName, i.VariantName, i.Sku, i.Quantity, i.UnitPrice, i.DiscountAmount, i.TotalPrice)).ToList(),
             order.StatusHistory.OrderByDescending(h => h.CreatedAt).ThenBy(h => h.Id).Select(h => new OrderEvent(h.PreviousStatus.ToString(), h.NewStatus.ToString(), actor.Role == "Seller" ? null : h.Comment, actor.Role == "Seller" ? null : h.ChangedBy, h.CreatedAt)).ToList(),
             Convert.ToBase64String(order.Version), Allowed(order.Status, partial).Select(s => s.ToString()).ToList(), partial,
-            partial || shipment is null ? null : Application.Delivery.DeliveryService.View(shipment, order.Status.ToString()));
+            partial || shipment is null ? null : Application.Delivery.CheckoutDeliveryService.View(shipment, order.Status.ToString()));
     }
 
     internal static OrderRow Row(Order order, IEnumerable<OrderItem> all, HashSet<Guid>? sellers = null)

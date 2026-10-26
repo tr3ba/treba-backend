@@ -21,9 +21,9 @@ public static class DeliveryNotificationsRegistration
             })
             .Validate(o => o.DefaultWeightKg is > 0 and <= 1000, "Default parcel weight must be between 0 and 1000 kg.").ValidateOnStart();
         services.AddMemoryCache(options => options.SizeLimit = 1024);
-        services.AddHttpClient<IDeliveryProvider, NovaPoshtaClient>(client => client.Timeout = TimeSpan.FromSeconds(15))
+        services.AddHttpClient<ICheckoutDeliveryProvider, NovaPoshtaClient>(client => client.Timeout = TimeSpan.FromSeconds(15))
             .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
-        services.AddScoped<DeliveryService>();
+        services.AddScoped<CheckoutDeliveryService>();
         services.AddOptions<CustomerNotificationOptions>().Bind(configuration.GetSection("Notifications"))
             .Validate(o => !o.Enabled || Uri.TryCreate(o.StoreOrigin, UriKind.Absolute, out var uri) && uri.Scheme == "https"
                 && uri.IsDefaultPort && string.IsNullOrEmpty(uri.UserInfo) && uri.AbsolutePath == "/"

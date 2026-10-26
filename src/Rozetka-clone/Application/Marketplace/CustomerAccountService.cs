@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Marketplace;
 
-public sealed class CustomerAccountService(IApplicationDbContext db, ICurrentActor actor, Application.Delivery.DeliveryService? delivery = null)
+public sealed class CustomerAccountService(IApplicationDbContext db, ICurrentActor actor, Application.Delivery.CheckoutDeliveryService? delivery = null)
 {
     private Guid UserId => actor.UserId ?? throw new UnauthorizedAccessException();
     private static readonly HashSet<string> Fields = ["phone", "lastName", "firstName", "patronymic", "gender", "birthDate", "recipients", "address", "hobbies", "pets", "additionalInfo", "recipientFirstName", "recipientLastName", "recipientPhone", "addressCity", "addressStreet", "addressBuilding", "deliveryMethod", "addressBranch", "additionalInfoOptions"];
@@ -94,6 +94,6 @@ public sealed class CustomerAccountService(IApplicationDbContext db, ICurrentAct
             lines.Where(x => x.OrderId == o.Id).Select(x => new CustomerOrderItem(x.Id, x.ProductId, slugs.GetValueOrDefault(x.ProductId),
                 x.ProductName, x.Quantity, x.UnitPrice, x.TotalPrice, images.FirstOrDefault(i => i.ProductId == x.ProductId)?.ImageUrl)).ToList(),
             history.Where(x => x.OrderId == o.Id).Select(x => new CustomerOrderEvent(x.NewStatus.ToString(), x.CreatedAt)).ToList(),
-            shipments.FirstOrDefault(s => s.OrderId == o.Id) is { } shipment ? Application.Delivery.DeliveryService.View(shipment, o.Status.ToString()) : null)).ToList();
+            shipments.FirstOrDefault(s => s.OrderId == o.Id) is { } shipment ? Application.Delivery.CheckoutDeliveryService.View(shipment, o.Status.ToString()) : null)).ToList();
     }
 }
