@@ -386,7 +386,7 @@ public sealed class IdentityService : IIdentityService
         await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<AuthResponse> ExternalLoginAsync(
+    public async Task<LoginResponse> ExternalLoginAsync(
         string provider,
         string accessToken,
         CancellationToken cancellationToken = default
@@ -421,7 +421,13 @@ public sealed class IdentityService : IIdentityService
                 );
             }
 
-            return await IssueLoginTokensAsync(user, cancellationToken);
+            var challenge = await _secondFactorService.CreateLoginChallengeAsync(user, cancellationToken);
+            if (challenge is not null)
+            {
+                return new LoginResponse(null, challenge);
+            }
+
+            return new LoginResponse(await IssueLoginTokensAsync(user, cancellationToken), null);
         }
 
         var emailNormalized = email.Trim().ToLowerInvariant();
@@ -433,7 +439,14 @@ public sealed class IdentityService : IIdentityService
         {
             userByEmail.AddExternalLogin(provider, providerUserId);
             await _context.SaveChangesAsync(cancellationToken);
-            return await IssueLoginTokensAsync(userByEmail, cancellationToken);
+
+            var challenge = await _secondFactorService.CreateLoginChallengeAsync(userByEmail, cancellationToken);
+            if (challenge is not null)
+            {
+                return new LoginResponse(null, challenge);
+            }
+
+            return new LoginResponse(await IssueLoginTokensAsync(userByEmail, cancellationToken), null);
         }
 
         var customerRole = await _context.Roles.FirstOrDefaultAsync(r => r.Name == Roles.Customer, cancellationToken)
@@ -447,7 +460,6 @@ public sealed class IdentityService : IIdentityService
             lastName
         );
 
-        newUser.SetPasswordHash(Guid.NewGuid().ToString());
         newUser.AssignRole(customerRole.Id);
         newUser.VerifyEmail();
         newUser.AddExternalLogin(provider, providerUserId);
@@ -460,16 +472,24 @@ public sealed class IdentityService : IIdentityService
         _context.Users.Add(newUser);
         await _context.SaveChangesAsync(cancellationToken);
 
-        return await IssueLoginTokensAsync(newUser, cancellationToken);
+        var newUserChallenge = await _secondFactorService.CreateLoginChallengeAsync(newUser, cancellationToken);
+        if (newUserChallenge is not null)
+        {
+            return new LoginResponse(null, newUserChallenge);
+        }
+
+        return new LoginResponse(await IssueLoginTokensAsync(newUser, cancellationToken), null);
     }
 
     public async Task<bool> LinkExternalProviderAsync(
         Guid userId,
         string provider,
-        string providerUserId,
+        string accessToken,
         CancellationToken cancellationToken = default
     )
     {
+        var (providerUserId, email, firstName, lastName, avatarUrl) = await GetExternalUserInfoAsync(provider, accessToken, cancellationToken);
+
         var user = await _context.Users
             .Include(u => u.ExternalLogins)
             .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);

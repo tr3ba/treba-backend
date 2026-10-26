@@ -64,7 +64,7 @@ public interface IIdentityService
         CancellationToken cancellationToken = default
     );
 
-    Task<AuthResponse> ExternalLoginAsync(
+    Task<LoginResponse> ExternalLoginAsync(
         string provider,
         string accessToken,
         CancellationToken cancellationToken = default
@@ -73,7 +73,7 @@ public interface IIdentityService
     Task<bool> LinkExternalProviderAsync(
         Guid userId,
         string provider,
-        string providerUserId,
+        string accessToken,
         CancellationToken cancellationToken = default
     );
 

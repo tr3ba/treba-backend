@@ -51,7 +51,7 @@ public sealed class AuthController : ControllerBase
 
     [HttpPost("external")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> ExternalLogin(
@@ -114,7 +114,7 @@ public sealed class AuthController : ControllerBase
             var result = await _identityService.LinkExternalProviderAsync(
                 userId,
                 request.Provider,
-                request.AccessToken, // In this case, AccessToken is actually the providerUserId
+                request.AccessToken,
                 cancellationToken
             );
 
