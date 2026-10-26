@@ -14,6 +14,8 @@ using Application.Stores;
 using Application.Wishlists;
 using Infrastructure;
 using Infrastructure.Persistence;
+using Microsoft.AspNetCore.Authentication.Facebook;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -61,6 +63,127 @@ builder.Services.AddSwaggerDocumentation();
 
 builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
 
+var jwtSection = builder.Configuration.GetSection("Jwt");
+
+var googleSection = builder.Configuration.GetSection("ExternalAuth:Google");
+var facebookSection = builder.Configuration.GetSection("ExternalAuth:Facebook");
+
+var authBuilder = builder.Services.AddAuthentication(
+    options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    }
+);
+
+if (googleSection.GetValue<bool>("Enabled"))
+{
+    var clientId = googleSection["ClientId"];
+    var clientSecret = googleSection["ClientSecret"];
+
+    if (!string.IsNullOrEmpty(clientId) && !string.IsNullOrEmpty(clientSecret) &&
+        clientId != "YOUR_GOOGLE_CLIENT_ID" && clientSecret != "YOUR_GOOGLE_CLIENT_SECRET")
+    {
+        authBuilder.AddGoogle(GoogleDefaults.AuthenticationScheme, options =>
+        {
+            options.ClientId = clientId;
+            options.ClientSecret = clientSecret;
+            options.CallbackPath = googleSection["CallbackPath"] ?? "/api/auth/external/google/callback";
+            options.Scope.Add("email");
+            options.Scope.Add("profile");
+            options.SaveTokens = true;
+        });
+    }
+}
+
+if (facebookSection.GetValue<bool>("Enabled"))
+{
+    var appId = facebookSection["AppId"] ?? facebookSection["ClientId"];
+    var appSecret = facebookSection["AppSecret"] ?? facebookSection["ClientSecret"];
+
+    if (!string.IsNullOrEmpty(appId) && !string.IsNullOrEmpty(appSecret) &&
+        appId != "YOUR_FACEBOOK_APP_ID" && appSecret != "YOUR_FACEBOOK_APP_SECRET")
+    {
+        authBuilder.AddFacebook(FacebookDefaults.AuthenticationScheme, options =>
+        {
+            options.AppId = appId;
+            options.AppSecret = appSecret;
+            options.CallbackPath = facebookSection["CallbackPath"] ?? "/api/auth/external/facebook/callback";
+            options.Scope.Add("email");
+            options.Scope.Add("public_profile");
+            options.SaveTokens = true;
+            options.Fields.Add("id");
+            options.Fields.Add("email");
+            options.Fields.Add("first_name");
+            options.Fields.Add("last_name");
+            options.Fields.Add("picture");
+        });
+    }
+}
+
+authBuilder.AddJwtBearer(
+    options =>
+    {
+        var secretKey =
+            jwtSection["SecretKey"]
+            ?? throw new InvalidOperationException("JWT SecretKey is missing from configuration.");
+        if (Encoding.UTF8.GetByteCount(secretKey) < 32)
+        {
+            throw new InvalidOperationException("JWT SecretKey must be at least 32 bytes.");
+        }
+
+        options.RequireHttpsMetadata = false;
+        options.SaveToken = true;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSection["Issuer"],
+            ValidAudience = jwtSection["Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+            ClockSkew = TimeSpan.Zero,
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = async context =>
+            {
+                var idClaim = context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (!Guid.TryParse(
+                    idClaim,
+                    out var id
+                ))
+                {
+                    context.Fail("Invalid user.");
+                    return;
+                }
+                var db = context.HttpContext.RequestServices.GetRequiredService<ApplicationDbContext>();
+                var user = await db
+                    .Users
+                    .AsNoTracking()
+                    .Include(u => u.Role)
+                    .SingleOrDefaultAsync(
+                        u => u.Id == id,
+                        context.HttpContext.RequestAborted
+                    );
+                if (
+                    user is null
+                    || user.Status
+                        is Domain.Entities.Users.UserStatus.Blocked
+                            or Domain.Entities.Users.UserStatus.Deleted
+                    || user.Role?.Name != context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value
+                    || !Infrastructure.Authentication.SessionTokenBinding.IsCurrent(
+                        context.Principal?.FindFirst(Infrastructure.Authentication.SessionTokenBinding.ClaimName)?.Value, user)
+                )
+                {
+                    context.Fail("Account is unavailable or role has changed.");
+                }
+            },
+        };
+    }
+);
+
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IBrandService, BrandService>();
@@ -89,80 +212,6 @@ builder.Services.AddHostedService<OrderReservationWorker>();
 
 
 builder.Services.AddHostedService<PromotionActivationWorker>();
-
-var jwtSection = builder.Configuration.GetSection("Jwt");
-
-builder
-    .Services
-    .AddAuthentication(
-        options =>
-        {
-            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-        }
-    )
-    .AddJwtBearer(
-        options =>
-        {
-            var secretKey =
-                jwtSection["SecretKey"]
-                ?? throw new InvalidOperationException("JWT SecretKey is missing from configuration.");
-            if (Encoding.UTF8.GetByteCount(secretKey) < 32)
-            {
-                throw new InvalidOperationException("JWT SecretKey must be at least 32 bytes.");
-            }
-
-            options.RequireHttpsMetadata = false;
-            options.SaveToken = true;
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateIssuer = true,
-                ValidateAudience = true,
-                ValidateLifetime = true,
-                ValidateIssuerSigningKey = true,
-                ValidIssuer = jwtSection["Issuer"],
-                ValidAudience = jwtSection["Audience"],
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
-                ClockSkew = TimeSpan.Zero,
-            };
-            options.Events = new JwtBearerEvents
-            {
-                OnTokenValidated = async context =>
-                {
-                    var idClaim = context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-                    if (!Guid.TryParse(
-                        idClaim,
-                        out var id
-                    ))
-                    {
-                        context.Fail("Invalid user.");
-                        return;
-                    }
-                    var db = context.HttpContext.RequestServices.GetRequiredService<ApplicationDbContext>();
-                    var user = await db
-                        .Users
-                        .AsNoTracking()
-                        .Include(u => u.Role)
-                        .SingleOrDefaultAsync(
-                            u => u.Id == id,
-                            context.HttpContext.RequestAborted
-                        );
-                    if (
-                        user is null
-                        || user.Status
-                            is Domain.Entities.Users.UserStatus.Blocked
-                                or Domain.Entities.Users.UserStatus.Deleted
-                        || user.Role?.Name != context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value
-                        || !Infrastructure.Authentication.SessionTokenBinding.IsCurrent(
-                            context.Principal?.FindFirst(Infrastructure.Authentication.SessionTokenBinding.ClaimName)?.Value, user)
-                    )
-                    {
-                        context.Fail("Account is unavailable or role has changed.");
-                    }
-                },
-            };
-        }
-    );
 
 builder.Services.AddAuthorization();
 
