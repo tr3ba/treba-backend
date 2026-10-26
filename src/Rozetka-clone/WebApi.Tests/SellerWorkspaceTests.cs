@@ -288,7 +288,7 @@ public sealed class SellerWorkspaceTests
         await products.SubmitForModerationAsync(product.Id);
         Assert.Equal(moderator.Id, (await db.TelegramNotifications.SingleAsync()).UserId);
         var bot = new Bot();
-        clock.Now = clock.Now.AddSeconds(2);
+        clock.Now = (await db.TelegramNotifications.MaxAsync(n => n.AvailableAt)).AddSeconds(1);
         var runner = Runner(db, clock, new TelegramTestData.Source(), bot);
         await runner.DeliverOneAsync(default);
         Assert.Single(bot.Messages);
@@ -302,7 +302,7 @@ public sealed class SellerWorkspaceTests
                 .GetString()
         );
         await products.RejectAsync(product.Id, "Добавьте фото");
-        clock.Now = clock.Now.AddSeconds(2);
+        clock.Now = (await db.TelegramNotifications.MaxAsync(n => n.AvailableAt)).AddSeconds(1);
         await runner.DeliverOneAsync(default);
         Assert.Equal(2, bot.Messages.Count);
         Assert.Contains(
@@ -310,7 +310,7 @@ public sealed class SellerWorkspaceTests
             JsonDocument.Parse(bot.Messages[1]).RootElement.GetProperty("text").GetString()
         );
         await products.SubmitForModerationAsync(product.Id);
-        clock.Now = clock.Now.AddSeconds(2);
+        clock.Now = (await db.TelegramNotifications.MaxAsync(n => n.AvailableAt)).AddSeconds(1);
         moderator.Block();
         await db.SaveChangesAsync();
         await runner.DeliverOneAsync(default);

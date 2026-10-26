@@ -29,7 +29,8 @@ public sealed record CustomerOrderEvent(string Status, DateTimeOffset CreatedAt)
 public sealed record CustomerOrderView(Guid Id, string OrderNumber, string Status, string PaymentStatus,
     decimal Subtotal, decimal DiscountAmount, decimal DeliveryPrice, decimal TotalAmount, string Currency,
     DateTimeOffset CreatedAt, string RecipientName, string RecipientPhone, string RecipientEmail,
-    string? DeliveryAddress, IReadOnlyList<CustomerOrderItem> Items, IReadOnlyList<CustomerOrderEvent> History);
+    string? DeliveryAddress, IReadOnlyList<CustomerOrderItem> Items, IReadOnlyList<CustomerOrderEvent> History,
+    Contracts.Delivery.OrderDeliveryView? Delivery = null);
 public sealed record MarketplaceNotification(string Key, string Kind, string Title, string Text, string Scope,
     string Path, DateTimeOffset CreatedAt, bool Read = false);
 public sealed record NotificationFeed(IReadOnlyList<MarketplaceNotification> Items, int UnreadCount);

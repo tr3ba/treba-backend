@@ -120,7 +120,7 @@ page = json.load(sys.stdin)
 if not isinstance(page.get("content"), list) or page.get("page") != 1 or "totalElements" not in page:
     raise SystemExit("Public catalog returned an invalid page")
 '
-    for path in /api/v1/admin/orders /api/v1/support /api/v1/admin/operations/customers /api/v1/admin/promotions; do
+    for path in /api/v1/admin/orders /api/v1/support /api/v1/admin/operations/customers /api/v1/admin/promotions /api/v1/checkout-delivery/capabilities /api/v1/account/shipments; do
         code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$origin$path")
         [[ "$code" == 401 ]] || { echo "Operational route unavailable: $path (HTTP $code)"; return 1; }
     done
@@ -203,7 +203,7 @@ docker exec treba-caddy caddy reload --config /etc/caddy/Caddyfile --adapter cad
 
 verify_mini_app https://treba.duckdns.org
 # The public proxy may intentionally expose /health only to internal callers.
-for path in /api/v1/admin/orders /api/v1/support /api/v1/admin/operations/customers /api/v1/admin/promotions; do
+for path in /api/v1/admin/orders /api/v1/support /api/v1/admin/operations/customers /api/v1/admin/promotions /api/v1/checkout-delivery/capabilities /api/v1/account/shipments; do
     code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "https://treba.duckdns.org$path")
     [[ "$code" == 401 ]] || { echo "Public operational route unavailable: $path (HTTP $code)"; exit 1; }
 done

@@ -28,7 +28,7 @@ namespace WebApi.Tests;
 
 public sealed class AdminHttpTests
 {
-    internal static async Task<WebApplication> ServerAsync()
+    internal static async Task<WebApplication> ServerAsync(Action<IServiceCollection>? configure = null)
     {
         var database = Guid.NewGuid().ToString();
         var builder = WebApplication.CreateBuilder();
@@ -64,10 +64,12 @@ public sealed class AdminHttpTests
         services.AddControllers().AddApplicationPart(typeof(AdminReviewsController).Assembly);
         services.AddProblemDetails();
         services.AddExceptionHandler<ApiExceptionHandler>();
+        configure?.Invoke(services);
         var app = builder.Build();
         app.UseExceptionHandler();
         app.UseRouting();
         app.UseAuthentication();
+        if (configure is not null) app.UseRateLimiter();
         app.UseAuthorization();
         app.MapControllers();
         await app.StartAsync();

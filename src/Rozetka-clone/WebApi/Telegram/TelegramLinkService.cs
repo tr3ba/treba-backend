@@ -11,11 +11,14 @@ namespace WebApi.Telegram;
 public sealed class TelegramLinkService(ApplicationDbContext db, IOptions<TelegramOptions> options, TimeProvider clock)
 {
     public static bool EligibleRole(string? role) => role is Roles.Administrator or Roles.Manager or Roles.Moderator or Roles.Seller;
-    public async Task<User> RequireUserAsync(Guid userId, CancellationToken ct)
+    public async Task<User> RequireUserAsync(Guid userId, CancellationToken ct, bool allowCustomer = false)
     {
         var user = await db.Users.Include(u => u.Role).SingleOrDefaultAsync(u => u.Id == userId, ct);
-        if (user is null || user.IsDeleted || user.Status != UserStatus.Active || !EligibleRole(user.Role?.Name))
-            throw new UnauthorizedAccessException("Telegram доступний лише активним працівникам і продавцям Treba.");
+        if (user is null || user.IsDeleted || user.Status != UserStatus.Active
+            || !(EligibleRole(user.Role?.Name) || allowCustomer && user.Role?.Name == "Customer"))
+            throw new UnauthorizedAccessException(allowCustomer
+                ? "Для підключення Telegram потрібен активний обліковий запис Treba."
+                : "Робочі інструменти Telegram доступні лише активним працівникам і продавцям Treba.");
         return user;
     }
     public TelegramConfigurationDto Configuration() => new(options.Value.Configured,
@@ -24,7 +27,7 @@ public sealed class TelegramLinkService(ApplicationDbContext db, IOptions<Telegr
     public async Task<TelegramLinkDto> StatusAsync(Guid userId, CancellationToken ct)
     {
         if (!options.Value.Configured) return new(false, false, null, null, null, null, null, null);
-        await RequireUserAsync(userId, ct);
+        await RequireUserAsync(userId, ct, allowCustomer: true);
         var link = await db.TelegramBindings.AsNoTracking().SingleOrDefaultAsync(b => b.UserId == userId, ct);
         var now = clock.GetUtcNow();
         var pending = await db.TelegramLinkChallenges.AsNoTracking().Where(c => c.UserId == userId && c.CompletedAt == null
@@ -34,7 +37,7 @@ public sealed class TelegramLinkService(ApplicationDbContext db, IOptions<Telegr
     public async Task<TelegramLinkStartDto> BeginAsync(Guid userId, CancellationToken ct)
     {
         if (!options.Value.Configured) throw new BusinessRuleException("Адміністратор ще не підключив бота Treba.");
-        await RequireUserAsync(userId, ct);
+        await RequireUserAsync(userId, ct, allowCustomer: true);
         if (await db.TelegramBindings.AnyAsync(b => b.UserId == userId, ct)) throw new BusinessRuleException("Telegram уже підключено. Спочатку відключіть поточний обліковий запис.");
         var now = clock.GetUtcNow();
         foreach (var pending in await db.TelegramLinkChallenges.Where(c => c.UserId == userId && c.CompletedAt == null && c.ExpiresAt > now).ToListAsync(ct))
@@ -54,7 +57,7 @@ public sealed class TelegramLinkService(ApplicationDbContext db, IOptions<Telegr
         if (challenge is null || challenge.ExpiresAt <= now || challenge.CompletedAt is not null
             || challenge.TelegramUserId is { } previous && previous != telegramId)
             throw new BusinessRuleException("Термін дії посилання минув або його вже використано. Створіть нове в профілі Treba.");
-        var user = await RequireUserAsync(challenge.UserId, ct);
+        var user = await RequireUserAsync(challenge.UserId, ct, allowCustomer: true);
         if (await db.TelegramBindings.AnyAsync(b => b.TelegramUserId == telegramId || b.UserId == user.Id, ct))
             throw new BusinessRuleException("Цей Telegram або профіль Treba вже підключено.");
         challenge.TelegramUserId = telegramId; challenge.ChatId = chatId;
@@ -65,7 +68,7 @@ public sealed class TelegramLinkService(ApplicationDbContext db, IOptions<Telegr
     }
     public async Task<TelegramLinkDto> ConfirmAsync(Guid userId, Guid challengeId, CancellationToken ct)
     {
-        await RequireUserAsync(userId, ct); var now = clock.GetUtcNow();
+        await RequireUserAsync(userId, ct, allowCustomer: true); var now = clock.GetUtcNow();
         var challenge = await db.TelegramLinkChallenges.SingleOrDefaultAsync(c => c.Id == challengeId && c.UserId == userId, ct);
         if (challenge is null || challenge.ExpiresAt <= now || challenge.CompletedAt is not null || challenge.TelegramUserId is null || challenge.ChatId is null)
             throw new BusinessRuleException("Підтвердження Telegram недоступне. Почніть підключення знову.");
@@ -79,7 +82,7 @@ public sealed class TelegramLinkService(ApplicationDbContext db, IOptions<Telegr
     }
     public async Task UnlinkAsync(Guid userId, CancellationToken ct)
     {
-        await RequireUserAsync(userId, ct);
+        await RequireUserAsync(userId, ct, allowCustomer: true);
         var binding = await db.TelegramBindings.SingleOrDefaultAsync(b => b.UserId == userId, ct);
         if (binding is not null) db.TelegramBindings.Remove(binding);
         var now = clock.GetUtcNow();

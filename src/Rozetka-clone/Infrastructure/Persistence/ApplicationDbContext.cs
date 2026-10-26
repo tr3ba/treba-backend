@@ -25,6 +25,10 @@ namespace Infrastructure.Persistence
 
         public DbSet<User> Users => Set<User>();
         public DbSet<UserExternalLogin> UserExternalLogins => Set<UserExternalLogin>();
+        public DbSet<DeliveryQuote> DeliveryQuotes => Set<DeliveryQuote>();
+        public DbSet<OrderShipment> OrderShipments => Set<OrderShipment>();
+        public DbSet<CustomerNotificationSettings> CustomerNotificationSettings => Set<CustomerNotificationSettings>();
+        public DbSet<CustomerNotification> CustomerNotifications => Set<CustomerNotification>();
         public DbSet<FeatureFlag> FeatureFlags => Set<FeatureFlag>();
         public DbSet<SellerApplication> SellerApplications => Set<SellerApplication>();
         public DbSet<CustomerPreferences> CustomerPreferences => Set<CustomerPreferences>();

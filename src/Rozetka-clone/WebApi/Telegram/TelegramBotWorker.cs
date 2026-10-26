@@ -93,7 +93,12 @@ public sealed class TelegramBotWorker(IServiceScopeFactory scopes, IOptions<Tele
             var binding = await db.TelegramBindings.AsNoTracking().SingleOrDefaultAsync(b => b.TelegramUserId == telegramId, ct);
             if (binding is not null)
             {
-                var user = await links.RequireUserAsync(binding.UserId, ct);
+                var user = await links.RequireUserAsync(binding.UserId, ct, allowCustomer: true);
+                if (user.Role!.Name == "Customer")
+                {
+                    await bot.SendTextAsync(chatId, "Telegram підключено до вашого акаунта TREBA. Керуйте сповіщеннями про замовлення та відповіді підтримки у розділі «Підписки» на сайті.", ct);
+                    return;
+                }
                 await bot.SendMenuAsync(chatId, $"Вітаємо в Treba, {user.FirstName} {user.LastName}!\nРоль: {(user.Role!.Name == "Seller" ? "Продавець" : "Модератор")}\nID Treba: {user.Id}\nID Telegram: {telegramId}\n\nВідкрийте робоче меню або підтвердьте вхід через Guard.", ct);
                 return;
             }
@@ -101,6 +106,11 @@ public sealed class TelegramBotWorker(IServiceScopeFactory scopes, IOptions<Tele
             {
                 var name = string.Join(' ', new[] { String(from, "first_name"), String(from, "last_name") }.Where(x => !string.IsNullOrWhiteSpace(x)));
                 var user = await links.ClaimAsync(text[12..].Trim(), telegramId, chatId, String(from, "username"), name, ct);
+                if (user.Role == "Customer")
+                {
+                    await bot.SendTextAsync(chatId, "Поверніться на сайт TREBA та натисніть «Підтвердити підключення». Потім увімкніть потрібні сповіщення у розділі «Підписки».", ct);
+                    return;
+                }
                 await bot.SendTextAsync(chatId, $"Вітаємо в Treba, {user.Name}!\nРоль: {(user.Role == "Seller" ? "Продавець" : "Модератор")}\nID Treba: {user.Id}\nID Telegram: {telegramId}\n\nПоверніться до профілю на сайті та натисніть «Підтвердити підключення». Потім надішліть /menu — відкриється робоча панель.", ct);
             }
             else await bot.SendTextAsync(chatId, "Вітаємо! Це робочий бот Treba для продавців і модераторів.\nЩоб почати, відкрийте свій профіль на сайті Treba та натисніть «Підключити Telegram».", ct);

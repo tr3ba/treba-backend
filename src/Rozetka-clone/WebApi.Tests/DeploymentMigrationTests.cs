@@ -1,5 +1,6 @@
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Npgsql;
 using WebApi.Administration;
 
@@ -75,7 +76,7 @@ public sealed class DeploymentMigrationTests
                 new DbContextOptionsBuilder<ApplicationDbContext>().UseNpgsql(isolated).Options
             );
             foreach (
-                var migration in db.Database.GetMigrations().TakeWhile(m => m != AdminOperationsDeployment.Migration)
+                var migration in db.Database.GetMigrations().TakeWhile(m => m != "20261023110000_NormalizeProfileLanguages")
             )
             {
                 await using var insert = new NpgsqlCommand(
@@ -86,11 +87,11 @@ public sealed class DeploymentMigrationTests
                 await insert.ExecuteNonQueryAsync();
             }
             var pending = (await db.Database.GetPendingMigrationsAsync()).ToArray();
-            Assert.Equal(AdminOperationsDeployment.Migration, Assert.Single(pending));
+            Assert.Equal(new[] { "20261023110000_NormalizeProfileLanguages", "20261024192735_AddDeliveryAndCustomerNotifications", AdminOperationsDeployment.Migration }, pending);
             AdminOperationsDeployment.ValidatePendingMigrations(pending);
-            await db.Database.MigrateAsync();
-            await db.Database.MigrateAsync();
-            Assert.Empty(await db.Database.GetPendingMigrationsAsync());
+            await db.GetService<Microsoft.EntityFrameworkCore.Migrations.IMigrator>().MigrateAsync("20261023110000_NormalizeProfileLanguages");
+            await db.GetService<Microsoft.EntityFrameworkCore.Migrations.IMigrator>().MigrateAsync("20261023110000_NormalizeProfileLanguages");
+            Assert.Equal(new[] { "20261024192735_AddDeliveryAndCustomerNotifications", AdminOperationsDeployment.Migration }, await db.Database.GetPendingMigrationsAsync());
             await using var check = new NpgsqlCommand(
                 "SELECT \"Language\", \"DisplayName\" FROM user_profiles ORDER BY \"Id\"",
                 sql
