@@ -12,7 +12,8 @@ public sealed record OrderEvent(string PreviousStatus, string NewStatus, string?
 public sealed record OrderDetails(OrderRow Summary, string RecipientPhone, string RecipientEmail,
     string? CustomerComment, decimal Subtotal, decimal DiscountAmount, decimal DeliveryPrice,
     OrderAddressView? Address, IReadOnlyList<OrderLine> Items, IReadOnlyList<OrderEvent> History,
-    string Version, IReadOnlyList<string> AllowedStatuses, bool PartialOrder);
+    string Version, IReadOnlyList<string> AllowedStatuses, bool PartialOrder,
+    Contracts.Delivery.OrderDeliveryView? Delivery = null);
 public sealed record ChangeOrderStatusRequest([Required] string Status, [Required] string ExpectedVersion,
     [StringLength(500)] string? Reason);
 

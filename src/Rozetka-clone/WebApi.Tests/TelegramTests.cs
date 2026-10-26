@@ -57,7 +57,7 @@ public sealed class TelegramTests
     }
 
     [Theory]
-    [InlineData(Roles.Customer)]
+    [InlineData("UnsupportedRole")]
     public async Task Link_RejectsOtherRoles(string role)
     {
         await using var db = TelegramTestData.Memory();

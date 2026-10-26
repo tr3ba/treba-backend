@@ -12,6 +12,10 @@ namespace Application.Abstractions
 {
     public interface IApplicationDbContext
     {
+        DbSet<DeliveryQuote> DeliveryQuotes { get; }
+        DbSet<OrderShipment> OrderShipments { get; }
+        DbSet<CustomerNotificationSettings> CustomerNotificationSettings { get; }
+        DbSet<CustomerNotification> CustomerNotifications { get; }
         DbSet<FeatureFlag> FeatureFlags { get; }
         DbSet<SellerApplication> SellerApplications { get; }
         DbSet<CustomerPreferences> CustomerPreferences { get; }

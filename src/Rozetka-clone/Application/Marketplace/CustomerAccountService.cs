@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Marketplace;
 
-public sealed class CustomerAccountService(IApplicationDbContext db, ICurrentActor actor)
+public sealed class CustomerAccountService(IApplicationDbContext db, ICurrentActor actor, Application.Delivery.DeliveryService? delivery = null)
 {
     private Guid UserId => actor.UserId ?? throw new UnauthorizedAccessException();
     private static readonly HashSet<string> Fields = ["phone", "lastName", "firstName", "patronymic", "gender", "birthDate", "recipients", "address", "hobbies", "pets", "additionalInfo", "recipientFirstName", "recipientLastName", "recipientPhone", "addressCity", "addressStreet", "addressBuilding", "deliveryMethod", "addressBranch", "additionalInfoOptions"];
@@ -53,11 +53,19 @@ public sealed class CustomerAccountService(IApplicationDbContext db, ICurrentAct
         await db.SaveChangesAsync(ct); return await PreferencesAsync(ct);
     }
 
-    public async Task<PagedResponse<CustomerOrderView>> OrdersAsync(int page, string? search, DateTimeOffset? from, CancellationToken ct)
+    public Task<PagedResponse<CustomerOrderView>> ShipmentsAsync(int page, string? search, CancellationToken ct) => OrdersAsync(page, search, null, ct, shipmentsOnly: true);
+
+    public async Task<PagedResponse<CustomerOrderView>> OrdersAsync(int page, string? search, DateTimeOffset? from, CancellationToken ct, bool shipmentsOnly = false)
     {
         if (page is < 1 or > 100000 || search?.Length > 200) throw new ArgumentException("Invalid order filter.");
         var query = db.Orders.AsNoTracking().Where(x => x.CustomerId == UserId);
-        if (!string.IsNullOrWhiteSpace(search)) { var term = search.Trim().ToLowerInvariant(); query = query.Where(x => x.OrderNumber.ToLower().Contains(term)); }
+        if (shipmentsOnly) query = query.Where(x => db.OrderShipments.Any(s => s.OrderId == x.Id && s.Reference != null));
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim().ToLowerInvariant();
+            query = delivery is null ? query.Where(x => x.OrderNumber.ToLower().Contains(term))
+                : query.Where(x => x.OrderNumber.ToLower().Contains(term) || db.OrderShipments.Any(s => s.OrderId == x.Id && s.Reference != null && s.Reference.ToLower().Contains(term)));
+        }
         if (from.HasValue) query = query.Where(x => x.CreatedAt >= from.Value);
         var count = await query.CountAsync(ct);
         var orders = await query.OrderByDescending(x => x.CreatedAt).ThenBy(x => x.Id).Skip((page - 1) * 20).Take(20).ToListAsync(ct);
@@ -73,6 +81,7 @@ public sealed class CustomerAccountService(IApplicationDbContext db, ICurrentAct
     private async Task<List<CustomerOrderView>> ViewsAsync(List<Order> orders, CancellationToken ct)
     {
         var ids = orders.Select(x => x.Id).ToArray();
+        var shipments = delivery is null ? [] : await db.OrderShipments.AsNoTracking().Where(s => ids.Contains(s.OrderId)).ToListAsync(ct);
         var lines = await db.OrderItems.AsNoTracking().Where(x => ids.Contains(x.OrderId)).OrderBy(x => x.Id).ToListAsync(ct);
         var productIds = lines.Select(x => x.ProductId).Distinct().ToArray();
         var slugs = await db.Products.AsNoTracking().Where(x => productIds.Contains(x.Id)).ToDictionaryAsync(x => x.Id, x => x.Slug, ct);
@@ -84,6 +93,7 @@ public sealed class CustomerAccountService(IApplicationDbContext db, ICurrentAct
             addresses.FirstOrDefault(a => a.OrderId == o.Id) is { } a ? string.Join(", ", new[] { a.Country, a.City, a.Street, a.Building, a.Apartment }.Where(x => !string.IsNullOrWhiteSpace(x))) : null,
             lines.Where(x => x.OrderId == o.Id).Select(x => new CustomerOrderItem(x.Id, x.ProductId, slugs.GetValueOrDefault(x.ProductId),
                 x.ProductName, x.Quantity, x.UnitPrice, x.TotalPrice, images.FirstOrDefault(i => i.ProductId == x.ProductId)?.ImageUrl)).ToList(),
-            history.Where(x => x.OrderId == o.Id).Select(x => new CustomerOrderEvent(x.NewStatus.ToString(), x.CreatedAt)).ToList())).ToList();
+            history.Where(x => x.OrderId == o.Id).Select(x => new CustomerOrderEvent(x.NewStatus.ToString(), x.CreatedAt)).ToList(),
+            shipments.FirstOrDefault(s => s.OrderId == o.Id) is { } shipment ? Application.Delivery.DeliveryService.View(shipment, o.Status.ToString()) : null)).ToList();
     }
 }

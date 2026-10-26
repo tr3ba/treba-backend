@@ -31,7 +31,7 @@ It does not expose internal notes. Application and moderation entries represent 
 `POST /api/v1/account/notifications/read` persists per-user receipts, validates event visibility and tolerates repeated requests.
 Storefront and admin bells poll every 30 seconds; links open the relevant order, conversation or review queue.
 Admin handoff preserves an allowlisted local destination; the independent development login remains available.
-Notifications are in-app; email, SMS and Telegram delivery are not introduced by this feature.
+The in-app feed remains available. Optional order/support email and Telegram delivery is described in [delivery and notifications](delivery-notifications.md).
 
 ## Deployment and validation
 

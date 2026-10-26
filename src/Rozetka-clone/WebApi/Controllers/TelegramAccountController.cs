@@ -19,13 +19,13 @@ public sealed class TelegramAccountController(TelegramLinkService links, Telegra
 
     [HttpGet("configuration"), AllowAnonymous]
     public TelegramConfigurationDto Configuration() => links.Configuration();
-    [HttpGet("link"), Authorize(Roles = "Administrator,Manager,Moderator,Seller")]
+    [HttpGet("link"), Authorize(Roles = "Administrator,Manager,Moderator,Seller,Customer")]
     public Task<TelegramLinkDto> Link(CancellationToken ct) => links.StatusAsync(UserId, ct);
-    [HttpPost("link"), Authorize(Roles = "Administrator,Manager,Moderator,Seller"), EnableRateLimiting("telegram-sensitive")]
+    [HttpPost("link"), Authorize(Roles = "Administrator,Manager,Moderator,Seller,Customer"), EnableRateLimiting("telegram-sensitive")]
     public Task<TelegramLinkStartDto> BeginLink(CancellationToken ct) => links.BeginAsync(UserId, ct);
-    [HttpPost("link/confirm"), Authorize(Roles = "Administrator,Manager,Moderator,Seller")]
+    [HttpPost("link/confirm"), Authorize(Roles = "Administrator,Manager,Moderator,Seller,Customer")]
     public Task<TelegramLinkDto> ConfirmLink(ConfirmTelegramLinkRequest request, CancellationToken ct) => links.ConfirmAsync(UserId, request.ChallengeId, ct);
-    [HttpDelete("link"), Authorize(Roles = "Administrator,Manager,Moderator,Seller")]
+    [HttpDelete("link"), Authorize(Roles = "Administrator,Manager,Moderator,Seller,Customer")]
     public async Task<IActionResult> Unlink(CancellationToken ct) { await links.UnlinkAsync(UserId, ct); return NoContent(); }
     [HttpPost("guard"), AllowAnonymous, EnableRateLimiting("telegram-sensitive")]
     public Task<GuardStartDto> StartGuard(CreateGuardRequest request, CancellationToken ct) => guard.CreateAsync(request.DeviceName, HttpContext.Connection.RemoteIpAddress?.ToString(), ct, request.LoginChallengeId);

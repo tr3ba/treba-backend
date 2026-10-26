@@ -121,8 +121,7 @@ public sealed class PostgresOperationsTests
                     db,
                     new Application.Inventory.InventoryService(db, actor),
                     new SynchronizedDiscounts(new DiscountService(db), Rendezvous),
-                    actor,
-                    () => new TestPaymentService(db)
+                    actor
                 );
                 return await Record.ExceptionAsync(() =>
                     service.CreateOrderAsync(OperationsTests.Request(seed, coupon: "LAST"))
