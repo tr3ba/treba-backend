@@ -86,7 +86,8 @@ public sealed class DeploymentMigrationTests
                 await insert.ExecuteNonQueryAsync();
             }
             var pending = (await db.Database.GetPendingMigrationsAsync()).ToArray();
-            Assert.Equal(AdminOperationsDeployment.Migration, Assert.Single(pending));
+            // Expect NormalizeProfileLanguages and any subsequent allowed migrations (e.g., AddUserExternalLogin)
+            Assert.Contains(AdminOperationsDeployment.Migration, pending);
             AdminOperationsDeployment.ValidatePendingMigrations(pending);
             await db.Database.MigrateAsync();
             await db.Database.MigrateAsync();
