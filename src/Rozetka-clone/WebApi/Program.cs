@@ -32,6 +32,7 @@ var builder = WebApplication.CreateBuilder(args.Where(argument => !operatorFlags
 
 builder.Services.AddScoped<Application.Catalog.CatalogService>();
 builder.Services.AddTrebaTelegram(builder.Configuration);
+WebApi.Delivery.DeliveryNotificationsRegistration.AddDeliveryNotifications(builder.Services, builder.Configuration);
 builder.Services.AddScoped<Application.Administration.AdminWorkspaceService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<Application.Abstractions.ICurrentActor, WebApi.Authentication.HttpCurrentActor>();

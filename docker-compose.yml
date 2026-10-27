@@ -48,6 +48,14 @@ services:
       Payment__WayForPay__MerchantId: ${WAYFORPAY_MERCHANT_ID:-}
       Payment__WayForPay__ApiKey: ${WAYFORPAY_API_KEY:-}
 
+      Delivery__NovaPoshta__Enabled: ${NOVA_POSHTA_ENABLED:-true}
+      NovaPoshta__ApiKey: ${NovaPoshta__ApiKey:-${NOVA_POSHTA_API_KEY:-}}
+      Delivery__NovaPoshta__SenderCityRef: ${NOVA_POSHTA_SENDER_CITY_REF:-00000000-0000-0000-0000-000000000000}
+      Delivery__NovaPoshta__DefaultWeightKg: ${NOVA_POSHTA_DEFAULT_WEIGHT_KG:-1}
+      Notifications__Enabled: ${NOTIFICATIONS_ENABLED:-false}
+      Notifications__StoreOrigin: ${NOTIFICATIONS_STORE_ORIGIN:-https://treba.duckdns.org}
+      Email__Smtp__Enabled: ${SMTP_ENABLED:-false}
+      Email__Smtp__FromAddress: ${SMTP_FROM_ADDRESS:-}
       Email__Smtp__Host: ${SMTP_HOST:-}
       Email__Smtp__Port: ${SMTP_PORT:-587}
       Email__Smtp__Username: ${SMTP_USERNAME:-}

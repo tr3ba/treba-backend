@@ -154,4 +154,9 @@
   <data name="KindShort_CHAT" xml:space="preserve"><value>Підтримка</value></data>
   <data name="KindShort_QUESTION" xml:space="preserve"><value>Запитання</value></data>
   <data name="KindShort_RETURN" xml:space="preserve"><value>Повернення</value></data>
+  <data name="NovaPoshtaDelivery" xml:space="preserve"><value>Доставка Новою поштою</value></data>
+  <data name="TrebaCourierDelivery" xml:space="preserve"><value>Кур’єр TREBA</value></data>
+  <data name="ShipmentReference" xml:space="preserve"><value>Номер відправлення</value></data>
+  <data name="ShipmentAfterPayment" xml:space="preserve"><value>Номер відправлення буде створено після підтвердження оплати.</value></data>
+  <data name="ShipmentCancelled" xml:space="preserve"><value>Відправлення скасовано</value></data>
 </root>
