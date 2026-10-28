@@ -12,6 +12,11 @@ on:
         description: Existing reviewed image commit SHA (empty uses the selected ref)
         required: false
         type: string
+      enable_external_auth:
+        description: Enable Google and Facebook using the credentials already stored on the server
+        required: false
+        default: false
+        type: boolean
 
 env:
   AWS_REGION: eu-west-1
@@ -45,6 +50,7 @@ jobs:
         shell: bash
         env:
           DEPLOY_REVISION: ${{ github.event.inputs.image_revision || github.event.workflow_run.head_sha || github.sha }}
+          ENABLE_EXTERNAL_AUTH: ${{ inputs.enable_external_auth && 'true' || 'false' }}
         run: |
           set -euo pipefail
           python3 - <<'PY'
@@ -56,6 +62,9 @@ jobs:
           image = os.environ['ECR_REGISTRY'] + '/' + os.environ['ECR_REPOSITORY'] + ':' + revision
           script = Path('scripts/server/deploy-telegram-backend.sh').read_text()
           command = "bash -s -- '" + image + "' '" + revision + "' <<'TREBA_DEPLOYMENT'\n" + script + '\nTREBA_DEPLOYMENT'
+          if os.environ.get('ENABLE_EXTERNAL_AUTH') == 'true':
+              configuration = Path('scripts/server/enable-external-auth.py').read_text()
+              command = "set -e\npython3 <<'TREBA_EXTERNAL_AUTH_CONFIGURATION'\n" + configuration + '\nTREBA_EXTERNAL_AUTH_CONFIGURATION\n' + command
           Path('ssm-deploy.json').write_text(json.dumps({'commands': [command], 'executionTimeout': ['900']}))
           PY
           COMMAND_ID=$(aws ssm send-command \

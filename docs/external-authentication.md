@@ -16,6 +16,8 @@ ExternalAuth__Facebook__AppSecret=<Meta app secret>
 
 Facebook `ClientId` / `ClientSecret` remain supported as aliases. Placeholder `YOUR_...` values do not enable a provider. `/api/auth/external/providers` exposes only configured providers and their public client IDs, scopes and redirect URIs.
 
+When credentials are already present but the server environment has `Enabled=false`, the manual backend deployment input `enable_external_auth` validates both client IDs and secret presence, backs up the environment privately and enables only those two flags before running the normal deployment. It does not replace credential values. The default is false, so automatic deployments preserve the existing configuration.
+
 Register these exact redirect URIs in Google Cloud and Meta Facebook Login respectively:
 
 ```text
