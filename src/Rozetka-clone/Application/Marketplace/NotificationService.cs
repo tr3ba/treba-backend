@@ -40,8 +40,9 @@ public sealed class NotificationService(IApplicationDbContext db, ICurrentActor 
         var updates = await (from h in db.OrderStatusHistories.AsNoTracking() join o in db.Orders on h.OrderId equals o.Id
             where o.CustomerId == userId && h.CreatedAt >= cutoff orderby h.CreatedAt descending, h.Id
             select new { h.Id, h.OrderId, h.CreatedAt, h.NewStatus, o.OrderNumber }).Take(60).ToListAsync(ct);
-        result.AddRange(updates.Select(h => new MarketplaceNotification("order-status:" + h.Id, "order-status", "Оновлення замовлення",
-            h.OrderNumber + " · " + h.NewStatus, "shop", "/account/orders/" + h.OrderId, h.CreatedAt)));
+        result.AddRange(updates.Select(h => new MarketplaceNotification("order-status:" + h.Id, "order-status",
+            CustomerNotificationQueue.OrderTitle(h.NewStatus.ToString()),
+            CustomerNotificationQueue.OrderText(h.OrderNumber, h.NewStatus.ToString()), "shop", "/account/orders/" + h.OrderId, h.CreatedAt)));
         if (supportStaff || seller)
         {
             var cutoffUtc = cutoff.UtcDateTime;

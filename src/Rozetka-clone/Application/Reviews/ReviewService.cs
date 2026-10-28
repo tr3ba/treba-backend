@@ -17,6 +17,41 @@ namespace Application.Reviews
             _dbContext = dbContext;
         }
 
+        public async Task<PagedResult<ReviewableProductDto>> GetProductsAwaitingReviewAsync(Guid userId, int page, CancellationToken cancellationToken = default)
+        {
+            if (page is < 1 or > 100000) throw new ArgumentOutOfRangeException(nameof(page));
+            var query = from item in _dbContext.OrderItems.AsNoTracking()
+                join order in _dbContext.Orders.AsNoTracking() on item.OrderId equals order.Id
+                join product in _dbContext.Products.AsNoTracking() on item.ProductId equals product.Id
+                where order.CustomerId == userId && order.PaymentStatus == PaymentStatus.SUCCEEDED
+                    && (order.Status == OrderStatus.DELIVERED || order.Status == OrderStatus.COMPLETED)
+                    && !_dbContext.Reviews.Any(review => review.OrderItemId == item.Id)
+                orderby order.CreatedAt descending, item.Id
+                select new ReviewableProductDto(item.Id, item.ProductId, item.ProductName, product.Slug,
+                    _dbContext.ProductImages.Where(image => image.ProductId == item.ProductId)
+                        .OrderByDescending(image => image.IsMain).ThenBy(image => image.SortOrder).ThenBy(image => image.Id)
+                        .Select(image => image.ImageUrl).FirstOrDefault(), order.Id, order.OrderNumber);
+            var count = await query.CountAsync(cancellationToken);
+            return new() { Items = await query.Skip((page - 1) * 20).Take(20).ToListAsync(cancellationToken),
+                Page = page, PageSize = 20, TotalCount = count };
+        }
+
+        public async Task<PagedResult<ReviewDto>> GetMyReviewsAsync(Guid userId, int page, CancellationToken cancellationToken = default)
+        {
+            if (page is < 1 or > 100000) throw new ArgumentOutOfRangeException(nameof(page));
+            var query = _dbContext.Reviews.AsNoTracking().Where(review => review.UserId == userId && review.Status != ReviewStatus.DELETED);
+            var count = await query.CountAsync(cancellationToken);
+            var items = await query.OrderByDescending(review => review.CreatedAt).ThenBy(review => review.Id)
+                .Skip((page - 1) * 20).Take(20).Select(review => new ReviewDto
+                {
+                    Id = review.Id, ProductId = review.ProductId, UserId = review.UserId, OrderItemId = review.OrderItemId,
+                    Rating = review.Rating, Title = review.Title, Comment = review.Comment, Status = review.Status,
+                    VerifiedPurchase = review.VerifiedPurchase, HelpfulCount = review.HelpfulCount,
+                    CreatedAt = review.CreatedAt, UpdatedAt = review.UpdatedAt
+                }).ToListAsync(cancellationToken);
+            return new() { Items = items, Page = page, PageSize = 20, TotalCount = count };
+        }
+
         public async Task<ReviewDto> CreateReviewAsync(
             Guid userId,
             CreateReviewRequest request,
@@ -28,6 +63,9 @@ namespace Application.Reviews
                     nameof(request.Rating),
                     "Rating must be between 1 and 5.");
             }
+
+            if (request.Title is null || request.Title.Length > 255 || string.IsNullOrWhiteSpace(request.Comment) || request.Comment.Length > 10000)
+                throw new ArgumentException("Вкажіть текст відгуку до 10000 символів і заголовок до 255 символів.");
 
             var orderItem = await _dbContext.OrderItems
                 .AsNoTracking()
@@ -47,19 +85,22 @@ namespace Application.Reviews
                 throw new KeyNotFoundException("Order item not found.");
             }
 
-            var isPurchasedByUser = await _dbContext.Orders
+            var order = await _dbContext.Orders
                 .AsNoTracking()
-                .AnyAsync(
+                .SingleOrDefaultAsync(
                     x =>
                         x.Id == orderItem.OrderId &&
                         x.CustomerId == userId,
                     cancellationToken);
 
-            if (!isPurchasedByUser)
+            if (order is null)
             {
                 throw new BusinessRuleException(
-                    "Only the buyer of the product can leave a review.");
+                    "Відгук може залишити лише покупець цього товару.");
             }
+
+            if (!ReviewEligibility.IsPurchased(order.Status, order.PaymentStatus))
+                throw new BusinessRuleException("Відгук можна залишити після оплати та отримання товару.");
 
             var reviewAlreadyExists = await _dbContext.Reviews
                 .AsNoTracking()
@@ -70,7 +111,7 @@ namespace Application.Reviews
             if (reviewAlreadyExists)
             {
                 throw new BusinessRuleException(
-                    "A review already exists for this order item.");
+                    "Ви вже залишили відгук про цей товар із замовлення.");
             }
 
             var now = DateTime.UtcNow;
@@ -82,8 +123,8 @@ namespace Application.Reviews
                 UserId = userId,
                 OrderItemId = orderItem.Id,
                 Rating = request.Rating,
-                Title = request.Title,
-                Comment = request.Comment,
+                Title = request.Title.Trim(),
+                Comment = request.Comment.Trim(),
                 Status = ReviewStatus.PENDING,
                 VerifiedPurchase = true,
                 HelpfulCount = 0,

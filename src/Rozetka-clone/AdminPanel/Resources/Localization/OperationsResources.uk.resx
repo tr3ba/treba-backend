@@ -159,4 +159,14 @@
   <data name="ShipmentReference" xml:space="preserve"><value>Номер відправлення</value></data>
   <data name="ShipmentAfterPayment" xml:space="preserve"><value>Номер відправлення буде створено після підтвердження оплати.</value></data>
   <data name="ShipmentCancelled" xml:space="preserve"><value>Відправлення скасовано</value></data>
+  <data name="ManageDelivery" xml:space="preserve"><value>Керувати доставкою</value></data>
+  <data name="ManagedDeliveryHelp" xml:space="preserve"><value>Просувайте доставку вручну кнопкою нижче. Підтверджуйте отримання лише після того, як покупець отримав усі товари замовлення.</value></data>
+  <data name="DeliverySteps" xml:space="preserve"><value>Оплачено → Підтверджено → Комплектація → Готове до відправлення → Відправлено → Отримано → Виконано</value></data>
+  <data name="DeliveryReceivedHelp" xml:space="preserve"><value>Покупцеві доступне повідомлення про отримання та можливість залишити відгуки про придбані товари.</value></data>
+  <data name="DeliveryAction_CONFIRMED" xml:space="preserve"><value>Підтвердити замовлення</value></data>
+  <data name="DeliveryAction_PROCESSING" xml:space="preserve"><value>Почати комплектацію</value></data>
+  <data name="DeliveryAction_READY_FOR_SHIPMENT" xml:space="preserve"><value>Готове до відправлення</value></data>
+  <data name="DeliveryAction_SHIPPED" xml:space="preserve"><value>Позначити відправленим</value></data>
+  <data name="DeliveryAction_DELIVERED" xml:space="preserve"><value>Підтвердити отримання товарів</value></data>
+  <data name="DeliveryAction_COMPLETED" xml:space="preserve"><value>Завершити замовлення</value></data>
 </root>

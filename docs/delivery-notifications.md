@@ -18,6 +18,33 @@ shipment status through confirmation, processing, ready for shipment, shipped an
 The carrier API is used for directory and price reads; shipment registration and tracking remain internal to TREBA.
 Customer-facing screens use regular carrier names, shipment numbers and status history.
 
+In the admin order list, **Керувати доставкою** opens the order's fulfillment section. Each button advances one
+permitted step: paid → confirmed → processing → ready for shipment → shipped → delivered → completed.
+These manual steps can be used to simulate delivery; they do not contact the carrier. Confirm **Підтвердити отримання товарів**
+only when all items have been received. Existing role, mixed-seller and optimistic concurrency checks apply to every step.
+
+## Receipt and product reviews
+
+The delivered transition creates an in-app receipt notification with an optional review invitation. Customers with order
+email or Telegram enabled receive the same invitation through the existing outbox. Repeated/stale status writes cannot
+create another receipt event. In-app notifications do not depend on external channel subscriptions.
+
+The received order shows a review form for each eligible item; `/account/reviews` lists items awaiting review and the
+customer's own reviews, including moderation status. Product-page review links lead to this account section.
+The API enforces ownership, matching product/order item, successful payment, and `DELIVERED` or `COMPLETED` status.
+Unpaid, unreceived, cancelled and returned orders are ineligible. One review is allowed per order item, including reviews
+already pending, rejected or deleted; the existing unique database index also prevents concurrent duplicate inserts.
+New reviews require a rating of 1–5, a nonblank comment up to 10000 characters, and an optional title up to 255 characters.
+Reviews start pending and become public after moderation. No schema migration is required for this workflow.
+
+- `GET /api/v1/reviews/awaiting?page=1` — only the signed-in customer's eligible items without reviews, 20 per page.
+- `GET /api/v1/reviews/mine?page=1` — only their own nondeleted reviews, 20 per page.
+- `POST /api/v1/reviews` — `{ productId, orderItemId, rating, title, comment }`.
+
+Customer order items include `canReview` and `reviewId`; the server rechecks eligibility when the form is submitted.
+The storefront forwards these private operations through `/shop-api/reviews`, using its server session and same-origin
+write checks. Deploy the API/admin and storefront updates together; the API should be published first.
+
 API keys remain on the backend. Configure runtime environment variables (or local .NET user secrets):
 
 ```text

@@ -43,23 +43,28 @@ public sealed class CustomerNotificationQueue(IApplicationDbContext db)
 {
     public async Task OrderAsync(Order order, Guid eventId, string status, CancellationToken ct)
     {
-        var label = status switch
-        {
-            "AWAITING_PAYMENT" => "Замовлення прийнято", "PAID" => "Оплату замовлення підтверджено",
-            "CONFIRMED" => "Замовлення підтверджено", "PROCESSING" => "Замовлення комплектується",
-            "READY_FOR_SHIPMENT" => "Замовлення готове до відправлення", "SHIPPED" => "Статус замовлення: відправлено",
-            "DELIVERED" => "Статус замовлення: доставлено", "COMPLETED" => "Замовлення виконано",
-            "CANCELLED" => "Замовлення скасовано", "RETURN_REQUESTED" => "Повернення погоджено",
-            "RETURNED" => "Товари прийнято після повернення", _ => "Статус замовлення оновлено"
-        };
+        var label = OrderTitle(status);
         var shipment = db.OrderShipments.Local.FirstOrDefault(s => s.OrderId == order.Id)
             ?? await db.OrderShipments.AsNoTracking().SingleOrDefaultAsync(s => s.OrderId == order.Id, ct);
-        var text = $"{label}. № {order.OrderNumber}.";
+        var text = OrderText(order.OrderNumber, status);
         if (shipment?.Reference is { } reference)
             text += $" {(shipment.Carrier == "NovaPoshta" ? "Нова пошта" : "Кур’єр TREBA")}. Номер відправлення: {reference}.";
         await StageAsync(order.CustomerId, "Order", order.Id, eventId, "order:" + eventId, label, text,
             "/account/orders/" + order.Id, ct);
     }
+
+    public static string OrderTitle(string status) => status switch
+        {
+            "AWAITING_PAYMENT" => "Замовлення прийнято", "PAID" => "Оплату замовлення підтверджено",
+            "CONFIRMED" => "Замовлення підтверджено", "PROCESSING" => "Замовлення комплектується",
+            "READY_FOR_SHIPMENT" => "Замовлення готове до відправлення", "SHIPPED" => "Статус замовлення: відправлено",
+            "DELIVERED" => "Замовлення отримано", "COMPLETED" => "Замовлення виконано",
+            "CANCELLED" => "Замовлення скасовано", "RETURN_REQUESTED" => "Повернення погоджено",
+            "RETURNED" => "Товари прийнято після повернення", _ => "Статус замовлення оновлено"
+        };
+
+    public static string OrderText(string orderNumber, string status) => $"{OrderTitle(status)}. № {orderNumber}."
+        + (status == "DELIVERED" ? " Усі товари доставлено. За бажанням залиште відгук про покупку в деталях замовлення." : "");
 
     public Task SupportAsync(SupportTicket ticket, SupportMessage message, CancellationToken ct) =>
         StageAsync(ticket.CustomerId, "Support", ticket.Id, message.Id, "support:" + message.Id,
