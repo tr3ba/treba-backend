@@ -1,4 +1,5 @@
 using Infrastructure.Persistence;
+using Domain.Entities.Users;
 using Microsoft.EntityFrameworkCore;
 
 namespace WebApi.Administration;
@@ -6,6 +7,9 @@ namespace WebApi.Administration;
 // Operator-only commands: never start HTTP, workers, Telegram polling or notifications.
 public static class AdminOperationsDeployment
 {
+    public static string ExternalLoginTableIdentifier(ApplicationDbContext db) =>
+        "\"" + db.Model.FindEntityType(typeof(UserExternalLogin))!.GetTableName()!.Replace("\"", "\"\"") + "\"";
+
     public const string Migration = "20261026142406_AddManagedShipmentLifecycle";
     private static readonly HashSet<string> AllowedPending =
         ["20261017112413_AddPromotions", "20261019213326_AddReviewOrderItemRelation", "20261020093201_AddAdminOperations", "20261020104554_AddSupportConversations", "20261020144055_AddWebsiteAdminLogin", "20261021191511_AddDelivery", "20261022084526_AddMarketplaceWorkflows", "20261022132542_AddAdminFeaturesAndChatTrash", "20261023110000_NormalizeProfileLanguages", "20261024192735_AddDeliveryAndCustomerNotifications", "20261025000601_AddUserExternalLogin", Migration];
@@ -45,7 +49,8 @@ public static class AdminOperationsDeployment
             }
             var applied = await db.Database.GetAppliedMigrationsAsync(timeout.Token);
             if (!applied.Contains(Migration)) throw new InvalidOperationException("The operational database migration is missing.");
-            var privileges = await db.Database.SqlQueryRaw<bool>("""
+            var externalLoginTable = "public." + ExternalLoginTableIdentifier(db);
+            var privileges = await db.Database.SqlQuery<bool>($"""
                 SELECT has_schema_privilege('public', 'USAGE') AND
                     (SELECT bool_and(COALESCE(has_table_privilege(to_regclass(t.name), p.name), false))
                      FROM (VALUES ('public.orders'), ('public.order_items'), ('public.order_addresses'),
@@ -53,7 +58,7 @@ public static class AdminOperationsDeployment
                         ('public.promotion_rules'), ('public.promotion_actions'), ('public.coupons'),
                         ('public.coupon_usages'), ('public.support_tickets'), ('public.support_messages'),
                         ('public.product_review_baselines'), ('public.seller_applications'),
-                        ('public.customer_preferences'), ('public.notification_receipts'), ('public.feature_flags'), ('public.delivery_quotes'), ('public.order_shipments'), ('public.customer_notification_settings'), ('public.customer_notifications'), ('public.user_external_logins')) AS t(name)
+                        ('public.customer_preferences'), ('public.notification_receipts'), ('public.feature_flags'), ('public.delivery_quotes'), ('public.order_shipments'), ('public.customer_notification_settings'), ('public.customer_notifications'), ({externalLoginTable})) AS t(name)
                      CROSS JOIN (VALUES ('SELECT'), ('INSERT'), ('UPDATE'), ('DELETE')) AS p(name)) AS "Value"
                 """).SingleAsync(timeout.Token);
             if (!privileges) throw new InvalidOperationException("The API database account lacks operational table privileges.");

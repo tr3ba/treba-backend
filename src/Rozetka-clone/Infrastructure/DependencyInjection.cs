@@ -101,7 +101,6 @@ namespace Infrastructure
             services.AddScoped<IEmailSender, SmtpEmailSender>();
             services.AddScoped<ISecondFactorService, SecondFactorService>();
             services.AddScoped<ITokenService, TokenService>();
-            services.AddScoped<IIdentityService, IdentityService>();
             services.AddScoped<AdminEntryService>();
 
             // MockPaymentProvider is ONLY for Development environment.

@@ -9,6 +9,31 @@ namespace WebApi.Tests;
 
 public sealed class DeploymentMigrationTests
 {
+    [PostgresFact]
+    public async Task DeploymentPrivilegeLookup_ResolvesExternalLoginTableWithItsActualCase()
+    {
+        var connection = Environment.GetEnvironmentVariable("TREBA_TEST_POSTGRES")!;
+        var schema = "treba_qa_external_" + Guid.NewGuid().ToString("N");
+        await using var owner = new NpgsqlConnection(connection);
+        await owner.OpenAsync();
+        await using (var create = new NpgsqlCommand($"CREATE SCHEMA \"{schema}\"; CREATE TABLE \"{schema}\".\"UserExternalLogins\" (\"Id\" uuid PRIMARY KEY)", owner))
+            await create.ExecuteNonQueryAsync();
+        try
+        {
+            var isolated = new NpgsqlConnectionStringBuilder(connection) { SearchPath = schema + ",pg_catalog" }.ConnectionString;
+            await using var db = new ApplicationDbContext(new DbContextOptionsBuilder<ApplicationDbContext>().UseNpgsql(isolated).Options);
+            var relation = AdminOperationsDeployment.ExternalLoginTableIdentifier(db);
+            // PostgreSQL must resolve the model's quoted name; the former snake_case lookup misses this table.
+            Assert.True(await db.Database.SqlQuery<bool>($"SELECT has_table_privilege(to_regclass({relation}), 'SELECT') AS \"Value\"").SingleAsync());
+            Assert.True(await db.Database.SqlQueryRaw<bool>("SELECT to_regclass('user_external_logins') IS NULL AS \"Value\"").SingleAsync());
+        }
+        finally
+        {
+            await using var drop = new NpgsqlCommand($"DROP SCHEMA \"{schema}\" CASCADE", owner);
+            await drop.ExecuteNonQueryAsync();
+        }
+    }
+
     [Fact]
     public void DeploymentAcceptsMigrationsFromOperationsBaseline_AndRejectsUnreviewedUpdates()
     {
