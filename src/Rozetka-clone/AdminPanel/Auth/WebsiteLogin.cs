@@ -58,10 +58,20 @@ public static class WebsiteLogin
             }
             catch (HttpRequestException) { return Results.StatusCode(503); }
         });
-        app.MapPost("/site-login/logout", async (HttpContext context) =>
+        app.MapPost("/site-login/logout", async (HttpContext context, IHttpClientFactory clients, CancellationToken ct) =>
         {
             Private(context);
             if (!Uri.TryCreate(context.Request.Headers.Origin, UriKind.Absolute, out var origin) || origin.GetLeftPart(UriPartial.Authority) != admin) return Results.BadRequest();
+            var access = context.User.FindFirst(AccessClaim)?.Value;
+            var refresh = context.User.FindFirst(RefreshClaim)?.Value;
+            if (!string.IsNullOrEmpty(access) && !string.IsNullOrEmpty(refresh))
+            {
+                using var request = new HttpRequestMessage(HttpMethod.Post, "api/auth/logout")
+                { Content = JsonContent.Create(new RefreshTokenRequest(refresh)) };
+                request.Headers.Authorization = new("Bearer", access);
+                try { using var response = await clients.CreateClient("website-login").SendAsync(request, ct); }
+                catch (HttpRequestException) { /* Always clear the browser cookie, including expired API sessions. */ }
+            }
             await context.SignOutAsync(Scheme); return Results.NoContent();
         });
     }

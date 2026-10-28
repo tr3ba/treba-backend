@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace WebApi.Controllers
 {
     [ApiController]
-    [Authorize]
+    [Authorize(Roles = "Customer")]
     [Route("api/v1/cart")]
     public sealed class CartController : ControllerBase
     {

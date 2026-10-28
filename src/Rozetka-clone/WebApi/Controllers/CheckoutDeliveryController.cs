@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace WebApi.Controllers;
 
-[ApiController, Route("api/v1/checkout-delivery"), Authorize, EnableRateLimiting("delivery"), ResponseCache(NoStore = true)]
+[ApiController, Route("api/v1/checkout-delivery"), Authorize(Roles = "Customer"), EnableRateLimiting("delivery"), ResponseCache(NoStore = true)]
 public sealed class CheckoutDeliveryController(ICheckoutDeliveryProvider provider, CheckoutDeliveryService delivery) : ControllerBase
 {
     [HttpGet("capabilities")] public DeliveryCapabilities Capabilities() => delivery.Capabilities();
