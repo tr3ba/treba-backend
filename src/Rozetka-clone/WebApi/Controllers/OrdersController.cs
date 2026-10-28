@@ -17,7 +17,7 @@ public sealed class OrdersController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize]
+    [Authorize(Roles = "Customer")]
     [ProducesResponseType(typeof(OrderDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -50,7 +50,7 @@ public sealed class OrdersController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [Authorize]
+    [Authorize(Roles = "Customer")]
     [ProducesResponseType(typeof(OrderDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetOrderById(Guid id, CancellationToken cancellationToken)
@@ -88,7 +88,7 @@ public sealed class OrdersController : ControllerBase
     }
 
     [HttpPost("{id:guid}/cancel")]
-    [Authorize]
+    [Authorize(Roles = "Customer")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> CancelOrder(

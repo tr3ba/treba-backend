@@ -19,10 +19,18 @@ public sealed class WebsiteAdminSessionTests
     private sealed class Api : HttpMessageHandler
     {
         public int Requests;
+        public int Logouts;
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             Requests++;
+            if (request.RequestUri!.AbsolutePath == "/api/auth/logout")
+            {
+                Logouts++;
+                Assert.Equal("Bearer server-only-access", request.Headers.Authorization!.ToString());
+                Assert.Equal(HttpMethod.Post, request.Method);
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NoContent));
+            }
             Assert.Equal("/api/auth/admin-entry/redeem", request.RequestUri!.AbsolutePath);
             return Task.FromResult(
                 new HttpResponseMessage(HttpStatusCode.OK)
@@ -115,7 +123,10 @@ public sealed class WebsiteAdminSessionTests
         Assert.Equal("Manager", identity["role"]!.GetValue<string>());
         Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsync("/site-login/logout", null)).StatusCode);
         client.DefaultRequestHeaders.Add("Origin", "https://admin.fixture");
-        Assert.Equal(HttpStatusCode.NoContent, (await client.PostAsync("/site-login/logout", null)).StatusCode);
+        using var ended = await client.PostAsync("/site-login/logout", null);
+        Assert.Equal(HttpStatusCode.NoContent, ended.StatusCode);
+        Assert.Equal(1, api.Logouts);
+        Assert.Contains(ended.Headers.GetValues("Set-Cookie"), value => value.StartsWith(".AspNetCore.Website=;") && value.Contains("expires=", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]

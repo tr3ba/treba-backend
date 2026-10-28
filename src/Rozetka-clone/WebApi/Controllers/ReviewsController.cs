@@ -20,7 +20,7 @@ namespace WebApi.Controllers
             _reviewService = reviewService;
         }
 
-        [Authorize]
+        [Authorize(Roles = "Customer")]
         [HttpPost]
         public async Task<ActionResult<ReviewDto>> CreateReview(
             [FromBody] CreateReviewRequest request,
@@ -70,7 +70,7 @@ namespace WebApi.Controllers
         }
 
 
-        [Authorize]
+        [Authorize(Roles = "Customer")]
         [HttpPut("{reviewId:guid}")]
         public async Task<ActionResult<ReviewDto>> UpdateReview(
             Guid reviewId,
@@ -88,7 +88,7 @@ namespace WebApi.Controllers
             return Ok(review);
         }
 
-        [Authorize]
+        [Authorize(Roles = "Customer")]
         [HttpDelete("{reviewId:guid}")]
         public async Task<IActionResult> DeleteReview(
             Guid reviewId,
@@ -104,7 +104,7 @@ namespace WebApi.Controllers
             return NoContent();
         }
 
-        [Authorize]
+        [Authorize(Roles = "Customer")]
         [HttpPut("{reviewId:guid}/vote")]
         public async Task<IActionResult> VoteReview(
             Guid reviewId,

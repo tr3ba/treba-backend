@@ -7,7 +7,7 @@ using System.Security.Claims;
 namespace WebApi.Controllers
 {
     [ApiController]
-    [Authorize]
+    [Authorize(Roles = "Customer")]
     [Route("api/v1/wishlist")]
     public sealed class WishlistController : ControllerBase
     {

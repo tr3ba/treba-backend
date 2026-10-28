@@ -18,7 +18,7 @@ public sealed class PaymentsController : ControllerBase
     }
 
     [HttpPost("orders/{orderId:guid}/payments")]
-    [Authorize]
+    [Authorize(Roles = "Customer")]
     [ProducesResponseType(typeof(PaymentDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -51,7 +51,7 @@ public sealed class PaymentsController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [Authorize]
+    [Authorize(Roles = "Customer")]
     [ProducesResponseType(typeof(PaymentDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetPaymentById(
