@@ -24,7 +24,7 @@ public sealed record ReviewSellerApplicationRequest(Guid Version, bool Approve,
 public sealed record CustomerPreferencesView(Dictionary<string, string> Values, Guid Version);
 public sealed record SaveCustomerPreferencesRequest(Dictionary<string, string> Values, Guid Version);
 public sealed record CustomerOrderItem(Guid Id, Guid ProductId, string? ProductSlug, string Name, int Quantity,
-    decimal UnitPrice, decimal TotalPrice, string? ImageUrl);
+    decimal UnitPrice, decimal TotalPrice, string? ImageUrl, bool CanReview = false, Guid? ReviewId = null);
 public sealed record CustomerOrderEvent(string Status, DateTimeOffset CreatedAt);
 public sealed record CustomerOrderView(Guid Id, string OrderNumber, string Status, string PaymentStatus,
     decimal Subtotal, decimal DiscountAmount, decimal DeliveryPrice, decimal TotalAmount, string Currency,

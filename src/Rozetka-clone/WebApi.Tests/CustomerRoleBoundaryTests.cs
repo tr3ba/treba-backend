@@ -57,7 +57,8 @@ public sealed class CustomerRoleBoundaryTests
             (HttpMethod.Get, "/api/v1/account/preferences"), (HttpMethod.Patch, "/api/v1/account/preferences"),
             (HttpMethod.Get, "/api/v1/account/orders"), (HttpMethod.Get, "/api/v1/account/shipments"),
             (HttpMethod.Get, "/api/v1/account/seller-application"), (HttpMethod.Get, "/api/v1/account/notification-settings"),
-            (HttpMethod.Post, "/api/v1/reviews")];
+            (HttpMethod.Post, "/api/v1/reviews"),
+            (HttpMethod.Get, "/api/v1/reviews/awaiting"), (HttpMethod.Get, "/api/v1/reviews/mine")];
         foreach (var role in new[] { "Administrator", "Manager", "Moderator", "Seller", "Unknown" })
         {
             client.DefaultRequestHeaders.Remove("X-Fixture-Role"); client.DefaultRequestHeaders.Add("X-Fixture-Role", role);

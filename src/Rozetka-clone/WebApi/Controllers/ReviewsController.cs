@@ -36,6 +36,14 @@ namespace WebApi.Controllers
             return Ok(review);
         }
 
+        [Authorize(Roles = "Customer"), HttpGet("awaiting"), ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+        public Task<PagedResult<ReviewableProductDto>> Awaiting(int page = 1, CancellationToken cancellationToken = default) =>
+            _reviewService.GetProductsAwaitingReviewAsync(GetCurrentUserId(), page, cancellationToken);
+
+        [Authorize(Roles = "Customer"), HttpGet("mine"), ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+        public Task<PagedResult<ReviewDto>> Mine(int page = 1, CancellationToken cancellationToken = default) =>
+            _reviewService.GetMyReviewsAsync(GetCurrentUserId(), page, cancellationToken);
+
         [AllowAnonymous]
         [HttpGet("products/{productId:guid}")]
         public async Task<ActionResult<PagedResult<ReviewDto>>> GetProductReviews(

@@ -8,6 +8,9 @@ namespace Application.Reviews
 {
     public interface IReviewService
     {
+        Task<PagedResult<ReviewableProductDto>> GetProductsAwaitingReviewAsync(Guid userId, int page, CancellationToken cancellationToken = default);
+        Task<PagedResult<ReviewDto>> GetMyReviewsAsync(Guid userId, int page, CancellationToken cancellationToken = default);
+
         Task<ReviewDto> CreateReviewAsync(
             Guid userId,
             CreateReviewRequest request,

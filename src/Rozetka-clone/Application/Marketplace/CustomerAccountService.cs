@@ -83,6 +83,9 @@ public sealed class CustomerAccountService(IApplicationDbContext db, ICurrentAct
         var ids = orders.Select(x => x.Id).ToArray();
         var shipments = delivery is null ? [] : await db.OrderShipments.AsNoTracking().Where(s => ids.Contains(s.OrderId)).ToListAsync(ct);
         var lines = await db.OrderItems.AsNoTracking().Where(x => ids.Contains(x.OrderId)).OrderBy(x => x.Id).ToListAsync(ct);
+        var lineIds = lines.Select(x => x.Id).ToArray();
+        var reviews = await db.Reviews.AsNoTracking().Where(x => lineIds.Contains(x.OrderItemId))
+            .ToDictionaryAsync(x => x.OrderItemId, x => x.Id, ct);
         var productIds = lines.Select(x => x.ProductId).Distinct().ToArray();
         var slugs = await db.Products.AsNoTracking().Where(x => productIds.Contains(x.Id)).ToDictionaryAsync(x => x.Id, x => x.Slug, ct);
         var images = await db.ProductImages.AsNoTracking().Where(x => productIds.Contains(x.ProductId)).OrderByDescending(x => x.IsMain).ThenBy(x => x.SortOrder).ToListAsync(ct);
@@ -92,7 +95,9 @@ public sealed class CustomerAccountService(IApplicationDbContext db, ICurrentAct
             o.DiscountAmount, o.DeliveryPrice, o.TotalAmount, o.Currency, o.CreatedAt, o.RecipientName, o.RecipientPhone, o.RecipientEmail,
             addresses.FirstOrDefault(a => a.OrderId == o.Id) is { } a ? string.Join(", ", new[] { a.Country, a.City, a.Street, a.Building, a.Apartment }.Where(x => !string.IsNullOrWhiteSpace(x))) : null,
             lines.Where(x => x.OrderId == o.Id).Select(x => new CustomerOrderItem(x.Id, x.ProductId, slugs.GetValueOrDefault(x.ProductId),
-                x.ProductName, x.Quantity, x.UnitPrice, x.TotalPrice, images.FirstOrDefault(i => i.ProductId == x.ProductId)?.ImageUrl)).ToList(),
+                x.ProductName, x.Quantity, x.UnitPrice, x.TotalPrice, images.FirstOrDefault(i => i.ProductId == x.ProductId)?.ImageUrl,
+                Application.Reviews.ReviewEligibility.IsPurchased(o.Status, o.PaymentStatus) && !reviews.ContainsKey(x.Id),
+                reviews.TryGetValue(x.Id, out var reviewId) ? reviewId : null)).ToList(),
             history.Where(x => x.OrderId == o.Id).Select(x => new CustomerOrderEvent(x.NewStatus.ToString(), x.CreatedAt)).ToList(),
             shipments.FirstOrDefault(s => s.OrderId == o.Id) is { } shipment ? Application.Delivery.CheckoutDeliveryService.View(shipment, o.Status.ToString()) : null)).ToList();
     }

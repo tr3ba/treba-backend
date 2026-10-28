@@ -9,6 +9,19 @@ else if(order is not null)
 {
     <section class="page-hero"><div><p class="eyebrow">@L["Orders"]</p><h1>@order.Summary.OrderNumber</h1><OperationsStatusBadge Domain="Order" Value="@order.Summary.Status" /></div><button class="secondary-button" disabled="@busy" @onclick="Load"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i>@L["RefreshData"]</button></section>
     @if(order.PartialOrder){<p class="feedback-success">@O["PartialOrder"]</p>}
+    @if(order.Summary.Status is "PAID" or "CONFIRMED" or "PROCESSING" or "READY_FOR_SHIPMENT" or "SHIPPED" or "DELIVERED" or "COMPLETED")
+    {
+        <section id="fulfillment" class="card-box">
+            <h2><i class="bi bi-truck" aria-hidden="true"></i> @O["ManageDelivery"]</h2>
+            <p>@O["ManagedDeliveryHelp"]</p>
+            <p class="operations-caption">@O["DeliverySteps"]</p>
+            @if(order.AllowedStatuses.FirstOrDefault(state => state != "CANCELLED") is {} action)
+            {
+                <button class="primary-button" disabled="@busy" @onclick="()=>PrepareDelivery(action)"><i class="bi bi-check2-circle" aria-hidden="true"></i>@O["DeliveryAction_" + action]</button>
+            }
+            @if(order.Summary.Status is "DELIVERED" or "COMPLETED"){<p class="feedback-success">@O["DeliveryReceivedHelp"]</p>}
+        </section>
+    }
     <div class="operations-two-column">
         <section class="card-box"><h2><i class="bi bi-person" aria-hidden="true"></i> @O["Customer"]</h2><p>@order.Summary.CustomerName<br/>@order.RecipientPhone<br/>@order.RecipientEmail</p><AuthorizeView Roles="Administrator,Manager"><a class="record-link" href="@($"/customer-activity/{order.Summary.CustomerId}")"><i class="bi bi-person-lines-fill" aria-hidden="true"></i>@O["CustomerHistory"]<i class="bi bi-arrow-up-right" aria-hidden="true"></i></a></AuthorizeView>
         @if(order.Address is {} a){<h3>@O["DeliveryAddress"]</h3><p>@a.Country, @a.Region, @a.City<br/>@a.Street @a.Building @a.Apartment<br/>@a.PostalCode<br/>@a.RecipientName · @a.RecipientPhone</p>}
@@ -30,5 +43,6 @@ else if(order is not null)
     [Parameter]public Guid Id{get;set;} private OrderDetails? order;private bool loading,busy,confirm;private string? error;private string next="",reason="";
     protected override Task OnParametersSetAsync()=>Load();
     private async Task Load(){loading=true;error=null;try{order=await Api.Order(Id);next="";reason="";}catch(HttpRequestException e){error=e.Message;}finally{loading=false;}}
+    private void PrepareDelivery(string status){next=status;reason="";confirm=true;}
     private async Task Confirm(bool yes){confirm=false;if(!yes||order is null)return;busy=true;error=null;try{await Api.ChangeOrder(Id,new(next,order.Version,string.IsNullOrWhiteSpace(reason)&&next=="PAID"?O["ManualPaymentRecorded"]:reason));await Load();}catch(HttpRequestException e){error=e.Message;}finally{busy=false;}}
 }
