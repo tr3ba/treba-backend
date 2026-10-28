@@ -14,8 +14,6 @@ using Application.Stores;
 using Application.Wishlists;
 using Infrastructure;
 using Infrastructure.Persistence;
-using Microsoft.AspNetCore.Authentication.Facebook;
-using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -66,9 +64,6 @@ builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
 
 var jwtSection = builder.Configuration.GetSection("Jwt");
 
-var googleSection = builder.Configuration.GetSection("ExternalAuth:Google");
-var facebookSection = builder.Configuration.GetSection("ExternalAuth:Facebook");
-
 var authBuilder = builder.Services.AddAuthentication(
     options =>
     {
@@ -76,51 +71,6 @@ var authBuilder = builder.Services.AddAuthentication(
         options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
     }
 );
-
-if (googleSection.GetValue<bool>("Enabled"))
-{
-    var clientId = googleSection["ClientId"];
-    var clientSecret = googleSection["ClientSecret"];
-
-    if (!string.IsNullOrEmpty(clientId) && !string.IsNullOrEmpty(clientSecret) &&
-        clientId != "YOUR_GOOGLE_CLIENT_ID" && clientSecret != "YOUR_GOOGLE_CLIENT_SECRET")
-    {
-        authBuilder.AddGoogle(GoogleDefaults.AuthenticationScheme, options =>
-        {
-            options.ClientId = clientId;
-            options.ClientSecret = clientSecret;
-            options.CallbackPath = googleSection["CallbackPath"] ?? "/api/auth/external/google/callback";
-            options.Scope.Add("email");
-            options.Scope.Add("profile");
-            options.SaveTokens = true;
-        });
-    }
-}
-
-if (facebookSection.GetValue<bool>("Enabled"))
-{
-    var appId = facebookSection["AppId"] ?? facebookSection["ClientId"];
-    var appSecret = facebookSection["AppSecret"] ?? facebookSection["ClientSecret"];
-
-    if (!string.IsNullOrEmpty(appId) && !string.IsNullOrEmpty(appSecret) &&
-        appId != "YOUR_FACEBOOK_APP_ID" && appSecret != "YOUR_FACEBOOK_APP_SECRET")
-    {
-        authBuilder.AddFacebook(FacebookDefaults.AuthenticationScheme, options =>
-        {
-            options.AppId = appId;
-            options.AppSecret = appSecret;
-            options.CallbackPath = facebookSection["CallbackPath"] ?? "/api/auth/external/facebook/callback";
-            options.Scope.Add("email");
-            options.Scope.Add("public_profile");
-            options.SaveTokens = true;
-            options.Fields.Add("id");
-            options.Fields.Add("email");
-            options.Fields.Add("first_name");
-            options.Fields.Add("last_name");
-            options.Fields.Add("picture");
-        });
-    }
-}
 
 authBuilder.AddJwtBearer(
     options =>

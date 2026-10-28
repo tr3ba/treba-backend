@@ -545,7 +545,7 @@ namespace Domain.Entities.Users
             UpdatedAt = DateTimeOffset.UtcNow;
         }
 
-        public void AddExternalLogin(
+        public UserExternalLogin AddExternalLogin(
             string provider,
             string providerUserId)
         {
@@ -561,6 +561,7 @@ namespace Domain.Entities.Users
             var externalLogin = UserExternalLogin.Create(Id, provider, providerUserId);
             _externalLogins.Add(externalLogin);
             UpdatedAt = DateTimeOffset.UtcNow;
+            return externalLogin;
         }
 
         public void RemoveExternalLogin(string provider)

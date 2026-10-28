@@ -3,6 +3,19 @@
 # Prints public Telegram settings and secret presence only. Never enable shell tracing.
 set -euo pipefail
 
+# OAuth diagnostics expose configuration presence only, never client secrets or tokens.
+python3 - <<'PY'
+from pathlib import Path
+path = Path('/home/ubuntu/treba-backend.env')
+values = dict(line.split('=', 1) for line in path.read_text().splitlines() if '=' in line and not line.lstrip().startswith('#')) if path.exists() else {}
+def configured(*keys):
+    return any(values.get(key, '').strip() and not values[key].strip().startswith('YOUR_') for key in keys)
+for name in ('Google', 'Facebook'):
+    prefix = 'ExternalAuth__' + name + '__'
+    print('OAUTH_' + name.upper() + '_CLIENT_ID_CONFIGURED=' + str(configured(prefix + 'AppId', prefix + 'ClientId')))
+    print('OAUTH_' + name.upper() + '_CLIENT_SECRET_CONFIGURED=' + str(configured(prefix + 'AppSecret', prefix + 'ClientSecret')))
+PY
+
 if [[ "${TREBA_INSPECT_CATALOG:-}" == 1 ]]; then
     python3 - <<'PY'
 import json, os, subprocess, urllib.request

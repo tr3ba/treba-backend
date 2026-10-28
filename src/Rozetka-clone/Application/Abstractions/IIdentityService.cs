@@ -64,6 +64,13 @@ public interface IIdentityService
         CancellationToken cancellationToken = default
     );
 
+    IReadOnlyList<ExternalProviderInfo> GetExternalProviders();
+
+    Task<LoginResponse> ExchangeExternalCodeAsync(
+        ExternalCodeLoginRequest request,
+        CancellationToken cancellationToken = default
+    );
+
     Task<LoginResponse> ExternalLoginAsync(
         string provider,
         string accessToken,
