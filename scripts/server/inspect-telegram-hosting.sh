@@ -6,6 +6,7 @@ set -euo pipefail
 # OAuth diagnostics expose configuration presence only, never client secrets or tokens.
 python3 - <<'PY'
 from pathlib import Path
+import json, subprocess
 path = Path('/home/ubuntu/treba-backend.env')
 values = dict(line.split('=', 1) for line in path.read_text().splitlines() if '=' in line and not line.lstrip().startswith('#')) if path.exists() else {}
 def configured(*keys):
@@ -14,6 +15,20 @@ for name in ('Google', 'Facebook'):
     prefix = 'ExternalAuth__' + name + '__'
     print('OAUTH_' + name.upper() + '_CLIENT_ID_CONFIGURED=' + str(configured(prefix + 'AppId', prefix + 'ClientId')))
     print('OAUTH_' + name.upper() + '_CLIENT_SECRET_CONFIGURED=' + str(configured(prefix + 'AppSecret', prefix + 'ClientSecret')))
+    enabled = values.get(prefix + 'Enabled', '(default)').strip().lower()
+    print('OAUTH_' + name.upper() + '_ENV_FILE_ENABLED=' + (enabled if enabled in ('true', 'false', '(default)') else '(invalid)'))
+container = json.loads(subprocess.check_output(['docker', 'inspect', 'treba-backend']))[0]
+runtime = dict(item.split('=', 1) for item in container['Config']['Env'] if '=' in item)
+try:
+    settings = json.loads(subprocess.check_output(['docker', 'exec', 'treba-backend', 'cat', '/app/appsettings.json']))
+except (subprocess.CalledProcessError, ValueError):
+    settings = {}
+for name in ('Google', 'Facebook'):
+    prefix = 'ExternalAuth__' + name + '__'
+    enabled = runtime.get(prefix + 'Enabled', '(default)').strip().lower()
+    print('OAUTH_' + name.upper() + '_RUNTIME_ENABLED=' + (enabled if enabled in ('true', 'false', '(default)') else '(invalid)'))
+    print('OAUTH_' + name.upper() + '_RUNTIME_CLIENT_ID_PRESENT=' + str(any(runtime.get(prefix + key, '').strip() for key in ('AppId', 'ClientId'))))
+    print('OAUTH_' + name.upper() + '_JSON_ENABLED=' + str(settings.get('ExternalAuth', {}).get(name, {}).get('Enabled', '(missing)')))
 PY
 
 if [[ "${TREBA_INSPECT_CATALOG:-}" == 1 ]]; then
