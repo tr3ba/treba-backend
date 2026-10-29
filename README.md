@@ -145,6 +145,8 @@ Delivery setup, customer subscriptions and deployment requirements: [delivery an
 The backend implements authentication functionality including:
 
 - User registration
+- Required email or SMS verification for password registration ([setup and API](docs/registration-verification.md))
+- Password recovery with a confirmation code and session revocation ([flow and API](docs/password-reset.md))
 - Login
 - JWT authentication
 - Refresh token flow

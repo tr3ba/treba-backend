@@ -96,6 +96,11 @@ namespace Infrastructure
             );
 
             services.AddHttpClient<IIdentityService, IdentityService>();
+            services.AddOptions<TurboSmsOptions>().Bind(configuration.GetSection(TurboSmsOptions.SectionName));
+            services.AddHttpClient<ISmsSender, TurboSmsSender>(client => client.Timeout = Timeout.InfiniteTimeSpan)
+                .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
+            services.AddScoped<IRegistrationService, RegistrationService>();
+            services.AddScoped<IPasswordResetService, PasswordResetService>();
 
             services.AddSingleton<AesSecretProtector>();
             services.AddScoped<IEmailSender, SmtpEmailSender>();

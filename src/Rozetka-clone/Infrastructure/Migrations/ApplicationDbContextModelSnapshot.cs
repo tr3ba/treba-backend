@@ -2713,13 +2713,19 @@ namespace Infrastructure.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("DeliveryAddress")
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)");
+
                     b.Property<DateTimeOffset>("ExpiresAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("FailedAttempts")
+                        .IsConcurrencyToken()
                         .HasColumnType("integer");
 
                     b.Property<DateTimeOffset?>("LastCodeSentAt")
+                        .IsConcurrencyToken()
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Purpose")
@@ -2731,6 +2737,8 @@ namespace Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DeliveryAddress", "LastCodeSentAt");
 
                     b.HasIndex("UserId", "Purpose", "ExpiresAt");
 
@@ -2848,6 +2856,7 @@ namespace Infrastructure.Migrations
                         .HasColumnType("character varying(100)");
 
                     b.Property<string>("PasswordHash")
+                        .IsConcurrencyToken()
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");

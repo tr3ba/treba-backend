@@ -811,4 +811,7 @@
   <data name="ImportCreateCategoryHint" xml:space="preserve"><value>Choose a parent section and enter the new category name. An existing category will be reused.</value></data>
   <data name="ImportCategorySelected" xml:space="preserve"><value>Category selected.</value></data>
   <data name="CategoryName" xml:space="preserve"><value>Category name</value></data>
+  <data name="FeatureSmsSending" xml:space="preserve"><value>SMS sending</value></data>
+  <data name="FeatureSmsSendingDescription" xml:space="preserve"><value>Send registration and password recovery codes through TurboSMS from MAGAZIN. Each message uses the provider balance.</value></data>
+  <data name="FeatureSmsSendingHint" xml:space="preserve"><value>Off by default. Turning this off blocks new SMS requests and resends. Users can choose email. Codes already sent remain valid until they expire.</value></data>
 </root>

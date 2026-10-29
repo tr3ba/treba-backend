@@ -17,6 +17,7 @@ public sealed class ApiExceptionHandler(
     {
         var (status, title) = exception switch
         {
+            Application.Abstractions.SmsDeliveryException => (503, exception.Message),
             Application.Abstractions.DeliveryUnavailableException => (503, exception.Message),
             KeyNotFoundException => (404, "Запис не знайдено."),
             DbUpdateConcurrencyException when context.Request.Path.StartsWithSegments("/api/telegram") => (409, "Запит уже оброблено або дані змінилися. Оновіть сторінку."),

@@ -811,4 +811,7 @@
   <data name="ImportCreateCategoryHint" xml:space="preserve"><value>Виберіть батьківський розділ і вкажіть назву нової категорії. Наявну категорію буде використано повторно.</value></data>
   <data name="ImportCategorySelected" xml:space="preserve"><value>Категорію вибрано.</value></data>
   <data name="CategoryName" xml:space="preserve"><value>Назва категорії</value></data>
+  <data name="FeatureSmsSending" xml:space="preserve"><value>Надсилання SMS</value></data>
+  <data name="FeatureSmsSendingDescription" xml:space="preserve"><value>Надсилайте коди підтвердження реєстрації та відновлення пароля через TurboSMS від імені MAGAZIN. Кожне повідомлення витрачає кошти з балансу провайдера.</value></data>
+  <data name="FeatureSmsSendingHint" xml:space="preserve"><value>За замовчуванням вимкнено. Вимкнення блокує нові та повторні SMS. Користувачі можуть обрати пошту. Уже надіслані коди діють до завершення строку.</value></data>
 </root>

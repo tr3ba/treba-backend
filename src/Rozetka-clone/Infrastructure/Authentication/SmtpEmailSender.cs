@@ -93,7 +93,7 @@ public sealed class SmtpEmailSender(
                     <tr><td style="padding:30px 34px">
                       <div style="font-size:20px;font-weight:800;letter-spacing:1px">TREBA</div>
                       <p style="margin:28px 0 8px;font-size:20px;font-weight:700">Hello, {{safeName}}</p>
-                      <p style="margin:0 0 22px;color:#64748b;font-size:14px;line-height:1.6">Use this code to confirm your sign-in or enable email protection.</p>
+                      <p style="margin:0 0 22px;color:#64748b;font-size:14px;line-height:1.6">Use this code to confirm your registration, sign-in, password reset or email protection.</p>
                       <div style="padding:18px;border-radius:13px;background:#fff7ed;color:#c2410c;text-align:center;font-size:32px;font-weight:800;letter-spacing:8px">{{safeCode}}</div>
                       <p style="margin:22px 0 0;color:#64748b;font-size:12px;line-height:1.6">The code is valid for {{minutes}} minutes. If you did not request it, you can safely ignore this email.</p>
                     </td></tr>

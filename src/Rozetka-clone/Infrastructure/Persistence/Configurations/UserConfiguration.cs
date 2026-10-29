@@ -76,6 +76,7 @@ namespace Infrastructure.Persistence.Configurations
 
             builder
                 .Property(x => x.PasswordHash)
+                .IsConcurrencyToken()
                 .HasMaxLength(500)
                 .IsRequired();
 

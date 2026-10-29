@@ -39,14 +39,17 @@ public sealed class FeatureChatDeletionTests
             .Options;
         await using var db = new ApplicationDbContext(options, actor);
         var settings = new FeatureSettingsService(db, actor);
-        var initial = Assert.Single(await settings.ListAsync(default));
+        var defaults = await settings.ListAsync(default);
+        Assert.Equal(2, defaults.Count);
+        Assert.All(defaults, flag => Assert.False(flag.Enabled));
+        var initial = Assert.Single(defaults, flag => flag.Key == FeatureFlag.ChatDeletion);
         Assert.False(initial.Enabled);
         Assert.Equal(Guid.Empty, initial.Version);
         var enabled = await settings.SetAsync(FeatureFlag.ChatDeletion, new(true, initial.Version), default);
         Assert.True(enabled.Enabled);
         Assert.NotEqual(Guid.Empty, enabled.Version);
         await using var reloaded = new ApplicationDbContext(options, actor);
-        Assert.True(Assert.Single(await new FeatureSettingsService(reloaded, actor).ListAsync(default)).Enabled);
+        Assert.True(Assert.Single(await new FeatureSettingsService(reloaded, actor).ListAsync(default), flag => flag.Key == FeatureFlag.ChatDeletion).Enabled);
         await Assert.ThrowsAsync<BusinessRuleException>(() =>
             settings.SetAsync(FeatureFlag.ChatDeletion, new(false, initial.Version), default)
         );

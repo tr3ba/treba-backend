@@ -8,5 +8,6 @@ public sealed record RegisterRequest(
     [Required, StringLength(100)] string FirstName,
     [Required, StringLength(100)] string LastName,
     [StringLength(30)] string? PhoneNumber,
-    string? RoleName = null
+    string? RoleName = null,
+    [Required, RegularExpression("^(email|sms)$")] string? VerificationMethod = null
 );

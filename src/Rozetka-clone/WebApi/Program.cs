@@ -46,6 +46,13 @@ builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<WebApi.Errors.ApiExceptionHandler>();
 
 builder.Services.AddControllers();
+builder.Services.AddRateLimiter(options => options.AddPolicy("registration", context =>
+    System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 10, Window = TimeSpan.FromMinutes(1), QueueLimit = 0,
+        })));
 
 builder.Services.AddCors(options =>
 {
@@ -120,9 +127,7 @@ authBuilder.AddJwtBearer(
                     );
                 if (
                     user is null
-                    || user.Status
-                        is Domain.Entities.Users.UserStatus.Blocked
-                            or Domain.Entities.Users.UserStatus.Deleted
+                    || user.Status != Domain.Entities.Users.UserStatus.Active
                     || user.Role?.Name != context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value
                     || !Infrastructure.Authentication.SessionTokenBinding.IsCurrent(
                         context.Principal?.FindFirst(Infrastructure.Authentication.SessionTokenBinding.ClaimName)?.Value, user)
