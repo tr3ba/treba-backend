@@ -59,7 +59,8 @@ docker pull "$image"
 
 # The frontend must be released first; do not retire the working panel otherwise.
 [[ "$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 https://treba.duckdns.org/admin-api/session)" == 401 ]] || { echo 'Deploy the integrated frontend before this backend.'; exit 1; }
-curl -fsS --max-time 15 https://treba.duckdns.org/admin | grep 'ad-boot' >/dev/null
+# Accept the original frontend during rollout; newer releases expose a stable marker.
+curl -fsS --max-time 15 https://treba.duckdns.org/admin | grep -E 'data-treba-workspace=|ad-boot' >/dev/null
 
 # Apply only the reviewed, backwards-compatible operational migrations before switching HTTP.
 # The command checks schema ownership first and leaves the old container running on failure.
