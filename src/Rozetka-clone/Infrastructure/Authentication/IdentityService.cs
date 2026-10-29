@@ -32,82 +32,6 @@ public sealed class IdentityService : IIdentityService
         _httpClient = httpClient;
     }
 
-    public async Task<AuthResponse> RegisterAsync(
-        RegisterRequest request,
-        CancellationToken cancellationToken = default
-    )
-    {
-        if (!string.IsNullOrWhiteSpace(request.RoleName)
-            && request.RoleName != Roles.Customer)
-        {
-            throw new InvalidOperationException("Public registration only supports the Customer role.");
-        }
-
-        var emailNormalized = request.Email
-            .Trim()
-            .ToLowerInvariant();
-
-        var existingUser = await _context.Users.AnyAsync(
-            u => u.Email == emailNormalized,
-            cancellationToken
-        );
-
-        if (existingUser)
-        {
-            throw new InvalidOperationException($"Користувач з електронною адресою '{request.Email}' уже існує.");
-        }
-
-        var targetRoleName = Roles.Customer;
-        var role =
-            await _context.Roles.FirstOrDefaultAsync(
-                r => r.Name == targetRoleName,
-                cancellationToken
-            )
-            ?? throw new InvalidOperationException($"Роль '{targetRoleName}' не знайдено в системі.");
-
-        var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
-
-        var user = User.Create(
-            Guid.NewGuid(),
-            emailNormalized,
-            request.PhoneNumber,
-            request.FirstName,
-            request.LastName
-        );
-
-        user.SetPasswordHash(passwordHash);
-        user.AssignRole(role.Id);
-
-        user.VerifyEmail();
-
-        var refreshToken = _tokenService.GenerateRefreshToken();
-        var refreshTokenExpiry = DateTimeOffset.UtcNow.AddDays(7);
-        user.SetRefreshToken(
-            refreshToken,
-            refreshTokenExpiry
-        );
-
-        _context.Users.Add(user);
-        await _context.SaveChangesAsync(cancellationToken);
-
-        var accessToken = _tokenService.GenerateAccessToken(
-            user,
-            role.Name
-        );
-        var expiresAt = _tokenService.GetAccessTokenExpiration();
-
-        return new AuthResponse(
-            user.Id,
-            user.Email,
-            user.FirstName,
-            user.LastName,
-            role.Name,
-            accessToken,
-            refreshToken,
-            expiresAt
-        );
-    }
-
     public async Task<LoginResponse> LoginAsync(
         LoginRequest request,
         CancellationToken cancellationToken = default
@@ -137,8 +61,9 @@ public sealed class IdentityService : IIdentityService
             throw new UnauthorizedAccessException("Неправильна електронна адреса або пароль.");
         }
 
-        if (user.Status == UserStatus.Blocked
-            || user.Status == UserStatus.Deleted)
+        if (user.Status == UserStatus.PendingActivation)
+            throw new InvalidOperationException("Спочатку підтвердьте реєстрацію кодом із пошти або SMS.");
+        if (user.Status != UserStatus.Active)
         {
             throw new InvalidOperationException("Обліковий запис заблоковано або видалено.");
         }
@@ -205,7 +130,7 @@ public sealed class IdentityService : IIdentityService
             user is null
             || user.RefreshTokenExpiryTime is null
             || user.RefreshTokenExpiryTime <= DateTimeOffset.UtcNow
-            || user.Status is UserStatus.Blocked or UserStatus.Deleted
+            || user.Status != UserStatus.Active
         )
         {
             throw new UnauthorizedAccessException("Недійсний або прострочений токен оновлення.");
@@ -474,7 +399,7 @@ public sealed class IdentityService : IIdentityService
         if (existingLink is not null)
         {
             var user = existingLink.User ?? throw new UnauthorizedAccessException("Обліковий запис недоступний.");
-            if (user.Status == UserStatus.Blocked || user.Status == UserStatus.Deleted)
+            if (user.Status != UserStatus.Active)
             {
                 throw new InvalidOperationException("Обліковий запис заблоковано або видалено.");
             }
@@ -507,7 +432,7 @@ public sealed class IdentityService : IIdentityService
 
         if (userByEmail is not null)
         {
-            if (userByEmail.Status is UserStatus.Blocked or UserStatus.Deleted)
+            if (userByEmail.Status != UserStatus.Active)
                 throw new UnauthorizedAccessException("Обліковий запис заблоковано або видалено.");
             if (userByEmail.ExternalLogins.Any(el => el.Provider == provider))
                 throw new UnauthorizedAccessException("Для цього облікового запису вже підключено інший профіль провайдера.");

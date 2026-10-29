@@ -296,6 +296,10 @@ namespace Domain.Entities.Users
             }
 
             PhoneVerified = true;
+            if (Status == UserStatus.PendingActivation)
+            {
+                Status = UserStatus.Active;
+            }
             UpdatedAt = DateTimeOffset.UtcNow;
         }
 
@@ -383,7 +387,7 @@ namespace Domain.Entities.Users
                 throw new UserDomainException("Only blocked user can be unblocked.");
             }
 
-            Status = EmailVerified
+            Status = EmailVerified || PhoneVerified
                 ? UserStatus.Active
                 : UserStatus.PendingActivation;
 
@@ -417,6 +421,11 @@ namespace Domain.Entities.Users
 
         private void EnsureCanLogin()
         {
+            if (Status == UserStatus.PendingActivation)
+            {
+                throw new UserDomainException("Confirm your email or phone before signing in.");
+            }
+
             if (Status == UserStatus.Blocked)
             {
                 throw new UserDomainException("Blocked user cannot login.");

@@ -3,6 +3,7 @@ using Contracts.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace WebApi.Controllers;
 
@@ -24,16 +25,18 @@ public sealed class AuthController : ControllerBase
 
     [HttpPost("register")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
+    [EnableRateLimiting("registration")]
+    [ProducesResponseType(typeof(RegistrationChallengeResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Register(
         [FromBody] RegisterRequest request,
+        [FromServices] IRegistrationService registration,
         CancellationToken cancellationToken
     )
     {
         try
         {
-            var response = await _identityService.RegisterAsync(
+            var response = await registration.BeginAsync(
                 request,
                 cancellationToken
             );
@@ -50,9 +53,51 @@ public sealed class AuthController : ControllerBase
         }
     }
 
+    [HttpGet("registration/methods")]
+    [AllowAnonymous]
+    public async Task<RegistrationMethodsResponse> RegistrationMethods([FromServices] IRegistrationService registration, CancellationToken ct) =>
+        await registration.GetMethodsAsync(ct);
+
+    [HttpPost("registration/verify")]
+    [AllowAnonymous]
+    [EnableRateLimiting("registration")]
+    [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
+    public async Task<AuthResponse> VerifyRegistration([FromBody] VerifyRegistrationRequest request,
+        [FromServices] IRegistrationService registration, CancellationToken ct) => await registration.VerifyAsync(request, ct);
+
+    [HttpPost("registration/resend")]
+    [AllowAnonymous]
+    [EnableRateLimiting("registration")]
+    public async Task<RegistrationChallengeResponse> ResendRegistration([FromBody] ResendRegistrationCodeRequest request,
+        [FromServices] IRegistrationService registration, CancellationToken ct) => await registration.ResendAsync(request.ChallengeId, ct);
+
     [HttpGet("external/providers")]
     [AllowAnonymous]
     public IActionResult ExternalProviders() => Ok(_identityService.GetExternalProviders());
+
+    [HttpGet("password-reset/methods")]
+    [AllowAnonymous]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public async Task<RegistrationMethodsResponse> PasswordResetMethods([FromServices] IRegistrationService registration, CancellationToken ct) =>
+        await registration.GetMethodsAsync(ct);
+
+    [HttpPost("password-reset/request")]
+    [AllowAnonymous]
+    [EnableRateLimiting("registration")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public async Task<PasswordResetChallengeResponse> RequestPasswordReset([FromBody] RequestPasswordResetRequest request,
+        [FromServices] IPasswordResetService reset, CancellationToken ct) => await reset.RequestAsync(request, ct);
+
+    [HttpPost("password-reset/complete")]
+    [AllowAnonymous]
+    [EnableRateLimiting("registration")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public async Task<IActionResult> CompletePasswordReset([FromBody] CompletePasswordResetRequest request,
+        [FromServices] IPasswordResetService reset, CancellationToken ct)
+    {
+        await reset.CompleteAsync(request, ct);
+        return NoContent();
+    }
 
     [HttpGet("external/{provider}/callback")]
     [AllowAnonymous]

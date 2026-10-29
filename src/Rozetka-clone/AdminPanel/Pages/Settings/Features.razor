@@ -13,12 +13,14 @@ else
 {
     @foreach (var flag in _features)
     {
+        var sms = flag.Key == "notifications.sms-sending";
+        var titleKey = sms ? "FeatureSmsSending" : "FeatureChatDeletion";
         <article class="card-box feature-card">
-            <div class="feature-card-heading"><span class="feature-card-icon"><i class="bi bi-chat-square-text" aria-hidden="true"></i></span><div><h2>@L["FeatureChatDeletion"]</h2><span class="feature-state @(flag.Enabled ? "enabled" : "")">@L[flag.Enabled ? "FeatureEnabled" : "FeatureDisabled"]</span></div>
-                <button type="button" role="switch" class="feature-switch" aria-label="@L["FeatureChatDeletion"]" aria-checked="@flag.Enabled.ToString().ToLowerInvariant()" disabled="@_busy" @onclick="() => Toggle(flag)"><span></span></button>
+            <div class="feature-card-heading"><span class="feature-card-icon"><i class="bi @(sms ? "bi-phone" : "bi-chat-square-text")" aria-hidden="true"></i></span><div><h2>@L[titleKey]</h2><span class="feature-state @(flag.Enabled ? "enabled" : "")">@L[flag.Enabled ? "FeatureEnabled" : "FeatureDisabled"]</span></div>
+                <button type="button" role="switch" class="feature-switch" aria-label="@L[titleKey]" aria-checked="@flag.Enabled.ToString().ToLowerInvariant()" disabled="@_busy" @onclick="() => Toggle(flag)"><span></span></button>
             </div>
-            <p>@L["FeatureChatDeletionDescription"]</p>
-            <div class="feature-notice"><i class="bi bi-info-circle" aria-hidden="true"></i><span>@L["FeatureChatDeletionHint"]</span></div>
+            <p>@L[sms ? "FeatureSmsSendingDescription" : "FeatureChatDeletionDescription"]</p>
+            <div class="feature-notice"><i class="bi bi-info-circle" aria-hidden="true"></i><span>@L[sms ? "FeatureSmsSendingHint" : "FeatureChatDeletionHint"]</span></div>
             @if (flag.UpdatedAt is { } updated) { <small class="feature-updated">@L["FeatureUpdated"] @Time.Local(updated).ToString("g")</small> }
         </article>
     }

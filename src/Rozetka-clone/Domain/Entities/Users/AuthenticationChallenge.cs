@@ -8,6 +8,10 @@ public enum AuthenticationChallengePurpose
     EnableEmailTwoFactor,
     DisableEmailTwoFactor,
     AdminEntry,
+    RegistrationEmail,
+    RegistrationSms,
+    PasswordResetEmail,
+    PasswordResetSms,
 }
 
 public sealed class AuthenticationChallenge : BaseEntity
@@ -38,6 +42,13 @@ public sealed class AuthenticationChallenge : BaseEntity
     public DateTimeOffset? LastCodeSentAt { get; private set; }
     public DateTimeOffset? ConsumedAt { get; private set; }
     public int FailedAttempts { get; private set; }
+    public string? DeliveryAddress { get; private set; }
+
+    public void SetDeliveryAddress(string address)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(address);
+        DeliveryAddress = address;
+    }
 
     public bool IsActive(
         DateTimeOffset now

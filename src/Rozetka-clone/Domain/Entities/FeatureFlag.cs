@@ -3,6 +3,7 @@ namespace Domain.Entities;
 public sealed class FeatureFlag
 {
     public const string ChatDeletion = "support.chat-deletion";
+    public const string SmsSending = "notifications.sms-sending";
     public Guid Id { get; set; } = Guid.NewGuid();
     public string Key { get; set; } = "";
     public bool Enabled { get; set; }

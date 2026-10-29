@@ -166,6 +166,9 @@ public sealed class OperationsUiTests
             Assert.Contains("role=\"switch\"", settings);
             Assert.Contains("aria-checked=\"false\"", settings);
             Assert.DoesNotContain("FeatureChatDeletionDescription", settings);
+            Assert.Contains(culture == "uk" ? "Надсилання SMS" : "SMS sending", settings);
+            Assert.Contains("MAGAZIN", settings);
+            Assert.DoesNotContain("FeatureSmsSendingHint", settings);
             var trash = await Render<DeletedChats>([], "Manager");
             Assert.Contains("Return fixture", trash);
             Assert.Contains("bi-arrow-counterclockwise", trash);
@@ -244,6 +247,7 @@ public sealed class OperationsUiTests
                 "/api/v1/admin/settings/features" => new List<FeatureFlagDto>
                 {
                     new(FeatureFlag.ChatDeletion, deletionEnabled, Guid.Empty, null),
+                    new(FeatureFlag.SmsSending, false, Guid.Empty, null),
                 },
                 "/api/v1/admin/catalog/filter-options" => new Contracts.Catalog.CatalogFilterOptionsDto([], [], []),
                 "/api/v1/admin/catalog/products" => new Contracts.Common.PagedResponse<CatalogProductDto>(

@@ -2,6 +2,8 @@
 
 Administrators manage system-wide features at **Settings → Features** (`/settings/features`).
 The first switch is **Chat deletion** (`support.chat-deletion`), disabled until an administrator enables it.
+**SMS sending** (`notifications.sms-sending`) also defaults to off and controls billable TurboSMS requests.
+See [registration verification](registration-verification.md) for the token variable and registration flow.
 Values persist in PostgreSQL, take effect on subsequent API requests, and use versions to reject stale edits.
 There are no browser-only flags or configuration-file overrides for this switch.
 
