@@ -1,3 +1,5 @@
+> The administrative interface has moved to `treba-frontend` at `/admin`. See [current migration and delivery notes](admin-frontend-migration.md). UI paths below describe the previous panel unless prefixed with `/admin`.
+
 # Вход в админку с сайта
 
 Сотрудник входит на основном сайте через существующий аккаунт. Если защита не подключена, достаточно пароля. Если подключены Google Authenticator, почта или Telegram Guard, сайт предлагает подключённые способы и принимает один выбранный способ.

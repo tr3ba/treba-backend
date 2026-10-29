@@ -24,8 +24,6 @@ switched=0
 old_stopped=0
 proxy_changed=0
 completed=0
-admin_switched=0
-admin_previous="treba-admin-previous-$deployment_id"
 
 cleanup() {
     result=$?
@@ -33,13 +31,6 @@ cleanup() {
     docker rm -f "$candidate" >/dev/null 2>&1 || true
     if [[ "$completed" != 1 ]]; then
         echo 'Deployment did not complete; restoring the previous running configuration.'
-        if [[ "$admin_switched" == 1 ]]; then
-            docker rm -f treba-admin >/dev/null 2>&1 || true
-            if docker container inspect "$admin_previous" >/dev/null 2>&1; then
-                docker rename "$admin_previous" treba-admin
-                docker start treba-admin >/dev/null
-            fi
-        fi
         if [[ "$proxy_changed" == 1 ]]; then
             # Write in place: replacing the inode would leave the bind mount on the old file.
             cat "$caddy_backup" > "$caddy_file"
@@ -65,6 +56,10 @@ trap cleanup EXIT
 
 aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin 019066823315.dkr.ecr.eu-west-1.amazonaws.com >/dev/null
 docker pull "$image"
+
+# The frontend must be released first; do not retire the working panel otherwise.
+[[ "$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 https://treba.duckdns.org/admin-api/session)" == 401 ]] || { echo 'Deploy the integrated frontend before this backend.'; exit 1; }
+curl -fsS --max-time 15 https://treba.duckdns.org/admin | grep 'ad-boot' >/dev/null
 
 # Apply only the reviewed, backwards-compatible operational migrations before switching HTTP.
 # The command checks schema ownership first and leaves the old container running on failure.
@@ -147,30 +142,6 @@ verify_operations http://127.0.0.1:5000
 cp -p "$caddy_file" "$caddy_backup"
 proxy_changed=1
 
-# AdminPanel shares the reviewed image but runs separately, with no published host port.
-docker network inspect treba-admin-web >/dev/null 2>&1 || docker network create treba-admin-web >/dev/null
-if ! docker inspect --format '{{json .NetworkSettings.Networks}}' treba-caddy | python3 -c 'import json,sys; sys.exit(0 if "treba-admin-web" in json.load(sys.stdin) else 1)'; then
-    docker network connect treba-admin-web treba-caddy
-fi
-docker volume create treba-admin-keys >/dev/null
-if docker container inspect treba-admin >/dev/null 2>&1; then
-    docker stop treba-admin >/dev/null
-    docker rename treba-admin "$admin_previous"
-fi
-admin_switched=1
-docker run -d --name treba-admin --restart unless-stopped --network treba-admin-web \
-    --add-host host.docker.internal:host-gateway -v treba-admin-keys:/keys \
-    --label "org.opencontainers.image.revision=$revision" \
-    -e ASPNETCORE_URLS=http://+:5100 -e ApiBaseUrl=http://host.docker.internal:5000/ -e PublicApiBaseUrl=https://treba.duckdns.org/ \
-    -e WebsiteLogin__Enabled=true -e WebsiteLogin__StoreOrigin=https://treba.duckdns.org \
-    -e WebsiteLogin__AdminOrigin=https://admin.treba.duckdns.org -e DataProtectionKeysPath=/keys \
-    --entrypoint dotnet "$image" /app/admin/AdminPanel.dll --contentRoot=/app/admin >/dev/null
-admin_ready=0
-for attempt in $(seq 1 45); do
-    if docker exec treba-admin curl -fsS --max-time 3 http://localhost:5100/health >/dev/null 2>&1; then admin_ready=1; break; fi
-    sleep 1
-done
-[[ "$admin_ready" == 1 ]] || { echo 'AdminPanel did not become ready.'; exit 1; }
 python3 - "$caddy_file" <<'PY'
 from pathlib import Path
 import re, sys
@@ -192,10 +163,14 @@ if not re.search(r'(?<!\S)/js/editor-drafts\.js(?!\S)', source):
     source = source.replace('/api/*', '/js/editor-drafts.js /api/*', 1)
     path.write_text(source)
     print('Added the shared Mini App draft module to the backend matcher.')
-admin = '''\n# TREBA managed admin entry\nadmin.treba.duckdns.org {\n    reverse_proxy treba-admin:5100\n}\n'''
-if 'admin.treba.duckdns.org' not in source:
+# Redirect the retired host only after the integrated frontend has passed preflight.
+admin = '''\n# TREBA managed admin entry\nadmin.treba.duckdns.org {\n    @legacyLogin path /site-login/* /auth/login\n    redir @legacyLogin https://treba.duckdns.org/admin 302\n    redir https://treba.duckdns.org/admin{uri} 302\n}\n'''
+pattern = r'admin\.treba\.duckdns\.org\s*\{\s*reverse_proxy treba-admin:5100\s*\}'
+if re.search(pattern, source):
+    path.write_text(re.sub(pattern, lambda match: admin.strip(), source, count=1))
+elif 'admin.treba.duckdns.org' not in source:
     path.write_text(source + admin)
-elif not re.search(r'admin\.treba\.duckdns\.org\s*\{\s*reverse_proxy treba-admin:5100\s*\}', source):
+elif 'https://treba.duckdns.org/admin{uri}' not in source:
     raise SystemExit('The existing admin host differs from the reviewed configuration.')
 PY
 docker exec treba-caddy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null
@@ -208,15 +183,6 @@ for path in /api/v1/admin/orders /api/v1/support /api/v1/admin/operations/custom
     [[ "$code" == 401 ]] || { echo "Public operational route unavailable: $path (HTTP $code)"; exit 1; }
 done
 curl -fsS --max-time 15 https://treba.duckdns.org/ >/dev/null
-admin_public_ready=0
-for attempt in $(seq 1 90); do
-    if curl -fsS --max-time 3 https://admin.treba.duckdns.org/health >/dev/null 2>&1; then admin_public_ready=1; break; fi
-    sleep 2
-done
-[[ "$admin_public_ready" == 1 ]] || { echo 'Public AdminPanel TLS or health check failed.'; exit 1; }
-curl -fsS --max-time 10 https://admin.treba.duckdns.org/ | grep 'blazor.web.js' >/dev/null
-curl -fsS --max-time 10 https://admin.treba.duckdns.org/js/site-login.js | grep 'trebaSiteLogin' >/dev/null
-echo "Public AdminPanel passed. Revision: $revision"
 menu_ready=0
 for attempt in $(seq 1 12); do
     if docker exec treba-backend dotnet WebApi.dll --check-telegram-deployment --verify-telegram-menu=true --Logging:LogLevel:Microsoft.EntityFrameworkCore.Database.Command=Warning; then
@@ -227,6 +193,8 @@ for attempt in $(seq 1 12); do
 done
 [[ "$menu_ready" == 1 ]] || { echo 'The bot menu was not configured.'; exit 1; }
 completed=1
+# Keep the old container recoverable, but do not run a frontend in the backend deployment.
+if docker container inspect treba-admin >/dev/null 2>&1; then docker stop treba-admin >/dev/null; fi
 echo "Telegram deployment passed. Revision: $revision"
 echo "Rollback container retained: $previous"
 echo "Previous Caddy configuration retained: $caddy_backup"

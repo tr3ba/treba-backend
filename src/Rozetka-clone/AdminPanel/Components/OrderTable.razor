@@ -1,9 +1,0 @@
-@inject UiTime Time
-<div class="table-wrap"><table class="custom-table"><thead><tr><th>@O["OrderNumber"]</th><th>@O["Customer"]</th><th>@L["Status"]</th><th>@O["Items"]</th><th>@O["Amount"]</th><th>@O["Created"]</th></tr></thead><tbody>
-@foreach (var row in Rows)
-{
-    <tr><td><a class="record-link" href="@($"/orders/{row.Id}")"><i class="bi bi-bag-check" aria-hidden="true"></i>@row.OrderNumber<i class="bi bi-arrow-up-right" aria-hidden="true"></i></a></td><td>@row.CustomerName</td><td><OperationsStatusBadge Domain="Order" Value="@row.Status" />@if(row.Status is "PAID" or "CONFIRMED" or "PROCESSING" or "READY_FOR_SHIPMENT" or "SHIPPED" or "DELIVERED"){<a class="record-link operations-block-link" href="@($"/orders/{row.Id}#fulfillment")"><i class="bi bi-truck" aria-hidden="true"></i>@O["ManageDelivery"]</a>}</td><td>@row.ItemCount</td><td>@row.TotalAmount.ToString("N2") @row.Currency</td><td>@Time.Local(row.CreatedAt).ToString("g")</td></tr>
-}
-</tbody></table></div>
-@if (Rows.Count == 0) { <p class="empty-state">@O["NoResults"]</p> }
-@code { [Parameter, EditorRequired] public IReadOnlyList<OrderRow> Rows { get; set; } = []; }

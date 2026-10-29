@@ -69,7 +69,6 @@ Rozetka-clone
 ├── Domain
 ├── Infrastructure
 ├── WebApi
-├── AdminPanel
 └── WebApi.Tests
 ```
 
@@ -94,9 +93,9 @@ Contains database and infrastructure integrations, including
 
 Main ASP.NET Core HTTP API.
 
-### AdminPanel
+### Administrative interface
 
-Administrative part of the backend solution.
+The administrative UI and seller workspace are maintained in `treba-frontend` at `/admin`. This repository contains the administrative API and business services. See [the frontend migration](docs/admin-frontend-migration.md).
 
 ### WebApi.Tests
 

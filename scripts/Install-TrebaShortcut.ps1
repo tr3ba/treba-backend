@@ -15,7 +15,7 @@ $shortcut.TargetPath = Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\po
 $shortcut.Arguments = '-NoProfile -ExecutionPolicy Bypass -File "' + (Join-Path $repository 'scripts\Start-Treba.ps1') + '"'
 if ($LocalApi) { $shortcut.Arguments += ' -LocalApi -LocalSettings "' + $localSettings + '"' }
 $shortcut.WorkingDirectory = $repository
-$shortcut.IconLocation = Join-Path $repository 'src\Rozetka-clone\AdminPanel\wwwroot\favicon.ico'
+$shortcut.IconLocation = Join-Path (Split-Path $repository -Parent) 'treba-frontend\src\app\favicon.ico'
 $shortcut.Description = if ($LocalApi) { 'TREBA development: local API and database tunnel' } else { 'TREBA admin panel with Telegram and Guard' }
 $shortcut.WindowStyle = 1
 $shortcut.Save()
