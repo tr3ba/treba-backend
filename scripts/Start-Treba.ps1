@@ -132,7 +132,6 @@ try {
     if (!$locked) { Write-Host 'TREBA is already starting. Please wait.'; exit 0 }
     Write-LaunchLog ('Launcher: PowerShell ' + $PSVersionTable.PSVersion + ', repository=' + $repository + ', settings=' + $LocalSettings)
     $apiRoot = Join-Path $repository 'src\Rozetka-clone\WebApi'
-    $adminRoot = Join-Path $repository 'src\Rozetka-clone\AdminPanel'
     $apiSettings = Join-Path $apiRoot 'appsettings.Development.json'
     $settings = & (Join-Path $PSScriptRoot 'Get-TrebaLocalSettings.ps1') -LocalSettings $LocalSettings -ApiSettings $apiSettings
     $apiConfiguration = Get-Content -LiteralPath $apiSettings -Raw | ConvertFrom-Json
@@ -226,7 +225,7 @@ try {
                 [void]$fingerprint.Append($file).Append((Get-SourceHash (Join-Path $repository $file)))
             }
         }
-        foreach ($configurationFile in @((Join-Path $apiRoot 'appsettings.Development.json'), (Join-Path $adminRoot 'appsettings.Development.json'), $LocalSettings)) {
+        foreach ($configurationFile in @((Join-Path $apiRoot 'appsettings.Development.json'), $LocalSettings)) {
             if (Test-Path -LiteralPath $configurationFile) { [void]$fingerprint.Append((Get-SourceHash $configurationFile)) }
         }
         [xml]$apiProject = Get-Content -LiteralPath (Join-Path $apiRoot 'WebApi.csproj') -Raw
@@ -239,21 +238,17 @@ try {
         try { $sourceHash = ([BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($fingerprint.ToString())))).Replace('-','').Substring(0,16) } finally { $sha.Dispose() }
         $build = Join-Path $stateDirectory ('builds\' + $sourceHash)
         $apiDll = Join-Path $build 'bin\WebApi\debug\WebApi.dll'
-        $adminDll = Join-Path $build 'bin\AdminPanel\debug\AdminPanel.dll'
-        if (!(Test-Path -LiteralPath $apiDll) -or !(Test-Path -LiteralPath $adminDll)) {
+        if (!(Test-Path -LiteralPath $apiDll)) {
             & dotnet build (Join-Path $apiRoot 'WebApi.csproj') --artifacts-path $build --nologo --verbosity quiet
             if ($LASTEXITCODE -ne 0) { throw 'API build failed.' }
-            & dotnet build (Join-Path $adminRoot 'AdminPanel.csproj') --artifacts-path $build --nologo --verbosity quiet
-            if ($LASTEXITCODE -ne 0) { throw 'AdminPanel build failed.' }
         }
     } finally { Pop-Location }
 
     $apiOwned = Own-Service $previous $previous.ApiPort
-    $adminOwned = Own-Service $previous $previous.AdminPort
-    Write-LaunchLog ('Previous services: api=' + $apiOwned + ', admin=' + $adminOwned + ', database port=' + $previous.DatabasePort)
-    if ($previous -and $previous.SourceHash -eq $sourceHash -and $previous.DatabasePort -eq $databasePort -and $apiOwned -and $adminOwned) {
+    Write-LaunchLog ('Previous API: ' + $apiOwned)
+    if ($previous -and $previous.SourceHash -eq $sourceHash -and $previous.DatabasePort -eq $databasePort -and $apiOwned) {
         Wait-Url ('http://127.0.0.1:' + $previous.ApiPort + '/health') -OutputLog $previous.ApiOutputLog -ErrorLog $previous.ApiErrorLog
-        $url = 'http://localhost:' + $previous.AdminPort + '/'
+        $url = & (Join-Path (Split-Path $repository -Parent) 'treba-frontend\scripts\start-workspace.ps1') -ApiUrl ('http://127.0.0.1:' + $previous.ApiPort)
         Write-Host ('TREBA is ready: ' + $url) -ForegroundColor Green
         if (!$NoBrowser) { Start-Process $url }
         return
@@ -267,23 +262,19 @@ try {
             while ((Test-Port $port) -and (Get-Date) -lt $deadline) { Start-Sleep -Milliseconds 300 }
         }
     }
-    $apiPort = Free-Port 5290; $adminPort = Free-Port 5218
-    Write-LaunchLog ('Selected ports: database=' + $databasePort + ', api=' + $apiPort + ', admin=' + $adminPort)
+    $apiPort = Free-Port 5290
+    Write-LaunchLog ('Selected ports: database=' + $databasePort + ', api=' + $apiPort)
     $token = New-ControlToken
     $env:ASPNETCORE_ENVIRONMENT = 'Development'; $env:DOTNET_ENVIRONMENT = 'Development'
     $env:LocalLaunch__Token = $token; $env:LocalLaunch__Id = $sourceHash
     $env:ConnectionStrings__DefaultConnection = $routedConnection
     Write-Step 'Starting the API...'
     $apiProcess = Start-App $apiDll $apiRoot @(('--urls=http://127.0.0.1:' + $apiPort),'--ApplyMigrations=false','--BootstrapAdmin:Email=') 'api'
-    $launchState = @{SourceHash=$sourceHash;Token=$token;DatabasePort=$databasePort;ApiPort=$apiPort;AdminPort=$adminPort;ApiPid=$apiProcess.Id;AdminPid=0;LauncherLog=$launcherLog;ApiOutputLog=$appLogs.api.Output;ApiErrorLog=$appLogs.api.Error}
+    $launchState = @{SourceHash=$sourceHash;Token=$token;DatabasePort=$databasePort;ApiPort=$apiPort;AdminPort=0;ApiPid=$apiProcess.Id;AdminPid=0;LauncherLog=$launcherLog;ApiOutputLog=$appLogs.api.Output;ApiErrorLog=$appLogs.api.Error}
     Save-State $launchState $stateFile
     Wait-Url ('http://127.0.0.1:' + $apiPort + '/health') -Process $apiProcess -OutputLog $appLogs.api.Output -ErrorLog $appLogs.api.Error
-    Write-Step 'Starting the admin panel...'
-    $adminProcess = Start-App $adminDll $adminRoot @(('--urls=http://127.0.0.1:' + $adminPort),('--ApiBaseUrl=http://127.0.0.1:' + $apiPort + '/')) 'admin'
-    $launchState.AdminPid = $adminProcess.Id; $launchState.AdminOutputLog = $appLogs.admin.Output; $launchState.AdminErrorLog = $appLogs.admin.Error
-    Save-State $launchState $stateFile
-    Wait-Url ('http://127.0.0.1:' + $adminPort + '/auth/login') -Process $adminProcess -OutputLog $appLogs.admin.Output -ErrorLog $appLogs.admin.Error
-    $url = 'http://localhost:' + $adminPort + '/'
+    Write-Step 'Starting the frontend workspace...'
+    $url = & (Join-Path (Split-Path $repository -Parent) 'treba-frontend\scripts\start-workspace.ps1') -ApiUrl ('http://127.0.0.1:' + $apiPort)
     Write-Host ('TREBA is ready: ' + $url) -ForegroundColor Green
     if (!$NoBrowser) { Start-Process $url }
 } catch {

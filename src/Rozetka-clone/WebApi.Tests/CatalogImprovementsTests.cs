@@ -1,4 +1,3 @@
-using AdminPanel.State;
 using Application.Abstractions;
 using Application.Catalog;
 using Application.Common;
@@ -11,7 +10,6 @@ using Domain.Enums;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using DomainAttribute = Domain.Entities.Attribute.Attribute;
-using UiCategory = AdminPanel.Services.Abstractions.CategoryTreeDto;
 
 namespace WebApi.Tests;
 
@@ -329,22 +327,6 @@ public sealed class CatalogImprovementsTests
         await Assert.ThrowsAsync<BusinessRuleException>(() =>
             service.RejectAsync(product.Id, "A second decision must fail.")
         );
-    }
-
-    [Fact]
-    public void CategoryTree_SearchKeepsParents_AndCollapseUsesActualDepth()
-    {
-        var leaf = new UiCategory(Guid.NewGuid(), "Phones", "phones", true, []);
-        var branch = new UiCategory(Guid.NewGuid(), "Devices", "devices", true, [leaf]);
-        var root = new UiCategory(Guid.NewGuid(), "Electronics", "electronics", true, [branch]);
-        Assert.Single(CategoryTreePresentation.Visible([root], new HashSet<Guid>(), ""));
-        var visible = CategoryTreePresentation.Visible([root], new HashSet<Guid> { root.Id }, "");
-        Assert.Equal(2, visible.Count);
-        var search = CategoryTreePresentation.Visible([root], new HashSet<Guid>(), "phones");
-        Assert.Equal(3, search.Count);
-        Assert.Equal("Electronics → Devices → Phones", search[2].Path);
-        Assert.Equal(2, search[2].Depth);
-        Assert.Empty(CategoryTreePresentation.Visible([root], new HashSet<Guid>(), "unmatched"));
     }
 
     [Theory]

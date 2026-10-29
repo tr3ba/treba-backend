@@ -1,4 +1,3 @@
-using AdminPanel.Auth;
 using Application.Administration;
 using Application.Common;
 using Application.Reviews;
@@ -238,9 +237,8 @@ public sealed class AdminWorkspaceTests
     [InlineData("Moderator", true)]
     [InlineData("Seller", false)]
     [InlineData("Customer", false)]
-    public void ReviewPageAndApi_GrantSameRoles(string role, bool allowed)
+    public void ReviewAndDashboardApi_GrantSameRoles(string role, bool allowed)
     {
-        Assert.Equal(allowed, AdminAccess.CanAccess(role, "/reviews"));
         foreach (var type in new[] { typeof(AdminReviewsController), typeof(AdminDashboardController) })
         {
             var policy = Assert.Single(

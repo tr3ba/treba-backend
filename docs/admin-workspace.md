@@ -1,3 +1,5 @@
+> The administrative interface has moved to `treba-frontend` at `/admin`. See [current migration and delivery notes](admin-frontend-migration.md). UI paths below describe the previous panel unless prefixed with `/admin`.
+
 # Admin workspace
 
 ## Sellers

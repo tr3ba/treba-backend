@@ -1,6 +1,7 @@
-﻿Microsoft Visual Studio Solution File, Format Version 12.00
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.9.12020.428 insiders
+VisualStudioVersion = 18.9.12020.428
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Application", "Application\Application.csproj", "{F1AFAB50-1B41-4EDD-AABD-CD05F61C70E1}"
 EndProject
@@ -9,8 +10,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure", "Infrastructure\Infrastructure.csproj", "{1A02C58E-814A-42B6-ACFF-EDE7A1032AF6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Contracts", "Contracts\Contracts.csproj", "{F9CE78D5-D402-4F26-BF2F-EBB6FC2BACA8}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AdminPanel", "AdminPanel\AdminPanel.csproj", "{4650384A-BEDD-47E3-A6D6-EEC45D2C40E0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApi", "WebApi\WebApi.csproj", "{D6C9F08A-D0B9-405E-BAF8-E9FBA4B2AF0E}"
 EndProject
@@ -38,10 +37,6 @@ Global
 		{F9CE78D5-D402-4F26-BF2F-EBB6FC2BACA8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F9CE78D5-D402-4F26-BF2F-EBB6FC2BACA8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F9CE78D5-D402-4F26-BF2F-EBB6FC2BACA8}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4650384A-BEDD-47E3-A6D6-EEC45D2C40E0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4650384A-BEDD-47E3-A6D6-EEC45D2C40E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4650384A-BEDD-47E3-A6D6-EEC45D2C40E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4650384A-BEDD-47E3-A6D6-EEC45D2C40E0}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D6C9F08A-D0B9-405E-BAF8-E9FBA4B2AF0E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D6C9F08A-D0B9-405E-BAF8-E9FBA4B2AF0E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D6C9F08A-D0B9-405E-BAF8-E9FBA4B2AF0E}.Release|Any CPU.ActiveCfg = Release|Any CPU

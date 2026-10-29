@@ -3,7 +3,6 @@ WORKDIR /src
 
 COPY src/Rozetka-clone/Rozetka-clone.sln ./src/Rozetka-clone/
 
-COPY src/Rozetka-clone/AdminPanel/AdminPanel.csproj ./src/Rozetka-clone/AdminPanel/
 COPY src/Rozetka-clone/Application/Application.csproj ./src/Rozetka-clone/Application/
 COPY src/Rozetka-clone/Contracts/Contracts.csproj ./src/Rozetka-clone/Contracts/
 COPY src/Rozetka-clone/Domain/Domain.csproj ./src/Rozetka-clone/Domain/
@@ -11,7 +10,6 @@ COPY src/Rozetka-clone/Infrastructure/Infrastructure.csproj ./src/Rozetka-clone/
 COPY src/Rozetka-clone/WebApi/WebApi.csproj ./src/Rozetka-clone/WebApi/
 
 RUN dotnet restore src/Rozetka-clone/WebApi/WebApi.csproj
-RUN dotnet restore src/Rozetka-clone/AdminPanel/AdminPanel.csproj
 
 COPY src/Rozetka-clone ./src/Rozetka-clone
 
@@ -20,7 +18,6 @@ RUN dotnet publish src/Rozetka-clone/WebApi/WebApi.csproj \
     -o /app/publish \
     /p:UseAppHost=false
 
-RUN dotnet publish src/Rozetka-clone/AdminPanel/AdminPanel.csproj -c Release -o /app/admin /p:UseAppHost=false
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
@@ -30,7 +27,6 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /app/publish .
-COPY --from=build /app/admin /app/admin
 
 EXPOSE 5000
 

@@ -83,7 +83,7 @@ jobs:
             -e Security__OtpHashKey="$OTP_TEST_KEY" \
             "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
 
-          trap 'docker rm -f treba-backend-test treba-admin-test treba-mini-proxy-test >/dev/null 2>&1 || true' EXIT
+          trap 'docker rm -f treba-backend-test treba-mini-proxy-test >/dev/null 2>&1 || true' EXIT
 
           echo "Waiting for backend /ping..."
           ready=false
@@ -134,23 +134,6 @@ jobs:
             sleep 1
           done
           python3 scripts/server/check-mini-app-modules.py http://localhost:5052
-
-          docker run -d --name treba-admin-test -p 5051:5100 \
-            -e ASPNETCORE_URLS=http://+:5100 -e WebsiteLogin__Enabled=true \
-            -e WebsiteLogin__StoreOrigin=https://treba.duckdns.org \
-            -e WebsiteLogin__AdminOrigin=https://admin.treba.duckdns.org \
-            --entrypoint dotnet "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" \
-            /app/admin/AdminPanel.dll --contentRoot=/app/admin
-          admin_ready=false
-          for attempt in $(seq 1 20); do
-            if curl -fsS http://localhost:5051/health >/dev/null 2>&1; then admin_ready=true; break; fi
-            sleep 1
-          done
-          [ "$admin_ready" = true ] || { echo 'Published AdminPanel did not start.'; exit 1; }
-          curl -fsS http://localhost:5051/ | grep 'blazor.web.js' >/dev/null
-          curl -fsS http://localhost:5051/js/site-login.js | grep 'trebaSiteLogin' >/dev/null
-          [ "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:5051/site-login/start)" = 302 ]
-          echo 'Published AdminPanel HTML, assets and website entry passed.'
 
           docker push "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
           if [ "$GITHUB_REF" = refs/heads/main ]; then

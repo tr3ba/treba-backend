@@ -89,6 +89,7 @@ services:
 
     environment:
       NODE_ENV: production
+      TREBA_API_URL: http://backend:5000
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:5000}
       NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-Treba Marketplace}
       NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}

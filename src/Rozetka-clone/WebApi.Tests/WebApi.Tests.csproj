@@ -26,7 +26,6 @@
     <ProjectReference Include="..\Application\Application.csproj" />
     <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
     <ProjectReference Include="..\WebApi\WebApi.csproj" />
-    <ProjectReference Include="..\AdminPanel\AdminPanel.csproj" />
   </ItemGroup>
 
 </Project>
