@@ -107,6 +107,8 @@ public sealed class PostgresDeliveryNotificationTests
     [PostgresFact]
     public async Task DeliveryMigration_PreservesExistingData_AndReapplicationDoesNothing()
     {
+        const string deliveryMigration = "20261024192735_AddDeliveryAndCustomerNotifications";
+        const string shipmentMigration = "20261026142406_AddManagedShipmentLifecycle";
         var connection = Environment.GetEnvironmentVariable("TREBA_TEST_POSTGRES")!;
         var schema = "treba_qa_delivery_migration_" + Guid.NewGuid().ToString("N");
         await using var owner = new NpgsqlConnection(connection); await owner.OpenAsync();
@@ -123,20 +125,26 @@ public sealed class PostgresDeliveryNotificationTests
                 CREATE TABLE "__EFMigrationsHistory" ("MigrationId" varchar(150) PRIMARY KEY, "ProductVersion" varchar(32) NOT NULL);
                 """, sql)) await baseline.ExecuteNonQueryAsync();
             await using var db = new ApplicationDbContext(new DbContextOptionsBuilder<ApplicationDbContext>().UseNpgsql(isolated).Options);
-            foreach (var migration in db.Database.GetMigrations().TakeWhile(m => m != "20261024192735_AddDeliveryAndCustomerNotifications"))
+            foreach (var migration in db.Database.GetMigrations().TakeWhile(m => m != deliveryMigration))
             {
                 await using var record = new NpgsqlCommand("INSERT INTO \"__EFMigrationsHistory\" VALUES (@id, '10.0.11')", sql);
                 record.Parameters.AddWithValue("id", migration); await record.ExecuteNonQueryAsync();
             }
-            await db.GetService<IMigrator>().MigrateAsync("20261024192735_AddDeliveryAndCustomerNotifications");
+            var migrator = db.GetService<IMigrator>();
+            await migrator.MigrateAsync(deliveryMigration);
             await using (var seed = new NpgsqlCommand("""
                 INSERT INTO orders ("Id", "Note", "Status") VALUES ('44444444-4444-4444-4444-444444444444', 'Paid order', 'PAID');
                 INSERT INTO order_shipments ("OrderId", "CityRef", "PickupPointRef", "City", "PickupPoint", "Postomat", "Reference", "QuotedPrice", "WeightKg", "EstimatedWeight")
                 VALUES ('33333333-3333-3333-3333-333333333333', '11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', 'Київ', 'Відділення №1', false, 'TREBA-DEMO-UNPAID', 90, 1, false),
                        ('44444444-4444-4444-4444-444444444444', '11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', 'Київ', 'Відділення №2', false, 'TREBA-DEMO-PAID', 90, 1, false);
                 """, sql)) await seed.ExecuteNonQueryAsync();
-            await db.Database.MigrateAsync(); await db.Database.MigrateAsync();
-            Assert.Empty(await db.Database.GetPendingMigrationsAsync());
+            // This fixture contains only the delivery baseline. Later authentication or catalog
+            // migrations must not run against its intentionally incomplete schema.
+            await migrator.MigrateAsync(shipmentMigration);
+            await migrator.MigrateAsync(shipmentMigration);
+            Assert.Equal(shipmentMigration, (await db.Database.GetAppliedMigrationsAsync()).Last());
+            Assert.All(await db.Database.GetPendingMigrationsAsync(), migration =>
+                Assert.True(StringComparer.Ordinal.Compare(migration, shipmentMigration) > 0));
             Assert.Empty(await db.CustomerNotifications.ToListAsync()); Assert.Empty(await db.DeliveryQuotes.ToListAsync());
             var shipments = await db.OrderShipments.AsNoTracking().OrderBy(s => s.OrderId).ToListAsync();
             Assert.Null(shipments[0].Reference); Assert.Equal("TRB-PAID", shipments[1].Reference);
