@@ -30,7 +30,9 @@ namespace Application.Reviews
         Task ModerateReviewAsync(
             Guid reviewId,
             ReviewStatus status,
-            CancellationToken cancellationToken = default);
+            CancellationToken cancellationToken = default,
+            string? reply = null,
+            Guid? repliedBy = null);
 
         Task VoteReviewAsync(
             Guid reviewId,

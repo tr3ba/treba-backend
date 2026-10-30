@@ -26,6 +26,7 @@ namespace Infrastructure.Persistence.Configurations
             );
 
             builder.HasKey(x => x.Id);
+            builder.Property(x => x.StaffReply).HasMaxLength(2000);
 
             builder
                 .Property(x => x.Id)

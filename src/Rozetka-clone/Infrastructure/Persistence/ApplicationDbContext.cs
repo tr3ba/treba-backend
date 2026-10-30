@@ -30,6 +30,7 @@ namespace Infrastructure.Persistence
         public DbSet<CustomerNotificationSettings> CustomerNotificationSettings => Set<CustomerNotificationSettings>();
         public DbSet<CustomerNotification> CustomerNotifications => Set<CustomerNotification>();
         public DbSet<FeatureFlag> FeatureFlags => Set<FeatureFlag>();
+        public DbSet<ReviewReplyTemplate> ReviewReplyTemplates => Set<ReviewReplyTemplate>();
         public DbSet<SellerApplication> SellerApplications => Set<SellerApplication>();
         public DbSet<CustomerPreferences> CustomerPreferences => Set<CustomerPreferences>();
         public DbSet<NotificationReceipt> NotificationReceipts => Set<NotificationReceipt>();

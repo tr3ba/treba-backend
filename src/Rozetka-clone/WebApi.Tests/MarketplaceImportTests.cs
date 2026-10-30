@@ -12,6 +12,7 @@ public sealed class MarketplaceImportTests
 {
     [Theory]
     [InlineData("https://rozetka.com.ua/ua/example/p622282721/?utm_source=test", "rozetka")]
+    [InlineData("https://auto.rozetka.com.ua/ua/rubeg_op2/p2119937/", "rozetka")]
     [InlineData("https://prom.ua/ua/p123456-test-product.html", "prom")]
     [InlineData("https://seller.prom.ua/p123456-test-product.html", "prom")]
     [InlineData("https://epicentrk.ua/ua/shop/test-product.html#description", "epic")]
@@ -24,7 +25,6 @@ public sealed class MarketplaceImportTests
     }
 
     [Theory]
-    [InlineData("https://prom.ua.evil.test/ua/p123-test.html")]
     [InlineData("https://epicentrk.ua/ua/shop/category/")]
     [InlineData("https://prom.ua/ua/catalog.html")]
     [InlineData("https://prom.ua:444/ua/p123-test.html")]
@@ -157,6 +157,24 @@ public sealed class MarketplaceImportTests
         using var source = new MarketplaceSourceClient(http);
         Assert.Contains("<h1>Product</h1>", await source.GetPageAsync(RozetkaUrl, default));
         Assert.Equal(2, calls);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Source_EnrichesMissingApiDescription_AndKeepsAvailableDataIfHtmlIsBlocked(bool blocked)
+    {
+        using var http = new HttpClient(new Handler(request =>
+            request.RequestUri!.Host == "product-api.rozetka.com.ua"
+                ? request.RequestUri.AbsolutePath.EndsWith("get-main") ? Json(MainJson.Replace("<p>8 GB / SSD 512 GB</p>", "")) : Json("""{"success":true,"data":[]} """)
+                : blocked ? new(HttpStatusCode.Forbidden) : new(HttpStatusCode.OK) { Content = new StringContent("""
+                    <script type="application/ld+json">{"@type":"Product","name":"ASUS Example","description":"Full public product description"}</script>
+                    """, Encoding.UTF8, "text/html") }));
+        using var source = new MarketplaceSourceClient(http);
+        var data = new MarketplaceProductParser().Parse(RozetkaUrl, await source.GetPageAsync(RozetkaUrl, default));
+        Assert.Equal("ASUS Example", data.Name);
+        Assert.Equal(blocked ? "" : "Full public product description", data.Description);
+        Assert.Single(data.Images);
     }
 
     [Fact]

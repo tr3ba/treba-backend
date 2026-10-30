@@ -160,7 +160,7 @@ public sealed partial class ProductImportService(ApplicationDbContext db, IMarke
             var urls = JsonSerializer.Deserialize<List<string>>(draft.ImagesJson) ?? [];
             for (var index = 0; index < urls.Count; index++)
             {
-                var bytes = await source.GetImageAsync(MarketplaceSourceClient.ImageUri(urls[index]), ct);
+                var bytes = await source.GetImageAsync(MarketplaceSourceClient.ImageUri(urls[index], allowExternal: MarketplaceSourceClient.Provider(new Uri(draft.SourceUrl)) == "web"), ct);
                 if (bytes.Length is <= 0 or > 5 * 1024 * 1024) throw new BusinessRuleException("Фотографія джерела перевищує допустимий розмір.");
                 var extension = ImageExtension(bytes) ?? throw new BusinessRuleException("Фотографія джерела має непідтримуваний формат.");
                 var fileName = Guid.NewGuid().ToString("N") + extension;
@@ -208,6 +208,10 @@ public sealed partial class ProductImportService(ApplicationDbContext db, IMarke
         await db.Categories.Where(c => c.Id == draft.CategoryId).Select(c => c.Name).SingleAsync(ct), draft.SourcePrice,
         JsonSerializer.Deserialize<List<string>>(draft.ImagesJson) ?? [], JsonSerializer.Deserialize<List<ImportedCharacteristicDto>>(draft.CharacteristicsJson) ?? [],
         draft.ExpiresAt, draft.ProductId, draft.SubmittedAt) { BrandId = brandId == Guid.Empty ? null : brandId, ManufacturerPartNumber = identifiers.PartNumber, Barcode = identifiers.Barcode, Duplicates = duplicates,
+            SourceSku = (JsonSerializer.Deserialize<List<ImportedCharacteristicDto>>(draft.CharacteristicsJson) ?? []).FirstOrDefault(value => value.Name == "SKU")?.Value ?? "",
+            SourceCurrency = (JsonSerializer.Deserialize<List<ImportedCharacteristicDto>>(draft.CharacteristicsJson) ?? []).FirstOrDefault(value => value.Name == "Валюта джерела")?.Value ?? "",
+            SourceWarnings = string.IsNullOrWhiteSpace(draft.Description) || draft.Description.StartsWith("\n\nХарактеристики джерела:\n", StringComparison.Ordinal)
+                ? ["Сайт не передав повний опис. Характеристики збережено. Доповніть опис перед створенням товару."] : [],
             CanClassifyCategory = draft.SubmittedAt is null && draft.SourceCategoryKey.StartsWith("u:", StringComparison.Ordinal) && await access.CanClassifyUnmappedImportsAsync(draft.UserId, ct) };
     }
     private static (string PartNumber, string Barcode) ReadIdentifiers(ProductImportDraft draft)
@@ -216,6 +220,8 @@ public sealed partial class ProductImportService(ApplicationDbContext db, IMarke
         string Find(params string[] names) => values.FirstOrDefault(v => names.Contains(CatalogDuplicateService.Normalize(v.Name)))?.Value ?? "";
         var part = Find("АРТИКУЛПРОИЗВОДИТЕЛЯ", "АРТИКУЛВИРОБНИКА", "MPN", "КОДВИРОБНИКА");
         var barcode = Find("ШТРИХКОД", "EAN", "GTIN", "EAN13");
+        var firstCode = System.Text.RegularExpressions.Regex.Match(barcode, @"(?<![0-9])(?:[0-9]{14}|[0-9]{13}|[0-9]{12}|[0-9]{8})(?![0-9])");
+        if (firstCode.Success) barcode = firstCode.Value;
         return (part[..Math.Min(100, part.Length)], CatalogDuplicateService.Normalize(barcode)[..Math.Min(100, CatalogDuplicateService.Normalize(barcode).Length)]);
     }
     public static string? ImageExtension(byte[] bytes)

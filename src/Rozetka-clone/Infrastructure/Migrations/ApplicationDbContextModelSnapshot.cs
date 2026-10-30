@@ -1632,6 +1632,16 @@ namespace Infrastructure.Migrations
                     b.Property<int>("Rating")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime?>("StaffRepliedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("StaffRepliedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("StaffReply")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -1689,6 +1699,81 @@ namespace Infrastructure.Migrations
                     b.HasIndex("ReviewId");
 
                     b.ToTable("review_images", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Entities.ReviewReplyTemplate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<string>("TextEn")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("TextUk")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Enabled");
+
+                    b.ToTable("review_reply_templates", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("a1000000-0000-4000-8000-000000000001"),
+                            Enabled = true,
+                            Name = "Подяка за відгук",
+                            TextEn = "{customer}, thank you for your review! We appreciate you sharing your experience with {product}.",
+                            TextUk = "{customer}, дякуємо за ваш відгук! Раді, що ви поділилися враженнями про {product}.",
+                            UpdatedAt = new DateTimeOffset(new DateTime(2026, 10, 30, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            UpdatedBy = new Guid("00000000-0000-0000-0000-000000000000"),
+                            Version = new Guid("a1000000-0000-4000-8000-000000000011")
+                        },
+                        new
+                        {
+                            Id = new Guid("a1000000-0000-4000-8000-000000000002"),
+                            Enabled = true,
+                            Name = "Раді вдалим покупкам",
+                            TextEn = "Thank you for choosing TREBA! We are glad that {product} met your expectations. We look forward to seeing you again!",
+                            TextUk = "Дякуємо, що обираєте TREBA! Приємно знати, що {product} виправдав ваші очікування. Будемо раді бачити вас знову!",
+                            UpdatedAt = new DateTimeOffset(new DateTime(2026, 10, 30, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            UpdatedBy = new Guid("00000000-0000-0000-0000-000000000000"),
+                            Version = new Guid("a1000000-0000-4000-8000-000000000012")
+                        },
+                        new
+                        {
+                            Id = new Guid("a1000000-0000-4000-8000-000000000003"),
+                            Enabled = true,
+                            Name = "Допомога з покупкою",
+                            TextEn = "{customer}, thank you for your feedback. We are sorry you experienced difficulties. Please contact TREBA support with your order number so we can help.",
+                            TextUk = "{customer}, дякуємо за зворотний зв’язок. Нам шкода, що ви зіткнулися з труднощами. Будь ласка, зверніться до підтримки TREBA з номером замовлення, щоб ми могли допомогти.",
+                            UpdatedAt = new DateTimeOffset(new DateTime(2026, 10, 30, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            UpdatedBy = new Guid("00000000-0000-0000-0000-000000000000"),
+                            Version = new Guid("a1000000-0000-4000-8000-000000000013")
+                        });
                 });
 
             modelBuilder.Entity("Domain.Entities.ReviewVote", b =>

@@ -42,6 +42,14 @@ public sealed class MarketplaceSourceClient : IMarketplaceSourceClient, IDisposa
                     if (Successful(details)) json["trebaCharacteristics"] = details!["data"]?.DeepClone();
                 }
                 catch (Exception ex) when (ex is BusinessRuleException or System.Text.Json.JsonException) { /* Main product data remains usable. */ }
+                if (json["data"] is JsonObject product && MissingDescription(product))
+                {
+                    using var enrichment = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                    enrichment.CancelAfter(TimeSpan.FromSeconds(5));
+                    try { json["trebaHtml"] = Encoding.UTF8.GetString(await DownloadAsync(uri, "page", 4 * 1024 * 1024, enrichment.Token)); }
+                    catch (Exception ex) when (ex is BusinessRuleException || ex is OperationCanceledException && !ct.IsCancellationRequested)
+                    { /* Keep the public API data when the optional description page is blocked. */ }
+                }
                 return json.ToJsonString();
             }
             catch (Exception ex) when (ex is BusinessRuleException or System.Text.Json.JsonException)
@@ -51,6 +59,8 @@ public sealed class MarketplaceSourceClient : IMarketplaceSourceClient, IDisposa
     }
     public Task<byte[]> GetImageAsync(Uri uri, CancellationToken ct) => DownloadAsync(uri, "image", 5 * 1024 * 1024, ct);
     private static bool Successful(JsonNode? node) => node is JsonObject && node["success"] is JsonValue value && value.TryGetValue<bool>(out var success) && success;
+    private static bool MissingDescription(JsonObject product) => string.IsNullOrWhiteSpace(product["description"] is JsonObject description ? description["text"]?.ToString() : product["description"]?.ToString())
+        && string.IsNullOrWhiteSpace(product["docket"]?.ToString());
     private static Uri RozetkaApiUri(string action, string id) => new($"https://product-api.rozetka.com.ua/v4/goods/{action}?goodsId={id}&lang=ua&country=UA");
 
     private async Task<byte[]> DownloadAsync(Uri uri, string kind, int maxBytes, CancellationToken ct)
@@ -70,7 +80,7 @@ public sealed class MarketplaceSourceClient : IMarketplaceSourceClient, IDisposa
     {
         for (var redirect = 0; redirect < 4; redirect++)
         {
-            if (kind == "image") ImageUri(uri.AbsoluteUri);
+            if (kind == "image") ImageUri(uri.AbsoluteUri, allowExternal: true);
             else if (kind == "page") ProductUri(uri.AbsoluteUri);
             else if (uri.Host != "product-api.rozetka.com.ua" || uri.Scheme != "https" || !uri.IsDefaultPort || uri.UserInfo.Length != 0
                 || !Regex.IsMatch(uri.PathAndQuery, @"^/v4/goods/(get-main|get-characteristic)\?goodsId=[1-9][0-9]{0,11}&lang=ua&country=UA$"))
@@ -88,7 +98,13 @@ public sealed class MarketplaceSourceClient : IMarketplaceSourceClient, IDisposa
                 {
                     if (response.Headers.Location is null) break;
                     var next = new Uri(uri, response.Headers.Location);
-                    if (kind == "page" && Provider(ProductUri(next.AbsoluteUri)) != Provider(uri)) throw new ArgumentException("Джерело перенаправило на інший маркетплейс.");
+                    if (kind == "page")
+                    {
+                        var target = ProductUri(next.AbsoluteUri);
+                        if (Provider(target) != Provider(uri) || Provider(uri) == "web" &&
+                            !SiteHost(target).Equals(SiteHost(uri), StringComparison.OrdinalIgnoreCase))
+                            throw new ArgumentException("Джерело перенаправило на інший сайт. Використайте кінцеве посилання на товар.");
+                    }
                     uri = next; continue;
                 }
                 if (response.StatusCode is HttpStatusCode.Forbidden or HttpStatusCode.TooManyRequests or HttpStatusCode.ServiceUnavailable)
@@ -119,31 +135,44 @@ public sealed class MarketplaceSourceClient : IMarketplaceSourceClient, IDisposa
             "rozetka" => Regex.IsMatch(uri.AbsolutePath, @"/p[1-9][0-9]{0,11}/?$"),
             "prom" => Regex.IsMatch(uri.AbsolutePath, @"^/(?:ua/)?p[1-9][0-9]{0,11}-[^/]+\.html$"),
             "epic" => Regex.IsMatch(uri.AbsolutePath, @"^/(?:ua/)?shop/[^/]+\.html$"),
+            "web" => uri.AbsolutePath != "/" || uri.Query.Length > 1,
             _ => false
         };
-        if (!valid) throw new ArgumentException("Укажіть HTTPS-посилання на конкретний товар Rozetka, Prom.ua або Епіцентру.");
+        if (!valid) throw new ArgumentException("Укажіть публічне HTTPS-посилання на конкретний товар.");
+        if (Provider(uri) == "web")
+        {
+            var builder = new UriBuilder(uri) { Fragment = "" };
+            var query = uri.Query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries)
+                .Where(part => !Regex.IsMatch(part.Split('=')[0], @"^(utm_[^=]*|gclid|fbclid|yclid)$", RegexOptions.IgnoreCase));
+            builder.Query = string.Join('&', query);
+            return builder.Uri;
+        }
         var path = uri.AbsolutePath;
         if (!path.StartsWith("/ua/", StringComparison.OrdinalIgnoreCase)) path = "/ua" + path;
         return new Uri(uri.GetLeftPart(UriPartial.Authority) + path);
     }
-    public static string Provider(Uri uri) => uri.Host is "rozetka.com.ua" or "www.rozetka.com.ua" ? "rozetka"
+    public static string Provider(Uri uri) => uri.Host == "rozetka.com.ua" || uri.Host.EndsWith(".rozetka.com.ua", StringComparison.OrdinalIgnoreCase) ? "rozetka"
         : uri.Host == "prom.ua" || uri.Host.EndsWith(".prom.ua", StringComparison.OrdinalIgnoreCase) ? "prom"
-        : uri.Host is "epicentrk.ua" or "www.epicentrk.ua" ? "epic" : "";
-    public static Uri ImageUri(string value)
+        : uri.Host is "epicentrk.ua" or "www.epicentrk.ua" ? "epic" : "web";
+    public static Uri ImageUri(string value, bool allowExternal = false)
     {
         var uri = SecureUri(value);
         var allowed = Regex.IsMatch(uri.Host, @"^content[0-9]*\.rozetka\.com\.ua$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)
                 && uri.AbsolutePath.StartsWith("/goods/images/", StringComparison.OrdinalIgnoreCase)
             || uri.Host is "images.prom.ua" or "images.promcdn.ua"
             || uri.Host is "cdn.epicentrk.ua" or "cdn.27.ua" || uri.Host == "epicentrk.ua" && uri.AbsolutePath.StartsWith("/upload/", StringComparison.OrdinalIgnoreCase);
-        if (!allowed) throw new ArgumentException("Фотографія має бути у сховищі підтримуваного маркетплейсу.");
+        if (!allowed && !allowExternal) throw new ArgumentException("Фотографія має бути у сховищі підтримуваного маркетплейсу.");
         return uri;
     }
     private static Uri SecureUri(string value)
     {
         if (value.Length > 2048 || !Uri.TryCreate(value, UriKind.Absolute, out var uri) || uri.Scheme != "https"
             || !uri.IsDefaultPort || !string.IsNullOrEmpty(uri.UserInfo) || uri.HostNameType != UriHostNameType.Dns)
-            throw new ArgumentException("Дозволено лише публічні HTTPS-посилання підтримуваних маркетплейсів.");
+            throw new ArgumentException("Дозволено лише публічні HTTPS-посилання без пароля та нестандартного порту.");
+        var host = uri.IdnHost.TrimEnd('.');
+        if (!host.Contains('.') || host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
+            || new[] { ".localhost", ".local", ".internal", ".lan", ".home", ".onion", ".arpa" }.Any(suffix => host.EndsWith(suffix, StringComparison.OrdinalIgnoreCase)))
+            throw new ArgumentException("Локальні та внутрішні адреси не підтримуються.");
         return uri;
     }
     public static bool IsPublicAddress(IPAddress ip)
@@ -174,4 +203,5 @@ public sealed class MarketplaceSourceClient : IMarketplaceSourceClient, IDisposa
         throw new HttpRequestException("Could not connect to source.");
     }
     public void Dispose() => client.Dispose();
+    private static string SiteHost(Uri uri) => uri.IdnHost.StartsWith("www.", StringComparison.OrdinalIgnoreCase) ? uri.IdnHost[4..] : uri.IdnHost;
 }

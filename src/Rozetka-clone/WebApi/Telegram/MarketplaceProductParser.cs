@@ -23,6 +23,7 @@ public sealed class MarketplaceProductParser
         source = MarketplaceSourceClient.ProductUri(source.AbsoluteUri);
         if (html.Length > 4 * 1024 * 1024) throw new ArgumentException("Сторінка надто велика.");
         var provider = MarketplaceSourceClient.Provider(source);
+        if (provider == "web") return new GenericProductParser().Parse(source, html);
         if (provider == "rozetka" && html.AsSpan().TrimStart().StartsWith("{")) return ParseRozetkaApi(source, html);
         using var document = new HtmlParser().ParseDocument(html);
         if (document.QuerySelector("#challenge-running, #challenge-form, script[src*='challenge-platform']") is not null
@@ -157,7 +158,7 @@ public sealed class MarketplaceProductParser
             foreach (var image in imageList.EnumerateArray())
                 foreach (var size in new[] { "big", "original", "large" })
                     if (image.TryGetProperty(size, out var sized)) { AddImage(images, Text(sized, "url")); break; }
-        var description = data.TryGetProperty("description", out var descriptionNode) ? Text(descriptionNode, "text") : null;
+        var description = data.TryGetProperty("description", out var descriptionNode) ? descriptionNode.ValueKind == JsonValueKind.String ? descriptionNode.GetString() : Text(descriptionNode, "text") : null;
         if (string.IsNullOrWhiteSpace(description)) description = Text(data, "docket");
         var characteristics = new List<ImportedCharacteristicDto>();
         if (root.TryGetProperty("trebaCharacteristics", out var groups) && groups.ValueKind == JsonValueKind.Array)
@@ -173,6 +174,16 @@ public sealed class MarketplaceProductParser
                     }
         AddIdentifier(characteristics, "Артикул виробника", Text(data, "article"));
         AddIdentifier(characteristics, "Штрихкод", Text(data, "barcode") ?? Text(data, "gtin"));
+        if (Text(root, "trebaHtml") is { } html)
+            try
+            {
+                var page = new MarketplaceProductParser().Parse(source, html);
+                if (page.Description.Length > (description?.Length ?? 0)) description = page.Description;
+                foreach (var image in page.Images) AddImage(images, image);
+                foreach (var item in page.Characteristics)
+                    if (characteristics.Count < 100 && !characteristics.Any(existing => existing.Name == item.Name && existing.Value == item.Value)) characteristics.Add(item);
+            }
+            catch (Exception ex) when (ex is BusinessRuleException or ArgumentException) { /* Optional public HTML can be incomplete. */ }
         decimal? price = decimal.TryParse(Text(data, "price"), NumberStyles.Number, CultureInfo.InvariantCulture, out var amount) && amount is > 0 and <= 999999999.99m ? decimal.Round(amount, 2) : null;
         var brand = Text(data, "brand") ?? (data.TryGetProperty("brand", out var brandNode) ? Text(brandNode, "name") ?? Text(brandNode, "title") : null);
         return new(expectedId, source.AbsoluteUri, name, Clean(description ?? "", 10000), ResolveBrand(brand, name, characteristics), "c" + categoryId,

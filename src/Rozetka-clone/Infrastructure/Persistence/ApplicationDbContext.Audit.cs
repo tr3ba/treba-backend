@@ -20,7 +20,7 @@ public sealed partial class ApplicationDbContext
         ["Brand"] = ["Name", "Slug", "IsActive"],
         ["Seller"] = ["CompanyName", "Status"],
         ["Store"] = ["Name", "Slug", "IsActive"],
-        ["Review"] = ["Status"]
+        ["Review"] = ["Status", "StaffReply"]
         ,
         ["Order"] = ["Status", "TotalAmount"]
         ,
@@ -35,6 +35,8 @@ public sealed partial class ApplicationDbContext
         ["SupportTicket"] = ["Status", "Kind", "Subject", "IsDeleted", "DeletedAt", "DeletedBy"]
         ,
         ["FeatureFlag"] = ["Key", "Enabled"]
+        ,
+        ["ReviewReplyTemplate"] = ["Name", "TextUk", "TextEn", "Enabled"]
         ,
         ["TelegramBinding"] = ["UserId", "TelegramUserId", "Username"]
         ,
