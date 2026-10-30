@@ -106,7 +106,7 @@ public sealed class AdminUsersController : ControllerBase
         _dbContext.Users.Add(user);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        var response = MapDetails(user);
+        var response = MapDetails(user, customerRole.Name);
 
         return CreatedAtAction(
             nameof(GetUserById),
@@ -267,7 +267,8 @@ public sealed class AdminUsersController : ControllerBase
                                         address.DefaultAddress
                                     )
                             )
-                            .ToList()
+                            .ToList(),
+                        user.Role == null ? null : user.Role.Name
                     )
             )
             .SingleOrDefaultAsync(cancellationToken);
@@ -346,7 +347,8 @@ public sealed class AdminUsersController : ControllerBase
     }
 
     private static UserDetailsResponse MapDetails(
-        DomainUser user
+        DomainUser user,
+        string role
     )
     {
         return new(
@@ -363,7 +365,8 @@ public sealed class AdminUsersController : ControllerBase
             user.UpdatedAt,
             user.LastLoginAt,
             null,
-            []
+            [],
+            role
         );
     }
 }
