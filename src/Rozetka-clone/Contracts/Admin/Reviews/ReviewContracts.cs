@@ -16,6 +16,8 @@ public sealed record AdminReviewDto(
     string Status,
     bool VerifiedPurchase,
     DateTime CreatedAt,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt,
+    string? StaffReply = null,
+    DateTime? StaffRepliedAt = null);
 
-public sealed record ModerateReviewRequest([Required] string Status);
+public sealed record ModerateReviewRequest([Required] string Status, [StringLength(2000)] string? Reply = null);

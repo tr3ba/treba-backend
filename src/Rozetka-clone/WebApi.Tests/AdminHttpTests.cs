@@ -55,6 +55,7 @@ public sealed class AdminHttpTests
         services.AddScoped<PromotionManagementService>();
         services.AddScoped<SupportService>();
         services.AddScoped<FeatureSettingsService>();
+        services.AddScoped<ReviewReplyTemplateService>();
         services.AddScoped<OperationsService>();
         services.AddScoped<Application.Marketplace.SellerApplicationService>();
         services.AddScoped<Application.Marketplace.CustomerAccountService>();

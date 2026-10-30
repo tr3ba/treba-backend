@@ -1,4 +1,6 @@
 using Application.Administration;
+using Application.Abstractions;
+using Contracts.Admin.Settings;
 using Application.Reviews;
 using Contracts.Admin.Reviews;
 using Contracts.Common;
@@ -12,7 +14,7 @@ namespace WebApi.Controllers;
 [ApiController]
 [Route("api/v1/admin/reviews")]
 [Authorize(Roles = $"{Roles.Administrator},{Roles.Manager},{Roles.Moderator}")]
-public sealed class AdminReviewsController(AdminWorkspaceService workspace, IReviewService reviews) : ControllerBase
+public sealed class AdminReviewsController(AdminWorkspaceService workspace, IReviewService reviews, ReviewReplyTemplateService templates, ICurrentActor actor) : ControllerBase
 {
     [HttpGet]
     public Task<PagedResponse<AdminReviewDto>> List(
@@ -22,6 +24,9 @@ public sealed class AdminReviewsController(AdminWorkspaceService workspace, IRev
     [HttpGet("pending-count")]
     public Task<int> PendingCount(CancellationToken ct) => workspace.PendingReviewsAsync(ct);
 
+    [HttpGet("reply-templates")]
+    public Task<IReadOnlyList<ReviewReplyTemplateDto>> ReplyTemplates(CancellationToken ct) => templates.ListAsync(false, ct);
+
     [HttpPut("{id:guid}/moderate")]
     public async Task<IActionResult> Moderate(Guid id, ModerateReviewRequest request, CancellationToken ct)
     {
@@ -29,7 +34,7 @@ public sealed class AdminReviewsController(AdminWorkspaceService workspace, IRev
         if (status is not (ReviewStatus.PUBLISHED or ReviewStatus.REJECTED))
             return BadRequest(new { message = "Choose PUBLISHED or REJECTED." });
 
-        try { await reviews.ModerateReviewAsync(id, status, ct); }
+        try { await reviews.ModerateReviewAsync(id, status, ct, request.Reply, actor.UserId); }
         catch (KeyNotFoundException) { return NotFound(); }
         return NoContent();
     }

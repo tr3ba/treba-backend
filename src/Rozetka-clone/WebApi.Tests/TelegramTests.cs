@@ -261,13 +261,21 @@ public sealed class TelegramTests
 
     [Theory]
     [InlineData("http://rozetka.com.ua/test/p123/")]
-    [InlineData("https://evil.example/test/p123/")]
-    [InlineData("https://rozetka.com.ua.evil.example/test/p123/")]
     [InlineData("https://rozetka.com.ua:444/test/p123/")]
     [InlineData("https://user:pass@rozetka.com.ua/test/p123/")]
     [InlineData("https://rozetka.com.ua/category/c123/")]
-    public void Import_RejectsOtherOriginsAndNonProductUrls(string url) =>
+    public void Import_RejectsUnsafeAndKnownNonProductUrls(string url) =>
         Assert.Throws<ArgumentException>(() => MarketplaceSourceClient.ProductUri(url));
+
+    [Theory]
+    [InlineData("https://evil.example/test/p123/")]
+    [InlineData("https://rozetka.com.ua.evil.example/test/p123/")]
+    public void OtherPublicStores_UseGenericParsing_AndCannotImpersonateRozetka(string url)
+    {
+        var uri = MarketplaceSourceClient.ProductUri(url);
+        Assert.Equal("web", MarketplaceSourceClient.Provider(uri));
+        Assert.Throws<BusinessRuleException>(() => new MarketplaceProductParser().Parse(uri, "<h1>Not a product page</h1>"));
+    }
 
     [Theory]
     [InlineData("127.0.0.1")]

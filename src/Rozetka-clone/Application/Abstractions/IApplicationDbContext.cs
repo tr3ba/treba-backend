@@ -17,6 +17,7 @@ namespace Application.Abstractions
         DbSet<CustomerNotificationSettings> CustomerNotificationSettings { get; }
         DbSet<CustomerNotification> CustomerNotifications { get; }
         DbSet<FeatureFlag> FeatureFlags { get; }
+        DbSet<ReviewReplyTemplate> ReviewReplyTemplates { get; }
         DbSet<SellerApplication> SellerApplications { get; }
         DbSet<CustomerPreferences> CustomerPreferences { get; }
         DbSet<NotificationReceipt> NotificationReceipts { get; }

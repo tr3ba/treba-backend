@@ -21,6 +21,10 @@ namespace Domain.Entities
 
         public string Comment { get; set; } = string.Empty;
 
+        public string? StaffReply { get; set; }
+        public DateTime? StaffRepliedAt { get; set; }
+        public Guid? StaffRepliedBy { get; set; }
+
         public ReviewStatus Status { get; set; }
 
         public bool VerifiedPurchase { get; set; }

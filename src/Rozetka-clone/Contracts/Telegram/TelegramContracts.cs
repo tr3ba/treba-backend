@@ -20,7 +20,7 @@ public sealed record GuardStatusDto(string Status, DateTimeOffset ExpiresAt);
 public sealed record SellerCategoryGrantInput(Guid CategoryId, bool IncludeDescendants = true);
 public sealed record UpdateSellerCategoriesRequest([Required, MaxLength(500)] List<SellerCategoryGrantInput> Grants);
 public sealed record SellerCategoryGrantDto(Guid CategoryId, string Name, bool IncludeDescendants);
-public sealed record CategoryMappingInput([Required, RegularExpression(@"^(?:c[1-9][0-9]{0,11}|(?:prom|epic):[a-f0-9]{12})$")] string ExternalKey, Guid CategoryId);
+public sealed record CategoryMappingInput([Required, RegularExpression(@"^(?:c[1-9][0-9]{0,11}|(?:prom|epic|web):[a-f0-9]{12})$")] string ExternalKey, Guid CategoryId);
 public sealed record CategoryMappingDto(Guid Id, string ExternalKey, Guid CategoryId, string CategoryName);
 
 public sealed record ImportUrlRequest([Required, StringLength(1500)] string Url, Guid? CategoryId = null);
@@ -33,6 +33,9 @@ public sealed record ImportPreviewDto(Guid Id, string SourceUrl, string Name, st
     public Guid? BrandId { get; init; }
     public string ManufacturerPartNumber { get; init; } = "";
     public string Barcode { get; init; } = "";
+    public string SourceSku { get; init; } = "";
+    public string SourceCurrency { get; init; } = "";
+    public IReadOnlyList<string> SourceWarnings { get; init; } = [];
     public IReadOnlyList<ProductDuplicateDto> Duplicates { get; init; } = [];
     public bool CanClassifyCategory { get; init; }
 }

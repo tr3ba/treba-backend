@@ -20,6 +20,8 @@ namespace Application.Reviews
         public string Title { get; init; } = string.Empty;
 
         public string Comment { get; init; } = string.Empty;
+        public string? StaffReply { get; init; }
+        public DateTime? StaffRepliedAt { get; init; }
 
         public ReviewStatus Status { get; init; }
 

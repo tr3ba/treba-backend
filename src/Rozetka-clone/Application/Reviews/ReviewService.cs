@@ -47,7 +47,8 @@ namespace Application.Reviews
                     Id = review.Id, ProductId = review.ProductId, UserId = review.UserId, OrderItemId = review.OrderItemId,
                     Rating = review.Rating, Title = review.Title, Comment = review.Comment, Status = review.Status,
                     VerifiedPurchase = review.VerifiedPurchase, HelpfulCount = review.HelpfulCount,
-                    CreatedAt = review.CreatedAt, UpdatedAt = review.UpdatedAt
+                    CreatedAt = review.CreatedAt, UpdatedAt = review.UpdatedAt,
+                    StaffReply = review.StaffReply, StaffRepliedAt = review.StaffRepliedAt
                 }).ToListAsync(cancellationToken);
             return new() { Items = items, Page = page, PageSize = 20, TotalCount = count };
         }
@@ -145,6 +146,8 @@ namespace Application.Reviews
                 Rating = review.Rating,
                 Title = review.Title,
                 Comment = review.Comment,
+                StaffReply = review.StaffReply,
+                StaffRepliedAt = review.StaffRepliedAt,
                 Status = review.Status,
                 VerifiedPurchase = review.VerifiedPurchase,
                 HelpfulCount = review.HelpfulCount,
@@ -197,6 +200,8 @@ namespace Application.Reviews
                 Rating = review.Rating,
                 Title = review.Title,
                 Comment = review.Comment,
+                StaffReply = review.StaffReply,
+                StaffRepliedAt = review.StaffRepliedAt,
                 Status = review.Status,
                 VerifiedPurchase = review.VerifiedPurchase,
                 HelpfulCount = review.HelpfulCount,
@@ -238,10 +243,17 @@ namespace Application.Reviews
         public async Task ModerateReviewAsync(
             Guid reviewId,
             ReviewStatus status,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default,
+            string? reply = null,
+            Guid? repliedBy = null)
         {
             if (status is not (ReviewStatus.PUBLISHED or ReviewStatus.REJECTED))
                 throw new ArgumentException("Choose PUBLISHED or REJECTED.", nameof(status));
+            if (reply is not null && (reply.Length > 2000 || status != ReviewStatus.PUBLISHED))
+                throw new ArgumentException("Відповідь до 2000 символів можна додати лише до опублікованого відгуку.");
+            var normalizedReply = string.IsNullOrWhiteSpace(reply) ? null : reply.Trim();
+            if (normalizedReply is not null && repliedBy is null)
+                throw new UnauthorizedAccessException();
 
             var review = await _dbContext.Reviews
                 .FirstOrDefaultAsync(
@@ -255,23 +267,33 @@ namespace Application.Reviews
 
             if (review.Status == ReviewStatus.DELETED)
                 throw new BusinessRuleException("Deleted reviews cannot be moderated.");
-            if (review.Status == status) return;
+            var replyChanged = reply is not null && normalizedReply != review.StaffReply;
+            if (review.Status == status && !replyChanged) return;
 
-            var product = await _dbContext.Products.FirstOrDefaultAsync(x => x.Id == review.ProductId, cancellationToken)
-                ?? throw new KeyNotFoundException("Product not found.");
-            var otherRatings = await _dbContext.Reviews.AsNoTracking()
-                .Where(x => x.ProductId == review.ProductId && x.Id != reviewId && x.Status == ReviewStatus.PUBLISHED)
-                .GroupBy(x => x.ProductId)
-                .Select(group => new { Count = group.Count(), Sum = group.Sum(x => x.Rating) })
-                .SingleOrDefaultAsync(cancellationToken);
-            var count = (otherRatings?.Count ?? 0) + (status == ReviewStatus.PUBLISHED ? 1 : 0);
-            var sum = (otherRatings?.Sum ?? 0) + (status == ReviewStatus.PUBLISHED ? review.Rating : 0);
+            if (review.Status != status)
+            {
+                var product = await _dbContext.Products.FirstOrDefaultAsync(x => x.Id == review.ProductId, cancellationToken)
+                    ?? throw new KeyNotFoundException("Product not found.");
+                var otherRatings = await _dbContext.Reviews.AsNoTracking()
+                    .Where(x => x.ProductId == review.ProductId && x.Id != reviewId && x.Status == ReviewStatus.PUBLISHED)
+                    .GroupBy(x => x.ProductId)
+                    .Select(group => new { Count = group.Count(), Sum = group.Sum(x => x.Rating) })
+                    .SingleOrDefaultAsync(cancellationToken);
+                var count = (otherRatings?.Count ?? 0) + (status == ReviewStatus.PUBLISHED ? 1 : 0);
+                var sum = (otherRatings?.Sum ?? 0) + (status == ReviewStatus.PUBLISHED ? review.Rating : 0);
 
+                product.ReviewCount = count;
+                product.AverageRating = count == 0 ? 0 : sum / (double)count;
+                product.UpdatedAt = DateTime.UtcNow;
+            }
             review.Status = status;
             review.UpdatedAt = DateTime.UtcNow;
-            product.ReviewCount = count;
-            product.AverageRating = count == 0 ? 0 : sum / (double)count;
-            product.UpdatedAt = review.UpdatedAt;
+            if (replyChanged)
+            {
+                review.StaffReply = normalizedReply;
+                review.StaffRepliedAt = normalizedReply is null ? null : review.UpdatedAt;
+                review.StaffRepliedBy = normalizedReply is null ? null : repliedBy;
+            }
 
             await _dbContext.SaveChangesAsync(cancellationToken);
         }
@@ -372,6 +394,8 @@ namespace Application.Reviews
                     Rating = x.Rating,
                     Title = x.Title,
                     Comment = x.Comment,
+                    StaffReply = x.StaffReply,
+                    StaffRepliedAt = x.StaffRepliedAt,
                     Status = x.Status,
                     VerifiedPurchase = x.VerifiedPurchase,
                     HelpfulCount = x.HelpfulCount,

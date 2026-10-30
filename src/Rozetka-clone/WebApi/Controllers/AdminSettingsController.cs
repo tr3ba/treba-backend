@@ -12,8 +12,17 @@ namespace WebApi.Controllers;
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 [Authorize(Roles = Roles.Administrator)]
 [Route("api/v1/admin/settings")]
-public sealed class AdminSettingsController(StaffSettingsService settings, FeatureSettingsService features) : ControllerBase
+public sealed class AdminSettingsController(StaffSettingsService settings, FeatureSettingsService features, ReviewReplyTemplateService replies) : ControllerBase
 {
+    [HttpGet("review-replies")]
+    public Task<IReadOnlyList<ReviewReplyTemplateDto>> ReviewReplies(CancellationToken ct) => replies.ListAsync(true, ct);
+
+    [HttpPost("review-replies")]
+    public Task<ReviewReplyTemplateDto> CreateReviewReply(SaveReviewReplyTemplateRequest request, CancellationToken ct) => replies.SaveAsync(null, request, ct);
+
+    [HttpPut("review-replies/{id:guid}")]
+    public Task<ReviewReplyTemplateDto> UpdateReviewReply(Guid id, SaveReviewReplyTemplateRequest request, CancellationToken ct) => replies.SaveAsync(id, request, ct);
+
     [HttpGet("features")]
     public Task<IReadOnlyList<FeatureFlagDto>> Features(CancellationToken ct) => features.ListAsync(ct);
 
