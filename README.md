@@ -1,376 +1,234 @@
 <div align="center">
 
-# ⚙️ Treba Backend
+# Treba Backend
 
-### ASP.NET Core · .NET 10 · PostgreSQL · AWS
+### API маркетплейсу · дані · автентифікація
 
-Backend API and application services for the **Treba Marketplace**.
+[English](README.en.md) · **Українська**
+
+<img src="https://skillicons.dev/icons?i=cs,dotnet,postgres,docker&theme=dark" height="44" alt="C#, .NET, PostgreSQL і Docker">
 
 <br>
 
-[![Organization](https://img.shields.io/badge/TREBA-002AFF?style=for-the-badge&logo=github&logoColor=white)](https://github.com/tr3ba)
-[![Live Demo](https://img.shields.io/badge/LIVE_DEMO-FF6E2A?style=for-the-badge&logo=googlechrome&logoColor=white)](https://treba.duckdns.org)
+![ASP.NET Core](https://img.shields.io/badge/ASP.NET_Core-10-512BD4?style=flat-square&logo=dotnet&logoColor=white) ![EF Core](https://img.shields.io/badge/EF_Core-10-6C3CA4?style=flat-square&logo=dotnet&logoColor=white) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-4169E1?style=flat-square&logo=postgresql&logoColor=white) ![Docker](https://img.shields.io/badge/Docker-Containers-2496ED?style=flat-square&logo=docker&logoColor=white)
+
+[![Вихідний код](https://img.shields.io/badge/ВИХІДНИЙ_КОД-FF6E2A?style=for-the-badge&logo=github&logoColor=white)](https://github.com/tr3ba/treba-backend)
 [![Frontend](https://img.shields.io/badge/FRONTEND-002AFF?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://github.com/tr3ba/treba-frontend)
-
-<br><br>
-
-![.NET](https://img.shields.io/badge/.NET-10-512BD4?style=flat-square&logo=dotnet&logoColor=white)
-![ASP.NET Core](https://img.shields.io/badge/ASP.NET_Core-API-512BD4?style=flat-square&logo=dotnet&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white)
-![EF Core](https://img.shields.io/badge/EF_Core-10-512BD4?style=flat-square)
-![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)
-![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white)
-![AWS](https://img.shields.io/badge/AWS-FF9900?style=flat-square&logo=amazonwebservices&logoColor=white)
+[![Документація](https://img.shields.io/badge/ДОКУМЕНТАЦІЯ-002AFF?style=for-the-badge&logo=github&logoColor=white)](https://github.com/tr3ba/.github/blob/main/README.uk.md)
 
 </div>
 
----
+## Навігація
 
-## 👋 About
-
-**Treba Backend** is the server-side part of the Treba Marketplace.
-
-The solution provides the marketplace API, authentication and authorization,
-user management, catalog operations, cart functionality, administration endpoints
-and PostgreSQL database access.
-
-The backend is built with **ASP.NET Core on .NET 10** and uses
-**Entity Framework Core with Npgsql** for PostgreSQL.
+[Огляд](#backend-about) · [Технології](#backend-stack) · [Структура](#backend-structure) · [Запуск](#backend-run) · [Перевірки](#backend-checks) · [Docker і доставка](#backend-delivery) · [Документація](#backend-docs)
 
 ---
 
-## 🧩 Technology Stack
+<a id="backend-about"></a>
 
-| Area | Technology |
+## Що робить backend
+
+Treba Backend: серверна частина командного маркетплейсу. API працює з каталогом, користувачами, продавцями, магазинами, кошиком, замовленнями та адміністративними операціями.
+
+<table width="100%">
+<tr>
+<td width="460" valign="top">
+
+### Маркетплейс
+
+- Товари, категорії, бренди та атрибути.
+- Варіанти, зображення й теги товарів.
+- Продавці, магазини та заявки продавців.
+- Кошик, список бажань, замовлення й відгуки.
+- Імпорт товарів, підтримка та сповіщення.
+
+</td>
+<td width="460" valign="top">
+
+### Облікові записи та операції
+
+- Реєстрація з верифікацією email/SMS.
+- Login, refresh/logout і перевірки 2FA.
+- Відновлення пароля та зовнішня авторизація.
+- Адміністративні API й правила доступу.
+- Інтеграції доставки та Telegram Mini App.
+
+</td>
+</tr>
+</table>
+
+Зовнішні інтеграції потребують окремого налаштування. Адміністративний інтерфейс працює у frontend на `/admin`. [Як його перенесли](https://github.com/tr3ba/treba-backend/blob/37bb801ba1aee85719ac49d61151840071b59e85/docs/admin-frontend-migration.md).
+
+<a id="backend-stack"></a>
+
+## Технології та версії
+
+| Компонент | Версія або налаштування |
 |---|---|
-| Runtime | **.NET 10** |
-| Web API | **ASP.NET Core** |
-| ORM | **Entity Framework Core 10** |
-| PostgreSQL provider | **Npgsql 10.0.3** |
-| Database | **PostgreSQL** |
-| Authentication | **JWT Bearer** |
-| Password security | **BCrypt** |
-| API documentation | **Swagger / Swashbuckle** |
-| Containers | **Docker** |
-| CI/CD | **GitHub Actions** |
-| Cloud | **AWS ECR · EC2 · Systems Manager** |
+| Мова | C#; окремий номер версії мови тут не заявляється |
+| Платформа | ASP.NET Core / .NET 10, `net10.0` |
+| Entity Framework Core | Пакети Design/Tools `10.0.11` |
+| PostgreSQL provider | `Npgsql.EntityFrameworkCore.PostgreSQL 10.0.3` |
+| JWT Bearer | `10.0.12` |
+| Хешування паролів | `BCrypt.Net-Next 4.2.0` |
+| Swagger | `Swashbuckle.AspNetCore 10.2.3` |
+| Локальна й CI база | `postgres:18-alpine` у Compose та Backend Build |
+| Контейнери | .NET SDK 10.0 → ASP.NET runtime 10.0 |
 
----
+Конфігурація: [WebApi.csproj](https://github.com/tr3ba/treba-backend/blob/37bb801ba1aee85719ac49d61151840071b59e85/src/Rozetka-clone/WebApi/WebApi.csproj), [Infrastructure.csproj](https://github.com/tr3ba/treba-backend/blob/37bb801ba1aee85719ac49d61151840071b59e85/src/Rozetka-clone/Infrastructure/Infrastructure.csproj), [Dockerfile](https://github.com/tr3ba/treba-backend/blob/37bb801ba1aee85719ac49d61151840071b59e85/docker/Dockerfile.backend), [Compose](https://github.com/tr3ba/treba-backend/blob/37bb801ba1aee85719ac49d61151840071b59e85/docker-compose.yml).
 
-## 🏗️ Solution Architecture
+<a id="backend-structure"></a>
 
-The backend follows a layered structure:
+## Структура рішення
 
 ```text
-Rozetka-clone
-│
-├── Application
-├── Contracts
-├── Domain
-├── Infrastructure
-├── WebApi
-└── WebApi.Tests
+src/Rozetka-clone/
+├── Application/       прикладні сервіси та сценарії
+├── Contracts/         спільні контракти
+├── Domain/            доменні сутності
+├── Infrastructure/    EF Core, persistence та інтеграції
+├── WebApi/            HTTP API й налаштування застосунку
+└── WebApi.Tests/      тести
 ```
 
-### Application
+`Shared/` містить спільні допоміжні файли, які також використовуються під час збірки WebApi. Рішення: `src/Rozetka-clone/Rozetka-clone.sln`.
 
-Contains application-level services and use-case logic.
-
-### Contracts
-
-Contains shared contracts and communication models.
-
-### Domain
-
-Contains the core domain model.
-
-### Infrastructure
-
-Contains database and infrastructure integrations, including
-**Entity Framework Core**, **Npgsql** and PostgreSQL access.
-
-### WebApi
-
-Main ASP.NET Core HTTP API.
-
-### Administrative interface
-
-The administrative UI and seller workspace are maintained in `treba-frontend` at `/admin`. This repository contains the administrative API and business services. See [the frontend migration](docs/admin-frontend-migration.md).
-
-### WebApi.Tests
-
-Backend and admin-panel tests are a separate project in the same solution at
-`src/Rozetka-clone/WebApi.Tests`. Open `src/Rozetka-clone/Rozetka-clone.sln` to see
-the project and run tests from Visual Studio's Test Explorer.
-
-From the repository root, run the entire solution's tests with:
-
-```sh
-dotnet test src/Rozetka-clone/Rozetka-clone.sln --configuration Release
+```mermaid
+flowchart LR
+    FE["Next.js frontend"] --> API["WebApi"]
+    API --> APP["Application / Domain"]
+    APP --> INF["Infrastructure / EF Core"]
+    INF --> DB[("PostgreSQL")]
+    style FE fill:#002AFF,color:#ffffff,stroke:#002AFF
+    style API fill:#FF6E2A,color:#ffffff,stroke:#FF6E2A
 ```
 
-Set `TREBA_TEST_POSTGRES` to a connection string for a dedicated local/test
-PostgreSQL database to include the database integration tests. These tests
-create and clean up isolated test tables; PostgreSQL tests are skipped
-when the variable is not set.
+<a id="backend-run"></a>
 
----
+## Локальний запуск вихідного коду
 
-## 🔌 API Areas
+Наведені команди виконуються в корені **tr3ba/treba-backend**.
 
-The current backend contains endpoints and services for marketplace areas including:
+### 1. Підготувати середовище
 
-- Products
-- Categories
-- Brands
-- Product variants
-- Catalog
-- Cart
-- Sellers
-- Stores
-- Users
-- Administration
-- Authentication
-- Security / 2FA
-- Nova Poshta delivery calculation and TREBA courier delivery with managed shipment statuses
-- Optional customer email and Telegram notifications
+Потрібні .NET SDK 10, PostgreSQL і налаштовані параметри Development. Без рядка підключення та коректних ключів запуск не буде повним.
 
-Delivery setup, customer subscriptions and deployment requirements: [delivery and notifications](docs/delivery-notifications.md).
-
----
-
-## 🔐 Authentication & Security
-
-The backend implements authentication functionality including:
-
-- User registration
-- Required email or SMS verification for password registration ([setup and API](docs/registration-verification.md))
-- Password recovery with a confirmation code and session revocation ([flow and API](docs/password-reset.md))
-- Login
-- JWT authentication
-- Refresh token flow
-- Logout
-- Two-factor authentication checks
-- Email-based security configuration
-- Authenticator-based 2FA configuration
-
-Runtime security configuration is separated from source code and is expected
-to be provided through environment/runtime configuration.
-
----
-
-## 🗄️ Database
-
-Treba Backend uses **PostgreSQL** through:
-
-```text
-ASP.NET Core
-      ↓
-Entity Framework Core
-      ↓
-Npgsql
-      ↓
-PostgreSQL
-```
-
-The application contains EF Core migrations and uses `UseNpgsql`
-in the infrastructure configuration.
-
-For the AWS environment, PostgreSQL is hosted in **Amazon RDS**.
-
----
-
-## ❤️ Health Endpoints
-
-The backend exposes separate health endpoints:
-
-### `/ping`
-
-Basic application availability check.
-
-```text
-GET /ping
-```
-
-Used to confirm that the backend process is responding.
-
-### `/health`
-
-Database-aware application health check.
-
-```text
-GET /health
-```
-
-Used to verify both the backend service and PostgreSQL connectivity.
-
----
-
-## 📖 API Documentation
-
-Swagger is configured for the **Development** environment.
-
-Production environments intentionally do not expose Swagger by default.
-
----
-
-## 🐳 Docker
-
-The repository contains a dedicated backend Dockerfile:
-
-```text
-docker/Dockerfile.backend
-```
-
-The image builds and runs the application on **.NET 10**.
-
-The repository also contains a Docker Compose configuration for local
-multi-service development with:
-
-```text
-PostgreSQL
-Backend
-Frontend
-```
-
-> **Development note:** the Compose configuration and `.env.example`
-> are currently being aligned with the latest backend runtime configuration.
-> Some legacy configuration names and an older health-check route still need cleanup.
-
----
-
-## 🚀 CI/CD
-
-The backend repository contains several GitHub Actions workflows.
-
-### Build & Validation
-
-The backend workflow performs:
-
-```text
-Restore
-   ↓
-Build
-   ↓
-NuGet vulnerability check
-   ↓
-Tests
-```
-
-Build validation runs for the main development branches and pull requests.
-
-### Docker Image Publishing
-
-The Docker publishing workflow:
-
-```text
-Source
-   ↓
-Docker Build
-   ↓
-Container Start
-   ↓
-/ping Smoke Check
-   ↓
-Amazon ECR
-```
-
-Images are published with version/SHA-oriented tags and `latest`.
-
-### Deployment
-
-Deployment uses:
-
-```text
-GitHub Actions
-      ↓
-Amazon ECR
-      ↓
-AWS Systems Manager
-      ↓
-Amazon EC2
-```
-
-AWS Systems Manager is used to execute deployment commands on EC2.
-
-### Releases
-
-A dedicated backend release workflow exists for tags matching:
-
-```text
-v*
-```
-
----
-
-## ☁️ AWS Deployment
-
-The backend delivery path is designed around the following AWS services:
-
-| Service | Purpose |
+| Конфігурація .NET | Для чого / вимога |
 |---|---|
-| Amazon ECR | Docker image registry |
-| Amazon EC2 | Application runtime |
-| Amazon RDS | PostgreSQL database |
-| AWS Systems Manager | Remote deployment |
-| AWS IAM | Access control |
-| AWS Secrets Manager | Runtime secrets |
-| Amazon CloudWatch | Monitoring |
+| `ConnectionStrings:DefaultConnection` | Підключення до окремої локальної PostgreSQL БД |
+| `Jwt:SecretKey` | Не менше 32 байтів UTF-8 |
+| `Jwt:Issuer`, `Jwt:Audience` | Значення видавця й аудиторії токенів |
+| `Security:EncryptionKey` | Base64-кодування рівно 32 байтів |
+| `Security:OtpHashKey` | Base64-кодування щонайменше 32 байтів |
+| `ApplyMigrations` | Умовне застосування EF-міграцій під час startup |
+
+Для environment variables двокрапка замінюється на `__`, наприклад `ConnectionStrings__DefaultConnection`. Можна використовувати .NET User Secrets для WebApi або локальний `appsettings.Development.json`, підготовлений за [прикладом](https://github.com/tr3ba/treba-backend/blob/37bb801ba1aee85719ac49d61151840071b59e85/src/Rozetka-clone/WebApi/appsettings.Development.example.json). Шаблон потребує заповнення значень.
+
+Файл `.env.example` у корені стосується Compose; `dotnet run` сам по собі не означає завантаження цього файла. Вимоги ключів визначені у [DependencyInjection.cs](https://github.com/tr3ba/treba-backend/blob/37bb801ba1aee85719ac49d61151840071b59e85/src/Rozetka-clone/Infrastructure/DependencyInjection.cs) і [Program.cs](https://github.com/tr3ba/treba-backend/blob/37bb801ba1aee85719ac49d61151840071b59e85/src/Rozetka-clone/WebApi/Program.cs).
+
+### 2. Підготувати базу
+
+Створіть локальну БД і налаштуйте рядок підключення. У Development-прикладі `ApplyMigrations=true`; у Program.cs міграції запускаються лише коли цей прапорець увімкнено. Загальні startup-міграції призначайте тільки підготовленій локальній БД; production має окремі операційні процедури.
+
+### 3. Відновити пакети й запустити
+
+Приклад для PowerShell:
+
+```powershell
+dotnet restore src/Rozetka-clone/Rozetka-clone.sln
+$env:ASPNETCORE_ENVIRONMENT = "Development"
+dotnet run --project src/Rozetka-clone/WebApi/WebApi.csproj --no-launch-profile -- --urls http://localhost:5000
+```
+
+Swagger вмикається лише в Development. Створення administrator, email/SMS, OAuth, Нова Пошта й Telegram потребують відповідної конфігурації; один успішний startup не перевіряє ці сценарії.
+
+### Health endpoints
+
+| Запит | Що він показує |
+|---|---|
+| `GET /ping` | Процес відповідає; endpoint не потребує підключення до БД |
+| `GET /health` | Виконується `CanConnectAsync` до PostgreSQL; успіх не перевіряє всю схему й бізнес-сценарії |
+
+```powershell
+Invoke-RestMethod http://localhost:5000/ping
+Invoke-RestMethod http://localhost:5000/health
+```
+
+<a id="backend-checks"></a>
+
+## Збірка та тести
+
+```powershell
+dotnet build src/Rozetka-clone/Rozetka-clone.sln --configuration Release
+dotnet test src/Rozetka-clone/WebApi.Tests/WebApi.Tests.csproj --configuration Release
+dotnet list src/Rozetka-clone/Rozetka-clone.sln package --vulnerable --include-transitive
+```
+
+Для PostgreSQL integration tests потрібен `TREBA_TEST_POSTGRES` із рядком підключення до окремої тестової БД. Без цієї змінної частина PostgreSQL-тестів пропускається. [Backend Build](https://github.com/tr3ba/treba-backend/blob/37bb801ba1aee85719ac49d61151840071b59e85/.github/workflows/build-backend.yml) піднімає PostgreSQL 18 і передає цю змінну тестам.
+
+
+
+<a id="backend-delivery"></a>
+
+## Docker і доставка
+
+```powershell
+docker build -f docker/Dockerfile.backend -t treba-backend:local .
+```
+
+Dockerfile публікує WebApi, використовує ASP.NET runtime 10.0 та слухає порт 5000. Для запуску контейнера потрібна runtime-конфігурація з таблиці вище; сама збірка образу не створює БД.
+
+<details>
+<summary><strong>Compose та Kubernetes Stage 5</strong></summary>
+
+Compose описує PostgreSQL, backend і frontend; frontend збирається із сусіднього `../treba-frontend`. У конфігурації вже є `Jwt__SecretKey` та healthcheck `/health`.
+
+Для запуску Compose потрібні коректні міграції, ключі й параметри frontend build. `NEXT_PUBLIC_*` у Dockerfile задаються під час збірки, тоді як Compose передає відповідні значення під час запуску.
+
+У `k8s/` зберігається окрема локальна конфігурація Stage 5. YAML check перевіряє синтаксис маніфестів.
+
+</details>
+
+### Шлях CI/CD
+
+```text
+Backend Build / тести
+        ↓
+Docker build → /ping та перевірки ресурсів → Amazon ECR
+        ↓
+AWS Systems Manager → candidate → EC2 / HTTP-перевірки
+```
+
+Deployment-скрипт вибирає образ за SHA-тегом, перевіряє новий контейнер і зберігає попередній для повернення при помилці. Повернення контейнера не відкочує міграції БД.
+
+[Workflows](https://github.com/tr3ba/treba-backend/blob/37bb801ba1aee85719ac49d61151840071b59e85/.github/workflows/deploy-backend.yml) · [Deployment script](https://github.com/tr3ba/treba-backend/blob/37bb801ba1aee85719ac49d61151840071b59e85/scripts/server/deploy-telegram-backend.sh)
+
+<details>
+<summary><strong>Перед production-запуском</strong></summary>
+
+- `MockPaymentProvider` реєструється лише в Development. Для non-Development у `AddInfrastructure` потрібна реалізація `IPaymentProvider`; без неї production-платежі не працюватимуть.
+- `IDeliveryProvider` тут прив'язаний до `MockDeliveryProvider`. Інтеграції Нової Пошти описані окремо в документації доставки.
+
+Реєстрація провайдерів: [DependencyInjection.cs](https://github.com/tr3ba/treba-backend/blob/37bb801ba1aee85719ac49d61151840071b59e85/src/Rozetka-clone/Infrastructure/DependencyInjection.cs).
+
+</details>
+
+<a id="backend-docs"></a>
+
+## Документація за напрямами
+
+| Напрям | Документ у вихідному репозиторії |
+|---|---|
+| Admin UI → frontend | [Перенесення адміністративного простору](https://github.com/tr3ba/treba-backend/blob/37bb801ba1aee85719ac49d61151840071b59e85/docs/admin-frontend-migration.md) |
+| Реєстрація та відновлення | [Верифікація](https://github.com/tr3ba/treba-backend/blob/37bb801ba1aee85719ac49d61151840071b59e85/docs/registration-verification.md) · [Password reset](https://github.com/tr3ba/treba-backend/blob/37bb801ba1aee85719ac49d61151840071b59e85/docs/password-reset.md) |
+| OAuth | [Google / Facebook](https://github.com/tr3ba/treba-backend/blob/37bb801ba1aee85719ac49d61151840071b59e85/docs/external-authentication.md) |
+| Доставка | [Нова Пошта та сповіщення](https://github.com/tr3ba/treba-backend/blob/37bb801ba1aee85719ac49d61151840071b59e85/docs/delivery-notifications.md) |
+| Імпорт | [Seller product import](https://github.com/tr3ba/treba-backend/blob/37bb801ba1aee85719ac49d61151840071b59e85/docs/seller-product-import.md) |
+| Підтримка | [Приватні розмови](https://github.com/tr3ba/treba-backend/blob/37bb801ba1aee85719ac49d61151840071b59e85/docs/support-conversations.md) |
+| Локальний launcher | [Інструкція](https://github.com/tr3ba/treba-backend/blob/37bb801ba1aee85719ac49d61151840071b59e85/docs/local-launcher.md) |
+
+
 
 ---
 
-## 📊 Current Project Status
-
-<div align="center">
-
-![API](https://img.shields.io/badge/Backend_API-Implemented-002AFF?style=flat-square)
-![Database](https://img.shields.io/badge/PostgreSQL-Integrated-002AFF?style=flat-square)
-![Docker](https://img.shields.io/badge/Docker-Configured-002AFF?style=flat-square)
-![CI](https://img.shields.io/badge/CI%2FCD-Configured-FF6E2A?style=flat-square)
-![AWS](https://img.shields.io/badge/AWS_Deployment-Configured-FF6E2A?style=flat-square)
-
-</div>
-
-The backend API and PostgreSQL integration are implemented.
-
-The frontend application is maintained separately and its integration with
-backend-powered catalog, authentication and cart flows is still being completed.
-
----
-
-## ⚠️ Configuration Notes
-
-The current repository still contains a few development configuration items
-that should be cleaned up:
-
-- Docker Compose contains legacy JWT configuration naming
-- `.env.example` requires alignment with the latest required security settings
-- Docker Compose still references the legacy `/WeatherForecast` health check
-- current health checks are `/ping` and `/health`
-
-These items do not change the current application architecture,
-but should be updated before presenting Docker Compose as a fully reproducible local environment.
-
----
-
-## 📦 Related Repository
-
-### 🎨 Treba Frontend
-
-Next.js marketplace frontend:
-
-[![Open Frontend](https://img.shields.io/badge/OPEN_FRONTEND-002AFF?style=for-the-badge&logo=github&logoColor=white)](https://github.com/tr3ba/treba-frontend)
-
----
-
-<div align="center">
-
-## Treba Marketplace
-
-**Build · Automate · Deploy · Monitor · Improve**
-
-<br>
-
-[![Treba Organization](https://img.shields.io/badge/TREBA_ORGANIZATION-002AFF?style=for-the-badge&logo=github&logoColor=white)](https://github.com/tr3ba)
-
-</div>
+[Frontend README](https://github.com/tr3ba/treba-frontend#readme) · [Історія TREBA](https://github.com/tr3ba/.github/blob/main/docs/history/project-history.md) · [Команда](https://github.com/tr3ba/.github/blob/main/docs/team/README.md)
