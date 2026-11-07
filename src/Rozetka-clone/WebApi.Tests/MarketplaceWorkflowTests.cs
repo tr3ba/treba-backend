@@ -233,6 +233,7 @@ public sealed class MarketplaceWorkflowTests
                 AuthorRole = "Customer",
                 AuthorName = "Customer",
                 Message = subject,
+
                 Internal = internalMessage,
             };
             db.SupportTickets.Add(ticket);
@@ -371,6 +372,7 @@ public sealed class MarketplaceWorkflowTests
     {
         await using var server = await AdminHttpTests.ServerAsync();
         using var client = server.GetTestClient();
+
         if (role is not null)
             client.DefaultRequestHeaders.Add("X-Test-Role", role);
         Assert.Equal(expected, (await client.GetAsync("/api/v1/admin/seller-applications")).StatusCode);

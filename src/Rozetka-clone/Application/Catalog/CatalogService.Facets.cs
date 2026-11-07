@@ -10,10 +10,17 @@ public sealed partial class CatalogService
 {
     public async Task<PublicCatalogFacets> PublicFacetsAsync(Guid? categoryId, string? search, CancellationToken ct)
     {
-        if (search?.Length > 200) throw new ArgumentException("Search is too long.");
+        if (search?.Length > 200)
+            throw new ArgumentException("Search is too long.");
         var products = db.Products.AsNoTracking().Where(p => p.Status == ProductStatus.ACTIVE
             && db.Categories.Any(c => c.Id == p.CategoryId && c.IsActive) && db.Brands.Any(b => b.Id == p.BrandId && b.IsActive));
-        if (categoryId.HasValue) { var ids = await CategoryBranchAsync(categoryId.Value, ct); products = products.Where(p => ids.Contains(p.CategoryId)); }
+
+        if (categoryId.HasValue)
+        {
+            var ids = await CategoryBranchAsync(categoryId.Value, ct);
+            products = products.Where(p => ids.Contains(p.CategoryId));
+        }
+
         if (!string.IsNullOrWhiteSpace(search))
         {
             var term = search.Trim().ToLowerInvariant();
@@ -32,7 +39,8 @@ public sealed partial class CatalogService
         var options = await db.AttributeOptions.AsNoTracking().Where(o => attributeIds.Contains(o.AttributeId)).ToDictionaryAsync(o => o.Id, ct);
         var facets = definitions.Select(a => new CatalogFacet(a.Id, a.Name, values.Where(v => v.AttributeId == a.Id).Select(v =>
         {
-            if (v.OptionId is { } id && options.TryGetValue(id, out var option)) return new CatalogFacetOption(option.Value, option.DisplayValue ?? option.Value);
+            if (v.OptionId is { } id && options.TryGetValue(id, out var option))
+                return new CatalogFacetOption(option.Value, option.DisplayValue ?? option.Value);
             var text = v.StringValue ?? v.NumberValue?.ToString("G29", CultureInfo.InvariantCulture) ?? v.BoolValue?.ToString().ToLowerInvariant() ?? "";
             return new CatalogFacetOption(text, v.BoolValue.HasValue ? v.BoolValue.Value ? "Так" : "Ні" : text + (a.Unit is null ? "" : " " + a.Unit));
         }).Where(x => x.Value.Length is > 0 and <= 200).DistinctBy(x => x.Value).OrderBy(x => x.Label).Take(100).ToList())).ToList();

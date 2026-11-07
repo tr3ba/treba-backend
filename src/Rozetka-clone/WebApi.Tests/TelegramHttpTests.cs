@@ -100,6 +100,7 @@ public sealed class TelegramHttpTests
         var app = builder.Build();
         app.UseExceptionHandler();
         app.UseRouting();
+
         if (webRoot is not null)
         {
             app.UseDefaultFiles();
@@ -223,6 +224,7 @@ public sealed class TelegramHttpTests
             await TelegramTestData.AllowImportAsync(db, seed);
             userId = seed.User.Id;
             categoryId = seed.Category.Id;
+
             if (telegram)
                 await TelegramTestData.BindAsync(db, seed.User, clock);
             jobId = Assert
@@ -235,6 +237,7 @@ public sealed class TelegramHttpTests
             (await db.SellerImportJobs.SingleAsync()).Status = "Failed";
             await db.SaveChangesAsync();
         }
+
         if (telegram)
             client.DefaultRequestHeaders.Authorization = new("Tma", TelegramTestData.Signed(12345, clock.Now));
         else
@@ -301,6 +304,7 @@ public sealed class TelegramHttpTests
         );
         using var bootstrap = await client.GetAsync("/api/telegram/mini/bootstrap");
         Assert.Equal(expected, bootstrap.StatusCode);
+
         if (expected != HttpStatusCode.OK)
             return;
         Assert.True(bootstrap.Headers.CacheControl?.NoStore);
@@ -486,6 +490,7 @@ public sealed class TelegramHttpTests
             }
         );
         Assert.Equal(expected, response.StatusCode);
+
         if (expected == HttpStatusCode.Created)
         {
             Assert.NotNull(response.Headers.Location);
@@ -555,6 +560,7 @@ public sealed class TelegramHttpTests
     private sealed class Bot : ITelegramBotClient
     {
         internal List<string> Messages = [];
+
         internal int Menus;
 
         public Task<JsonDocument> CallAsync(string method, object payload, CancellationToken ct) =>

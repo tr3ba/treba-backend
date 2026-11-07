@@ -13,7 +13,9 @@ public sealed class StaffAndAuditTests
     private sealed class Actor : ICurrentActor
     {
         public Guid? UserId { get; set; }
+
         public string Name => "Test Administrator";
+
         public string Role => "Administrator";
     }
 
@@ -105,6 +107,7 @@ public sealed class StaffAndAuditTests
         var (db, actor, admin, other) = await Setup(1);
         await using var cleanup = db;
         actor.UserId = other.Id;
+
         if (block)
             admin.Block();
         else

@@ -56,6 +56,7 @@ public sealed class OrdersController : ControllerBase
     public async Task<IActionResult> GetOrderById(Guid id, CancellationToken cancellationToken)
     {
         var order = await _orderService.GetOrderByIdAsync(id, cancellationToken);
+
         if (order is null)
         {
             return NotFound(new

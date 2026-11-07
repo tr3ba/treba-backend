@@ -61,6 +61,7 @@ public sealed class MarketplaceImportTests
           "images":[{"big":{"url":"https://content.rozetka.com.ua/goods/images/big/123.jpg"}}]},
           "trebaCharacteristics":[{"options":[{"title":"RAM","values":[{"title":"8 GB"}]}]}]}
         """;
+
     private static readonly Uri RozetkaUrl = new("https://rozetka.com.ua/ua/example/p622282721/");
 
     [Fact]

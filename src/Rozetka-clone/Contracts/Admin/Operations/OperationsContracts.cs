@@ -24,35 +24,44 @@ public sealed class PromotionInput
     [Required] public string Type { get; set; } = "PERCENTAGE";
     [Required] public string Status { get; set; } = "DRAFT";
     public DateTimeOffset StartAt { get; set; } = DateTimeOffset.UtcNow;
+
     public DateTimeOffset EndAt { get; set; } = DateTimeOffset.UtcNow.AddDays(30);
+
     public decimal DiscountValue
     {
         get; set;
     }
+
     public decimal? MaximumDiscount
     {
         get; set;
     }
+
     public decimal? MinimumOrderAmount
     {
         get; set;
     }
+
     public Guid? ProductId
     {
         get; set;
     }
+
     public Guid? CategoryId
     {
         get; set;
     }
+
     public Guid? BrandId
     {
         get; set;
     }
+
     public Guid? SellerId
     {
         get; set;
     }
+
     public Guid? ExpectedVersion
     {
         get; set;
@@ -65,18 +74,22 @@ public sealed class CouponInput
     {
         get; set;
     }
+
     [Required, StringLength(100), RegularExpression(@"^[A-Za-z0-9_-]+$")]
     public string Code { get; set; } = "";
+
     [Range(0, int.MaxValue)]
     public int UsageLimit
     {
         get; set;
     }
+
     [Range(0, int.MaxValue)]
     public int UsageLimitPerUser
     {
         get; set;
     }
+
     public bool Active { get; set; } = true;
 }
 public sealed record CouponView(Guid Id, string Code, int UsageLimit, int UsageLimitPerUser, int UsedCount, bool Active);
@@ -91,8 +104,16 @@ public sealed class CreateTicketRequest
     {
         get; set;
     }
-    public Guid? ProductId { get; set; }
-    public Guid? ClientRequestId { get; set; }
+
+    public Guid? ProductId
+    {
+        get; set;
+    }
+
+    public Guid? ClientRequestId
+    {
+        get; set;
+    }
     [Required] public string Kind { get; set; } = "QUESTION";
     [Required, StringLength(200)] public string Subject { get; set; } = "";
     [Required, StringLength(4000)] public string Message { get; set; } = "";

@@ -34,15 +34,50 @@ public sealed class AuthenticationChallenge : BaseEntity
         CreatedAt = DateTimeOffset.UtcNow;
     }
 
-    public Guid UserId { get; private set; }
-    public AuthenticationChallengePurpose Purpose { get; private set; }
-    public string? CodeHash { get; private set; }
-    public DateTimeOffset ExpiresAt { get; private set; }
-    public DateTimeOffset CreatedAt { get; private set; }
-    public DateTimeOffset? LastCodeSentAt { get; private set; }
-    public DateTimeOffset? ConsumedAt { get; private set; }
-    public int FailedAttempts { get; private set; }
-    public string? DeliveryAddress { get; private set; }
+    public Guid UserId
+    {
+        get; private set;
+    }
+
+    public AuthenticationChallengePurpose Purpose
+    {
+        get; private set;
+    }
+
+    public string? CodeHash
+    {
+        get; private set;
+    }
+
+    public DateTimeOffset ExpiresAt
+    {
+        get; private set;
+    }
+
+    public DateTimeOffset CreatedAt
+    {
+        get; private set;
+    }
+
+    public DateTimeOffset? LastCodeSentAt
+    {
+        get; private set;
+    }
+
+    public DateTimeOffset? ConsumedAt
+    {
+        get; private set;
+    }
+
+    public int FailedAttempts
+    {
+        get; private set;
+    }
+
+    public string? DeliveryAddress
+    {
+        get; private set;
+    }
 
     public void SetDeliveryAddress(string address)
     {
@@ -99,6 +134,7 @@ public sealed class AuthenticationChallenge : BaseEntity
     public void RegisterFailure()
     {
         FailedAttempts++;
+
         if (FailedAttempts >= 5)
         {
             ConsumedAt = DateTimeOffset.UtcNow;

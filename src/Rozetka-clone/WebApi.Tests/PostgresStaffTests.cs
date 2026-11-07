@@ -25,6 +25,7 @@ public sealed class PostgresStaffTests
     private sealed record Actor(Guid? UserId) : ICurrentActor
     {
         public string Name => "PostgreSQL Test Administrator";
+
         public string Role => "Administrator";
     }
 
@@ -93,6 +94,7 @@ public sealed class PostgresStaffTests
                 await using var db = new ApplicationDbContext(options, new Actor(actor));
                 var user = await db.Users.SingleAsync(user => user.Id == target);
                 user.Block();
+
                 if (Interlocked.Increment(ref loaded) == 2)
                     ready.SetResult();
                 await ready.Task;

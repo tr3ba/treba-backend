@@ -2,7 +2,10 @@ namespace Application.Abstractions;
 
 public interface ISmsSender
 {
-    bool IsConfigured { get; }
+    bool IsConfigured
+    {
+        get;
+    }
     Task SendAsync(string recipient, string text, Guid requestId, CancellationToken ct = default);
 }
 

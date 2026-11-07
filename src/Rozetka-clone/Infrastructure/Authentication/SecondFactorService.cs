@@ -12,9 +12,13 @@ namespace Infrastructure.Authentication;
 public sealed class SecondFactorService : ISecondFactorService
 {
     private readonly IApplicationDbContext _context;
+
     private readonly IEmailSender _emailSender;
+
     private readonly AesSecretProtector _protector;
+
     private readonly SecurityOptions _options;
+
     private readonly byte[] _hashKey;
 
     public SecondFactorService(
@@ -39,6 +43,7 @@ public sealed class SecondFactorService : ISecondFactorService
                 exception
             );
         }
+
         if (_hashKey.Length < 32)
         {
             throw new InvalidOperationException("Security:OtpHashKey must decode to at least 32 bytes.");
@@ -51,8 +56,11 @@ public sealed class SecondFactorService : ISecondFactorService
     )
     {
         var methods = EnabledMethods(user).ToList();
+
         if (user.Role?.Name is Roles.Administrator or Roles.Manager or Roles.Moderator or Roles.Seller
-            && await _context.TelegramBindings.AnyAsync(b => b.UserId == user.Id, cancellationToken)) methods.Add(TwoFactorMethods.Telegram);
+            && await _context.TelegramBindings.AnyAsync(b => b.UserId == user.Id, cancellationToken))
+            methods.Add(TwoFactorMethods.Telegram);
+
         if (methods.Count == 0)
         {
             return null;
@@ -84,6 +92,7 @@ public sealed class SecondFactorService : ISecondFactorService
             AuthenticationChallengePurpose.Login,
             cancellationToken
         );
+
         if (!user.EmailTwoFactorEnabled)
         {
             throw new InvalidOperationException("Email codes are not enabled for this account.");
@@ -156,6 +165,7 @@ public sealed class SecondFactorService : ISecondFactorService
             userId,
             cancellationToken
         );
+
         if (user.AuthenticatorEnabled)
         {
             throw new InvalidOperationException("Google Authenticator is already enabled.");
@@ -193,6 +203,7 @@ public sealed class SecondFactorService : ISecondFactorService
             userId,
             cancellationToken
         );
+
         if (!VerifyAuthenticator(
             user,
             code
@@ -216,6 +227,7 @@ public sealed class SecondFactorService : ISecondFactorService
             userId,
             cancellationToken
         );
+
         if (!user.AuthenticatorEnabled)
         {
             throw new InvalidOperationException("Google Authenticator is not enabled.");
@@ -243,6 +255,7 @@ public sealed class SecondFactorService : ISecondFactorService
             userId,
             cancellationToken
         );
+
         if (user.EmailTwoFactorEnabled)
         {
             throw new InvalidOperationException("Email login codes are already enabled.");
@@ -279,6 +292,7 @@ public sealed class SecondFactorService : ISecondFactorService
             AuthenticationChallengePurpose.EnableEmailTwoFactor,
             cancellationToken
         );
+
         if (user.Id != userId)
         {
             throw new UnauthorizedAccessException("Security challenge does not belong to this account.");
@@ -308,6 +322,7 @@ public sealed class SecondFactorService : ISecondFactorService
             userId,
             cancellationToken
         );
+
         if (!user.EmailTwoFactorEnabled)
         {
             throw new InvalidOperationException("Email login codes are not enabled.");
@@ -344,6 +359,7 @@ public sealed class SecondFactorService : ISecondFactorService
             AuthenticationChallengePurpose.DisableEmailTwoFactor,
             cancellationToken
         );
+
         if (user.Id != userId)
         {
             throw new UnauthorizedAccessException("Security challenge does not belong to this account.");
@@ -372,6 +388,7 @@ public sealed class SecondFactorService : ISecondFactorService
     )
     {
         var now = DateTimeOffset.UtcNow;
+
         if (!challenge.CanSendCode(now))
         {
             throw new InvalidOperationException("Wait 30 seconds before requesting another code.");
@@ -415,6 +432,7 @@ public sealed class SecondFactorService : ISecondFactorService
                 item => item.Id == challengeId,
                 cancellationToken
             ) ?? throw new UnauthorizedAccessException("Security challenge was not found.");
+
         if (challenge.Purpose != purpose
             || !challenge.IsActive(DateTimeOffset.UtcNow))
         {
@@ -430,6 +448,7 @@ public sealed class SecondFactorService : ISecondFactorService
                     cancellationToken
                 )
             ?? throw new UnauthorizedAccessException("Account was not found.");
+
         if (user.Status is UserStatus.Blocked or UserStatus.Deleted)
         {
             throw new UnauthorizedAccessException("Account is unavailable.");
@@ -507,6 +526,7 @@ public sealed class SecondFactorService : ISecondFactorService
     )
     {
         var methods = new List<string>(2);
+
         if (user.AuthenticatorEnabled)
         {
             methods.Add(TwoFactorMethods.Authenticator);
@@ -541,6 +561,7 @@ public sealed class SecondFactorService : ISecondFactorService
             '@',
             2
         );
+
         if (parts.Length != 2)
         {
             return "***";

@@ -26,24 +26,34 @@ public sealed class RegistrationTests
         EncryptionKey = Convert.ToBase64String(new byte[32]),
         OtpHashKey = Convert.ToBase64String(Enumerable.Repeat((byte)7, 32).ToArray()),
     });
+
     private sealed class Email : IEmailSender
     {
         public string? Code;
+
         public int Sends;
+
         public bool Fail;
+
         public Task SendSecurityCodeAsync(string recipient, string displayName, string code, TimeSpan validFor, CancellationToken cancellationToken = default)
         {
             Sends++; Code = code;
+
             if (Fail) throw new InvalidOperationException("Email unavailable");
             return Task.CompletedTask;
         }
     }
+
     private sealed class Provider : HttpMessageHandler
     {
         public int Sends;
+
         public string Reply = """{"response_code":800,"response_result":[{"response_code":0,"message_id":"fixture-message"}]}""";
+
         public string? Code;
+
         public HttpStatusCode Status = HttpStatusCode.OK;
+
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             Sends++;
@@ -58,28 +68,41 @@ public sealed class RegistrationTests
             return new(Status) { Content = new StringContent(Reply) };
         }
     }
+
     private sealed class Fixture : IAsyncDisposable
     {
         public readonly ApplicationDbContext Db = TelegramTestData.Memory();
+
         public readonly Email Email = new();
+
         public readonly Provider Provider = new();
+
         public readonly IConfiguration Config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["Jwt:SecretKey"] = "registration-tests-only-secret-at-least-32-bytes",
-            ["Jwt:Issuer"] = "test", ["Jwt:Audience"] = "test",
+            ["Jwt:Issuer"] = "test",
+            ["Jwt:Audience"] = "test",
         }).Build();
+
         public readonly IOptions<SmtpEmailOptions> Smtp = Options.Create(new SmtpEmailOptions { Enabled = true, Host = "fixture", FromAddress = "fixture@example.test" });
+
         public TurboSmsSender Sms => new(new HttpClient(Provider), Db, Options.Create(new TurboSmsOptions { Token = "test-provider-token" }));
+
         public RegistrationService Service => new(Db, new TokenService(Config), Email, Sms, Security, Smtp);
+
         public IdentityService Identity => new(Db, new TokenService(Config), new SecondFactorService(Db, Email, new(Security), Security), Config, new HttpClient());
+
         public async Task Seed(bool sms = false)
         {
             Db.Roles.Add(Role.Create(Roles.Customer, Roles.Customer));
+
             if (sms) Db.FeatureFlags.Add(new() { Key = FeatureFlag.SmsSending, Enabled = true });
             await Db.SaveChangesAsync();
         }
+
         public ValueTask DisposeAsync() => Db.DisposeAsync();
     }
+
     private static RegisterRequest Request(string? method = "email", string? phone = "+380 (67) 123-45-67", string email = "new@example.test") =>
         new(email, "Password123!", "Олена", "Коваль", phone, VerificationMethod: method);
 
@@ -97,7 +120,9 @@ public sealed class RegistrationTests
         builder.Services.AddRateLimiter(options => options.AddPolicy("registration", context =>
             System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter("fixture", _ => new()
             {
-                PermitLimit = 100, Window = TimeSpan.FromMinutes(1), QueueLimit = 0,
+                PermitLimit = 100,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
             })));
         await using var app = builder.Build();
         app.UseExceptionHandler(); app.UseRouting(); app.UseRateLimiter(); app.MapControllers(); await app.StartAsync();
@@ -140,6 +165,7 @@ public sealed class RegistrationTests
         Assert.Equal(method == "email" ? 1 : 0, f.Email.Sends);
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() => f.Service.VerifyAsync(new(pending.ChallengeId, code)));
         Assert.NotNull((await f.Identity.LoginAsync(new(user.Email, "Password123!"))).Authentication);
+
         if (method == "sms") { user.Block(); user.Unblock(); Assert.Equal(UserStatus.Active, user.Status); }
     }
 

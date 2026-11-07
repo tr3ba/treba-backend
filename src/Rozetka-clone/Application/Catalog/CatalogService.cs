@@ -27,15 +27,21 @@ public sealed partial class CatalogService(
         if (page < 1 || page > 100000 || size is < 1 or > 100)
             throw new ArgumentException("Invalid pagination.");
         filters ??= new();
+
         if (filters.MinPrice < 0 || filters.MaxPrice < 0 || filters.MinPrice > filters.MaxPrice)
             throw new ArgumentException("Invalid price range.");
+
         if (!string.IsNullOrEmpty(filters.Stock) && filters.Stock is not ("available" or "low" or "out"))
             throw new ArgumentException("Unknown stock filter.");
+
         if (!string.IsNullOrEmpty(sort) && sort.ToLowerInvariant() is not ("priceasc" or "pricedesc" or "newest" or "oldest" or "nameasc" or "stockasc" or "updated" or "waiting"))
             throw new ArgumentException("Unknown catalog sort.");
 
         var query = db.Products.AsNoTracking();
-        if (status != nameof(ProductStatus.ARCHIVED)) query = query.Where(p => p.Status != ProductStatus.ARCHIVED);
+
+        if (status != nameof(ProductStatus.ARCHIVED))
+            query = query.Where(p => p.Status != ProductStatus.ARCHIVED);
+
         if (filters.WaitingHours.HasValue)
         {
             if (filters.WaitingHours is not (24 or 72))
@@ -123,24 +129,32 @@ public sealed partial class CatalogService(
 
         if (filters.BrandId.HasValue)
             query = query.Where(p => p.BrandId == filters.BrandId.Value);
+
         if (filters.SellerId.HasValue)
             query = query.Where(p => db.Stores.Any(s => s.Id == p.StoreId && s.SellerId == filters.SellerId.Value));
+
         if (filters.MinPrice.HasValue || filters.MaxPrice.HasValue)
             query = query.Where(p => db.ProductVariants.Any(v => v.ProductId == p.Id && v.IsActive
                 && (!filters.MinPrice.HasValue || v.Price >= filters.MinPrice.Value)
                 && (!filters.MaxPrice.HasValue || v.Price <= filters.MaxPrice.Value)));
+
         if (filters.Stock == "available")
             query = query.Where(p => db.ProductVariants.Any(v => v.ProductId == p.Id && v.IsActive && v.StockQuantity > 0));
+
         if (filters.Stock == "out")
             query = query.Where(p => !db.ProductVariants.Any(v => v.ProductId == p.Id && v.IsActive && v.StockQuantity > 0));
+
         if (filters.Stock == "low")
             query = query.Where(p => db.ProductVariants.Where(v => v.ProductId == p.Id && v.IsActive).Sum(v => v.StockQuantity) > 0
             && db.ProductVariants.Where(v => v.ProductId == p.Id && v.IsActive).Sum(v => v.StockQuantity) <= 5);
 
-        if (filters.Attributes is { Count: > 20 }) throw new ArgumentException("Too many attribute filters.");
+        if (filters.Attributes is { Count: > 20 })
+            throw new ArgumentException("Too many attribute filters.");
         foreach (var filter in filters.Attributes ?? [])
         {
-            var attributeId = filter.Key; var value = filter.Value;
+            var attributeId = filter.Key;
+            var value = filter.Value;
+
             if (string.IsNullOrWhiteSpace(value) || value.Length > 200 || !await db.Attributes.AnyAsync(a => a.Id == attributeId && a.IsFilterable, ct))
                 throw new ArgumentException("Invalid attribute filter.");
             decimal? number = decimal.TryParse(value, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var parsed) ? parsed : null;

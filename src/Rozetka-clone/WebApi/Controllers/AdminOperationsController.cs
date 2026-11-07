@@ -11,8 +11,10 @@ public sealed class AdminOperationsController(OperationsService operations) : Co
 {
     [HttpGet("metrics")]
     public Task<OperationsMetrics> Metrics(int days = 30, CancellationToken ct = default) => operations.MetricsAsync(days, ct);
+
     [HttpGet("customers")]
     public Task<PagedResponse<CustomerRow>> Customers(int page = 1, string? search = null, CancellationToken ct = default) => operations.CustomersAsync(page, search, ct);
+
     [HttpGet("customers/{id:guid}")]
     public async Task<ActionResult<CustomerDetails>> Customer(Guid id, CancellationToken ct) => await operations.CustomerAsync(id, ct) is { } result ? Ok(result) : NotFound();
 }

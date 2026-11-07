@@ -6,7 +6,14 @@ namespace Application.ProductTags
 {
     public sealed class UpdateProductTagRequest
     {
-        public string? Name { get; init; }
-        public string? Slug { get; init; }
+        public string? Name
+        {
+            get; init;
+        }
+
+        public string? Slug
+        {
+            get; init;
+        }
     }
 }

@@ -6,8 +6,14 @@ namespace Application.Carts
 {
     public sealed class AddCartItemRequest
     {
-        public Guid ProductVariantId { get; init; }
+        public Guid ProductVariantId
+        {
+            get; init;
+        }
 
-        public int Quantity { get; init; }
+        public int Quantity
+        {
+            get; init;
+        }
     }
 }

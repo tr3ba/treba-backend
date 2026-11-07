@@ -10,6 +10,7 @@ namespace Application.Marketplace;
 public sealed class NotificationService(IApplicationDbContext db, ICurrentActor actor)
 {
     private Guid UserId => actor.UserId ?? throw new UnauthorizedAccessException();
+
     public async Task<NotificationFeed> FeedAsync(CancellationToken ct)
     {
         var userId = UserId;
@@ -20,29 +21,51 @@ public sealed class NotificationService(IApplicationDbContext db, ICurrentActor 
         var productIds = db.Products.Where(p => db.Stores.Any(s => s.Id == p.StoreId && s.IsActive && db.Sellers.Any(v => v.Id == s.SellerId && v.UserId == userId && v.Status == SellerStatus.ACTIVE))).Select(p => p.Id);
         var result = new List<MarketplaceNotification>();
         var messages = await (from m in db.SupportMessages.AsNoTracking()
-            join t in db.SupportTickets.AsNoTracking() on m.TicketId equals t.Id
-            where !m.Internal && m.AuthorId != userId && m.CreatedAt >= cutoff
-                && (t.CustomerId == userId || m.AuthorId == t.CustomerId &&
-                    ((staff || actor.Role == Roles.Moderator && t.Kind == "CHAT") && t.ProductId == null
-                        || seller && t.Kind == "QUESTION" && t.ProductId != null && productIds.Contains(t.ProductId.Value)))
-            orderby m.CreatedAt descending, m.Id
-            select new { m.Id, m.CreatedAt, m.Message, t.CustomerId, TicketId = t.Id, t.Subject, t.ProductId }).Take(100).ToListAsync(ct);
+                              join t in db.SupportTickets.AsNoTracking() on m.TicketId equals t.Id
+                              where !m.Internal && m.AuthorId != userId && m.CreatedAt >= cutoff
+                                  && (t.CustomerId == userId || m.AuthorId == t.CustomerId &&
+                                      ((staff || actor.Role == Roles.Moderator && t.Kind == "CHAT") && t.ProductId == null
+                                          || seller && t.Kind == "QUESTION" && t.ProductId != null && productIds.Contains(t.ProductId.Value)))
+                              orderby m.CreatedAt descending, m.Id
+                              select new
+                              {
+                                  m.Id,
+                                  m.CreatedAt,
+                                  m.Message,
+                                  t.CustomerId,
+                                  TicketId = t.Id,
+                                  t.Subject,
+                                  t.ProductId
+                              }).Take(100).ToListAsync(ct);
         result.AddRange(messages.Select(m => new MarketplaceNotification("message:" + m.Id, m.ProductId == null ? "support" : "question",
             m.ProductId == null ? "Нове повідомлення підтримки" : "Нове повідомлення про товар", Short(m.Subject + ": " + m.Message),
             m.CustomerId == userId ? "shop" : "admin", m.CustomerId == userId ? "/account/messages?ticket=" + m.TicketId : "/support/" + m.TicketId, m.CreatedAt)));
+
         if (staff || seller)
         {
             var orders = db.Orders.AsNoTracking().Where(o => o.CreatedAt >= cutoff);
-            if (seller) orders = orders.Where(o => db.OrderItems.Any(i => i.OrderId == o.Id && db.Sellers.Any(s => s.Id == i.SellerId && s.UserId == userId && s.Status == SellerStatus.ACTIVE)));
+
+            if (seller)
+                orders = orders.Where(o => db.OrderItems.Any(i => i.OrderId == o.Id && db.Sellers.Any(s => s.Id == i.SellerId && s.UserId == userId && s.Status == SellerStatus.ACTIVE)));
             var rows = await orders.OrderByDescending(o => o.CreatedAt).ThenBy(o => o.Id).Take(60).Select(o => new { o.Id, o.OrderNumber, o.CreatedAt }).ToListAsync(ct);
             result.AddRange(rows.Select(o => new MarketplaceNotification("order:" + o.Id, "order", "Нове замовлення", o.OrderNumber, "admin", "/orders/" + o.Id, o.CreatedAt)));
         }
-        var updates = await (from h in db.OrderStatusHistories.AsNoTracking() join o in db.Orders on h.OrderId equals o.Id
-            where o.CustomerId == userId && h.CreatedAt >= cutoff orderby h.CreatedAt descending, h.Id
-            select new { h.Id, h.OrderId, h.CreatedAt, h.NewStatus, o.OrderNumber }).Take(60).ToListAsync(ct);
+        var updates = await (from h in db.OrderStatusHistories.AsNoTracking()
+                             join o in db.Orders on h.OrderId equals o.Id
+                             where o.CustomerId == userId && h.CreatedAt >= cutoff
+                             orderby h.CreatedAt descending, h.Id
+                             select new
+                             {
+                                 h.Id,
+                                 h.OrderId,
+                                 h.CreatedAt,
+                                 h.NewStatus,
+                                 o.OrderNumber
+                             }).Take(60).ToListAsync(ct);
         result.AddRange(updates.Select(h => new MarketplaceNotification("order-status:" + h.Id, "order-status",
             CustomerNotificationQueue.OrderTitle(h.NewStatus.ToString()),
             CustomerNotificationQueue.OrderText(h.OrderNumber, h.NewStatus.ToString()), "shop", "/account/orders/" + h.OrderId, h.CreatedAt)));
+
         if (supportStaff || seller)
         {
             var cutoffUtc = cutoff.UtcDateTime;
@@ -68,22 +91,33 @@ public sealed class NotificationService(IApplicationDbContext db, ICurrentActor 
 
     public async Task ReadAsync(string[] keys, CancellationToken ct)
     {
-        if (keys is null || keys.Length > 300 || keys.Any(x => x is null || x.Length > 120)) throw new ArgumentException("Invalid notification keys.");
+        if (keys is null || keys.Length > 300 || keys.Any(x => x is null || x.Length > 120))
+            throw new ArgumentException("Invalid notification keys.");
         var visible = (await FeedAsync(ct)).Items.Select(x => x.Key).ToHashSet();
-        if (keys.Any(x => !visible.Contains(x))) throw new KeyNotFoundException();
+
+        if (keys.Any(x => !visible.Contains(x)))
+            throw new KeyNotFoundException();
         var distinct = keys.Distinct().ToArray();
         for (var attempt = 0; attempt < 3; attempt++)
         {
             var read = await db.NotificationReceipts.Where(x => x.UserId == UserId && distinct.Contains(x.EventKey)).Select(x => x.EventKey).ToListAsync(ct);
             var added = distinct.Except(read).Select(key => db.NotificationReceipts.Add(new() { UserId = UserId, EventKey = key })).ToList();
-            if (added.Count == 0) return;
-            try { await db.SaveChangesAsync(ct); return; }
+
+            if (added.Count == 0)
+                return;
+            try
+            {
+                await db.SaveChangesAsync(ct);
+                return;
+            }
             catch (DbUpdateException) when (attempt < 2)
             {
-                foreach (var entry in added) entry.State = EntityState.Detached;
+                foreach (var entry in added)
+                    entry.State = EntityState.Detached;
                 // Another tab may mark the same events read concurrently; retry against the persisted receipts.
             }
         }
     }
+
     private static string Short(string text) => text.Length > 200 ? text[..200] + "…" : text;
 }

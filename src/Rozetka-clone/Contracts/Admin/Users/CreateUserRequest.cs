@@ -10,7 +10,10 @@ public sealed class CreateUserRequest
     public string Email { get; set; } = string.Empty;
 
     [MaxLength(30)]
-    public string? Phone { get; set; }
+    public string? Phone
+    {
+        get; set;
+    }
 
     [Required]
     [MaxLength(100)]
@@ -21,5 +24,8 @@ public sealed class CreateUserRequest
     public string LastName { get; set; } = string.Empty;
 
     [MaxLength(100)]
-    public string? MiddleName { get; set; }
+    public string? MiddleName
+    {
+        get; set;
+    }
 }

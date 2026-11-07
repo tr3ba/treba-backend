@@ -13,6 +13,7 @@ namespace WebApi.Controllers
     public sealed class StoresController : ControllerBase
     {
         private readonly IStoreService _storeService;
+
         private readonly ISellerService _sellerService;
 
         public StoresController(

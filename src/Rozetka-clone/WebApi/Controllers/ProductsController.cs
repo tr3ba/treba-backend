@@ -13,6 +13,7 @@ namespace WebApi.Controllers
     public sealed class ProductsController : ControllerBase
     {
         private readonly IProductService _productService;
+
         private readonly IApplicationDbContext _dbContext;
 
         public ProductsController(
@@ -112,6 +113,7 @@ namespace WebApi.Controllers
             }
 
             var telegram = HttpContext.RequestServices.GetRequiredService<Microsoft.Extensions.Options.IOptions<WebApi.Telegram.TelegramOptions>>().Value;
+
             if (User.IsInRole(Roles.Seller) && telegram.Enabled && telegram.EnforceSellerCategories)
             {
                 var categoryId = await _dbContext.Products.Where(p => p.Id == id).Select(p => p.CategoryId).SingleAsync(cancellationToken);

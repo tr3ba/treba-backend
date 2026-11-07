@@ -37,7 +37,10 @@ namespace WebApi.Controllers
             [FromServices] SellerProvisioningService provisioning, CancellationToken ct)
         {
             var result = await provisioning.CreateAsync(request, ct);
-            return CreatedAtAction(nameof(GetById), new { id = result.SellerId }, result);
+            return CreatedAtAction(nameof(GetById), new
+            {
+                id = result.SellerId
+            }, result);
         }
 
         [HttpGet("{id:guid}")]

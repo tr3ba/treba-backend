@@ -11,7 +11,9 @@ namespace Application.Payments;
 public sealed class PaymentService : IPaymentService
 {
     private readonly IApplicationDbContext _context;
+
     private readonly IPaymentProvider _paymentProvider;
+
     private readonly IOrderService _orderService;
 
     public PaymentService(IApplicationDbContext context, IPaymentProvider paymentProvider, IOrderService orderService)
@@ -189,97 +191,97 @@ public sealed class PaymentService : IPaymentService
 
         bool statusChanged = false;
 
-            switch (providerStatus.Status.ToLower())
-            {
-                case "success":
-                case "succeeded":
-                case "paid":
-                    if (payment.Status != PaymentStatus.SUCCEEDED)
-                    {
-                        payment.Status = PaymentStatus.SUCCEEDED;
-                        payment.PaidAt = DateTimeOffset.UtcNow;
-                        statusChanged = true;
-                    }
-                    break;
-
-                case "failed":
-                    if (payment.Status != PaymentStatus.FAILED)
-                    {
-                        payment.Status = PaymentStatus.FAILED;
-                        payment.FailureReason = providerStatus.ErrorMessage;
-                        statusChanged = true;
-                    }
-                    break;
-
-                case "cancelled":
-                    if (payment.Status != PaymentStatus.CANCELLED)
-                    {
-                        payment.Status = PaymentStatus.CANCELLED;
-                        payment.FailureReason = providerStatus.ErrorMessage;
-                        statusChanged = true;
-                    }
-                    break;
-
-                case "expired":
-                    // Expired payments are treated as failed but with a specific reason
-                    if (payment.Status != PaymentStatus.FAILED)
-                    {
-                        payment.Status = PaymentStatus.FAILED;
-                        payment.FailureReason = providerStatus.ErrorMessage ?? "Payment expired";
-                        statusChanged = true;
-                    }
-                    break;
-
-                case "pending":
-                case "processing":
-                    if (payment.Status != PaymentStatus.PENDING)
-                    {
-                        payment.Status = PaymentStatus.PENDING;
-                        statusChanged = true;
-                    }
-                    break;
-            }
-
-            if (statusChanged)
-            {
-                var transaction = new PaymentTransaction
+        switch (providerStatus.Status.ToLower())
+        {
+            case "success":
+            case "succeeded":
+            case "paid":
+                if (payment.Status != PaymentStatus.SUCCEEDED)
                 {
-                    Id = Guid.NewGuid(),
-                    PaymentId = payment.Id,
-                    Type = "PAYMENT",
-                    ExternalTransactionId = providerStatus.ExternalTransactionId,
-                    Amount = providerStatus.Amount,
-                    Status = providerStatus.Status,
-                    RequestData = request.Data.ToString(),
-                    ResponseData = providerStatus.ErrorMessage,
-                    CreatedAt = DateTimeOffset.UtcNow
-                };
-
-                _context.PaymentTransactions.Add(transaction);
-
-                // Record webhook event for idempotency (prevent duplicate processing)
-                var webhookEvent = new PaymentTransaction
-                {
-                    Id = Guid.NewGuid(),
-                    PaymentId = payment.Id,
-                    Type = "WEBHOOK_EVENT",
-                    ExternalTransactionId = request.ProviderEventId,
-                    Amount = 0,
-                    Status = providerStatus.Status,
-                    RequestData = request.Data.ToString(),
-                    ResponseData = providerStatus.ErrorMessage,
-                    CreatedAt = DateTimeOffset.UtcNow
-                };
-                _context.PaymentTransactions.Add(webhookEvent);
-
-                if (payment.Status == PaymentStatus.SUCCEEDED)
-                {
-                    await _orderService.PayOrderAsync(payment.OrderId, cancellationToken);
+                    payment.Status = PaymentStatus.SUCCEEDED;
+                    payment.PaidAt = DateTimeOffset.UtcNow;
+                    statusChanged = true;
                 }
-            }
+                break;
 
-            await _context.SaveChangesAsync(cancellationToken);
-            scope.Complete();
+            case "failed":
+                if (payment.Status != PaymentStatus.FAILED)
+                {
+                    payment.Status = PaymentStatus.FAILED;
+                    payment.FailureReason = providerStatus.ErrorMessage;
+                    statusChanged = true;
+                }
+                break;
+
+            case "cancelled":
+                if (payment.Status != PaymentStatus.CANCELLED)
+                {
+                    payment.Status = PaymentStatus.CANCELLED;
+                    payment.FailureReason = providerStatus.ErrorMessage;
+                    statusChanged = true;
+                }
+                break;
+
+            case "expired":
+                // Expired payments are treated as failed but with a specific reason
+                if (payment.Status != PaymentStatus.FAILED)
+                {
+                    payment.Status = PaymentStatus.FAILED;
+                    payment.FailureReason = providerStatus.ErrorMessage ?? "Payment expired";
+                    statusChanged = true;
+                }
+                break;
+
+            case "pending":
+            case "processing":
+                if (payment.Status != PaymentStatus.PENDING)
+                {
+                    payment.Status = PaymentStatus.PENDING;
+                    statusChanged = true;
+                }
+                break;
+        }
+
+        if (statusChanged)
+        {
+            var transaction = new PaymentTransaction
+            {
+                Id = Guid.NewGuid(),
+                PaymentId = payment.Id,
+                Type = "PAYMENT",
+                ExternalTransactionId = providerStatus.ExternalTransactionId,
+                Amount = providerStatus.Amount,
+                Status = providerStatus.Status,
+                RequestData = request.Data.ToString(),
+                ResponseData = providerStatus.ErrorMessage,
+                CreatedAt = DateTimeOffset.UtcNow
+            };
+
+            _context.PaymentTransactions.Add(transaction);
+
+            // Record webhook event for idempotency (prevent duplicate processing)
+            var webhookEvent = new PaymentTransaction
+            {
+                Id = Guid.NewGuid(),
+                PaymentId = payment.Id,
+                Type = "WEBHOOK_EVENT",
+                ExternalTransactionId = request.ProviderEventId,
+                Amount = 0,
+                Status = providerStatus.Status,
+                RequestData = request.Data.ToString(),
+                ResponseData = providerStatus.ErrorMessage,
+                CreatedAt = DateTimeOffset.UtcNow
+            };
+            _context.PaymentTransactions.Add(webhookEvent);
+
+            if (payment.Status == PaymentStatus.SUCCEEDED)
+            {
+                await _orderService.PayOrderAsync(payment.OrderId, cancellationToken);
+            }
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+        scope.Complete();
     }
 
     public async Task<RefundDto> RefundAsync(Guid orderId, decimal amount, CancellationToken cancellationToken = default)
@@ -290,71 +292,71 @@ public sealed class PaymentService : IPaymentService
             TransactionScopeAsyncFlowOption.Enabled);
 
         // Validate refund amount is positive
-            if (amount <= 0)
-            {
-                throw new ArgumentException("Сума повернення має бути більшою за нуль.", nameof(amount));
-            }
+        if (amount <= 0)
+        {
+            throw new ArgumentException("Сума повернення має бути більшою за нуль.", nameof(amount));
+        }
 
-            var payment = await _context.Payments
-                .FirstOrDefaultAsync(p => p.OrderId == orderId && p.Status == PaymentStatus.SUCCEEDED, cancellationToken)
-                ?? throw new InvalidOperationException($"Успішний платіж для замовлення {orderId} не знайдено.");
+        var payment = await _context.Payments
+            .FirstOrDefaultAsync(p => p.OrderId == orderId && p.Status == PaymentStatus.SUCCEEDED, cancellationToken)
+            ?? throw new InvalidOperationException($"Успішний платіж для замовлення {orderId} не знайдено.");
 
-            // Calculate already refunded amount from successful REFUND transactions
-            var alreadyRefunded = await _context.PaymentTransactions
-                .Where(t => t.PaymentId == payment.Id
-                         && t.Type == "REFUND"
-                         && (t.Status == "success" || t.Status == "succeeded" || t.Status == "refunded"))
-                .SumAsync(t => t.Amount, cancellationToken);
+        // Calculate already refunded amount from successful REFUND transactions
+        var alreadyRefunded = await _context.PaymentTransactions
+            .Where(t => t.PaymentId == payment.Id
+                     && t.Type == "REFUND"
+                     && (t.Status == "success" || t.Status == "succeeded" || t.Status == "refunded"))
+            .SumAsync(t => t.Amount, cancellationToken);
 
-            if (alreadyRefunded + amount > payment.Amount)
-            {
-                throw new ArgumentException($"Сума повернення ({alreadyRefunded + amount}) не може перевищувати суму платежу ({payment.Amount}). Уже повернуто: {alreadyRefunded}.");
-            }
+        if (alreadyRefunded + amount > payment.Amount)
+        {
+            throw new ArgumentException($"Сума повернення ({alreadyRefunded + amount}) не може перевищувати суму платежу ({payment.Amount}). Уже повернуто: {alreadyRefunded}.");
+        }
 
-            var refundId = Guid.NewGuid();
+        var refundId = Guid.NewGuid();
 
-            var providerResponse = await _paymentProvider.RefundAsync(
-                new Application.Payments.RefundProviderRequest(
-                    payment.ExternalPaymentId!,
-                    amount,
-                    payment.Currency,
-                    refundId.ToString()
-                ),
-                cancellationToken);
-
-            PaymentStatus newStatus = providerResponse.Success
-                ? (amount >= payment.Amount ? PaymentStatus.REFUNDED : PaymentStatus.PARTIALLY_REFUNDED)
-                : payment.Status;
-
-            if (providerResponse.Success)
-            {
-                payment.Status = newStatus;
-            }
-
-            var refundTransaction = new PaymentTransaction
-            {
-                Id = Guid.NewGuid(),
-                PaymentId = payment.Id,
-                Type = "REFUND",
-                ExternalTransactionId = providerResponse.ExternalTransactionId,
-                Amount = amount,
-                Status = providerResponse.Status,
-                RequestData = providerResponse.RequestData,
-                ResponseData = providerResponse.ResponseData,
-                CreatedAt = DateTimeOffset.UtcNow
-            };
-
-            _context.PaymentTransactions.Add(refundTransaction);
-
-            await _context.SaveChangesAsync(cancellationToken);
-            scope.Complete();
-
-            return new RefundDto(
-                refundId,
-                payment.Id,
+        var providerResponse = await _paymentProvider.RefundAsync(
+            new Application.Payments.RefundProviderRequest(
+                payment.ExternalPaymentId!,
                 amount,
-                newStatus.ToString(),
-                DateTimeOffset.UtcNow);
+                payment.Currency,
+                refundId.ToString()
+            ),
+            cancellationToken);
+
+        PaymentStatus newStatus = providerResponse.Success
+            ? (amount >= payment.Amount ? PaymentStatus.REFUNDED : PaymentStatus.PARTIALLY_REFUNDED)
+            : payment.Status;
+
+        if (providerResponse.Success)
+        {
+            payment.Status = newStatus;
+        }
+
+        var refundTransaction = new PaymentTransaction
+        {
+            Id = Guid.NewGuid(),
+            PaymentId = payment.Id,
+            Type = "REFUND",
+            ExternalTransactionId = providerResponse.ExternalTransactionId,
+            Amount = amount,
+            Status = providerResponse.Status,
+            RequestData = providerResponse.RequestData,
+            ResponseData = providerResponse.ResponseData,
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+
+        _context.PaymentTransactions.Add(refundTransaction);
+
+        await _context.SaveChangesAsync(cancellationToken);
+        scope.Complete();
+
+        return new RefundDto(
+            refundId,
+            payment.Id,
+            amount,
+            newStatus.ToString(),
+            DateTimeOffset.UtcNow);
     }
 
     private static string? ExtractExternalPaymentId(object data)

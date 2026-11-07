@@ -29,17 +29,32 @@ namespace Domain.Entities.Users
             MarketingEmailsEnabled = marketingEmailsEnabled;
         }
 
-        public Guid UserId { get; private set; }
+        public Guid UserId
+        {
+            get; private set;
+        }
 
-        public DateOnly? BirthDate { get; private set; }
+        public DateOnly? BirthDate
+        {
+            get; private set;
+        }
 
-        public string? Gender { get; private set; }
+        public string? Gender
+        {
+            get; private set;
+        }
 
-        public string? AvatarUrl { get; private set; }
+        public string? AvatarUrl
+        {
+            get; private set;
+        }
 
         public string Language { get; private set; } = "uk";
 
-        public bool MarketingEmailsEnabled { get; private set; }
+        public bool MarketingEmailsEnabled
+        {
+            get; private set;
+        }
 
         public static UserProfile Create(
             Guid userId,

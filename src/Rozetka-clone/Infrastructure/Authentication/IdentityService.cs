@@ -12,9 +12,13 @@ namespace Infrastructure.Authentication;
 public sealed class IdentityService : IIdentityService
 {
     private readonly IApplicationDbContext _context;
+
     private readonly ITokenService _tokenService;
+
     private readonly ISecondFactorService _secondFactorService;
+
     private readonly IConfiguration _configuration;
+
     private readonly HttpClient _httpClient;
 
     public IdentityService(
@@ -49,20 +53,20 @@ public sealed class IdentityService : IIdentityService
                 cancellationToken
             );
 
-        if (
-            user is null
-            || string.IsNullOrEmpty(user.PasswordHash)
-            || !BCrypt.Net.BCrypt.Verify(
-                request.Password,
-                user.PasswordHash
-            )
-        )
-        {
+        if (user is null)
             throw new UnauthorizedAccessException("Неправильна електронна адреса або пароль.");
-        }
+
+        if (string.IsNullOrEmpty(user.PasswordHash))
+            throw new UnauthorizedAccessException("Неправильна електронна адреса або пароль.");
+
+        var passwordMatches = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
+
+        if (!passwordMatches)
+            throw new UnauthorizedAccessException("Неправильна електронна адреса або пароль.");
 
         if (user.Status == UserStatus.PendingActivation)
             throw new InvalidOperationException("Спочатку підтвердьте реєстрацію кодом із пошти або SMS.");
+
         if (user.Status != UserStatus.Active)
         {
             throw new InvalidOperationException("Обліковий запис заблоковано або видалено.");
@@ -72,6 +76,7 @@ public sealed class IdentityService : IIdentityService
             user,
             cancellationToken
         );
+
         if (challenge is not null)
         {
             return new LoginResponse(
@@ -92,8 +97,16 @@ public sealed class IdentityService : IIdentityService
     public async Task<LoginResponse> LoginWithGuardAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var user = await _context.Users.Include(u => u.Role).SingleOrDefaultAsync(u => u.Id == userId, cancellationToken);
-        if (user is null || user.IsDeleted || user.Status != UserStatus.Active || user.Role?.Name is not (Roles.Administrator or Roles.Manager or Roles.Moderator or Roles.Seller))
+
+        if (user is null)
             throw new UnauthorizedAccessException("Guard доступний лише активним працівникам і продавцям.");
+
+        var accountIsInactive = user.IsDeleted || user.Status != UserStatus.Active;
+        var roleIsIneligible = user.Role?.Name is not (Roles.Administrator or Roles.Manager or Roles.Moderator or Roles.Seller);
+
+        if (accountIsInactive || roleIsIneligible)
+            throw new UnauthorizedAccessException("Guard доступний лише активним працівникам і продавцям.");
+
         // A linked and approved Guard is itself one of the account's verification methods.
         return new LoginResponse(await IssueLoginTokensAsync(user, cancellationToken), null);
     }
@@ -195,6 +208,7 @@ public sealed class IdentityService : IIdentityService
             u => u.Email == emailNormalized,
             cancellationToken
         );
+
         if (existingUser)
         {
             throw new InvalidOperationException($"Користувач з електронною адресою '{email}' уже існує.");
@@ -316,10 +330,21 @@ public sealed class IdentityService : IIdentityService
     {
         var origin = _configuration["ExternalAuth:StoreOrigin"]
             ?? _configuration["WebsiteLogin:StoreOrigin"] ?? "https://treba.duckdns.org";
-        if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri)
-            || (uri.Scheme != "https" && !(uri.Scheme == "http" && uri.IsLoopback))
-            || uri.UserInfo.Length > 0 || uri.AbsolutePath != "/" || uri.Query.Length > 0 || uri.Fragment.Length > 0)
+
+        if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri))
             throw new InvalidOperationException("ExternalAuth StoreOrigin must be an HTTPS origin (HTTP is allowed for localhost).");
+
+        var usesHttps = uri.Scheme == "https";
+        var usesLocalHttp = uri.Scheme == "http" && uri.IsLoopback;
+        var usesAllowedScheme = usesHttps || usesLocalHttp;
+        var containsUserInfo = uri.UserInfo.Length > 0;
+        var hasPath = uri.AbsolutePath != "/";
+        var hasQuery = uri.Query.Length > 0;
+        var hasFragment = uri.Fragment.Length > 0;
+
+        if (!usesAllowedScheme || containsUserInfo || hasPath || hasQuery || hasFragment)
+            throw new InvalidOperationException("ExternalAuth StoreOrigin must be an HTTPS origin (HTTP is allowed for localhost).");
+
         origin = uri.GetLeftPart(UriPartial.Authority);
         var providers = new List<ExternalProviderInfo>();
         foreach (var provider in new[] { "google", "facebook" })
@@ -327,7 +352,13 @@ public sealed class IdentityService : IIdentityService
             var section = _configuration.GetSection("ExternalAuth:" + provider);
             var clientId = ConfiguredValue(section, "AppId", "ClientId");
             var clientSecret = ConfiguredValue(section, "AppSecret", "ClientSecret");
-            if (!section.GetValue<bool>("Enabled") || clientId is null || clientSecret is null) continue;
+            var isDisabled = !section.GetValue<bool>("Enabled");
+            var isMissingClientId = clientId is null;
+            var isMissingClientSecret = clientSecret is null;
+
+            if (isDisabled || isMissingClientId || isMissingClientSecret)
+                continue;
+
             providers.Add(new ExternalProviderInfo(provider, clientId,
                 provider == "google" ? "https://accounts.google.com/o/oauth2/v2/auth" : "https://www.facebook.com/dialog/oauth",
                 provider == "google" ? ["openid", "email", "profile"] : ["email", "public_profile"],
@@ -347,9 +378,13 @@ public sealed class IdentityService : IIdentityService
         var provider = request.Provider.Trim().ToLowerInvariant();
         var info = GetExternalProviders().SingleOrDefault(p => p.Name == provider)
             ?? throw new InvalidOperationException("Цей спосіб входу тимчасово недоступний.");
+
         if (!string.Equals(request.RedirectUri, info.RedirectUri, StringComparison.Ordinal))
             throw new UnauthorizedAccessException("Недозволена адреса повернення.");
-        if (string.IsNullOrWhiteSpace(request.Code)) throw new UnauthorizedAccessException("Відсутній код входу.");
+
+        if (string.IsNullOrWhiteSpace(request.Code))
+            throw new UnauthorizedAccessException("Відсутній код входу.");
+
         var section = _configuration.GetSection("ExternalAuth:" + provider);
         var fields = new Dictionary<string, string>
         {
@@ -359,21 +394,46 @@ public sealed class IdentityService : IIdentityService
             ["redirect_uri"] = info.RedirectUri,
             ["grant_type"] = "authorization_code",
         };
+
         if (provider == "google")
         {
             var verifier = request.CodeVerifier;
-            if (verifier is null || verifier.Length is < 43 or > 128
-                || verifier.Any(c => !char.IsAsciiLetterOrDigit(c) && c is not '-' and not '_' and not '.' and not '~'))
+
+            if (verifier is null)
                 throw new UnauthorizedAccessException("Недійсний запит входу.");
+
+            var verifierHasInvalidLength = verifier.Length is < 43 or > 128;
+
+            if (verifierHasInvalidLength)
+                throw new UnauthorizedAccessException("Недійсний запит входу.");
+
+            var verifierHasInvalidCharacter = verifier.Any(character =>
+                !char.IsAsciiLetterOrDigit(character)
+                && character is not '-' and not '_' and not '.' and not '~');
+
+            if (verifierHasInvalidCharacter)
+                throw new UnauthorizedAccessException("Недійсний запит входу.");
+
             fields["code_verifier"] = verifier;
         }
         using var message = new HttpRequestMessage(HttpMethod.Post,
             provider == "google" ? "https://oauth2.googleapis.com/token" : "https://graph.facebook.com/oauth/access_token")
-        { Content = new FormUrlEncodedContent(fields) };
+        {
+            Content = new FormUrlEncodedContent(fields)
+        };
         using var response = await _httpClient.SendAsync(message, cancellationToken);
-        if (!response.IsSuccessStatusCode) throw new UnauthorizedAccessException("Не вдалося підтвердити вхід. Спробуйте ще раз.");
+
+        if (!response.IsSuccessStatusCode)
+            throw new UnauthorizedAccessException("Не вдалося підтвердити вхід. Спробуйте ще раз.");
+
         using var token = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
-        if (!token.RootElement.TryGetProperty("access_token", out var accessToken) || string.IsNullOrWhiteSpace(accessToken.GetString()))
+
+        if (!token.RootElement.TryGetProperty("access_token", out var accessToken))
+            throw new UnauthorizedAccessException("Провайдер не підтвердив вхід.");
+
+        var accessTokenIsMissing = string.IsNullOrWhiteSpace(accessToken.GetString());
+
+        if (accessTokenIsMissing)
             throw new UnauthorizedAccessException("Провайдер не підтвердив вхід.");
         return await ExternalLoginAsync(provider, accessToken.GetString()!, cancellationToken);
     }
@@ -399,6 +459,7 @@ public sealed class IdentityService : IIdentityService
         if (existingLink is not null)
         {
             var user = existingLink.User ?? throw new UnauthorizedAccessException("Обліковий запис недоступний.");
+
             if (user.Status != UserStatus.Active)
             {
                 throw new InvalidOperationException("Обліковий запис заблоковано або видалено.");
@@ -416,6 +477,7 @@ public sealed class IdentityService : IIdentityService
             }
 
             var challenge = await _secondFactorService.CreateLoginChallengeAsync(user, cancellationToken);
+
             if (challenge is not null)
             {
                 return new LoginResponse(null, challenge);
@@ -434,12 +496,15 @@ public sealed class IdentityService : IIdentityService
         {
             if (userByEmail.Status != UserStatus.Active)
                 throw new UnauthorizedAccessException("Обліковий запис заблоковано або видалено.");
+
             if (userByEmail.ExternalLogins.Any(el => el.Provider == provider))
                 throw new UnauthorizedAccessException("Для цього облікового запису вже підключено інший профіль провайдера.");
+
             _context.UserExternalLogins.Add(userByEmail.AddExternalLogin(provider, providerUserId));
             await _context.SaveChangesAsync(cancellationToken);
 
             var challenge = await _secondFactorService.CreateLoginChallengeAsync(userByEmail, cancellationToken);
+
             if (challenge is not null)
             {
                 return new LoginResponse(null, challenge);
@@ -472,6 +537,7 @@ public sealed class IdentityService : IIdentityService
         await _context.SaveChangesAsync(cancellationToken);
 
         var newUserChallenge = await _secondFactorService.CreateLoginChallengeAsync(newUser, cancellationToken);
+
         if (newUserChallenge is not null)
         {
             return new LoginResponse(null, newUserChallenge);
@@ -534,12 +600,15 @@ public sealed class IdentityService : IIdentityService
         }
 
         var externalLogin = user.ExternalLogins.FirstOrDefault(el => el.Provider == provider);
+
         if (externalLogin is null)
         {
             throw new InvalidOperationException($"Обліковий запис {provider} не пов'язаний.");
         }
 
-        if (string.IsNullOrEmpty(user.PasswordHash) && user.ExternalLogins.Count == 1)
+        var isRemovingOnlyLoginMethod = string.IsNullOrEmpty(user.PasswordHash) && user.ExternalLogins.Count == 1;
+
+        if (isRemovingOnlyLoginMethod)
         {
             throw new InvalidOperationException("Неможливо відв'язати єдиний спосіб входу. Встановіть пароль спочатку.");
         }
@@ -572,16 +641,26 @@ public sealed class IdentityService : IIdentityService
         request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
 
         using var response = await _httpClient.SendAsync(request, cancellationToken);
-        if (!response.IsSuccessStatusCode) throw new UnauthorizedAccessException("Google не підтвердив вхід.");
+
+        if (!response.IsSuccessStatusCode)
+            throw new UnauthorizedAccessException("Google не підтвердив вхід.");
 
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
         var userInfo = JsonSerializer.Deserialize<GoogleUserInfo>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-        if (userInfo is null || string.IsNullOrEmpty(userInfo.Id) || string.IsNullOrEmpty(userInfo.Email))
+        if (userInfo is null)
         {
             throw new InvalidOperationException("Failed to get user info from Google.");
         }
-        if (!userInfo.VerifiedEmail) throw new UnauthorizedAccessException("Підтвердьте адресу електронної пошти у Google.");
+
+        var hasGoogleUserId = !string.IsNullOrEmpty(userInfo.Id);
+        var hasGoogleEmail = !string.IsNullOrEmpty(userInfo.Email);
+
+        if (!hasGoogleUserId || !hasGoogleEmail)
+            throw new InvalidOperationException("Failed to get user info from Google.");
+
+        if (!userInfo.VerifiedEmail)
+            throw new UnauthorizedAccessException("Підтвердьте адресу електронної пошти у Google.");
 
         return (
             userInfo.Id,
@@ -600,15 +679,23 @@ public sealed class IdentityService : IIdentityService
         request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
 
         using var response = await _httpClient.SendAsync(request, cancellationToken);
-        if (!response.IsSuccessStatusCode) throw new UnauthorizedAccessException("Facebook не підтвердив вхід.");
+
+        if (!response.IsSuccessStatusCode)
+            throw new UnauthorizedAccessException("Facebook не підтвердив вхід.");
 
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
         var userInfo = JsonSerializer.Deserialize<FacebookUserInfo>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-        if (userInfo is null || string.IsNullOrEmpty(userInfo.Id) || string.IsNullOrEmpty(userInfo.Email))
+        if (userInfo is null)
         {
             throw new InvalidOperationException("Дозвольте Facebook передати адресу електронної пошти для входу.");
         }
+
+        var hasFacebookUserId = !string.IsNullOrEmpty(userInfo.Id);
+        var hasFacebookEmail = !string.IsNullOrEmpty(userInfo.Email);
+
+        if (!hasFacebookUserId || !hasFacebookEmail)
+            throw new InvalidOperationException("Дозвольте Facebook передати адресу електронної пошти для входу.");
 
         return (
             userInfo.Id,

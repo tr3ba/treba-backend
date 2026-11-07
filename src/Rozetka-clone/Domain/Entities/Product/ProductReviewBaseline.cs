@@ -6,6 +6,8 @@ public sealed class ProductReviewBaseline
     {
         get; set;
     }
+
     public DateTimeOffset CapturedAt { get; set; } = DateTimeOffset.UtcNow;
+
     public string Snapshot { get; set; } = "{}";
 }

@@ -19,38 +19,60 @@ namespace Application.Reviews
 
         public async Task<PagedResult<ReviewableProductDto>> GetProductsAwaitingReviewAsync(Guid userId, int page, CancellationToken cancellationToken = default)
         {
-            if (page is < 1 or > 100000) throw new ArgumentOutOfRangeException(nameof(page));
+            if (page is < 1 or > 100000)
+                throw new ArgumentOutOfRangeException(nameof(page));
             var query = from item in _dbContext.OrderItems.AsNoTracking()
-                join order in _dbContext.Orders.AsNoTracking() on item.OrderId equals order.Id
-                join product in _dbContext.Products.AsNoTracking() on item.ProductId equals product.Id
-                where order.CustomerId == userId && order.PaymentStatus == PaymentStatus.SUCCEEDED
-                    && (order.Status == OrderStatus.DELIVERED || order.Status == OrderStatus.COMPLETED)
-                    && !_dbContext.Reviews.Any(review => review.OrderItemId == item.Id)
-                orderby order.CreatedAt descending, item.Id
-                select new ReviewableProductDto(item.Id, item.ProductId, item.ProductName, product.Slug,
-                    _dbContext.ProductImages.Where(image => image.ProductId == item.ProductId)
-                        .OrderByDescending(image => image.IsMain).ThenBy(image => image.SortOrder).ThenBy(image => image.Id)
-                        .Select(image => image.ImageUrl).FirstOrDefault(), order.Id, order.OrderNumber);
+                        join order in _dbContext.Orders.AsNoTracking() on item.OrderId equals order.Id
+                        join product in _dbContext.Products.AsNoTracking() on item.ProductId equals product.Id
+                        where order.CustomerId == userId && order.PaymentStatus == PaymentStatus.SUCCEEDED
+                            && (order.Status == OrderStatus.DELIVERED || order.Status == OrderStatus.COMPLETED)
+                            && !_dbContext.Reviews.Any(review => review.OrderItemId == item.Id)
+                        orderby order.CreatedAt descending, item.Id
+                        select new ReviewableProductDto(item.Id, item.ProductId, item.ProductName, product.Slug,
+                            _dbContext.ProductImages.Where(image => image.ProductId == item.ProductId)
+                                .OrderByDescending(image => image.IsMain).ThenBy(image => image.SortOrder).ThenBy(image => image.Id)
+                                .Select(image => image.ImageUrl).FirstOrDefault(), order.Id, order.OrderNumber);
             var count = await query.CountAsync(cancellationToken);
-            return new() { Items = await query.Skip((page - 1) * 20).Take(20).ToListAsync(cancellationToken),
-                Page = page, PageSize = 20, TotalCount = count };
+            return new()
+            {
+                Items = await query.Skip((page - 1) * 20).Take(20).ToListAsync(cancellationToken),
+                Page = page,
+                PageSize = 20,
+                TotalCount = count
+            };
         }
 
         public async Task<PagedResult<ReviewDto>> GetMyReviewsAsync(Guid userId, int page, CancellationToken cancellationToken = default)
         {
-            if (page is < 1 or > 100000) throw new ArgumentOutOfRangeException(nameof(page));
+            if (page is < 1 or > 100000)
+                throw new ArgumentOutOfRangeException(nameof(page));
             var query = _dbContext.Reviews.AsNoTracking().Where(review => review.UserId == userId && review.Status != ReviewStatus.DELETED);
             var count = await query.CountAsync(cancellationToken);
             var items = await query.OrderByDescending(review => review.CreatedAt).ThenBy(review => review.Id)
                 .Skip((page - 1) * 20).Take(20).Select(review => new ReviewDto
                 {
-                    Id = review.Id, ProductId = review.ProductId, UserId = review.UserId, OrderItemId = review.OrderItemId,
-                    Rating = review.Rating, Title = review.Title, Comment = review.Comment, Status = review.Status,
-                    VerifiedPurchase = review.VerifiedPurchase, HelpfulCount = review.HelpfulCount,
-                    CreatedAt = review.CreatedAt, UpdatedAt = review.UpdatedAt,
-                    StaffReply = review.StaffReply, StaffRepliedAt = review.StaffRepliedAt
+                    Id = review.Id,
+                    ProductId = review.ProductId,
+                    UserId = review.UserId,
+                    OrderItemId = review.OrderItemId,
+                    Rating = review.Rating,
+                    Title = review.Title,
+                    Comment = review.Comment,
+                    Status = review.Status,
+                    VerifiedPurchase = review.VerifiedPurchase,
+                    HelpfulCount = review.HelpfulCount,
+                    CreatedAt = review.CreatedAt,
+                    UpdatedAt = review.UpdatedAt,
+                    StaffReply = review.StaffReply,
+                    StaffRepliedAt = review.StaffRepliedAt
                 }).ToListAsync(cancellationToken);
-            return new() { Items = items, Page = page, PageSize = 20, TotalCount = count };
+            return new()
+            {
+                Items = items,
+                Page = page,
+                PageSize = 20,
+                TotalCount = count
+            };
         }
 
         public async Task<ReviewDto> CreateReviewAsync(
@@ -58,14 +80,21 @@ namespace Application.Reviews
             CreateReviewRequest request,
             CancellationToken cancellationToken = default)
         {
-            if (request.Rating < 1 || request.Rating > 5)
+            var ratingIsOutOfRange = request.Rating < 1 || request.Rating > 5;
+
+            if (ratingIsOutOfRange)
             {
                 throw new ArgumentOutOfRangeException(
                     nameof(request.Rating),
                     "Rating must be between 1 and 5.");
             }
 
-            if (request.Title is null || request.Title.Length > 255 || string.IsNullOrWhiteSpace(request.Comment) || request.Comment.Length > 10000)
+            var titleIsMissing = request.Title is null;
+            var titleIsTooLong = request.Title?.Length > 255;
+            var commentIsMissing = string.IsNullOrWhiteSpace(request.Comment);
+            var commentIsTooLong = request.Comment?.Length > 10000;
+
+            if (titleIsMissing || titleIsTooLong || commentIsMissing || commentIsTooLong)
                 throw new ArgumentException("Вкажіть текст відгуку до 10000 символів і заголовок до 255 символів.");
 
             var orderItem = await _dbContext.OrderItems
@@ -100,7 +129,9 @@ namespace Application.Reviews
                     "Відгук може залишити лише покупець цього товару.");
             }
 
-            if (!ReviewEligibility.IsPurchased(order.Status, order.PaymentStatus))
+            var orderIsEligibleForReview = ReviewEligibility.IsPurchased(order.Status, order.PaymentStatus);
+
+            if (!orderIsEligibleForReview)
                 throw new BusinessRuleException("Відгук можна залишити після оплати та отримання товару.");
 
             var reviewAlreadyExists = await _dbContext.Reviews
@@ -162,7 +193,9 @@ namespace Application.Reviews
             UpdateReviewRequest request,
             CancellationToken cancellationToken = default)
         {
-            if (request.Rating < 1 || request.Rating > 5)
+            var ratingIsOutOfRange = request.Rating < 1 || request.Rating > 5;
+
+            if (ratingIsOutOfRange)
             {
                 throw new ArgumentOutOfRangeException(
                     nameof(request.Rating),
@@ -247,11 +280,19 @@ namespace Application.Reviews
             string? reply = null,
             Guid? repliedBy = null)
         {
-            if (status is not (ReviewStatus.PUBLISHED or ReviewStatus.REJECTED))
+            var statusIsNotModeratable = status is not (ReviewStatus.PUBLISHED or ReviewStatus.REJECTED);
+
+            if (statusIsNotModeratable)
                 throw new ArgumentException("Choose PUBLISHED or REJECTED.", nameof(status));
-            if (reply is not null && (reply.Length > 2000 || status != ReviewStatus.PUBLISHED))
+
+            var replyIsTooLong = reply?.Length > 2000;
+            var replyIsForUnpublishedReview = reply is not null && status != ReviewStatus.PUBLISHED;
+
+            if (replyIsTooLong || replyIsForUnpublishedReview)
                 throw new ArgumentException("Відповідь до 2000 символів можна додати лише до опублікованого відгуку.");
+
             var normalizedReply = string.IsNullOrWhiteSpace(reply) ? null : reply.Trim();
+
             if (normalizedReply is not null && repliedBy is null)
                 throw new UnauthorizedAccessException();
 
@@ -267,8 +308,11 @@ namespace Application.Reviews
 
             if (review.Status == ReviewStatus.DELETED)
                 throw new BusinessRuleException("Deleted reviews cannot be moderated.");
+
             var replyChanged = reply is not null && normalizedReply != review.StaffReply;
-            if (review.Status == status && !replyChanged) return;
+
+            if (review.Status == status && !replyChanged)
+                return;
 
             if (review.Status != status)
             {
@@ -286,8 +330,10 @@ namespace Application.Reviews
                 product.AverageRating = count == 0 ? 0 : sum / (double)count;
                 product.UpdatedAt = DateTime.UtcNow;
             }
+
             review.Status = status;
             review.UpdatedAt = DateTime.UtcNow;
+
             if (replyChanged)
             {
                 review.StaffReply = normalizedReply;

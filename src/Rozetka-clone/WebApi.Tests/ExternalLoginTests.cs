@@ -18,22 +18,28 @@ namespace WebApi.Tests;
 public sealed class ExternalLoginTests
 {
     private const string Origin = "https://treba.example";
+
     private const string Verifier = "fixture-verifier-abcdefghijklmnopqrstuvwxyz0123456789";
+
     private static readonly IOptions<SecurityOptions> Security = Options.Create(new SecurityOptions
     {
         EncryptionKey = Convert.ToBase64String(new byte[32]),
         OtpHashKey = Convert.ToBase64String(Enumerable.Repeat((byte)1, 32).ToArray()),
     });
+
     private sealed class Email : IEmailSender
     {
         public Task SendSecurityCodeAsync(string recipient, string displayName, string code, TimeSpan validFor, CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
+
     private sealed class Provider(string provider, string email = "customer@example.test", bool verified = true, bool missingSurname = false) : HttpMessageHandler
     {
         public int Requests;
+
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             Requests++;
+
             if (request.RequestUri!.AbsolutePath.EndsWith("/token") || request.RequestUri.AbsolutePath.EndsWith("/access_token"))
             {
                 Assert.Equal(HttpMethod.Post, request.Method);
@@ -42,7 +48,9 @@ public sealed class ExternalLoginTests
                 Assert.Equal(provider + "-client", fields["client_id"]);
                 Assert.Equal(provider + "-fixture-secret", fields["client_secret"]);
                 Assert.Equal(Origin + "/api/auth/external/" + provider + "/callback", fields["redirect_uri"]);
+
                 if (provider == "google") Assert.Equal(Verifier, fields["code_verifier"]);
+
                 if (fields["code"] == "invalid") return new(HttpStatusCode.BadRequest) { Content = new StringContent("{}") };
                 return new(HttpStatusCode.OK) { Content = new StringContent("{\"access_token\":\"provider-token\"}") };
             }
@@ -53,18 +61,25 @@ public sealed class ExternalLoginTests
             return new(HttpStatusCode.OK) { Content = new StringContent(profile) };
         }
     }
+
     private static IdentityService Identity(ApplicationDbContext db, Provider provider, bool enabled = true)
     {
         var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["Jwt:SecretKey"] = "external-login-tests-only-key-at-least-32-bytes",
-            ["Jwt:Issuer"] = "test", ["Jwt:Audience"] = "test",
+            ["Jwt:Issuer"] = "test",
+            ["Jwt:Audience"] = "test",
             ["ExternalAuth:StoreOrigin"] = Origin,
-            ["ExternalAuth:Google:Enabled"] = enabled.ToString(), ["ExternalAuth:Google:ClientId"] = "google-client", ["ExternalAuth:Google:ClientSecret"] = "google-fixture-secret",
-            ["ExternalAuth:Facebook:Enabled"] = enabled.ToString(), ["ExternalAuth:Facebook:ClientId"] = "facebook-client", ["ExternalAuth:Facebook:ClientSecret"] = "facebook-fixture-secret",
+            ["ExternalAuth:Google:Enabled"] = enabled.ToString(),
+            ["ExternalAuth:Google:ClientId"] = "google-client",
+            ["ExternalAuth:Google:ClientSecret"] = "google-fixture-secret",
+            ["ExternalAuth:Facebook:Enabled"] = enabled.ToString(),
+            ["ExternalAuth:Facebook:ClientId"] = "facebook-client",
+            ["ExternalAuth:Facebook:ClientSecret"] = "facebook-fixture-secret",
         }).Build();
         return new(db, new TokenService(config), new SecondFactorService(db, new Email(), new(Security), Security), config, new HttpClient(provider));
     }
+
     private static ExternalCodeLoginRequest Request(string provider, string code = "one-time-code") =>
         new(provider, code, Origin + "/api/auth/external/" + provider + "/callback", Verifier);
 

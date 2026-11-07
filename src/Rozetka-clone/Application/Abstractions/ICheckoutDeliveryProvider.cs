@@ -4,8 +4,14 @@ namespace Application.Abstractions;
 
 public interface ICheckoutDeliveryProvider
 {
-    bool Available { get; }
-    decimal DefaultWeightKg { get; }
+    bool Available
+    {
+        get;
+    }
+    decimal DefaultWeightKg
+    {
+        get;
+    }
     Task<IReadOnlyList<DeliveryCity>> CitiesAsync(string query, CancellationToken ct);
     Task<DeliveryPickupPage> PickupPointsAsync(Guid cityRef, string query, string kind, int page, CancellationToken ct);
     Task<(DeliveryCity City, DeliveryPickupPoint PickupPoint, decimal Price)> QuoteAsync(Guid cityRef,

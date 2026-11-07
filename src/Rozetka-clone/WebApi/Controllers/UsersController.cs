@@ -13,7 +13,9 @@ namespace WebApi.Controllers;
 public class UsersController : ControllerBase
 {
     private const long MaxAvatarBytes = 5 * 1024 * 1024;
+
     private readonly IApplicationDbContext _context;
+
     private readonly IWebHostEnvironment _environment;
 
     public UsersController(
@@ -339,6 +341,7 @@ public class UsersController : ControllerBase
         }
 
         var oldAvatarUrl = user.Profile?.AvatarUrl;
+
         if (user.Profile is not null
             && oldAvatarUrl is not null)
         {
@@ -438,6 +441,7 @@ public class UsersController : ControllerBase
     )
     {
         var expectedPrefix = $"/uploads/avatars/{userId:N}/";
+
         if (
             string.IsNullOrWhiteSpace(avatarUrl)
             || !avatarUrl.StartsWith(
@@ -471,6 +475,7 @@ public class UsersController : ControllerBase
                     )
             )
         );
+
         if (path.StartsWith(
             expectedDirectory,
             StringComparison.OrdinalIgnoreCase

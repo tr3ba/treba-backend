@@ -15,6 +15,7 @@ namespace Application.Products
     public sealed class ProductService : IProductService
     {
         private readonly IApplicationDbContext _dbContext;
+
         private readonly ICurrentActor? _actor;
 
         public ProductService(
@@ -251,6 +252,7 @@ namespace Application.Products
                 )
                 .Select(v => v.Price)
                 .ToListAsync(cancellationToken);
+
             if (!variants.Any(price => price > 0))
             {
                 throw new BusinessRuleException("Add an active variant with a positive price before submitting.");
@@ -357,6 +359,7 @@ namespace Application.Products
         {
             var name = _actor?.Name ?? "System";
             var changes = new List<AuditChangeDto> { new("Status", previous.ToString(), product.Status.ToString()), new("Decision", null, decision) };
+
             if (reason is not null)
                 changes.Add(new("Reason", null, reason));
             _dbContext.AdminAuditLogs.Add(new AdminAuditLog

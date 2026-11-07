@@ -6,7 +6,10 @@ namespace Application.Reviews
 {
     public sealed class UpdateReviewRequest
     {
-        public int Rating { get; init; }
+        public int Rating
+        {
+            get; init;
+        }
 
         public string Title { get; init; } = string.Empty;
 

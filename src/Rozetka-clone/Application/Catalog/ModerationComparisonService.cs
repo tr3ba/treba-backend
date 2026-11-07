@@ -13,6 +13,7 @@ public sealed class ModerationComparisonService(IApplicationDbContext db)
     public async Task CaptureAsync(Product product, CancellationToken ct)
     {
         var baseline = await db.ProductReviewBaselines.SingleOrDefaultAsync(b => b.ProductId == product.Id, ct);
+
         if (baseline is null)
         {
             baseline = new()
@@ -24,11 +25,13 @@ public sealed class ModerationComparisonService(IApplicationDbContext db)
         baseline.CapturedAt = DateTimeOffset.UtcNow;
         baseline.Snapshot = JsonSerializer.Serialize(await Snapshot(product, ct));
     }
+
     public async Task<ModerationComparisonDto> CompareAsync(Guid id, Guid? sellerUserId, CancellationToken ct)
     {
         var product = await db.Products.AsNoTracking().SingleOrDefaultAsync(p => p.Id == id
             && (!sellerUserId.HasValue || db.Stores.Any(s => s.Id == p.StoreId && db.Sellers.Any(seller => seller.Id == s.SellerId && seller.UserId == sellerUserId))), ct) ?? throw new KeyNotFoundException();
         var baseline = await db.ProductReviewBaselines.AsNoTracking().SingleOrDefaultAsync(b => b.ProductId == id, ct);
+
         if (baseline is null)
             return new(null, []);
         var before = JsonSerializer.Deserialize<Dictionary<string, string>>(baseline.Snapshot) ?? [];
@@ -37,6 +40,7 @@ public sealed class ModerationComparisonService(IApplicationDbContext db)
             .Where(k => before.GetValueOrDefault(k) != after.GetValueOrDefault(k))
             .Select(k => new AuditChangeDto(k, before.GetValueOrDefault(k), after.GetValueOrDefault(k))).ToList());
     }
+
     private async Task<Dictionary<string, string>> Snapshot(Product p, CancellationToken ct)
     {
         var category = await db.Categories.Where(c => c.Id == p.CategoryId).Select(c => c.Name).SingleOrDefaultAsync(ct);

@@ -7,20 +7,48 @@ namespace Application.Attributes
 {
     public sealed class AttributeDto
     {
-        public Guid Id { get; init; }
-        public Guid CategoryId { get; init; }
+        public Guid Id
+        {
+            get; init;
+        }
+
+        public Guid CategoryId
+        {
+            get; init;
+        }
 
         public string Name { get; init; } = string.Empty;
+
         public string Code { get; init; } = string.Empty;
 
-        public AttributeType Type { get; init; }
+        public AttributeType Type
+        {
+            get; init;
+        }
 
-        public bool IsRequired { get; init; }
-        public bool IsFilterable { get; init; }
-        public bool IsComparable { get; init; }
+        public bool IsRequired
+        {
+            get; init;
+        }
 
-        public string? Unit { get; init; }
+        public bool IsFilterable
+        {
+            get; init;
+        }
 
-        public int SortOrder { get; init; }
+        public bool IsComparable
+        {
+            get; init;
+        }
+
+        public string? Unit
+        {
+            get; init;
+        }
+
+        public int SortOrder
+        {
+            get; init;
+        }
     }
 }

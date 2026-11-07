@@ -27,7 +27,10 @@ namespace Domain.Entities.Users
 
         public string Name { get; private set; } = null!;
 
-        public string? Description { get; private set; }
+        public string? Description
+        {
+            get; private set;
+        }
 
         public static Permission Create(
             string code,

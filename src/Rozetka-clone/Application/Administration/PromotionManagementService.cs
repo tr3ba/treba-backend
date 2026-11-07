@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.RegularExpressions;
 using Application.Abstractions;
 using Application.Common;
 using Application.Orders;
@@ -12,142 +13,471 @@ namespace Application.Administration;
 
 public sealed class PromotionManagementService(IApplicationDbContext db)
 {
-    public async Task<PagedResponse<PromotionView>> ListAsync(int page, string? search, string? status, CancellationToken ct)
+    private const int PageSize = 12;
+    private const string CouponCodePattern = @"^[A-Za-z0-9_-]+$";
+
+    public async Task<PagedResponse<PromotionView>> ListAsync(
+        int page,
+        string? search,
+        string? status,
+        CancellationToken ct)
     {
-        OrderService.ValidatePage(page, 12);
+        OrderService.ValidatePage(page, PageSize);
+
         var query = db.Promotions.AsNoTracking();
-        if (!string.IsNullOrWhiteSpace(status))
-        {
-            if (!Enum.TryParse<PromotionStatus>(status, out var state) || !Enum.IsDefined(state) || state.ToString() != status)
-                throw new ArgumentException("Unknown promotion status.");
-            query = query.Where(p => p.Status == state);
-        }
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            var term = search.Trim().ToLowerInvariant();
-            query = query.Where(p => p.Name.ToLower().Contains(term) || db.Coupons.Any(c => c.PromotionId == p.Id && c.Code.ToLower().Contains(term)));
-        }
+        query = FilterByStatus(query, status);
+        query = FilterBySearch(query, search);
+
         var count = await query.CountAsync(ct);
-        var rows = await query.OrderByDescending(p => p.StartAt).ThenBy(p => p.Id).Skip((page - 1) * 12).Take(12).ToListAsync(ct);
-        var ids = rows.Select(p => p.Id).ToList();
-        var coupons = await db.Coupons.AsNoTracking().Where(c => ids.Contains(c.PromotionId)).ToListAsync(ct);
-        var actions = await db.PromotionActions.AsNoTracking().Where(a => ids.Contains(a.PromotionId)).ToListAsync(ct);
-        var rules = await db.PromotionRules.AsNoTracking().Where(r => ids.Contains(r.PromotionId)).ToListAsync(ct);
-        return new(rows.Select(p => View(p, actions.FirstOrDefault(a => a.PromotionId == p.Id), rules.Where(r => r.PromotionId == p.Id), coupons.Where(c => c.PromotionId == p.Id))).ToList(), page, 12, count, (int)Math.Ceiling(count / 12d));
+        var skip = (page - 1) * PageSize;
+        var promotions = await query
+            .OrderByDescending(promotion => promotion.StartAt)
+            .ThenBy(promotion => promotion.Id)
+            .Skip(skip)
+            .Take(PageSize)
+            .ToListAsync(ct);
+
+        var promotionIds = promotions.Select(promotion => promotion.Id).ToList();
+
+        var coupons = await db.Coupons.AsNoTracking()
+            .Where(coupon => promotionIds.Contains(coupon.PromotionId))
+            .ToListAsync(ct);
+
+        var actions = await db.PromotionActions.AsNoTracking()
+            .Where(action => promotionIds.Contains(action.PromotionId))
+            .ToListAsync(ct);
+
+        var rules = await db.PromotionRules.AsNoTracking()
+            .Where(rule => promotionIds.Contains(rule.PromotionId))
+            .ToListAsync(ct);
+
+        var result = promotions.Select(promotion =>
+        {
+            var action = actions.FirstOrDefault(item => item.PromotionId == promotion.Id);
+            var promotionRules = rules.Where(rule => rule.PromotionId == promotion.Id);
+            var promotionCoupons = coupons.Where(coupon => coupon.PromotionId == promotion.Id);
+
+            return View(promotion, action, promotionRules, promotionCoupons);
+        }).ToList();
+
+        return new(result, page, PageSize, count, (int)Math.Ceiling(count / (double)PageSize));
     }
+
     public async Task<PromotionView?> GetAsync(Guid id, CancellationToken ct)
     {
-        var p = await db.Promotions.AsNoTracking().SingleOrDefaultAsync(p => p.Id == id, ct);
-        if (p is null)
+        var promotion = await db.Promotions.AsNoTracking()
+            .SingleOrDefaultAsync(item => item.Id == id, ct);
+
+        if (promotion is null)
             return null;
-        return View(p, await db.PromotionActions.AsNoTracking().FirstOrDefaultAsync(a => a.PromotionId == id, ct),
-            await db.PromotionRules.AsNoTracking().Where(r => r.PromotionId == id).ToListAsync(ct), await db.Coupons.AsNoTracking().Where(c => c.PromotionId == id).ToListAsync(ct));
+
+        var action = await db.PromotionActions.AsNoTracking()
+            .FirstOrDefaultAsync(item => item.PromotionId == id, ct);
+
+        var rules = await db.PromotionRules.AsNoTracking()
+            .Where(item => item.PromotionId == id)
+            .ToListAsync(ct);
+
+        var coupons = await db.Coupons.AsNoTracking()
+            .Where(item => item.PromotionId == id)
+            .ToListAsync(ct);
+
+        return View(promotion, action, rules, coupons);
     }
+
     public async Task<PromotionView> SaveAsync(Guid? id, PromotionInput request, CancellationToken ct)
     {
         OrderService.ValidateText(request.Name, 255, "Promotion name");
-        if (request.Description?.Length > 4000)
-            throw new ArgumentException("Description is too long.");
-        if (request.Type is not ("PERCENTAGE" or "FIXED_AMOUNT"))
-            throw new ArgumentException("Choose a percentage or fixed amount discount.");
-        if (!Enum.TryParse<PromotionStatus>(request.Status, out var status) || !Enum.IsDefined(status) || status.ToString() != request.Status)
+        ValidateDescription(request.Description);
+        ValidatePromotionType(request.Type);
+
+        var status = ParsePromotionStatus(request.Status);
+        ValidatePromotionDates(request, status);
+        ValidateDiscount(request);
+
+        var couponCodes = ValidateCoupons(request.Coupons);
+
+        await EnsureCouponCodesAvailableAsync(id, couponCodes, ct);
+        await EnsureTargetsAvailableAsync(request, ct);
+
+        var promotion = await LoadPromotionAsync(id, ct);
+        ValidateExpectedVersion(id, request.ExpectedVersion, promotion);
+
+        var existingCoupons = await LoadExistingCouponsAsync(id, ct);
+        ValidateExistingCoupons(request.Coupons, existingCoupons);
+
+        if (!id.HasValue)
+            db.Promotions.Add(promotion);
+
+        UpdatePromotion(promotion, request, status);
+
+        await ReplaceRulesAsync(promotion, request, ct);
+        await ReplaceActionAsync(promotion, request, ct);
+        UpdateCoupons(promotion, request.Coupons, existingCoupons);
+
+        await db.SaveChangesAsync(ct);
+
+        return (await GetAsync(promotion.Id, ct))!;
+    }
+
+    private static IQueryable<Promotion> FilterByStatus(IQueryable<Promotion> query, string? status)
+    {
+        if (string.IsNullOrWhiteSpace(status))
+            return query;
+
+        if (!Enum.TryParse<PromotionStatus>(status, out var parsedStatus)
+            || !Enum.IsDefined(parsedStatus)
+            || parsedStatus.ToString() != status)
+        {
             throw new ArgumentException("Unknown promotion status.");
-        if (request.StartAt >= request.EndAt || request.StartAt == default || request.EndAt == default)
+        }
+
+        return query.Where(promotion => promotion.Status == parsedStatus);
+    }
+
+    private IQueryable<Promotion> FilterBySearch(IQueryable<Promotion> query, string? search)
+    {
+        if (string.IsNullOrWhiteSpace(search))
+            return query;
+
+        var term = search.Trim().ToLowerInvariant();
+
+        return query.Where(promotion =>
+            promotion.Name.ToLower().Contains(term)
+            || db.Coupons.Any(coupon =>
+                coupon.PromotionId == promotion.Id
+                && coupon.Code.ToLower().Contains(term)));
+    }
+
+    private static void ValidateDescription(string? description)
+    {
+        if (description?.Length > 4000)
+            throw new ArgumentException("Description is too long.");
+    }
+
+    private static void ValidatePromotionType(string type)
+    {
+        if (type is not ("PERCENTAGE" or "FIXED_AMOUNT"))
+            throw new ArgumentException("Choose a percentage or fixed amount discount.");
+    }
+
+    private static PromotionStatus ParsePromotionStatus(string status)
+    {
+        if (!Enum.TryParse<PromotionStatus>(status, out var parsedStatus)
+            || !Enum.IsDefined(parsedStatus)
+            || parsedStatus.ToString() != status)
+        {
+            throw new ArgumentException("Unknown promotion status.");
+        }
+
+        return parsedStatus;
+    }
+
+    private static void ValidatePromotionDates(PromotionInput request, PromotionStatus status)
+    {
+        if (request.StartAt >= request.EndAt
+            || request.StartAt == default
+            || request.EndAt == default)
+        {
             throw new ArgumentException("The end must be after the start.");
-        if (status == PromotionStatus.ACTIVE && (request.StartAt > DateTimeOffset.UtcNow || request.EndAt <= DateTimeOffset.UtcNow))
+        }
+
+        if (status == PromotionStatus.ACTIVE
+            && (request.StartAt > DateTimeOffset.UtcNow || request.EndAt <= DateTimeOffset.UtcNow))
+        {
             throw new ArgumentException("An active promotion must be within its dates.");
+        }
+
         if (status == PromotionStatus.SCHEDULED && request.EndAt <= DateTimeOffset.UtcNow)
             throw new ArgumentException("A scheduled promotion must end in the future.");
-        if (request.DiscountValue <= 0 || request.DiscountValue > 999999999.99m || request.Type == "PERCENTAGE" && request.DiscountValue > 100
-            || !Money(request.DiscountValue) || request.MaximumDiscount is <= 0 or > 999999999.99m || request.MaximumDiscount.HasValue && !Money(request.MaximumDiscount.Value)
-            || request.MinimumOrderAmount is < 0 or > 999999999.99m || request.MinimumOrderAmount.HasValue && !Money(request.MinimumOrderAmount.Value))
-            throw new ArgumentException("Invalid discount or monetary limit.");
-        if (request.Coupons is null || request.Coupons.Count is < 1 or > 30 || request.Coupons.Any(c => c is null || string.IsNullOrWhiteSpace(c.Code)
-            || c.Code.Length > 100 || !System.Text.RegularExpressions.Regex.IsMatch(c.Code, @"^[A-Za-z0-9_-]+$") || c.UsageLimit < 0 || c.UsageLimitPerUser < 0))
-            throw new ArgumentException("Provide valid coupon codes and nonnegative usage limits.");
-        var codes = request.Coupons.Select(c => c.Code.ToUpperInvariant()).ToList();
-        if (codes.Distinct().Count() != codes.Count || request.Coupons.Where(c => c.Id.HasValue).Select(c => c.Id).Distinct().Count() != request.Coupons.Count(c => c.Id.HasValue))
-            throw new ArgumentException("Duplicate coupons.");
-        if (await db.Coupons.AnyAsync(c => codes.Contains(c.Code.ToUpper()) && c.PromotionId != id, ct))
-            throw new BusinessRuleException("A coupon code is already in use.");
-        if (request.ProductId.HasValue && !await db.Products.AnyAsync(x => x.Id == request.ProductId, ct)
-            || request.CategoryId.HasValue && !await db.Categories.AnyAsync(x => x.Id == request.CategoryId && x.IsActive, ct)
-            || request.BrandId.HasValue && !await db.Brands.AnyAsync(x => x.Id == request.BrandId && x.IsActive, ct)
-            || request.SellerId.HasValue && !await db.Sellers.AnyAsync(x => x.Id == request.SellerId && x.Status == SellerStatus.ACTIVE, ct))
-            throw new ArgumentException("A promotion target is unavailable.");
-        var p = id.HasValue ? await db.Promotions.SingleOrDefaultAsync(p => p.Id == id, ct) ?? throw new KeyNotFoundException() : new Promotion { Id = Guid.NewGuid() };
-        if (id.HasValue && request.ExpectedVersion != p.Version)
-            throw new BusinessRuleException("The promotion changed. Reload it before saving.");
-        var existing = id.HasValue ? await db.Coupons.Where(c => c.PromotionId == id).ToListAsync(ct) : [];
-        foreach (var input in request.Coupons)
+    }
+
+    private static void ValidateDiscount(PromotionInput request)
+    {
+        var discountIsOutOfRange = request.DiscountValue <= 0
+            || request.DiscountValue > 999999999.99m;
+
+        var percentageExceedsMaximum = request.Type == "PERCENTAGE"
+            && request.DiscountValue > 100;
+
+        var discountHasTooManyDecimalPlaces = !Money(request.DiscountValue);
+
+        var maximumDiscountIsInvalid = request.MaximumDiscount is <= 0 or > 999999999.99m
+            || request.MaximumDiscount.HasValue && !Money(request.MaximumDiscount.Value);
+
+        var minimumOrderAmountIsInvalid = request.MinimumOrderAmount is < 0 or > 999999999.99m
+            || request.MinimumOrderAmount.HasValue && !Money(request.MinimumOrderAmount.Value);
+
+        if (discountIsOutOfRange
+            || percentageExceedsMaximum
+            || discountHasTooManyDecimalPlaces
+            || maximumDiscountIsInvalid
+            || minimumOrderAmountIsInvalid)
         {
-            var old = input.Id.HasValue ? existing.SingleOrDefault(c => c.Id == input.Id) ?? throw new ArgumentException("Coupon does not belong to this promotion.") : null;
-            if (old is not null && (old.Code != input.Code.ToUpperInvariant() || input.UsageLimit > 0 && input.UsageLimit < old.UsedCount))
-                throw new BusinessRuleException("Existing coupon codes cannot be renamed, and limits cannot be lower than usage.");
+            throw new ArgumentException("Invalid discount or monetary limit.");
+        }
+    }
+
+    private static List<string> ValidateCoupons(List<CouponInput>? coupons)
+    {
+        if (coupons is null
+            || coupons.Count is < 1 or > 30
+            || coupons.Any(coupon =>
+                coupon is null
+                || string.IsNullOrWhiteSpace(coupon.Code)
+                || coupon.Code.Length > 100
+                || !Regex.IsMatch(coupon.Code, CouponCodePattern)
+                || coupon.UsageLimit < 0
+                || coupon.UsageLimitPerUser < 0))
+        {
+            throw new ArgumentException("Provide valid coupon codes and nonnegative usage limits.");
+        }
+
+        var normalizedCodes = coupons
+            .Select(coupon => coupon.Code.ToUpperInvariant())
+            .ToList();
+
+        var hasDuplicateCodes = normalizedCodes.Distinct().Count() != normalizedCodes.Count;
+        var hasDuplicateCouponIds = coupons
+            .Where(coupon => coupon.Id.HasValue)
+            .Select(coupon => coupon.Id)
+            .Distinct()
+            .Count() != coupons.Count(coupon => coupon.Id.HasValue);
+
+        if (hasDuplicateCodes || hasDuplicateCouponIds)
+            throw new ArgumentException("Duplicate coupons.");
+
+        return normalizedCodes;
+    }
+
+    private async Task EnsureCouponCodesAvailableAsync(
+        Guid? promotionId,
+        List<string> couponCodes,
+        CancellationToken ct)
+    {
+        var codeIsUsedByAnotherPromotion = await db.Coupons.AnyAsync(coupon =>
+            couponCodes.Contains(coupon.Code.ToUpper())
+            && coupon.PromotionId != promotionId, ct);
+
+        if (codeIsUsedByAnotherPromotion)
+            throw new BusinessRuleException("A coupon code is already in use.");
+    }
+
+    private async Task EnsureTargetsAvailableAsync(PromotionInput request, CancellationToken ct)
+    {
+        if (request.ProductId.HasValue
+            && !await db.Products.AnyAsync(product => product.Id == request.ProductId, ct))
+        {
+            throw new ArgumentException("A promotion target is unavailable.");
+        }
+
+        if (request.CategoryId.HasValue
+            && !await db.Categories.AnyAsync(category =>
+                category.Id == request.CategoryId && category.IsActive, ct))
+        {
+            throw new ArgumentException("A promotion target is unavailable.");
+        }
+
+        if (request.BrandId.HasValue
+            && !await db.Brands.AnyAsync(brand =>
+                brand.Id == request.BrandId && brand.IsActive, ct))
+        {
+            throw new ArgumentException("A promotion target is unavailable.");
+        }
+
+        if (request.SellerId.HasValue
+            && !await db.Sellers.AnyAsync(seller =>
+                seller.Id == request.SellerId && seller.Status == SellerStatus.ACTIVE, ct))
+        {
+            throw new ArgumentException("A promotion target is unavailable.");
+        }
+    }
+
+    private async Task<Promotion> LoadPromotionAsync(Guid? id, CancellationToken ct)
+    {
+        if (!id.HasValue)
+            return new Promotion { Id = Guid.NewGuid() };
+
+        return await db.Promotions.SingleOrDefaultAsync(promotion => promotion.Id == id, ct)
+            ?? throw new KeyNotFoundException();
+    }
+
+    private static void ValidateExpectedVersion(Guid? id, Guid? expectedVersion, Promotion promotion)
+    {
+        if (id.HasValue && expectedVersion != promotion.Version)
+            throw new BusinessRuleException("The promotion changed. Reload it before saving.");
+    }
+
+    private async Task<List<Coupon>> LoadExistingCouponsAsync(Guid? id, CancellationToken ct)
+    {
+        if (!id.HasValue)
+            return [];
+
+        return await db.Coupons
+            .Where(coupon => coupon.PromotionId == id)
+            .ToListAsync(ct);
+    }
+
+    private static void ValidateExistingCoupons(List<CouponInput> inputs, List<Coupon> existingCoupons)
+    {
+        foreach (var input in inputs)
+        {
+            var existingCoupon = input.Id.HasValue
+                ? existingCoupons.SingleOrDefault(coupon => coupon.Id == input.Id)
+                    ?? throw new ArgumentException("Coupon does not belong to this promotion.")
+                : null;
+
+            if (existingCoupon is not null
+                && (existingCoupon.Code != input.Code.ToUpperInvariant()
+                    || input.UsageLimit > 0 && input.UsageLimit < existingCoupon.UsedCount))
+            {
+                throw new BusinessRuleException(
+                    "Existing coupon codes cannot be renamed, and limits cannot be lower than usage.");
+            }
+
             if (input.UsageLimit > 0 && input.UsageLimitPerUser > input.UsageLimit)
                 throw new ArgumentException("Per-user usage cannot exceed the global limit.");
         }
-        if (!id.HasValue)
-            db.Promotions.Add(p);
-        p.Name = request.Name.Trim();
-        p.Description = request.Description?.Trim() ?? "";
-        p.Type = Enum.Parse<PromotionType>(request.Type);
-        p.Status = status;
-        p.StartAt = request.StartAt.UtcDateTime;
-        p.EndAt = request.EndAt.UtcDateTime;
-        p.Version = Guid.NewGuid();
-        var oldRules = await db.PromotionRules.Where(r => r.PromotionId == p.Id).ToListAsync(ct);
+    }
+
+    private static void UpdatePromotion(Promotion promotion, PromotionInput request, PromotionStatus status)
+    {
+        promotion.Name = request.Name.Trim();
+        promotion.Description = request.Description?.Trim() ?? "";
+        promotion.Type = Enum.Parse<PromotionType>(request.Type);
+        promotion.Status = status;
+        promotion.StartAt = request.StartAt.UtcDateTime;
+        promotion.EndAt = request.EndAt.UtcDateTime;
+        promotion.Version = Guid.NewGuid();
+    }
+
+    private async Task ReplaceRulesAsync(Promotion promotion, PromotionInput request, CancellationToken ct)
+    {
+        var oldRules = await db.PromotionRules
+            .Where(rule => rule.PromotionId == promotion.Id)
+            .ToListAsync(ct);
+
         db.PromotionRules.RemoveRange(oldRules);
-        void Rule(PromotionRuleType type, string value) => db.PromotionRules.Add(new()
+
+        AddRuleIfPresent(promotion, PromotionRuleType.PRODUCT, request.ProductId?.ToString());
+        AddRuleIfPresent(promotion, PromotionRuleType.CATEGORY, request.CategoryId?.ToString());
+        AddRuleIfPresent(promotion, PromotionRuleType.BRAND, request.BrandId?.ToString());
+        AddRuleIfPresent(promotion, PromotionRuleType.SELLER, request.SellerId?.ToString());
+
+        var minimumOrderAmount = request.MinimumOrderAmount?.ToString(CultureInfo.InvariantCulture);
+        AddRuleIfPresent(promotion, PromotionRuleType.MIN_ORDER_AMOUNT, minimumOrderAmount);
+    }
+
+    private void AddRuleIfPresent(Promotion promotion, PromotionRuleType ruleType, string? value)
+    {
+        if (value is null)
+            return;
+
+        db.PromotionRules.Add(new PromotionRule
         {
             Id = Guid.NewGuid(),
-            PromotionId = p.Id,
-            RuleType = type,
+            PromotionId = promotion.Id,
+            RuleType = ruleType,
             RuleValue = value
         });
-        if (request.ProductId.HasValue)
-            Rule(PromotionRuleType.PRODUCT, request.ProductId.Value.ToString());
-        if (request.CategoryId.HasValue)
-            Rule(PromotionRuleType.CATEGORY, request.CategoryId.Value.ToString());
-        if (request.BrandId.HasValue)
-            Rule(PromotionRuleType.BRAND, request.BrandId.Value.ToString());
-        if (request.SellerId.HasValue)
-            Rule(PromotionRuleType.SELLER, request.SellerId.Value.ToString());
-        if (request.MinimumOrderAmount.HasValue)
-            Rule(PromotionRuleType.MIN_ORDER_AMOUNT, request.MinimumOrderAmount.Value.ToString(CultureInfo.InvariantCulture));
-        db.PromotionActions.RemoveRange(await db.PromotionActions.Where(a => a.PromotionId == p.Id).ToListAsync(ct));
-        db.PromotionActions.Add(new()
+    }
+
+    private async Task ReplaceActionAsync(Promotion promotion, PromotionInput request, CancellationToken ct)
+    {
+        var oldActions = await db.PromotionActions
+            .Where(action => action.PromotionId == promotion.Id)
+            .ToListAsync(ct);
+
+        db.PromotionActions.RemoveRange(oldActions);
+        db.PromotionActions.Add(new PromotionAction
         {
             Id = Guid.NewGuid(),
-            PromotionId = p.Id,
+            PromotionId = promotion.Id,
             DiscountType = request.Type,
             DiscountValue = request.DiscountValue,
             MaximumDiscount = request.MaximumDiscount
         });
-        foreach (var old in existing)
-            old.Active = false;
-        foreach (var input in request.Coupons)
+    }
+
+    private void UpdateCoupons(Promotion promotion, List<CouponInput> inputs, List<Coupon> existingCoupons)
+    {
+        foreach (var existingCoupon in existingCoupons)
+            existingCoupon.Active = false;
+
+        foreach (var input in inputs)
         {
-            var coupon = input.Id.HasValue ? existing.Single(c => c.Id == input.Id) : new Coupon { Id = Guid.NewGuid(), PromotionId = p.Id, Code = input.Code.ToUpperInvariant() };
+            var coupon = input.Id.HasValue
+                ? existingCoupons.Single(existingCoupon => existingCoupon.Id == input.Id)
+                : new Coupon
+                {
+                    Id = Guid.NewGuid(),
+                    PromotionId = promotion.Id,
+                    Code = input.Code.ToUpperInvariant()
+                };
+
             if (!input.Id.HasValue)
                 db.Coupons.Add(coupon);
+
             coupon.Active = input.Active;
             coupon.UsageLimit = input.UsageLimit;
             coupon.UsageLimitPerUser = input.UsageLimitPerUser;
-            coupon.StartAt = p.StartAt;
-            coupon.EndAt = p.EndAt;
+            coupon.StartAt = promotion.StartAt;
+            coupon.EndAt = promotion.EndAt;
         }
-        await db.SaveChangesAsync(ct);
-        return (await GetAsync(p.Id, ct))!;
     }
+
     private static bool Money(decimal value) => decimal.Round(value, 2) == value;
-    private static PromotionView View(Promotion p, PromotionAction? a, IEnumerable<PromotionRule> rules, IEnumerable<Coupon> coupons)
+
+    private static PromotionView View(
+        Promotion promotion,
+        PromotionAction? action,
+        IEnumerable<PromotionRule> rules,
+        IEnumerable<Coupon> coupons)
     {
-        var list = rules.ToList();
-        Guid? Target(PromotionRuleType type) => Guid.TryParse(list.FirstOrDefault(r => r.RuleType == type)?.RuleValue, out var id) ? id : null;
-        var min = decimal.TryParse(list.FirstOrDefault(r => r.RuleType == PromotionRuleType.MIN_ORDER_AMOUNT)?.RuleValue, NumberStyles.Number, CultureInfo.InvariantCulture, out var value) ? (decimal?)value : null;
-        return new(p.Id, p.Name, p.Description, p.Type.ToString(), p.Status.ToString(), new(DateTime.SpecifyKind(p.StartAt, DateTimeKind.Utc)), new(DateTime.SpecifyKind(p.EndAt, DateTimeKind.Utc)),
-            a?.DiscountValue ?? 0, a?.MaximumDiscount, min, Target(PromotionRuleType.PRODUCT), Target(PromotionRuleType.CATEGORY), Target(PromotionRuleType.BRAND), Target(PromotionRuleType.SELLER), p.Version,
-            coupons.OrderBy(c => c.Code).Select(c => new CouponView(c.Id, c.Code, c.UsageLimit, c.UsageLimitPerUser, c.UsedCount, c.Active)).ToList());
+        var ruleList = rules.ToList();
+        var minimumOrderAmount = FindMinimumOrderAmount(ruleList);
+        var couponViews = coupons
+            .OrderBy(coupon => coupon.Code)
+            .Select(coupon => new CouponView(
+                coupon.Id,
+                coupon.Code,
+                coupon.UsageLimit,
+                coupon.UsageLimitPerUser,
+                coupon.UsedCount,
+                coupon.Active))
+            .ToList();
+
+        return new PromotionView(
+            promotion.Id,
+            promotion.Name,
+            promotion.Description,
+            promotion.Type.ToString(),
+            promotion.Status.ToString(),
+            new(DateTime.SpecifyKind(promotion.StartAt, DateTimeKind.Utc)),
+            new(DateTime.SpecifyKind(promotion.EndAt, DateTimeKind.Utc)),
+            action?.DiscountValue ?? 0,
+            action?.MaximumDiscount,
+            minimumOrderAmount,
+            FindTarget(ruleList, PromotionRuleType.PRODUCT),
+            FindTarget(ruleList, PromotionRuleType.CATEGORY),
+            FindTarget(ruleList, PromotionRuleType.BRAND),
+            FindTarget(ruleList, PromotionRuleType.SELLER),
+            promotion.Version,
+            couponViews);
+    }
+
+    private static Guid? FindTarget(List<PromotionRule> rules, PromotionRuleType type)
+    {
+        var value = rules.FirstOrDefault(rule => rule.RuleType == type)?.RuleValue;
+        return Guid.TryParse(value, out var id) ? id : null;
+    }
+
+    private static decimal? FindMinimumOrderAmount(List<PromotionRule> rules)
+    {
+        var value = rules.FirstOrDefault(rule => rule.RuleType == PromotionRuleType.MIN_ORDER_AMOUNT)?.RuleValue;
+
+        return decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out var amount)
+            ? amount
+            : null;
     }
 }

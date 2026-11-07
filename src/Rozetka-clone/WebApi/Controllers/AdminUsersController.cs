@@ -15,6 +15,7 @@ namespace WebApi.Controllers;
 public sealed class AdminUsersController : ControllerBase
 {
     private const int DefaultPageSize = 20;
+
     private const int MaxPageSize = 100;
 
     private readonly IApplicationDbContext _dbContext;

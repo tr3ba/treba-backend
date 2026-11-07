@@ -31,10 +31,17 @@ public sealed class AdminReviewsController(AdminWorkspaceService workspace, IRev
     public async Task<IActionResult> Moderate(Guid id, ModerateReviewRequest request, CancellationToken ct)
     {
         var status = AdminWorkspaceService.ParseReviewStatus(request.Status);
-        if (status is not (ReviewStatus.PUBLISHED or ReviewStatus.REJECTED))
-            return BadRequest(new { message = "Choose PUBLISHED or REJECTED." });
 
-        try { await reviews.ModerateReviewAsync(id, status, ct, request.Reply, actor.UserId); }
+        if (status is not (ReviewStatus.PUBLISHED or ReviewStatus.REJECTED))
+            return BadRequest(new
+            {
+                message = "Choose PUBLISHED or REJECTED."
+            });
+
+        try
+        {
+            await reviews.ModerateReviewAsync(id, status, ct, request.Reply, actor.UserId);
+        }
         catch (KeyNotFoundException) { return NotFound(); }
         return NoContent();
     }

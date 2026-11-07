@@ -201,6 +201,7 @@ public sealed class PostgresWorkspaceTests
                 while (await reader.ReadAsync())
                     names.Add(reader.GetString(0));
             }
+
             if (names.Count > 0)
             {
                 Assert.All(names, n => Assert.StartsWith(Prefix, n));

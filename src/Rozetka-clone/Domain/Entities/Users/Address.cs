@@ -39,11 +39,17 @@ namespace Domain.Entities.Users
             DefaultAddress = defaultAddress;
         }
 
-        public Guid UserId { get; private set; }
+        public Guid UserId
+        {
+            get; private set;
+        }
 
         public string Country { get; private set; } = null!;
 
-        public string? Region { get; private set; }
+        public string? Region
+        {
+            get; private set;
+        }
 
         public string City { get; private set; } = null!;
 
@@ -51,15 +57,24 @@ namespace Domain.Entities.Users
 
         public string Building { get; private set; } = null!;
 
-        public string? Apartment { get; private set; }
+        public string? Apartment
+        {
+            get; private set;
+        }
 
-        public string? PostalCode { get; private set; }
+        public string? PostalCode
+        {
+            get; private set;
+        }
 
         public string RecipientName { get; private set; } = null!;
 
         public string RecipientPhone { get; private set; } = null!;
 
-        public bool DefaultAddress { get; private set; }
+        public bool DefaultAddress
+        {
+            get; private set;
+        }
 
         public static Address Create(
             Guid userId,

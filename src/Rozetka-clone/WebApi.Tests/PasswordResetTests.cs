@@ -22,7 +22,9 @@ namespace WebApi.Tests;
 public sealed class PasswordResetTests
 {
     private const string OldPassword = "OriginalPassword123!";
+
     private const string NewPassword = "ReplacementPassword123!";
+
     private static readonly IOptions<SecurityOptions> Security = Options.Create(new SecurityOptions
     {
         EncryptionKey = Convert.ToBase64String(new byte[32]),
@@ -32,53 +34,75 @@ public sealed class PasswordResetTests
     private sealed class Email : IEmailSender
     {
         public string? Code;
+
         public int Sends;
+
         public bool Fail;
+
         public Task SendSecurityCodeAsync(string recipient, string displayName, string code, TimeSpan validFor, CancellationToken cancellationToken = default)
         {
             Sends++; Code = code;
+
             if (Fail) throw new System.Net.Mail.SmtpException("fixture failure");
             return Task.CompletedTask;
         }
     }
+
     private sealed class Sms : ISmsSender
     {
         public bool IsConfigured => true;
+
         public string? Code;
+
         public string? Recipient;
+
         public int Sends;
+
         public Task SendAsync(string recipient, string text, Guid requestId, CancellationToken ct = default)
         {
             Sends++; Recipient = recipient; Code = Regex.Match(text, @"\b[0-9]{6}\b").Value;
             return Task.CompletedTask;
         }
     }
+
     private sealed class Fixture : IAsyncDisposable
     {
         public readonly DbContextOptions<ApplicationDbContext> Options = new DbContextOptionsBuilder<ApplicationDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options;
+
         public readonly ApplicationDbContext Db;
+
         public readonly Email Email = new();
+
         public readonly Sms Sms = new();
+
         public readonly IConfiguration Config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["Jwt:SecretKey"] = "password-reset-fixture-secret-at-least-32-bytes",
-            ["Jwt:Issuer"] = "test", ["Jwt:Audience"] = "test",
+            ["Jwt:Issuer"] = "test",
+            ["Jwt:Audience"] = "test",
         }).Build();
+
         public Fixture() { Db = new(Options); }
+
         public IRegistrationService Methods => new RegistrationService(Db, new TokenService(Config), Email, Sms, Security,
             Microsoft.Extensions.Options.Options.Create(new SmtpEmailOptions { Enabled = true, Host = "fixture", FromAddress = "fixture@example.test" }));
+
         public PasswordResetService Service => new(Db, Methods, Email, Sms, Security, NullLogger<PasswordResetService>.Instance);
+
         public IdentityService Identity => new(Db, new TokenService(Config), new SecondFactorService(Db, Email, new(Security), Security), Config, new HttpClient());
+
         public async Task<User> Seed(string method = "email")
         {
             var role = Role.Create(Roles.Customer, Roles.Customer); Db.Roles.Add(role);
             var user = User.Create(Guid.NewGuid(), "customer@example.test", "380671234567", "Test", "Customer");
             user.AssignRole(role.Id); user.SetPasswordHash(BCrypt.Net.BCrypt.HashPassword(OldPassword));
+
             if (method == "sms") user.VerifyPhone(); else user.VerifyEmail();
             user.SetRefreshToken("existing-refresh-token", DateTimeOffset.UtcNow.AddDays(1));
             Db.Users.Add(user); Db.FeatureFlags.Add(new() { Key = FeatureFlag.SmsSending, Enabled = true });
             await Db.SaveChangesAsync(); return user;
         }
+
         public async Task AgeSends()
         {
             foreach (var challenge in await Db.AuthenticationChallenges.ToListAsync())
@@ -86,6 +110,7 @@ public sealed class PasswordResetTests
                     Db.Entry(challenge).Property(x => x.LastCodeSentAt).CurrentValue = DateTimeOffset.UtcNow.AddMinutes(-2);
             await Db.SaveChangesAsync();
         }
+
         public ValueTask DisposeAsync() => Db.DisposeAsync();
     }
 
@@ -107,6 +132,7 @@ public sealed class PasswordResetTests
         Assert.Equal(initialHash, user.PasswordHash); Assert.Equal("existing-refresh-token", user.RefreshToken);
         Assert.Matches("^[0-9]{6}$", code);
         Assert.DoesNotContain(code, (await f.Db.AuthenticationChallenges.SingleAsync(x => x.Id == pending.ChallengeId)).CodeHash!);
+
         if (method == "sms") Assert.Equal(user.Phone, f.Sms.Recipient);
         await f.Service.CompleteAsync(new(pending.ChallengeId, code, NewPassword));
         Assert.True(BCrypt.Net.BCrypt.Verify(NewPassword, user.PasswordHash));
@@ -132,8 +158,11 @@ public sealed class PasswordResetTests
     {
         await using var f = new Fixture(); var user = await f.Seed();
         var email = kind == "unknown" ? "unknown@example.test" : user.Email;
+
         if (kind == "unverified-email") { user.ChangeEmail("unverified@example.test"); email = user.Email; }
+
         if (kind == "blocked") user.Block();
+
         if (kind == "deleted") user.Delete(null);
         await f.Db.SaveChangesAsync();
         var response = await f.Service.RequestAsync(new(email, kind == "unverified-phone" ? "sms" : "email"));

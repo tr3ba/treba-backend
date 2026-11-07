@@ -12,6 +12,7 @@ namespace WebApi.Tests;
 public sealed class PostgresCatalogTests
 {
     private static readonly string Prefix = "treba_qa_cat_" + Guid.NewGuid().ToString("N")[..12] + "_";
+
     private static readonly string[] Tables =
     [
         "categories",

@@ -16,7 +16,12 @@ public sealed class MarketplaceAccountController(CustomerAccountService account,
     [HttpGet("seller-application"), Authorize(Roles = "Customer")] public async Task<IActionResult> Application(CancellationToken ct) => Ok(new { application = await sellers.MineAsync(ct) });
     [HttpPost("seller-application"), Authorize(Roles = "Customer")] public Task<SellerApplicationView> Apply(SellerApplicationInput input, CancellationToken ct) => sellers.ApplyAsync(input, ct);
     [HttpGet("notifications")] public Task<NotificationFeed> Notifications(CancellationToken ct) => notifications.FeedAsync(ct);
-    [HttpPost("notifications/read")] public async Task<IActionResult> Read(ReadNotificationsRequest input, CancellationToken ct) { await notifications.ReadAsync(input.Keys, ct); return NoContent(); }
+    [HttpPost("notifications/read")]
+    public async Task<IActionResult> Read(ReadNotificationsRequest input, CancellationToken ct)
+    {
+        await notifications.ReadAsync(input.Keys, ct);
+        return NoContent();
+    }
 }
 
 [ApiController, Authorize(Roles = "Customer"), Route("api/v1/account/notification-settings"), ResponseCache(NoStore = true)]

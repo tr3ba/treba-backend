@@ -89,6 +89,7 @@ public sealed class PostgresTelegramTests
                 while (await reader.ReadAsync())
                     names.Add(reader.GetString(0));
             }
+
             if (names.Count > 0)
             {
                 Assert.All(names, n => Assert.StartsWith(Prefix, n));
@@ -182,6 +183,7 @@ public sealed class PostgresTelegramTests
             await using (var reader = await owned.ExecuteReaderAsync())
                 while (await reader.ReadAsync())
                     names.Add(reader.GetString(0));
+
             if (names.Count > 0)
             {
                 Assert.All(names, name => Assert.StartsWith(Prefix, name));
@@ -321,6 +323,7 @@ public sealed class PostgresTelegramTests
                 while (await reader.ReadAsync())
                     names.Add(reader.GetString(0));
             }
+
             if (names.Count > 0)
             {
                 Assert.All(names, n => Assert.StartsWith(Prefix, n));

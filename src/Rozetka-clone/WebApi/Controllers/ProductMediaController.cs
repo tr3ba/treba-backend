@@ -12,7 +12,9 @@ public sealed class ProductMediaController(IProductMediaStorage media) : Control
     public async Task<IActionResult> Get(Guid productId, string fileName, CancellationToken ct)
     {
         var file = await media.ReadAsync(productId, fileName, ct);
-        if (file is null) return NotFound();
+
+        if (file is null)
+            return NotFound();
         Response.Headers.CacheControl = "public,max-age=3600";
         return File(file.Bytes, file.ContentType);
     }

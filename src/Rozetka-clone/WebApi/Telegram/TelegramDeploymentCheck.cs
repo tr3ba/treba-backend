@@ -14,12 +14,14 @@ public static class TelegramDeploymentCheck
         {
             await using var scope = services.CreateAsyncScope();
             var options = scope.ServiceProvider.GetRequiredService<IOptions<TelegramOptions>>().Value;
+
             if (!options.Configured || !options.LongPollingEnabled)
                 throw new InvalidOperationException("Telegram server settings are incomplete or long polling is disabled.");
             var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             var applied = (await db.Database.GetAppliedMigrationsAsync(timeout.Token)).ToHashSet(StringComparer.Ordinal);
             string[] required = ["20261017110000_AddAdminAuditLog", "20261018112728_AddTelegramWorkspace", "20261019165544_AddSellerWorkspaceTools"];
             var missing = required.Where(migration => !applied.Contains(migration)).ToArray();
+
             if (missing.Length != 0)
                 throw new InvalidOperationException("Required database migrations are missing: " + string.Join(", ", missing));
             Console.WriteLine("Telegram database migrations: present.");
@@ -35,25 +37,35 @@ public static class TelegramDeploymentCheck
                     has_table_privilege('public.admin_audit_logs', 'SELECT') AND
                     has_table_privilege('public.admin_audit_logs', 'INSERT') AS "Value"
                 """).SingleAsync(timeout.Token);
+
             if (!permissions)
                 throw new InvalidOperationException("The API database account lacks required Telegram or audit table privileges.");
             Console.WriteLine("Telegram database privileges: present.");
 
             var bot = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>();
-            using var me = await bot.CallAsync("getMe", new { }, timeout.Token);
+            using var me = await bot.CallAsync("getMe", new
+            {
+            }, timeout.Token);
             var username = me.RootElement.GetProperty("result").GetProperty("username").GetString();
+
             if (!string.Equals(username, options.BotUsername, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException("The server token belongs to a different Telegram bot.");
             Console.WriteLine("Telegram token: valid for @" + options.BotUsername + ".");
-            using var webhook = await bot.CallAsync("getWebhookInfo", new { }, timeout.Token);
+            using var webhook = await bot.CallAsync("getWebhookInfo", new
+            {
+            }, timeout.Token);
+
             if (!string.IsNullOrEmpty(webhook.RootElement.GetProperty("result").GetProperty("url").GetString()))
                 throw new InvalidOperationException("The bot has an active webhook; long polling requires removing it first.");
             Console.WriteLine("Telegram webhook: absent.");
-            using var menu = await bot.CallAsync("getChatMenuButton", new { }, timeout.Token);
+            using var menu = await bot.CallAsync("getChatMenuButton", new
+            {
+            }, timeout.Token);
             var button = menu.RootElement.GetProperty("result");
             var menuMatches = button.GetProperty("type").GetString() == "web_app"
                 && button.GetProperty("web_app").GetProperty("url").GetString() == options.MiniAppUrl;
             Console.WriteLine("Telegram chat menu URL matches: " + menuMatches.ToString().ToLowerInvariant() + ".");
+
             if (requireMenu && !menuMatches)
                 throw new InvalidOperationException("The running bot has not configured the expected Mini App menu button.");
             Console.WriteLine("Telegram deployment checks passed.");

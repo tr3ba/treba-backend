@@ -21,6 +21,7 @@ public sealed class CatalogController(
 {
     [HttpGet("duplicates")]
     public Task<IReadOnlyList<Contracts.Telegram.ProductDuplicateDto>> Duplicates(Guid brandId, string? manufacturerPartNumber, string? barcode, Guid? excludeId,
+
         [FromServices] CatalogDuplicateService duplicates, CancellationToken ct) => duplicates.FindAsync(SellerUserScope(), brandId, manufacturerPartNumber, barcode, excludeId, ct);
     [HttpPost("duplicates")]
     public Task<IReadOnlyList<Contracts.Telegram.ProductDuplicateDto>> LookupDuplicates(Contracts.Telegram.DuplicateLookupRequest request,
@@ -36,6 +37,7 @@ public sealed class CatalogController(
         {
             updated = await bulk.ApplyAsync(Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!), SellerUserScope(), request.Token, ct)
         });
+
     [HttpGet("products")]
     public async Task<PagedResponse<CatalogProductDto>> List(
         int page = 1,
@@ -69,6 +71,7 @@ public sealed class CatalogController(
 
     [HttpGet("filter-options")]
     public Task<CatalogFilterOptionsDto> FilterOptions(CancellationToken ct) => catalog.FilterOptionsAsync(SellerUserScope(), ct);
+
     [HttpGet("products/{id:guid}/resubmission-changes")]
     public Task<ModerationComparisonDto> Changes(Guid id, CancellationToken ct) => new ModerationComparisonService(db).CompareAsync(id, SellerUserScope(), ct);
 

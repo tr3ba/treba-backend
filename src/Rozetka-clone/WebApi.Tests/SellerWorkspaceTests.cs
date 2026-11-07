@@ -458,6 +458,7 @@ public sealed class SellerWorkspaceTests
     private sealed class Bot : ITelegramBotClient
     {
         internal List<string> Messages = [];
+
         internal int? FailureStatus;
 
         public Task<JsonDocument> CallAsync(string method, object payload, CancellationToken ct)

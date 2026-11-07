@@ -22,6 +22,7 @@ namespace WebApi.Tests;
 internal static class TelegramTestData
 {
     internal const string BotToken = "123456789:TEST_FIXTURE_ONLY_ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
     internal static readonly IOptions<TelegramOptions> Options = Microsoft.Extensions.Options.Options.Create(
         new TelegramOptions
         {
@@ -45,6 +46,7 @@ internal static class TelegramTestData
     internal static async Task<User> UserAsync(ApplicationDbContext db, string roleName = Roles.Seller)
     {
         var role = await db.Roles.SingleOrDefaultAsync(r => r.Name == roleName) ?? Role.Create(roleName, roleName);
+
         if (db.Entry(role).State == EntityState.Detached)
             db.Roles.Add(role);
         var user = User.Create(Guid.NewGuid(), Guid.NewGuid().ToString("N") + "@example.test", null, "Test", roleName);
@@ -196,6 +198,7 @@ internal static class TelegramTestData
     }
 
     internal const string SourceUrl = "https://rozetka.com.ua/test-phone/p123456/";
+
     internal const string Html = """
         <html><head><script type="application/ld+json">
         {"@graph":[{"@type":"BreadcrumbList","itemListElement":[
@@ -227,11 +230,13 @@ internal static class TelegramTestData
     internal sealed class Media : IProductMediaStorage
     {
         internal bool Fail;
+
         internal HashSet<string> Files = [];
 
         public Task SaveAsync(Guid productId, string fileName, byte[] bytes, CancellationToken ct)
         {
             Files.Add(fileName);
+
             if (Fail)
                 throw new IOException("Test storage unavailable");
             return Task.CompletedTask;

@@ -14,7 +14,9 @@ public sealed class SellerCategoryAccess(IApplicationDbContext db)
     {
         var sellerId = await db.Sellers.Where(s => s.UserId == userId && s.Status == SellerStatus.ACTIVE)
             .Select(s => (Guid?)s.Id).SingleOrDefaultAsync(ct);
-        if (sellerId is null) return [];
+
+        if (sellerId is null)
+            return [];
         var categories = await db.Categories.AsNoTracking().Select(c => new { c.Id, c.ParentId, c.IsActive }).ToListAsync(ct);
         var grants = await db.SellerCategoryGrants.AsNoTracking().Where(g => g.SellerId == sellerId).ToListAsync(ct);
         var byId = categories.ToDictionary(c => c.Id);
@@ -23,15 +25,26 @@ public sealed class SellerCategoryAccess(IApplicationDbContext db)
         var allowed = new List<Guid>();
         foreach (var leaf in categories.Where(c => c.IsActive))
         {
-            var seen = new HashSet<Guid>(); var valid = true; var granted = false;
+            var seen = new HashSet<Guid>();
+            var valid = true;
+            var granted = false;
             for (Guid? current = leaf.Id; current.HasValue;)
             {
                 byId.TryGetValue(current.Value, out var category);
-                if (!seen.Add(current.Value) || category is null || !category.IsActive) { valid = false; break; }
-                if (current == leaf.Id ? direct.Contains(current.Value) : descendants.Contains(current.Value)) granted = true;
+
+                if (!seen.Add(current.Value) || category is null || !category.IsActive)
+                {
+                    valid = false;
+                    break;
+                }
+
+                if (current == leaf.Id ? direct.Contains(current.Value) : descendants.Contains(current.Value))
+                    granted = true;
                 current = category.ParentId;
             }
-            if (valid && granted) allowed.Add(leaf.Id);
+
+            if (valid && granted)
+                allowed.Add(leaf.Id);
         }
         return allowed;
     }

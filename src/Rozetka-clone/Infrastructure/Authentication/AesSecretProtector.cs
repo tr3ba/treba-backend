@@ -55,6 +55,7 @@ public sealed class AesSecretProtector
     )
     {
         var payload = Convert.FromBase64String(protectedValue);
+
         if (payload.Length < 30
             || payload[0] != 1)
         {

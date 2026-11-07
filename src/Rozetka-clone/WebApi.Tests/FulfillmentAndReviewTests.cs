@@ -44,6 +44,7 @@ public sealed class FulfillmentAndReviewTests
             Assert.Contains(status, details.AllowedStatuses);
             await staff.ChangeStatusAsync(order.Id, new(status, details.Version, "Private staff note"), default);
             await Assert.ThrowsAsync<BusinessRuleException>(() => staff.ChangeStatusAsync(order.Id, new(status, details.Version, "Repeat"), default));
+
             if (status != "DELIVERED")
                 await Assert.ThrowsAsync<BusinessRuleException>(() => reviews.CreateReviewAsync(seed.Customer.Id, Review(seed, item.Id)));
         }

@@ -7,7 +7,10 @@ namespace Application.Categories
 {
     public sealed class CreateCategoryRequest
     {
-        public Guid? ParentId { get; init; }
+        public Guid? ParentId
+        {
+            get; init;
+        }
 
         [Required]
         [StringLength(200)]
@@ -18,12 +21,21 @@ namespace Application.Categories
         [RegularExpression(@"^[a-z0-9]+(?:-[a-z0-9]+)*$")]
         public string Slug { get; init; } = string.Empty;
 
-        public string? Description { get; init; }
+        public string? Description
+        {
+            get; init;
+        }
 
-        public string? ImageUrl { get; init; }
+        public string? ImageUrl
+        {
+            get; init;
+        }
 
         public bool IsActive { get; init; } = true;
 
-        public int SortOrder { get; init; }
+        public int SortOrder
+        {
+            get; init;
+        }
     }
 }

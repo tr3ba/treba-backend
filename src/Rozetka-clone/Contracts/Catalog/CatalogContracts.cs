@@ -61,11 +61,13 @@ public sealed class SaveCatalogProductRequest : IValidatableObject
     {
         get; set;
     }
+
     [StringLength(100)] public string ManufacturerPartNumber { get; set; } = "";
     public List<CatalogVariantInput>? Variants
     {
         get; set;
     }
+
     public List<CatalogAttributeInput>? Attributes
     {
         get; set;
@@ -91,35 +93,50 @@ public sealed class SaveCatalogProductRequest : IValidatableObject
             );
         }
 
-        if (Variants is null && (string.IsNullOrWhiteSpace(Sku) || Price is < 0.01m or > 999999999.99m))
-            yield return new("SKU and a positive price are required.", [nameof(Sku), nameof(Price)]);
+        if (Variants is null)
+        {
+            var skuIsMissing = string.IsNullOrWhiteSpace(Sku);
+            var priceIsOutOfRange = Price is < 0.01m or > 999999999.99m;
+
+            if (skuIsMissing || priceIsOutOfRange)
+                yield return new("SKU and a positive price are required.", [nameof(Sku), nameof(Price)]);
+
+        }
+
         if (Variants is not null)
         {
-            if (Variants.Count is < 1 or > 100 || !Variants.Any(v => v is not null && v.IsActive))
+            var variantCountIsInvalid = Variants.Count is < 1 or > 100;
+            var hasNoActiveVariant = !Variants.Any(variant => variant is not null && variant.IsActive);
+
+            if (variantCountIsInvalid || hasNoActiveVariant)
                 yield return new("Add between 1 and 100 variants, including an active variant.", [nameof(Variants)]);
-            if (Variants.Any(v => v is null))
+
+            var containsNullVariant = Variants.Any(variant => variant is null);
+
+            if (containsNullVariant)
                 yield return new("A variant cannot be null.", [nameof(Variants)]);
-            foreach (var variant in Variants.Where(v => v is not null))
+
+            foreach (var variant in Variants.Where(variant => variant is not null))
             {
                 var errors = new List<ValidationResult>();
                 Validator.TryValidateObject(variant, new(variant), errors, true);
+
                 foreach (var error in errors)
                     yield return new(error.ErrorMessage, [nameof(Variants)]);
             }
         }
+
         if (Attributes?.Count > 200)
             yield return new("At most 200 characteristic values are allowed.", [nameof(Attributes)]);
+
         if (Attributes?.Any(a => a is null) == true)
             yield return new("A characteristic cannot be null.", [nameof(Attributes)]);
-        if (Variants is null && decimal.Round(
-                Price,
-                2
-            ) != Price)
+
+        if (Variants is null && decimal.Round(Price, 2) != Price)
         {
             yield return new(
                 "Price can have at most two decimal places.",
-                [nameof(Price)]
-            );
+                [nameof(Price)]);
         }
     }
 }
@@ -148,13 +165,18 @@ public sealed record CatalogProductDto(
 )
 {
     public string StoreName { get; init; } = "";
+
     public string SellerName { get; init; } = "";
+
     public DateTime UpdatedAt
     {
         get; init;
     }
+
     public string ManufacturerPartNumber { get; init; } = "";
+
     public IReadOnlyList<CatalogVariantInput> Variants { get; init; } = [];
+
     public IReadOnlyList<CatalogAttributeInput> Attributes { get; init; } = [];
 }
 
@@ -189,7 +211,9 @@ public sealed class CatalogVariantInput : IValidatableObject
     {
         get; set;
     }
+
     public Guid Id { get; set; } = Guid.NewGuid();
+
     [Required, StringLength(100)] public string Sku { get; set; } = "";
     [Required, StringLength(250)] public string Name { get; set; } = "";
     [Range(typeof(decimal), "0.01", "999999999.99", ParseLimitsInInvariantCulture = true, ConvertValueInInvariantCulture = true)]
@@ -197,21 +221,36 @@ public sealed class CatalogVariantInput : IValidatableObject
     {
         get; set;
     }
+
     public decimal? OldPrice
     {
         get; set;
     }
+
     [Range(0, 1000000)]
     public int StockQuantity
     {
         get; set;
     }
+
     public bool IsActive { get; set; } = true;
+
     public IEnumerable<ValidationResult> Validate(ValidationContext context)
     {
-        if (Id == Guid.Empty || string.IsNullOrWhiteSpace(Sku) || string.IsNullOrWhiteSpace(Name))
+        var idIsMissing = Id == Guid.Empty;
+        var skuIsMissing = string.IsNullOrWhiteSpace(Sku);
+        var nameIsMissing = string.IsNullOrWhiteSpace(Name);
+
+        if (idIsMissing || skuIsMissing || nameIsMissing)
             yield return new("Variant name, SKU and id are required.");
-        if (decimal.Round(Price, 2) != Price || OldPrice is { } old && (old <= Price || old > 999999999.99m || decimal.Round(old, 2) != old))
+
+        var currentPriceHasTooManyDecimals = decimal.Round(Price, 2) != Price;
+        var oldPriceIsInvalid = OldPrice is { } oldPrice
+            && (oldPrice <= Price
+                || oldPrice > 999999999.99m
+                || decimal.Round(oldPrice, 2) != oldPrice);
+
+        if (currentPriceHasTooManyDecimals || oldPriceIsInvalid)
             yield return new("Prices must have at most two decimals; the old price must exceed the current price.");
     }
 }
@@ -222,22 +261,27 @@ public sealed class CatalogAttributeInput
     {
         get; set;
     }
+
     public Guid? VariantId
     {
         get; set;
     }
+
     public Guid? OptionId
     {
         get; set;
     }
+
     public string? StringValue
     {
         get; set;
     }
+
     public decimal? NumberValue
     {
         get; set;
     }
+
     public bool? BoolValue
     {
         get; set;
@@ -246,27 +290,36 @@ public sealed class CatalogAttributeInput
 
 public sealed class CatalogFilters
 {
-    public Dictionary<Guid, string>? Attributes { get; set; }
+    public Dictionary<Guid, string>? Attributes
+    {
+        get; set;
+    }
+
     public Guid? BrandId
     {
         get; set;
     }
+
     public Guid? SellerId
     {
         get; set;
     }
+
     public decimal? MinPrice
     {
         get; set;
     }
+
     public decimal? MaxPrice
     {
         get; set;
     }
+
     public string? Stock
     {
         get; set;
     }
+
     public int? WaitingHours
     {
         get; set;

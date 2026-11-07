@@ -13,6 +13,7 @@ namespace WebApi.Tests;
 public sealed class PostgresReviewTests
 {
     private static readonly string Prefix = "treba_qa_review_" + Guid.NewGuid().ToString("N")[..10] + "_";
+
     public sealed class Model(ModelCustomizerDependencies dependencies) : ModelCustomizer(dependencies)
     {
         public override void Customize(ModelBuilder builder, DbContext context)
@@ -26,7 +27,9 @@ public sealed class PostgresReviewTests
     private sealed class ConcurrentReviewSave : SaveChangesInterceptor
     {
         private int arrived;
+
         private readonly TaskCompletionSource ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
         public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData eventData,
             InterceptionResult<int> result, CancellationToken cancellationToken = default)
         {

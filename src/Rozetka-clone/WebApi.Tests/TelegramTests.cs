@@ -110,6 +110,7 @@ public sealed class TelegramTests
         await using var db = TelegramTestData.Memory();
         var user = await TelegramTestData.UserAsync(db);
         var clock = new TelegramTestData.Clock();
+
         if (twoFactor)
         {
             user.EnableEmailTwoFactor();
@@ -164,6 +165,7 @@ public sealed class TelegramTests
         var guard = new TelegramGuardService(db, links, TelegramTestData.Identity(db), TelegramTestData.Options, clock);
         var start = await guard.CreateAsync("Test", null, default);
         await guard.ApproveAsync(start.QrPayload, user.Id, 12345, default);
+
         if (change == "expired")
             clock.Now = clock.Now.AddMinutes(3);
         else if (change == "unlinked")

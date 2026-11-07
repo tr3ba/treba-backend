@@ -9,6 +9,7 @@ public class Order
     {
         get; set;
     }
+
     public string OrderNumber { get; set; } = null!;
 
     public Guid CustomerId
@@ -18,11 +19,13 @@ public class Order
 
     public OrderStatus Status { get; set; } = OrderStatus.CREATED;
 
-    public PaymentStatus PaymentStatus { get; set; }
+    public PaymentStatus PaymentStatus
+    {
+        get; set;
+    }
 
     // TODO: Remove obsolete fields after implementing Payment and Delivery
     // public DeliveryStatus DeliveryStatus { get; set; } = DeliveryStatus.CREATED;
-
     public string Currency { get; set; } = "UAH";
 
     public decimal Subtotal
