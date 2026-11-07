@@ -22,34 +22,66 @@ public sealed class OrderService(
     Application.Marketplace.CustomerNotificationQueue? notifications = null) : IOrderService
 {
     public bool Staff => actor.Role is "Administrator" or "Manager";
+
     private Guid ActorId => actor.UserId ?? throw new UnauthorizedAccessException();
 
     internal IQueryable<Order> VisibleOrders()
     {
         if (Staff)
             return db.Orders;
+
         if (actor.Role == "Seller")
-            return db.Orders.Where(o => db.OrderItems.Any(i => i.OrderId == o.Id
-            && db.Sellers.Any(s => s.Id == i.SellerId && s.UserId == actor.UserId && s.Status == SellerStatus.ACTIVE)));
+        {
+            return db.Orders.Where(order => db.OrderItems.Any(item =>
+                item.OrderId == order.Id
+                && db.Sellers.Any(seller =>
+                    seller.Id == item.SellerId
+                    && seller.UserId == actor.UserId
+                    && seller.Status == SellerStatus.ACTIVE)));
+        }
+
         return db.Orders.Where(o => o.CustomerId == actor.UserId);
     }
 
-    internal async Task<HashSet<Guid>?> SellerIds(CancellationToken ct) => actor.Role == "Seller"
-        ? (await db.Sellers.Where(s => s.UserId == actor.UserId && s.Status == SellerStatus.ACTIVE).Select(s => s.Id).ToListAsync(ct)).ToHashSet() : null;
+    internal async Task<HashSet<Guid>?> SellerIds(CancellationToken ct)
+    {
+        if (actor.Role != "Seller")
+            return null;
+
+        var ids = await db.Sellers
+            .Where(seller => seller.UserId == actor.UserId && seller.Status == SellerStatus.ACTIVE)
+            .Select(seller => seller.Id)
+            .ToListAsync(ct);
+
+        return ids.ToHashSet();
+    }
 
     public async Task<Contracts.Orders.OrderDto> CreateOrderAsync(CreateOrderRequest request, CancellationToken ct = default)
     {
         var customerId = ActorId;
-        if (request.CustomerId != Guid.Empty && request.CustomerId != customerId)
+
+        var belongsToAnotherCustomer = request.CustomerId != Guid.Empty && request.CustomerId != customerId;
+
+        if (belongsToAnotherCustomer)
             throw new ArgumentException("An order must belong to the signed-in customer.");
-        if (request.Items is null || request.Items.Count is < 1 or > 100 || request.Items.Any(i => i is null || i.Quantity is < 1 or > 1000000))
+
+        var hasInvalidItems = request.Items is null
+            || request.Items.Count is < 1 or > 100
+            || request.Items.Any(i => i is null || i.Quantity is < 1 or > 1000000);
+
+        if (hasInvalidItems)
             throw new ArgumentException("Provide between 1 and 100 items with positive quantities.");
-        if (request.Items.Select(i => i.VariantId).Distinct().Count() != request.Items.Count)
+
+        var hasDuplicateVariants = request.Items.Select(i => i.VariantId).Distinct().Count() != request.Items.Count;
+
+        if (hasDuplicateVariants)
             throw new ArgumentException("Duplicate variants are not allowed.");
 
         var carrier = request.DeliveryMethod ?? (request.DeliveryQuoteId.HasValue ? "NovaPoshta" : "TrebaCourier");
-        if (carrier is not ("NovaPoshta" or "TrebaCourier")
-            || (carrier == "NovaPoshta") != request.DeliveryQuoteId.HasValue)
+        var hasInvalidDeliverySelection = carrier is not ("NovaPoshta" or "TrebaCourier")
+            || (carrier == "NovaPoshta") != request.DeliveryQuoteId.HasValue;
+
+        if (hasInvalidDeliverySelection)
             throw new ArgumentException("Виберіть спосіб доставки. Для Нової пошти потрібен актуальний розрахунок.");
 
         ValidateText(request.RecipientName, 150, "Recipient name");
@@ -58,10 +90,14 @@ public sealed class OrderService(
 
         if (!System.Net.Mail.MailAddress.TryCreate(request.RecipientEmail, out _))
             throw new ArgumentException("A valid email is required.");
-        if (request.CustomerComment?.Length > 4000 || request.CouponCode?.Length > 100)
+
+        var hasOverlongOrderText = request.CustomerComment?.Length > 4000 || request.CouponCode?.Length > 100;
+
+        if (hasOverlongOrderText)
             throw new ArgumentException("Order text is too long.");
 
         var a = request.Address ?? throw new ArgumentException("Address is required.");
+
         ValidateText(a.Country, 100, "Country");
         ValidateText(a.City, 100, "City");
         ValidateText(a.Street, 150, "Street");
@@ -69,16 +105,27 @@ public sealed class OrderService(
         ValidateText(a.RecipientName, 150, "Recipient name");
         ValidateText(a.RecipientPhone, 32, "Phone");
 
-        if (a.Region?.Length > 100 || a.Apartment?.Length > 50 || a.PostalCode?.Length > 20)
+        var hasOverlongAddressText = a.Region?.Length > 100
+            || a.Apartment?.Length > 50
+            || a.PostalCode?.Length > 20;
+
+        if (hasOverlongAddressText)
             throw new ArgumentException("Address text is too long.");
 
         var ids = request.Items.Select(i => i.VariantId).ToList();
+
         var rows = await (from v in db.ProductVariants
                           join p in db.Products on v.ProductId equals p.Id
                           join store in db.Stores on p.StoreId equals store.Id
                           join seller in db.Sellers on store.SellerId equals seller.Id
-                          where ids.Contains(v.Id) && v.IsActive && v.Price > 0 && p.Status == ProductStatus.ACTIVE && store.IsActive && seller.Status == SellerStatus.ACTIVE
-                              && db.Categories.Any(c => c.Id == p.CategoryId && c.IsActive) && db.Brands.Any(b => b.Id == p.BrandId && b.IsActive)
+                          where ids.Contains(v.Id)
+                              && v.IsActive
+                              && v.Price > 0
+                              && p.Status == ProductStatus.ACTIVE
+                              && store.IsActive
+                              && seller.Status == SellerStatus.ACTIVE
+                              && db.Categories.Any(c => c.Id == p.CategoryId && c.IsActive)
+                              && db.Brands.Any(b => b.Id == p.BrandId && b.IsActive)
                           select new
                           {
                               Variant = v,
@@ -86,21 +133,46 @@ public sealed class OrderService(
                               SellerId = seller.Id
                           }).ToListAsync(ct);
 
-        if (rows.Count != ids.Count)
+        var hasUnavailableItems = rows.Count != ids.Count;
+
+        if (hasUnavailableItems)
             throw new BusinessRuleException("An item is unavailable for purchase.");
 
-        var discount = await discounts.CalculateDiscountAsync(customerId, request.Items.Select(i => new PriceItem(i.VariantId, i.Quantity)).ToList(), request.CouponCode, ct);
+        var discount = await discounts.CalculateDiscountAsync(
+            customerId,
+            request.Items.Select(i => new PriceItem(i.VariantId, i.Quantity)).ToList(),
+            request.CouponCode,
+            ct);
         var subtotal = request.Items.Sum(i => rows.Single(r => r.Variant.Id == i.VariantId).Variant.Price * i.Quantity);
 
-        if (subtotal > 9999999999999999.99m)
+        var exceedsMaximumOrderAmount = subtotal > 9999999999999999.99m;
+
+        if (exceedsMaximumOrderAmount)
             throw new ArgumentException("The order amount is too large.");
-        if (discount.Subtotal != subtotal)
+
+        var pricesChanged = discount.Subtotal != subtotal;
+
+        if (pricesChanged)
             throw new BusinessRuleException("Prices changed. Refresh the order.");
 
-        var quote = request.DeliveryQuoteId is { } quoteId
-            ? await (delivery ?? throw new BusinessRuleException("Delivery is not configured.")).ValidateAsync(quoteId, customerId,
-                request.Items.Select(i => new Contracts.Delivery.DeliveryQuoteItem(i.VariantId, i.Quantity)),
-                request.CouponCode, subtotal, discount.TotalAmount, ct) : null;
+        DeliveryQuote? quote = null;
+
+        if (request.DeliveryQuoteId is { } quoteId)
+        {
+            var deliveryService = delivery ?? throw new BusinessRuleException("Delivery is not configured.");
+            var quoteItems = request.Items.Select(item =>
+                new Contracts.Delivery.DeliveryQuoteItem(item.VariantId, item.Quantity));
+
+            quote = await deliveryService.ValidateAsync(
+                quoteId,
+                customerId,
+                quoteItems,
+                request.CouponCode,
+                subtotal,
+                discount.TotalAmount,
+                ct);
+        }
+
         var deliveryPrice = discount.FreeDelivery ? 0 : quote?.Price ?? 50;
 
         var now = DateTimeOffset.UtcNow;
@@ -156,19 +228,29 @@ public sealed class OrderService(
             // Save the destination at checkout; assign its tracking reference only after payment.
             db.OrderShipments.Add(new()
             {
-                OrderId = order.Id, Carrier = carrier,
-                CityRef = quote?.CityRef ?? Guid.Empty, PickupPointRef = quote?.PickupPointRef ?? Guid.Empty,
+                OrderId = order.Id,
+                Carrier = carrier,
+                CityRef = quote?.CityRef ?? Guid.Empty,
+                PickupPointRef = quote?.PickupPointRef ?? Guid.Empty,
                 City = quote?.City ?? a.City,
                 PickupPoint = quote?.PickupPoint ?? string.Join(", ", new[] { a.Street, a.Building, a.Apartment }.Where(s => !string.IsNullOrWhiteSpace(s))),
-                Postomat = quote?.Postomat ?? false, QuotedPrice = deliveryPrice,
-                WeightKg = quote?.WeightKg ?? 0, EstimatedWeight = quote?.EstimatedWeight ?? false
+                Postomat = quote?.Postomat ?? false,
+                QuotedPrice = deliveryPrice,
+                WeightKg = quote?.WeightKg ?? 0,
+                EstimatedWeight = quote?.EstimatedWeight ?? false
             });
+
             if (quote is not null)
             {
-                quote.UsedByOrderId = order.Id; quote.Version = Guid.NewGuid();
-                order.Address.Country = "Україна"; order.Address.City = quote.City[..Math.Min(100, quote.City.Length)];
+                quote.UsedByOrderId = order.Id;
+                quote.Version = Guid.NewGuid();
+                order.Address.Country = "Україна";
+                order.Address.City = quote.City[..Math.Min(100, quote.City.Length)];
                 order.Address.Street = quote.PickupPoint[..Math.Min(150, quote.PickupPoint.Length)];
-                order.Address.Building = "—"; order.Address.Apartment = null; order.Address.Region = null; order.Address.PostalCode = null;
+                order.Address.Building = "—";
+                order.Address.Apartment = null;
+                order.Address.Region = null;
+                order.Address.PostalCode = null;
             }
 
             foreach (var item in request.Items)
@@ -196,9 +278,23 @@ public sealed class OrderService(
             {
                 var coupon = await db.Coupons.SingleAsync(c => c.Id == couponId, ct);
                 var promotion = await db.Promotions.SingleAsync(p => p.Id == coupon.PromotionId, ct);
-                if (promotion.Version != discount.PromotionVersion || !coupon.Active || coupon.StartAt > now.UtcDateTime || coupon.EndAt < now.UtcDateTime
-                    || coupon.UsageLimit > 0 && coupon.UsedCount >= coupon.UsageLimit
-                    || coupon.UsageLimitPerUser > 0 && await db.CouponUsages.CountAsync(u => u.CouponId == couponId && u.UserId == customerId, ct) >= coupon.UsageLimitPerUser)
+
+                var promotionChanged = promotion.Version != discount.PromotionVersion;
+                var couponIsInactive = !coupon.Active;
+                var couponIsOutsideItsValidityWindow = coupon.StartAt > now.UtcDateTime || coupon.EndAt < now.UtcDateTime;
+
+                if (promotionChanged || couponIsInactive || couponIsOutsideItsValidityWindow)
+                    throw new BusinessRuleException("The coupon changed or its usage limit was reached. Refresh the order.");
+
+                var hasReachedGlobalUsageLimit = coupon.UsageLimit > 0 && coupon.UsedCount >= coupon.UsageLimit;
+
+                if (hasReachedGlobalUsageLimit)
+                    throw new BusinessRuleException("The coupon changed or its usage limit was reached. Refresh the order.");
+
+                var hasReachedUserUsageLimit = coupon.UsageLimitPerUser > 0
+                    && await db.CouponUsages.CountAsync(u => u.CouponId == couponId && u.UserId == customerId, ct) >= coupon.UsageLimitPerUser;
+
+                if (hasReachedUserUsageLimit)
                     throw new BusinessRuleException("The coupon changed or its usage limit was reached. Refresh the order.");
 
                 coupon.UsedCount++;
@@ -225,7 +321,9 @@ public sealed class OrderService(
             });
 
             db.Orders.Add(order);
-            if (notifications is not null) await notifications.OrderAsync(order, orderId, order.Status.ToString(), ct);
+
+            if (notifications is not null)
+                await notifications.OrderAsync(order, orderId, order.Status.ToString(), ct);
             await db.SaveChangesAsync(ct);
             // Receipt of payment remains a separate, explicit operation; manual checkout needs no provider.
 
@@ -243,26 +341,34 @@ public sealed class OrderService(
         DateTimeOffset? from, DateTimeOffset? to, Guid? customerId, CancellationToken ct)
     {
         ValidatePage(page, size);
+
         if (from > to)
             throw new ArgumentException("Invalid date range.");
 
         var query = VisibleOrders().AsNoTracking();
+
         if (!string.IsNullOrWhiteSpace(status))
         {
             var state = Parse(status);
             query = query.Where(o => o.Status == state);
         }
+
         if (from.HasValue)
             query = query.Where(o => o.CreatedAt >= from.Value);
+
         if (to.HasValue)
             query = query.Where(o => o.CreatedAt < to.Value);
+
         if (customerId.HasValue)
             query = query.Where(o => o.CustomerId == customerId.Value);
+
         if (!string.IsNullOrWhiteSpace(search))
         {
             var term = search.Trim().ToLowerInvariant();
-            query = query.Where(o => o.OrderNumber.ToLower().Contains(term) || o.RecipientName.ToLower().Contains(term)
-                || o.RecipientPhone.Contains(term) || o.RecipientEmail.ToLower().Contains(term));
+            query = query.Where(o => o.OrderNumber.ToLower().Contains(term)
+                || o.RecipientName.ToLower().Contains(term)
+                || o.RecipientPhone.Contains(term)
+                || o.RecipientEmail.ToLower().Contains(term));
         }
 
         var total = await query.CountAsync(ct);
@@ -271,12 +377,18 @@ public sealed class OrderService(
         var items = await db.OrderItems.AsNoTracking().Where(i => ids.Contains(i.OrderId)).ToListAsync(ct);
         var sellers = await SellerIds(ct);
 
-        return new(orders.Select(o => Row(o, items.Where(i => i.OrderId == o.Id), sellers)).ToList(), page, size, total, (int)Math.Ceiling(total / (double)size));
+        var rows = orders
+            .Select(order => Row(order, items.Where(item => item.OrderId == order.Id), sellers))
+            .ToList();
+        var pageCount = (int)Math.Ceiling(total / (double)size);
+
+        return new(rows, page, size, total, pageCount);
     }
 
     public async Task<OrderDetails?> DetailsAsync(Guid id, CancellationToken ct)
     {
         var order = await VisibleOrders().AsNoTracking().Include(o => o.Items).Include(o => o.Address).Include(o => o.StatusHistory).SingleOrDefaultAsync(o => o.Id == id, ct);
+
         if (order is null)
             return null;
 
@@ -286,33 +398,87 @@ public sealed class OrderService(
         var a = order.Address;
         var shipment = delivery is null ? null : await db.OrderShipments.AsNoTracking().SingleOrDefaultAsync(s => s.OrderId == id, ct);
 
-        return new(Row(order, order.Items, sellers), order.RecipientPhone, order.RecipientEmail, partial ? null : order.CustomerComment,
-            partial ? items.Sum(i => i.UnitPrice * i.Quantity) : order.Subtotal,
-            partial ? items.Sum(i => i.DiscountAmount) : order.DiscountAmount, partial ? 0 : order.DeliveryPrice,
-            a is null ? null : new(a.Country, a.Region, a.City, a.Street, a.Building, a.Apartment, a.PostalCode, a.RecipientName, a.RecipientPhone),
-            items.Select(i => new OrderLine(i.Id, i.ProductId, i.VariantId, i.SellerId, i.ProductName, i.VariantName, i.Sku, i.Quantity, i.UnitPrice, i.DiscountAmount, i.TotalPrice)).ToList(),
-            order.StatusHistory.OrderByDescending(h => h.CreatedAt).ThenBy(h => h.Id).Select(h => new OrderEvent(h.PreviousStatus.ToString(), h.NewStatus.ToString(), actor.Role == "Seller" ? null : h.Comment, actor.Role == "Seller" ? null : h.ChangedBy, h.CreatedAt)).ToList(),
-            Convert.ToBase64String(order.Version), Allowed(order.Status, partial).Select(s => s.ToString()).ToList(), partial,
-            partial || shipment is null ? null : Application.Delivery.CheckoutDeliveryService.View(shipment, order.Status.ToString()));
+        var address = a is null
+            ? null
+            : new OrderAddressView(a.Country, a.Region, a.City, a.Street, a.Building, a.Apartment, a.PostalCode, a.RecipientName, a.RecipientPhone);
+        var lines = items.Select(item => new OrderLine(
+            item.Id,
+            item.ProductId,
+            item.VariantId,
+            item.SellerId,
+            item.ProductName,
+            item.VariantName,
+            item.Sku,
+            item.Quantity,
+            item.UnitPrice,
+            item.DiscountAmount,
+            item.TotalPrice)).ToList();
+        var events = order.StatusHistory
+            .OrderByDescending(history => history.CreatedAt)
+            .ThenBy(history => history.Id)
+            .Select(history => new OrderEvent(
+                history.PreviousStatus.ToString(),
+                history.NewStatus.ToString(),
+                actor.Role == "Seller" ? null : history.Comment,
+                actor.Role == "Seller" ? null : history.ChangedBy,
+                history.CreatedAt))
+            .ToList();
+        var deliveryView = partial || shipment is null
+            ? null
+            : Application.Delivery.CheckoutDeliveryService.View(shipment, order.Status.ToString());
+
+        return new OrderDetails(
+            Row(order, order.Items, sellers),
+            order.RecipientPhone,
+            order.RecipientEmail,
+            partial ? null : order.CustomerComment,
+            partial ? items.Sum(item => item.UnitPrice * item.Quantity) : order.Subtotal,
+            partial ? items.Sum(item => item.DiscountAmount) : order.DiscountAmount,
+            partial ? 0 : order.DeliveryPrice,
+            address,
+            lines,
+            events,
+            Convert.ToBase64String(order.Version),
+            Allowed(order.Status, partial).Select(status => status.ToString()).ToList(),
+            partial,
+            deliveryView);
     }
 
     internal static OrderRow Row(Order order, IEnumerable<OrderItem> all, HashSet<Guid>? sellers = null)
     {
         var items = all.ToList();
         var visible = items.Where(i => sellers is null || sellers.Contains(i.SellerId)).ToList();
-        return new(order.Id, order.OrderNumber, order.CustomerId, order.RecipientName, order.Status.ToString(),
-            sellers is null || visible.Count == items.Count ? order.TotalAmount : visible.Sum(i => i.TotalPrice), order.Currency, visible.Sum(i => i.Quantity), order.CreatedAt);
+
+        var totalAmount = sellers is null || visible.Count == items.Count
+            ? order.TotalAmount
+            : visible.Sum(item => item.TotalPrice);
+        var itemCount = visible.Sum(item => item.Quantity);
+
+        return new(
+            order.Id,
+            order.OrderNumber,
+            order.CustomerId,
+            order.RecipientName,
+            order.Status.ToString(),
+            totalAmount,
+            order.Currency,
+            itemCount,
+            order.CreatedAt);
     }
 
     public async Task ChangeStatusAsync(Guid id, ChangeOrderStatusRequest request, CancellationToken ct)
     {
         var order = await VisibleOrders().Include(o => o.Items).SingleOrDefaultAsync(o => o.Id == id, ct) ?? throw new KeyNotFoundException();
+
         if (Convert.ToBase64String(order.Version) != request.ExpectedVersion)
             throw new BusinessRuleException("The order changed. Reload it before saving.");
 
         var next = Parse(request.Status);
         var sellers = await SellerIds(ct);
-        if (!Allowed(order.Status, sellers is not null && order.Items.Any(i => !sellers.Contains(i.SellerId))).Contains(next))
+        var sellerHasHiddenItems = sellers is not null && order.Items.Any(item => !sellers.Contains(item.SellerId));
+        var nextStatusIsNotAllowed = !Allowed(order.Status, sellerHasHiddenItems).Contains(next);
+
+        if (nextStatusIsNotAllowed)
             throw new BusinessRuleException("This status transition is not allowed for your role.");
 
         await StageTransitionAsync(order, next, request.Reason, ct);
@@ -321,25 +487,36 @@ public sealed class OrderService(
 
     internal async Task StageTransitionAsync(Order order, OrderStatus next, string? reason, CancellationToken ct)
     {
-        if (reason?.Length > 500 || next == OrderStatus.CANCELLED && string.IsNullOrWhiteSpace(reason))
+        var reasonIsTooLong = reason?.Length > 500;
+        var cancellationHasNoReason = next == OrderStatus.CANCELLED && string.IsNullOrWhiteSpace(reason);
+
+        if (reasonIsTooLong || cancellationHasNoReason)
             throw new ArgumentException("A cancellation reason of at most 500 characters is required.");
 
         var previous = order.Status;
+
         if (next == OrderStatus.PAID)
         {
             await inventory.StageConfirmAsync(order.Id, ct);
             var shipment = await db.OrderShipments.SingleOrDefaultAsync(s => s.OrderId == order.Id, ct);
+
             if (shipment is null)
             {
                 var address = await db.OrderAddresses.SingleOrDefaultAsync(a => a.OrderId == order.Id, ct);
-                shipment = new() { OrderId = order.Id, Carrier = "TrebaCourier", City = address?.City ?? "",
+                shipment = new()
+                {
+                    OrderId = order.Id,
+                    Carrier = "TrebaCourier",
+                    City = address?.City ?? "",
                     PickupPoint = address is null ? "" : string.Join(", ", new[] { address.Street, address.Building, address.Apartment }.Where(s => !string.IsNullOrWhiteSpace(s))),
-                    QuotedPrice = order.DeliveryPrice };
+                    QuotedPrice = order.DeliveryPrice
+                };
                 db.OrderShipments.Add(shipment);
             }
             shipment.Reference ??= "TRB-" + Guid.NewGuid().ToString("N").ToUpperInvariant();
             order.PaymentStatus = PaymentStatus.SUCCEEDED;
         }
+
         if (next is OrderStatus.CANCELLED or OrderStatus.RETURNED)
             await inventory.StageRestoreAsync(order.Id, ct);
 
@@ -348,8 +525,10 @@ public sealed class OrderService(
 
         if (next == OrderStatus.PAID)
             order.ConfirmedAt = DateTimeOffset.UtcNow;
+
         if (next == OrderStatus.CANCELLED)
             order.CancelledAt = DateTimeOffset.UtcNow;
+
         if (next == OrderStatus.COMPLETED)
             order.CompletedAt = DateTimeOffset.UtcNow;
 
@@ -364,7 +543,9 @@ public sealed class OrderService(
             Comment = reason?.Trim(),
             CreatedAt = DateTimeOffset.UtcNow
         });
-        if (notifications is not null) await notifications.OrderAsync(order, eventId, next.ToString(), ct);
+
+        if (notifications is not null)
+            await notifications.OrderAsync(order, eventId, next.ToString(), ct);
     }
 
     private IReadOnlyList<OrderStatus> Allowed(OrderStatus current, bool partial)
@@ -382,8 +563,10 @@ public sealed class OrderService(
             OrderStatus.DELIVERED => [OrderStatus.COMPLETED],
             _ => Array.Empty<OrderStatus>()
         };
+
         if (Staff)
             return states;
+
         if (actor.Role == "Seller")
             return states.Where(s => s is not (OrderStatus.PAID or OrderStatus.CANCELLED or OrderStatus.COMPLETED)).ToArray();
         return current is OrderStatus.CREATED or OrderStatus.AWAITING_PAYMENT ? [OrderStatus.CANCELLED] : [];
@@ -400,8 +583,18 @@ public sealed class OrderService(
     public async Task ExpireReservationAsync(Guid id, CancellationToken ct)
     {
         var order = await db.Orders.SingleOrDefaultAsync(o => o.Id == id, ct);
-        if (order is null || order.Status != OrderStatus.AWAITING_PAYMENT || !await db.InventoryReservations.AnyAsync(r => r.OrderId == id && r.Status == ReservationStatus.ACTIVE && r.ExpiresAt <= DateTimeOffset.UtcNow, ct))
+
+        if (order is null || order.Status != OrderStatus.AWAITING_PAYMENT)
             return;
+
+        var hasExpiredReservation = await db.InventoryReservations.AnyAsync(r =>
+            r.OrderId == id
+            && r.Status == ReservationStatus.ACTIVE
+            && r.ExpiresAt <= DateTimeOffset.UtcNow, ct);
+
+        if (!hasExpiredReservation)
+            return;
+
         await StageTransitionAsync(order, OrderStatus.CANCELLED, "Stock reservation expired after 30 minutes without payment.", ct);
         await db.SaveChangesAsync(ct);
     }

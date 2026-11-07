@@ -6,13 +6,34 @@ namespace Application.ProductAttributeValues
 {
     public sealed class UpdateProductAttributeValueRequest
     {
-        public Guid? VariantId { get; init; }
+        public Guid? VariantId
+        {
+            get; init;
+        }
 
-        public Guid? AttributeId { get; init; }
-        public Guid? OptionId { get; init; }
+        public Guid? AttributeId
+        {
+            get; init;
+        }
 
-        public string? StringValue { get; init; }
-        public decimal? NumberValue { get; init; }
-        public bool? BoolValue { get; init; }
+        public Guid? OptionId
+        {
+            get; init;
+        }
+
+        public string? StringValue
+        {
+            get; init;
+        }
+
+        public decimal? NumberValue
+        {
+            get; init;
+        }
+
+        public bool? BoolValue
+        {
+            get; init;
+        }
     }
 }

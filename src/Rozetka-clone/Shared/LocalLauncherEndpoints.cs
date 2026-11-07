@@ -13,6 +13,7 @@ public static class LocalLauncherEndpoints
     public static void Map(WebApplication app)
     {
         var token = app.Configuration["LocalLaunch:Token"];
+
         if (!app.Environment.IsDevelopment() || token is null || token.Length < 32) return;
         bool Authorized(HttpContext context)
         {

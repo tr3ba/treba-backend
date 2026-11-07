@@ -16,7 +16,9 @@ public static class DeliveryNotificationsRegistration
                 configuration.GetSection("NovaPoshta").Bind(o);
                 var aliasKey = o.ApiKey;
                 configuration.GetSection("Delivery:NovaPoshta").Bind(o);
-                if (string.IsNullOrWhiteSpace(o.ApiKey)) o.ApiKey = aliasKey;
+
+                if (string.IsNullOrWhiteSpace(o.ApiKey))
+                    o.ApiKey = aliasKey;
                 o.ApiKey = o.ApiKey.Trim();
             })
             .Validate(o => o.DefaultWeightKg is > 0 and <= 1000, "Default parcel weight must be between 0 and 1000 kg.").ValidateOnStart();
@@ -30,8 +32,10 @@ public static class DeliveryNotificationsRegistration
                 && string.IsNullOrEmpty(uri.Query) && string.IsNullOrEmpty(uri.Fragment), "Notifications:StoreOrigin must be an HTTPS origin.").ValidateOnStart();
         services.AddSingleton<INotificationChannels, NotificationChannels>();
         services.AddScoped<ITransactionalEmailSender, TransactionalEmailSender>();
-        services.AddScoped<CustomerNotificationSettingsService>(); services.AddScoped<CustomerNotificationQueue>();
-        services.AddScoped<CustomerNotificationRunner>(); services.AddHostedService<CustomerNotificationWorker>();
+        services.AddScoped<CustomerNotificationSettingsService>();
+        services.AddScoped<CustomerNotificationQueue>();
+        services.AddScoped<CustomerNotificationRunner>();
+        services.AddHostedService<CustomerNotificationWorker>();
         services.AddRateLimiter(options => options.AddPolicy("delivery", context =>
             RateLimitPartition.GetFixedWindowLimiter(context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
                 ?? context.Connection.RemoteIpAddress?.ToString() ?? "unknown",

@@ -7,7 +7,8 @@ public static class TelegramPreviewEndpoints
 {
     public static void Map(WebApplication app)
     {
-        if (!app.Environment.IsDevelopment()) return;
+        if (!app.Environment.IsDevelopment())
+            return;
         app.MapGet("/api/telegram/preview", (string? role) =>
         {
             role = role == "Moderator" ? "Moderator" : "Seller";
@@ -20,16 +21,30 @@ public static class TelegramPreviewEndpoints
                 new(Guid.Parse("20000000-0000-0000-0000-00000000000" + suffix), store, category, brand, null, name, "demo-" + suffix,
                     "Зволожувачі повітря", "LEVOIT", status, "Розумний зволожувач для повсякденного комфорту.",
                     "Компактний зволожувач для дому. Зручне керування, простий догляд і спокійний повсякденний дизайн.", sku, price, null, stock, 24, "Китай", now.AddDays(-1), [])
-                { StoreName = "Treba Studio", SellerName = "Treba Studio", UpdatedAt = now, Variants = [new() { Id = Guid.NewGuid(), Name = "Основний", Sku = sku, Price = price, StockQuantity = stock }] };
+                {
+                    StoreName = "Treba Studio",
+                    SellerName = "Treba Studio",
+                    UpdatedAt = now,
+                    Variants = [new() { Id = Guid.NewGuid(), Name = "Основний", Sku = sku, Price = price, StockQuantity = stock }]
+                };
             var products = new[] {
                 Product("1", "Зволожувач повітря LEVOIT Dual 200S Smart", "TRB-DEMO-001", role == "Moderator" ? "PENDING_MODERATION" : "ACTIVE", 2499, 25),
                 Product("2", "Компактний зволожувач для дому", "TRB-DEMO-002", role == "Moderator" ? "PENDING_MODERATION" : "DRAFT", 1799, 12),
                 Product("3", "Ультразвуковий зволожувач повітря", "TRB-DEMO-003", "REJECTED", 2199, 8)
             };
-            return Results.Ok(new {
-                bootstrap = new { user = new TelegramUserDto(user, "Саша Treba", role, 9990001), stats = new CatalogStatsDto(17, 12, 2, 2, 1, 0),
-                    categories = new[] { new CatalogLookupDto(category,"Побутова техніка → Клімат-техніка → Зволожувачі повітря") },
-                    brands = new[] { new CatalogLookupDto(brand,"LEVOIT") }, stores = role == "Seller" ? new[] { new CatalogLookupDto(store,"Treba Studio") } : [], allowedCategoryIds = new[] { category }, canClassifyImports = role == "Seller", pendingReviews = 3 },
+            return Results.Ok(new
+            {
+                bootstrap = new
+                {
+                    user = new TelegramUserDto(user, "Саша Treba", role, 9990001),
+                    stats = new CatalogStatsDto(17, 12, 2, 2, 1, 0),
+                    categories = new[] { new CatalogLookupDto(category, "Побутова техніка → Клімат-техніка → Зволожувачі повітря") },
+                    brands = new[] { new CatalogLookupDto(brand, "LEVOIT") },
+                    stores = role == "Seller" ? new[] { new CatalogLookupDto(store, "Treba Studio") } : [],
+                    allowedCategoryIds = new[] { category },
+                    canClassifyImports = role == "Seller",
+                    pendingReviews = 3
+                },
                 products,
                 importPreview = new ImportPreviewDto(Guid.Parse("30000000-0000-0000-0000-000000000001"), "https://rozetka.com.ua/demo/p123456/",
                     "Зволожувач LEVOIT Dual 200S Smart", "Приклад опису імпортованого товару. Перевірте комплектацію та характеристики перед надсиланням.", "LEVOIT",

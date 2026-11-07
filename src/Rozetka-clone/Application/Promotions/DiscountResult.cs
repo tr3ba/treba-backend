@@ -17,6 +17,7 @@ namespace Application.Promotions
         {
             get; init;
         }
+
         public IReadOnlyDictionary<Guid, decimal> LineDiscounts { get; init; } = new Dictionary<Guid, decimal>();
     }
 }

@@ -6,7 +6,10 @@ namespace Domain.Entities
 {
     public class PickupPoint
     {
-        public Guid Id { get; set; }
+        public Guid Id
+        {
+            get; set;
+        }
 
         public string Provider { get; set; } = null!;
 
@@ -18,9 +21,15 @@ namespace Domain.Entities
 
         public string Address { get; set; } = null!;
 
-        public decimal? Latitude { get; set; }
+        public decimal? Latitude
+        {
+            get; set;
+        }
 
-        public decimal? Longitude { get; set; }
+        public decimal? Longitude
+        {
+            get; set;
+        }
 
         public bool Active { get; set; } = true;
     }

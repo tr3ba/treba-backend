@@ -4,5 +4,7 @@ using System.Text;
 
 namespace Domain.Entities.Common
 {
-    public abstract class AggregateRoot : AuditableEntity { }
+    public abstract class AggregateRoot : AuditableEntity
+    {
+    }
 }

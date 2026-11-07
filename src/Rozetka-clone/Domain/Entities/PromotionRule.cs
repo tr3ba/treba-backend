@@ -7,11 +7,20 @@ namespace Domain.Entities
 {
     public class PromotionRule
     {
-        public Guid Id { get; set; }
+        public Guid Id
+        {
+            get; set;
+        }
 
-        public Guid PromotionId { get; set; }
+        public Guid PromotionId
+        {
+            get; set;
+        }
 
-        public PromotionRuleType RuleType { get; set; }
+        public PromotionRuleType RuleType
+        {
+            get; set;
+        }
 
         public string RuleValue { get; set; } = string.Empty;
     }

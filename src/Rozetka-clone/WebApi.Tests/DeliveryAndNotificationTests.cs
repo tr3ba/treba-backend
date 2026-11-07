@@ -29,12 +29,15 @@ namespace WebApi.Tests;
 public sealed class DeliveryAndNotificationTests
 {
     internal static readonly Guid CityId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+
     internal static readonly Guid PointId = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
     private sealed class CarrierHttp(bool wrongCity = false, bool failed = false, bool unfiltered = false) : HttpMessageHandler
     {
         internal readonly List<(string Model, string Method)> Requests = [];
+
         internal readonly List<JsonElement> Properties = [];
+
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             Assert.Equal("https://api.novaposhta.ua/v2.0/json/", request.RequestUri!.AbsoluteUri);
@@ -43,12 +46,15 @@ public sealed class DeliveryAndNotificationTests
             var properties = root.GetProperty("methodProperties");
             Properties.Add(properties.Clone());
             Assert.All(properties.EnumerateObject(), property => Assert.True(char.IsUpper(property.Name[0]), "Carrier property names must retain their PascalCase spelling."));
+
             if (method == "getCities")
             {
                 Assert.True(properties.TryGetProperty("FindByString", out _) || properties.TryGetProperty("Ref", out _));
                 Assert.True(properties.TryGetProperty("Limit", out _));
             }
+
             if (method == "getWarehouses") Assert.Equal(CityId, properties.GetProperty("CityRef").GetGuid());
+
             if (method == "getDocumentPrice")
             {
                 Assert.Equal(CityId, properties.GetProperty("CitySender").GetGuid());
@@ -75,7 +81,7 @@ public sealed class DeliveryAndNotificationTests
     }
 
     private static NovaPoshtaClient Carrier(CarrierHttp handler, IMemoryCache cache) => new(new HttpClient(handler), Options.Create(new NovaPoshtaOptions
-        { Enabled = true, ApiKey = "fixture-only", SenderCityRef = CityId }), cache);
+    { Enabled = true, ApiKey = "fixture-only", SenderCityRef = CityId }), cache);
 
     [Fact]
     public async Task Carrier_SearchPreservesWireCase_AndCannotReturnUnrelatedAlphabeticalCities()
@@ -128,7 +134,8 @@ public sealed class DeliveryAndNotificationTests
         var services = new ServiceCollection(); services.AddLogging();
         services.AddDeliveryNotifications(new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         {
-            ["NovaPoshta:ApiKey"] = "fixture-only", ["Delivery:NovaPoshta:Enabled"] = "false"
+            ["NovaPoshta:ApiKey"] = "fixture-only",
+            ["Delivery:NovaPoshta:Enabled"] = "false"
         }).Build());
         using var container = services.BuildServiceProvider();
         Assert.False(container.GetRequiredService<IOptions<NovaPoshtaOptions>>().Value.Configured);
@@ -168,14 +175,19 @@ public sealed class DeliveryAndNotificationTests
     internal sealed class Provider : ICheckoutDeliveryProvider
     {
         public bool Available => true;
+
         public decimal DefaultWeightKg => 1;
+
         public Task<IReadOnlyList<DeliveryCity>> CitiesAsync(string query, CancellationToken ct) => Task.FromResult<IReadOnlyList<DeliveryCity>>([new(CityId, "Київ", "Київська")]);
+
         public Task<DeliveryPickupPage> PickupPointsAsync(Guid cityRef, string query, string kind, int page, CancellationToken ct) => Task.FromResult(new DeliveryPickupPage([new(PointId, CityId, "Поштомат №123", "123", true)], page, false));
+
         public Task<(DeliveryCity City, DeliveryPickupPoint PickupPoint, decimal Price)> QuoteAsync(Guid cityRef, Guid pickupPointRef, decimal weightKg, decimal declaredValue, CancellationToken ct) =>
             Task.FromResult<(DeliveryCity, DeliveryPickupPoint, decimal)>((new(CityId, "Київ", "Київська"), new(PointId, CityId, "Поштомат №123", "123", true), 95.50m));
     }
 
     internal static CheckoutDeliveryService Delivery(ApplicationDbContext db, OperationsTests.Actor actor, TimeProvider clock) => new(db, new Provider(), new DiscountService(db), actor, clock);
+
     internal static OrderService Orders(ApplicationDbContext db, OperationsTests.Actor actor, CheckoutDeliveryService delivery) =>
         new(db, new InventoryService(db, actor), new DiscountService(db), actor, delivery, new CustomerNotificationQueue(db));
 
@@ -293,20 +305,27 @@ public sealed class DeliveryAndNotificationTests
     }
 
     internal sealed class Channels : INotificationChannels { public bool EmailAvailable => true; public bool TelegramAvailable => true; }
+
     internal sealed class Bot : ITelegramBotClient
     {
         internal readonly List<string> Sent = [];
+
         public Task<JsonDocument> CallAsync(string method, object payload, CancellationToken ct)
         { Sent.Add(JsonSerializer.Serialize(payload)); return Task.FromResult(JsonDocument.Parse("{}")); }
+
         public Task SendMenuAsync(long chatId, string text, CancellationToken ct) => throw new NotSupportedException();
+
         public Task SendTextAsync(long chatId, string text, CancellationToken ct) => throw new NotSupportedException();
     }
+
     internal sealed class Mail : ITransactionalEmailSender
     {
         internal bool Fail; internal readonly List<(string Email, string Text)> Sent = [];
+
         public Task SendNotificationAsync(string recipient, string title, string text, string url, CancellationToken ct)
         { if (Fail) throw new HttpRequestException("fixture failure"); Sent.Add((recipient, text)); return Task.CompletedTask; }
     }
+
     internal static CustomerNotificationRunner Runner(ApplicationDbContext db, Mail mail, TelegramTestData.Clock clock) =>
         new(db, mail, new Bot(), new Channels(), Options.Create(new CustomerNotificationOptions { Enabled = true, StoreOrigin = "https://treba.example" }), clock);
 

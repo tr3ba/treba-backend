@@ -6,6 +6,9 @@ namespace Application.Categories
 {
     public sealed class MoveCategoryRequest
     {
-        public Guid? NewParentId { get; init; }
+        public Guid? NewParentId
+        {
+            get; init;
+        }
     }
 }

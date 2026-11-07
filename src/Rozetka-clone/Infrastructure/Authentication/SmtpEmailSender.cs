@@ -18,6 +18,7 @@ public sealed class SmtpEmailSender(
     )
     {
         var settings = options.Value;
+
         if (
             !settings.Enabled
             || string.IsNullOrWhiteSpace(settings.Host)

@@ -9,6 +9,7 @@ public sealed class PromotionActivationWorker : BackgroundService
     private static readonly TimeSpan Interval = TimeSpan.FromMinutes(1);
 
     private readonly IServiceScopeFactory _scopeFactory;
+
     private readonly ILogger<PromotionActivationWorker> _logger;
 
     public PromotionActivationWorker(

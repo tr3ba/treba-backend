@@ -1,6 +1,7 @@
 namespace Domain.Enums;
 
-public enum OrderStatus {
+public enum OrderStatus
+{
     CREATED,
     AWAITING_PAYMENT,
     PAID,

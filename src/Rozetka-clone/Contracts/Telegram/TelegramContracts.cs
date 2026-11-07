@@ -30,14 +30,27 @@ public sealed record ImportPreviewDto(Guid Id, string SourceUrl, string Name, st
     IReadOnlyList<string> Images, IReadOnlyList<ImportedCharacteristicDto> Characteristics, DateTimeOffset ExpiresAt,
     Guid? ProductId, DateTimeOffset? SubmittedAt)
 {
-    public Guid? BrandId { get; init; }
+    public Guid? BrandId
+    {
+        get; init;
+    }
+
     public string ManufacturerPartNumber { get; init; } = "";
+
     public string Barcode { get; init; } = "";
+
     public string SourceSku { get; init; } = "";
+
     public string SourceCurrency { get; init; } = "";
+
     public IReadOnlyList<string> SourceWarnings { get; init; } = [];
+
     public IReadOnlyList<ProductDuplicateDto> Duplicates { get; init; } = [];
-    public bool CanClassifyCategory { get; init; }
+
+    public bool CanClassifyCategory
+    {
+        get; init;
+    }
 }
 public sealed record CreateImportBrandRequest([Required, StringLength(200)] string Name);
 public sealed record CreateImportCategoryRequest([Required, StringLength(200)] string Name, Guid ParentId);
@@ -48,13 +61,35 @@ public sealed class SubmitImportRequest
 {
     [Required, StringLength(250)] public string Name { get; set; } = "";
     [StringLength(10000)] public string Description { get; set; } = "";
-    public Guid StoreId { get; set; }
-    public Guid BrandId { get; set; }
+    public Guid StoreId
+    {
+        get; set;
+    }
+
+    public Guid BrandId
+    {
+        get; set;
+    }
+
     [StringLength(100)] public string ManufacturerPartNumber { get; set; } = "";
     [StringLength(100)] public string Barcode { get; set; } = "";
-    public bool DuplicateConfirmed { get; set; }
+    public bool DuplicateConfirmed
+    {
+        get; set;
+    }
+
     [Required, StringLength(100)] public string Sku { get; set; } = "";
-    [Range(typeof(decimal), "0.01", "999999999.99", ParseLimitsInInvariantCulture = true, ConvertValueInInvariantCulture = true)] public decimal Price { get; set; }
-    [Range(0, 1000000)] public int StockQuantity { get; set; }
+    [Range(typeof(decimal), "0.01", "999999999.99", ParseLimitsInInvariantCulture = true, ConvertValueInInvariantCulture = true)]
+    public decimal Price
+    {
+        get; set;
+    }
+
+    [Range(0, 1000000)]
+    public int StockQuantity
+    {
+        get; set;
+    }
+
     public List<CatalogAttributeInput> Attributes { get; set; } = [];
 }

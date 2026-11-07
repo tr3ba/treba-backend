@@ -32,6 +32,7 @@ public sealed class InventoryController : ControllerBase
             variantId,
             cancellationToken
         );
+
         if (inventory is null)
         {
             return NotFound(

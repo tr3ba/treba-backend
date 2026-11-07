@@ -18,7 +18,9 @@ namespace WebApi.Controllers
         private const long MaxImageBytes = 5 * 1024 * 1024;
 
         private readonly IProductImageService _productImageService;
+
         private readonly IProductMediaStorage _media;
+
         private readonly IApplicationDbContext _dbContext;
 
         public ProductImagesController(
@@ -353,6 +355,7 @@ namespace WebApi.Controllers
             }
 
             var fileName = imageUrl[expectedPrefix.Length..];
+
             if (!fileName.Contains('/') && !fileName.Contains('\\'))
                 await _media.DeleteAsync(productId, fileName, ct);
         }

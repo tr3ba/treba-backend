@@ -10,8 +10,12 @@ public sealed partial class CatalogService
     {
         var product = await db.Products.SingleOrDefaultAsync(p => p.Id == id && (!sellerUserId.HasValue
             || db.Stores.Any(s => s.Id == p.StoreId && db.Sellers.Any(seller => seller.Id == s.SellerId && seller.UserId == sellerUserId.Value))), ct);
-        if (product is null) return false;
-        if (product.Status == ProductStatus.ARCHIVED) return true;
+
+        if (product is null)
+            return false;
+
+        if (product.Status == ProductStatus.ARCHIVED)
+            return true;
         product.Status = ProductStatus.ARCHIVED;
         product.UpdatedAt = DateTime.UtcNow;
         foreach (var variant in await db.ProductVariants.Where(v => v.ProductId == id && v.IsActive).ToListAsync(ct))

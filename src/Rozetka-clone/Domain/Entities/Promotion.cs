@@ -11,6 +11,7 @@ namespace Domain.Entities
         {
             get; set;
         }
+
         public Guid Version { get; set; } = Guid.NewGuid();
 
         public string Name { get; set; } = string.Empty;

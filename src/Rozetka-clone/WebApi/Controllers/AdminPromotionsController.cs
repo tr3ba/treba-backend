@@ -11,8 +11,10 @@ public sealed class AdminPromotionsController(PromotionManagementService promoti
 {
     [HttpGet]
     public Task<PagedResponse<PromotionView>> List(int page = 1, string? search = null, string? status = null, CancellationToken ct = default) => promotions.ListAsync(page, search, status, ct);
+
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<PromotionView>> Get(Guid id, CancellationToken ct) => await promotions.GetAsync(id, ct) is { } result ? Ok(result) : NotFound();
+
     [HttpPost]
     public async Task<ActionResult<PromotionView>> Create(PromotionInput request, CancellationToken ct)
     {
@@ -22,6 +24,7 @@ public sealed class AdminPromotionsController(PromotionManagementService promoti
             id = result.Id
         }, result);
     }
+
     [HttpPut("{id:guid}")]
     public Task<PromotionView> Update(Guid id, PromotionInput request, CancellationToken ct) => promotions.SaveAsync(id, request, ct);
 }

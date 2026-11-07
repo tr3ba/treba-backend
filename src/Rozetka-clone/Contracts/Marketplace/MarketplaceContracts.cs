@@ -7,12 +7,20 @@ public sealed class SellerApplicationInput
     [Required, StringLength(250, MinimumLength = 2)] public string CompanyName { get; set; } = "";
     [Required, StringLength(200, MinimumLength = 2)] public string StoreName { get; set; } = "";
     [Required, StringLength(100, MinimumLength = 2)] public string TaxNumber { get; set; } = "";
-    [StringLength(1000)] public string? Website { get; set; }
+    [StringLength(1000)]
+    public string? Website
+    {
+        get; set;
+    }
+
     [Required, StringLength(200, MinimumLength = 2)] public string ContactName { get; set; } = "";
     [Required, StringLength(150)] public string Position { get; set; } = "";
     [Required, EmailAddress, StringLength(320)] public string Email { get; set; } = "";
     [Required, Phone, StringLength(50)] public string Phone { get; set; } = "";
-    public bool IsNonResident { get; set; }
+    public bool IsNonResident
+    {
+        get; set;
+    }
 }
 
 public sealed record SellerApplicationView(Guid Id, string CompanyName, string StoreName, string TaxNumber,

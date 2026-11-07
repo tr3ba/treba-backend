@@ -1,6 +1,7 @@
 namespace Domain.Enums;
 
-public enum PaymentStatus {
+public enum PaymentStatus
+{
     CREATED,
     PENDING,
     SUCCEEDED,

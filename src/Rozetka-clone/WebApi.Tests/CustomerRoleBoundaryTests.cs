@@ -25,6 +25,7 @@ public sealed class CustomerRoleBoundaryTests
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
         {
             var role = Request.Headers["X-Fixture-Role"].ToString();
+
             if (role.Length == 0) return Task.FromResult(AuthenticateResult.NoResult());
             var principal = new ClaimsPrincipal(new ClaimsIdentity([
                 new(ClaimTypes.Role, role), new(ClaimTypes.NameIdentifier, "bbf0b073-0533-44bf-9f72-f67fd7bb0d3b")], Scheme.Name));
@@ -65,6 +66,7 @@ public sealed class CustomerRoleBoundaryTests
             foreach (var (method, path) in endpoints)
             {
                 using var request = new HttpRequestMessage(method, path);
+
                 if (method != HttpMethod.Get) request.Content = JsonContent.Create(new { });
                 using var response = await client.SendAsync(request);
                 Assert.True(response.StatusCode == HttpStatusCode.Forbidden, role + " " + method + " " + path + " => " + response.StatusCode);

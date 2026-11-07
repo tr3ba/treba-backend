@@ -184,6 +184,7 @@ public sealed class GenericImportTests
             <script type="application/ld+json">{"@type":"Product","name":"Generic studio","brand":"Test Brand","sku":"SOURCE-SKU",
               "image":"https://cdn.example.test/studio.png","offers":{"price":"199.95","priceCurrency":"UAH"},"additionalProperty":[{"name":"EAN","value":["4820000000001","4820000000002"]}]}</script>
             """);
-        public Task<byte[]> GetImageAsync(Uri uri, CancellationToken ct) => Task.FromResult(new byte[] { 137,80,78,71,13,10,26,10,0 });
+
+        public Task<byte[]> GetImageAsync(Uri uri, CancellationToken ct) => Task.FromResult(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10, 0 });
     }
 }

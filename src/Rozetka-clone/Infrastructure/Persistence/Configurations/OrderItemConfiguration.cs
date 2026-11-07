@@ -25,7 +25,7 @@ public sealed class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
         builder.Property(x => x.DiscountAmount).HasPrecision(18, 2);
         builder.Property(x => x.TotalPrice).HasPrecision(18, 2);
 
-        builder.Property(x => x.ProductSnapshot).HasColumnType("jsonb"); 
+        builder.Property(x => x.ProductSnapshot).HasColumnType("jsonb");
 
         builder.HasIndex(x => x.OrderId);
         builder.HasIndex(x => x.SellerId);

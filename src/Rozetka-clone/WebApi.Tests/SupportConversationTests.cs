@@ -546,6 +546,7 @@ public sealed class SupportConversationTests
             AuthorName = "Legacy staff",
             AuthorRole = "Manager",
             Message = "Old private note",
+
             Internal = true,
         };
         db.SupportMessages.Add(note);

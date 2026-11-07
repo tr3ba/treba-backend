@@ -70,6 +70,7 @@ public sealed class AdminHttpTests
         app.UseExceptionHandler();
         app.UseRouting();
         app.UseAuthentication();
+
         if (configure is not null) app.UseRateLimiter();
         app.UseAuthorization();
         app.MapControllers();
@@ -144,12 +145,14 @@ public sealed class AdminHttpTests
     {
         await using var server = await ServerAsync();
         using var client = server.GetTestClient();
+
         if (role is not null)
             client.DefaultRequestHeaders.Add("X-Test-Role", role);
         using var list = await client.GetAsync("/api/v1/admin/reviews");
         using var dashboard = await client.GetAsync("/api/v1/admin/dashboard");
         Assert.Equal(expected, list.StatusCode);
         Assert.Equal(expected, dashboard.StatusCode);
+
         if (expected == HttpStatusCode.OK)
         {
             var data = await dashboard.Content.ReadFromJsonAsync<AdminDashboardDto>();
@@ -170,6 +173,7 @@ public sealed class AdminHttpTests
     {
         await using var server = await ServerAsync();
         using var client = server.GetTestClient();
+
         if (role is not null)
             client.DefaultRequestHeaders.Add("X-Test-Role", role);
         using var staff = await client.GetAsync("/api/v1/admin/settings/staff");
@@ -194,6 +198,7 @@ public sealed class AdminHttpTests
                 new("firstName", "Test"),
                 new("lastName", "Staff"),
             };
+
             if (Request.Headers.TryGetValue("X-Test-UserId", out var user))
                 claims.Add(new(ClaimTypes.NameIdentifier, user.ToString()));
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims, "Test"));

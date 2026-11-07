@@ -13,12 +13,14 @@ public static class AdministratorSeeder
     )
     {
         var email = config["BootstrapAdmin:Email"]?.Trim().ToLowerInvariant();
+
         if (string.IsNullOrEmpty(email))
         {
             return;
         }
 
         var password = config["BootstrapAdmin:Password"];
+
         if (string.IsNullOrEmpty(password)
             || password.Length < 12)
         {
@@ -30,6 +32,7 @@ public static class AdministratorSeeder
         var existing = await db.Users
             .Include(u => u.Role)
             .SingleOrDefaultAsync(u => u.Email == email);
+
         if (existing is not null)
         {
             if (existing.Role?.Name != Roles.Administrator)
@@ -51,6 +54,7 @@ public static class AdministratorSeeder
                     && u.Role != null
                     && u.Role.Name == Roles.Administrator
             );
+
         if (administratorAlreadyExists)
         {
             return;

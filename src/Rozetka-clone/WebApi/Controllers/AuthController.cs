@@ -12,6 +12,7 @@ namespace WebApi.Controllers;
 public sealed class AuthController : ControllerBase
 {
     private readonly IIdentityService _identityService;
+
     private readonly ISecondFactorService _secondFactorService;
 
     public AuthController(
@@ -104,7 +105,9 @@ public sealed class AuthController : ControllerBase
     public IActionResult ExternalCallback(string provider, [FromQuery] string? code, [FromQuery] string? state, [FromQuery] string? error)
     {
         var info = _identityService.GetExternalProviders().SingleOrDefault(p => p.Name == provider);
-        if (info is null || code?.Length > 8192 || state?.Length > 128 || error?.Length > 256) return BadRequest();
+
+        if (info is null || code?.Length > 8192 || state?.Length > 128 || error?.Length > 256)
+            return BadRequest();
         // Preserve the existing provider redirect URIs. The storefront validates the browser's state cookie.
         var target = new Uri(info.RedirectUri).GetLeftPart(UriPartial.Authority) + "/shop-api/external/" + provider + "/callback";
         Response.Headers.CacheControl = "no-store, private";
@@ -116,7 +119,10 @@ public sealed class AuthController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> ExternalCodeLogin([FromBody] ExternalCodeLoginRequest request, CancellationToken cancellationToken)
     {
-        try { return Ok(await _identityService.ExchangeExternalCodeAsync(request, cancellationToken)); }
+        try
+        {
+            return Ok(await _identityService.ExchangeExternalCodeAsync(request, cancellationToken));
+        }
         catch (UnauthorizedAccessException ex) { return Unauthorized(new { message = ex.Message }); }
         catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
         catch (HttpRequestException) { return StatusCode(503, new { message = "Провайдер входу тимчасово недоступний." }); }
@@ -191,7 +197,10 @@ public sealed class AuthController : ControllerBase
                 cancellationToken
             );
 
-            return Ok(new { success = result });
+            return Ok(new
+            {
+                success = result
+            });
         }
         catch (InvalidOperationException ex)
         {
@@ -233,7 +242,10 @@ public sealed class AuthController : ControllerBase
                 cancellationToken
             );
 
-            return Ok(new { success = result });
+            return Ok(new
+            {
+                success = result
+            });
         }
         catch (InvalidOperationException ex)
         {

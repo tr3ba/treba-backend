@@ -189,6 +189,7 @@ public sealed class FeatureChatDeletionTests
     {
         await using var app = await AdminHttpTests.ServerAsync();
         using var client = app.GetTestClient();
+
         if (role is not null)
         {
             client.DefaultRequestHeaders.Add("X-Test-Role", role);
@@ -220,6 +221,7 @@ public sealed class FeatureChatDeletionTests
     {
         await using var app = await AdminHttpTests.ServerAsync();
         using var client = app.GetTestClient();
+
         if (role is not null)
         {
             client.DefaultRequestHeaders.Add("X-Test-Role", role);

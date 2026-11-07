@@ -22,15 +22,24 @@ public sealed class UserExternalLogin : BaseEntity
         CreatedAt = createdAt;
     }
 
-    public Guid UserId { get; private set; }
+    public Guid UserId
+    {
+        get; private set;
+    }
 
-    public User? User { get; private set; }
+    public User? User
+    {
+        get; private set;
+    }
 
     public string Provider { get; private set; } = null!;
 
     public string ProviderUserId { get; private set; } = null!;
 
-    public DateTimeOffset CreatedAt { get; private set; }
+    public DateTimeOffset CreatedAt
+    {
+        get; private set;
+    }
 
     public static UserExternalLogin Create(
         Guid userId,

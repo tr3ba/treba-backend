@@ -20,14 +20,20 @@ public sealed class SellerImportsController(ProductImportService imports, Seller
 
     [HttpGet("queue")]
     public async Task<IReadOnlyList<ImportJobDto>> Jobs(CancellationToken ct)
-    { await imports.EnsureSellerAsync(UserId, ct); return await queue.ListAsync(UserId, ct); }
+    {
+        await imports.EnsureSellerAsync(UserId, ct);
+        return await queue.ListAsync(UserId, ct);
+    }
 
     [HttpPost("queue"), EnableRateLimiting("telegram-import")]
     public Task<IReadOnlyList<ImportJobDto>> Add(QueueImportsRequest request, CancellationToken ct) => queue.AddAsync(UserId, request, ct);
 
     [HttpPost("queue/{id:guid}/retry"), EnableRateLimiting("telegram-import")]
     public async Task<IActionResult> Retry(Guid id, CancellationToken ct, [FromQuery] Guid? categoryId = null, [FromQuery] bool resetCategory = false)
-    { await queue.RetryAsync(UserId, id, ct, categoryId, resetCategory); return NoContent(); }
+    {
+        await queue.RetryAsync(UserId, id, ct, categoryId, resetCategory);
+        return NoContent();
+    }
 
     [HttpGet("{id:guid}")]
     public Task<ImportPreviewDto> Preview(Guid id, CancellationToken ct) => imports.GetAsync(UserId, id, ct);

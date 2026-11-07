@@ -82,6 +82,7 @@ namespace WebApi.Controllers
                     id,
                     cancellationToken
                 );
+
                 if (current is null)
                 {
                     return NotFound();

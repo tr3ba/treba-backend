@@ -16,6 +16,7 @@ public sealed class AdminWorkspaceService(IApplicationDbContext db)
             throw new ArgumentException("Page must be positive and size must be between 1 and 100.");
 
         var reviews = db.Reviews.AsNoTracking().Where(review => review.Status != ReviewStatus.DELETED);
+
         if (!string.IsNullOrWhiteSpace(status))
         {
             var parsed = ParseReviewStatus(status);
@@ -25,7 +26,12 @@ public sealed class AdminWorkspaceService(IApplicationDbContext db)
         var query = from review in reviews
                     join product in db.Products.AsNoTracking() on review.ProductId equals product.Id
                     join user in db.Users.AsNoTracking() on review.UserId equals user.Id
-                    select new { Review = review, Product = product, User = user };
+                    select new
+                    {
+                        Review = review,
+                        Product = product,
+                        User = user
+                    };
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -111,7 +117,11 @@ public sealed class AdminWorkspaceService(IApplicationDbContext db)
                              join product in db.Products.AsNoTracking() on review.ProductId equals product.Id
                              where review.Status != ReviewStatus.DELETED && review.UpdatedAt >= sinceUtc
                              orderby review.UpdatedAt descending, review.Id
-                             select new { Review = review, ProductName = product.Name }).Take(8).ToListAsync(ct);
+                             select new
+                             {
+                                 Review = review,
+                                 ProductName = product.Name
+                             }).Take(8).ToListAsync(ct);
         activity.AddRange(reviews.Select(row => new AdminActivityDto(
             "review", row.Review.Status.ToString(), row.Review.Id, row.ProductName, Utc(row.Review.UpdatedAt))));
 

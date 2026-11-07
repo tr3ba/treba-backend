@@ -6,6 +6,9 @@ namespace Application.Carts
 {
     public sealed class UpdateCartItemRequest
     {
-        public int Quantity { get; init; }
+        public int Quantity
+        {
+            get; init;
+        }
     }
 }

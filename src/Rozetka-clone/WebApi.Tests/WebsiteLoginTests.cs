@@ -17,6 +17,7 @@ namespace WebApi.Tests;
 public sealed class WebsiteLoginTests
 {
     private const string Secret = "JBSWY3DPEHPK3PXP";
+
     private static readonly IOptions<SecurityOptions> Security = Options.Create(
         new SecurityOptions
         {
@@ -196,6 +197,7 @@ public sealed class WebsiteLoginTests
         {
             buffer = (buffer << 5) | alphabet.IndexOf(c);
             bits += 5;
+
             if (bits >= 8)
             {
                 bits -= 8;

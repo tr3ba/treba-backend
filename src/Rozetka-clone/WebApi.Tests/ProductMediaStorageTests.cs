@@ -10,10 +10,15 @@ public sealed class ProductMediaStorageTests
     private sealed class EnvironmentStub(string root) : IWebHostEnvironment
     {
         public string EnvironmentName { get; set; } = "Development";
+
         public string ApplicationName { get; set; } = "MediaTests";
+
         public string ContentRootPath { get; set; } = root;
+
         public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
+
         public string WebRootPath { get; set; } = root;
+
         public IFileProvider WebRootFileProvider { get; set; } = new NullFileProvider();
     }
 

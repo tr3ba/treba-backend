@@ -11,10 +11,12 @@ public sealed partial class CatalogService
     {
         var categories = await db.Categories.AsNoTracking().Select(c => new { c.Id, c.ParentId }).ToListAsync(ct);
         var result = new HashSet<Guid> { root };
-        var pending = new Queue<Guid>(); pending.Enqueue(root);
+        var pending = new Queue<Guid>();
+        pending.Enqueue(root);
         while (pending.TryDequeue(out var parent))
             foreach (var child in categories.Where(c => c.ParentId == parent))
-                if (result.Add(child.Id)) pending.Enqueue(child.Id);
+                if (result.Add(child.Id))
+                    pending.Enqueue(child.Id);
         return result.ToArray();
     }
 
@@ -23,7 +25,8 @@ public sealed partial class CatalogService
         var categories = await db.Categories.AsNoTracking().ToDictionaryAsync(c => c.Id, c => c.ParentId, ct);
         var result = new HashSet<Guid>();
         Guid? current = id;
-        while (current.HasValue && result.Add(current.Value)) current = categories.GetValueOrDefault(current.Value);
+        while (current.HasValue && result.Add(current.Value))
+            current = categories.GetValueOrDefault(current.Value);
         return result;
     }
 
@@ -33,14 +36,18 @@ public sealed partial class CatalogService
         var byId = categories.ToDictionary(c => c.Id);
         string Path(Guid id)
         {
-            var names = new List<string>(); var seen = new HashSet<Guid>();
+            var names = new List<string>();
+            var seen = new HashSet<Guid>();
             while (seen.Add(id) && byId.TryGetValue(id, out var item))
             {
                 names.Add(item.Name);
-                if (!item.ParentId.HasValue) break;
+
+                if (!item.ParentId.HasValue)
+                    break;
                 id = item.ParentId.Value;
             }
-            names.Reverse(); return string.Join(" → ", names);
+            names.Reverse();
+            return string.Join(" → ", names);
         }
         return new(categories.Select(c => new CatalogLookupDto(c.Id, Path(c.Id))).OrderBy(c => c.Name).ToList(),
             await db.Brands.AsNoTracking().OrderBy(b => b.Name).Select(b => new CatalogLookupDto(b.Id, b.Name)).ToListAsync(ct),
@@ -62,7 +69,8 @@ public sealed partial class CatalogService
     {
         var logs = await db.AdminAuditLogs.AsNoTracking().Where(d => d.EntityType == "Product" && d.EntityId == productId && d.Action == "Moderation")
             .OrderByDescending(d => d.OccurredAt).ThenByDescending(d => d.Id).Take(100).ToListAsync(ct);
-        return logs.Select(log => {
+        return logs.Select(log =>
+        {
             var changes = JsonSerializer.Deserialize<List<AuditChangeDto>>(log.ChangesJson) ?? [];
             return new ProductModerationDto(log.Id, log.OccurredAt, log.ActorName, changes.FirstOrDefault(c => c.Field == "Decision")?.After ?? "", changes.FirstOrDefault(c => c.Field == "Reason")?.After);
         }).ToList();

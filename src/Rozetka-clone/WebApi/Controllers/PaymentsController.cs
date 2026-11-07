@@ -32,21 +32,33 @@ public sealed class PaymentsController : ControllerBase
 
         if (!Guid.TryParse(userIdClaim, out var userId))
         {
-            return Unauthorized(new { message = "Не вдалося визначити користувача." });
+            return Unauthorized(new
+            {
+                message = "Не вдалося визначити користувача."
+            });
         }
 
         try
         {
             var payment = await _paymentService.CreatePaymentAsync(orderId, userId, cancellationToken);
-            return CreatedAtAction(nameof(GetPaymentById), new { id = payment.Id }, payment);
+            return CreatedAtAction(nameof(GetPaymentById), new
+            {
+                id = payment.Id
+            }, payment);
         }
         catch (InvalidOperationException ex)
         {
-            return NotFound(new { message = ex.Message });
+            return NotFound(new
+            {
+                message = ex.Message
+            });
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new
+            {
+                message = ex.Message
+            });
         }
     }
 
@@ -64,7 +76,10 @@ public sealed class PaymentsController : ControllerBase
 
         if (!Guid.TryParse(userIdClaim, out var userId))
         {
-            return Unauthorized(new { message = "Не вдалося визначити користувача." });
+            return Unauthorized(new
+            {
+                message = "Не вдалося визначити користувача."
+            });
         }
 
         try
@@ -74,7 +89,10 @@ public sealed class PaymentsController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return NotFound(new { message = ex.Message });
+            return NotFound(new
+            {
+                message = ex.Message
+            });
         }
     }
 
@@ -93,7 +111,10 @@ public sealed class PaymentsController : ControllerBase
                      ?? Request.Headers["Signature"].FirstOrDefault()
                      ?? string.Empty;
 
-        var requestWithSignature = request with { Signature = signature };
+        var requestWithSignature = request with
+        {
+            Signature = signature
+        };
 
         try
         {
@@ -102,7 +123,10 @@ public sealed class PaymentsController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new
+            {
+                message = ex.Message
+            });
         }
     }
 
@@ -123,11 +147,17 @@ public sealed class PaymentsController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return NotFound(new { message = ex.Message });
+            return NotFound(new
+            {
+                message = ex.Message
+            });
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return BadRequest(new
+            {
+                message = ex.Message
+            });
         }
     }
 }

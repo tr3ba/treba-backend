@@ -87,6 +87,7 @@ internal static class TotpUtility
                 bitsLeft -= 5;
             }
         }
+
         if (bitsLeft > 0)
         {
             output.Append(Alphabet[(buffer << (5 - bitsLeft)) & 31]);
@@ -109,6 +110,7 @@ internal static class TotpUtility
         foreach (var character in normalized)
         {
             var index = Alphabet.IndexOf(character);
+
             if (index < 0)
             {
                 throw new FormatException("Invalid Base32 secret.");
@@ -116,6 +118,7 @@ internal static class TotpUtility
 
             buffer = (buffer << 5) | index;
             bitsLeft += 5;
+
             if (bitsLeft >= 8)
             {
                 output.Add((byte)(buffer >> (bitsLeft - 8)));

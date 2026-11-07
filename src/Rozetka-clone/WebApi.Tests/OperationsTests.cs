@@ -492,6 +492,7 @@ public sealed class OperationsTests
     {
         await using var server = await AdminHttpTests.ServerAsync();
         using var client = server.GetTestClient();
+
         if (role is not null)
             client.DefaultRequestHeaders.Add("X-Test-Role", role);
         foreach (

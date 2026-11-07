@@ -12,67 +12,116 @@ namespace Application.Abstractions
 {
     public interface IApplicationDbContext
     {
-        DbSet<DeliveryQuote> DeliveryQuotes { get; }
-        DbSet<OrderShipment> OrderShipments { get; }
-        DbSet<CustomerNotificationSettings> CustomerNotificationSettings { get; }
-        DbSet<CustomerNotification> CustomerNotifications { get; }
-        DbSet<FeatureFlag> FeatureFlags { get; }
-        DbSet<ReviewReplyTemplate> ReviewReplyTemplates { get; }
-        DbSet<SellerApplication> SellerApplications { get; }
-        DbSet<CustomerPreferences> CustomerPreferences { get; }
-        DbSet<NotificationReceipt> NotificationReceipts { get; }
+        DbSet<DeliveryQuote> DeliveryQuotes
+        {
+            get;
+        }
+
+        DbSet<OrderShipment> OrderShipments
+        {
+            get;
+        }
+
+        DbSet<CustomerNotificationSettings> CustomerNotificationSettings
+        {
+            get;
+        }
+
+        DbSet<CustomerNotification> CustomerNotifications
+        {
+            get;
+        }
+
+        DbSet<FeatureFlag> FeatureFlags
+        {
+            get;
+        }
+
+        DbSet<ReviewReplyTemplate> ReviewReplyTemplates
+        {
+            get;
+        }
+
+        DbSet<SellerApplication> SellerApplications
+        {
+            get;
+        }
+
+        DbSet<CustomerPreferences> CustomerPreferences
+        {
+            get;
+        }
+
+        DbSet<NotificationReceipt> NotificationReceipts
+        {
+            get;
+        }
+
         DbSet<Domain.Entities.Support.SupportTicket> SupportTickets
         {
             get;
         }
+
         DbSet<Domain.Entities.Support.SupportMessage> SupportMessages
         {
             get;
         }
+
         DbSet<ProductReviewBaseline> ProductReviewBaselines
         {
             get;
         }
+
         DbSet<Domain.Entities.Telegram.SellerImportJob> SellerImportJobs
         {
             get;
         }
+
         DbSet<Domain.Entities.Telegram.TelegramNotification> TelegramNotifications
         {
             get;
         }
+
         DbSet<Domain.Entities.Telegram.ProductIdentity> ProductIdentities
         {
             get;
         }
+
         DbSet<Domain.Entities.Telegram.TelegramBotCursor> TelegramBotCursors
         {
             get;
         }
+
         DbSet<Domain.Entities.Telegram.TelegramBinding> TelegramBindings
         {
             get;
         }
+
         DbSet<Domain.Entities.Telegram.TelegramLinkChallenge> TelegramLinkChallenges
         {
             get;
         }
+
         DbSet<Domain.Entities.Telegram.TelegramGuardChallenge> TelegramGuardChallenges
         {
             get;
         }
+
         DbSet<Domain.Entities.Telegram.SellerCategoryGrant> SellerCategoryGrants
         {
             get;
         }
+
         DbSet<Domain.Entities.Telegram.RozetkaCategoryMapping> RozetkaCategoryMappings
         {
             get;
         }
+
         DbSet<Domain.Entities.Telegram.ProductImportDraft> ProductImportDrafts
         {
             get;
         }
+
         DbSet<User> Users
         {
             get;
@@ -278,17 +327,35 @@ namespace Application.Abstractions
             get;
         }
 
-        DbSet<Domain.Entities.Payments.Payment> Payments { get; }
+        DbSet<Domain.Entities.Payments.Payment> Payments
+        {
+            get;
+        }
 
-        DbSet<Domain.Entities.Payments.PaymentTransaction> PaymentTransactions { get; }
+        DbSet<Domain.Entities.Payments.PaymentTransaction> PaymentTransactions
+        {
+            get;
+        }
 
-        DbSet<DeliveryMethod> DeliveryMethods { get; }
+        DbSet<DeliveryMethod> DeliveryMethods
+        {
+            get;
+        }
 
-        DbSet<Shipment> Shipments { get; }
+        DbSet<Shipment> Shipments
+        {
+            get;
+        }
 
-        DbSet<ShipmentItem> ShipmentItems { get; }
+        DbSet<ShipmentItem> ShipmentItems
+        {
+            get;
+        }
 
-        DbSet<PickupPoint> PickupPoints { get; }
+        DbSet<PickupPoint> PickupPoints
+        {
+            get;
+        }
 
         Task<int> SaveChangesAsync(
             CancellationToken cancellationToken = default

@@ -20,6 +20,7 @@ internal static class CatalogTestData
     internal sealed record Actor(Guid? UserId) : ICurrentActor
     {
         public string Name => "Test Moderator";
+
         public string Role => "Moderator";
     }
 
@@ -380,6 +381,7 @@ public sealed class CatalogImprovementsTests
                 break;
             case AttributeType.BOOLEAN:
                 value.BoolValue = false;
+
                 if (!valid)
                     value.NumberValue = 0;
                 break;
@@ -389,6 +391,7 @@ public sealed class CatalogImprovementsTests
         }
         var request = CatalogTestData.Request(seed);
         request.Attributes!.Add(value);
+
         if (valid)
             Assert.Single((await new CatalogService(db).SaveAsync(null, seed.Store.Id, request, default))!.Attributes);
         else

@@ -5,7 +5,9 @@ namespace Contracts.Authentication;
 public static class TwoFactorMethods
 {
     public const string Authenticator = "authenticator";
+
     public const string Email = "email";
+
     public const string Telegram = "telegram";
 }
 

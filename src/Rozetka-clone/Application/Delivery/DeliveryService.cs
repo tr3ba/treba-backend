@@ -12,6 +12,7 @@ namespace Application.Delivery
     public sealed class DeliveryService : IDeliveryService
     {
         private readonly IApplicationDbContext _context;
+
         private readonly IDeliveryProvider _deliveryProvider;
 
         private readonly ICurrentActor _currentActor;

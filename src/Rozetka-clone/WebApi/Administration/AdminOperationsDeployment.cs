@@ -11,12 +11,14 @@ public static class AdminOperationsDeployment
         "\"" + db.Model.FindEntityType(typeof(UserExternalLogin))!.GetTableName()!.Replace("\"", "\"\"") + "\"";
 
     public const string Migration = "20261030094652_AddReviewRepliesAndTemplates";
-    private static readonly HashSet<string> AllowedPending =
-        ["20261017112413_AddPromotions", "20261019213326_AddReviewOrderItemRelation", "20261020093201_AddAdminOperations", "20261020104554_AddSupportConversations", "20261020144055_AddWebsiteAdminLogin", "20261021191511_AddDelivery", "20261022084526_AddMarketplaceWorkflows", "20261022132542_AddAdminFeaturesAndChatTrash", "20261023110000_NormalizeProfileLanguages", "20261024192735_AddDeliveryAndCustomerNotifications", "20261025000601_AddUserExternalLogin", "20261026142406_AddManagedShipmentLifecycle", "20261029143639_AddRegistrationVerification", Migration];
 
+    private static readonly HashSet<string> AllowedPending =
+
+        ["20261017112413_AddPromotions", "20261019213326_AddReviewOrderItemRelation", "20261020093201_AddAdminOperations", "20261020104554_AddSupportConversations", "20261020144055_AddWebsiteAdminLogin", "20261021191511_AddDelivery", "20261022084526_AddMarketplaceWorkflows", "20261022132542_AddAdminFeaturesAndChatTrash", "20261023110000_NormalizeProfileLanguages", "20261024192735_AddDeliveryAndCustomerNotifications", "20261025000601_AddUserExternalLogin", "20261026142406_AddManagedShipmentLifecycle", "20261029143639_AddRegistrationVerification", Migration];
     public static void ValidatePendingMigrations(IEnumerable<string> migrations)
     {
         var pending = migrations.ToArray();
+
         if (pending.Any(p => !AllowedPending.Contains(p)))
             throw new InvalidOperationException("Unexpected pending migrations require a separate reviewed database update: " + string.Join(", ", pending));
     }
@@ -30,10 +32,13 @@ public static class AdminOperationsDeployment
             var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             var pending = (await db.Database.GetPendingMigrationsAsync(timeout.Token)).ToArray();
             ValidatePendingMigrations(pending);
+
             if (pending.Length > 0)
             {
                 Console.WriteLine("Pending operational migrations: " + string.Join(", ", pending));
-                if (!migrate) throw new InvalidOperationException("Apply the operational database migration before deploying this API.");
+
+                if (!migrate)
+                    throw new InvalidOperationException("Apply the operational database migration before deploying this API.");
                 // Fail before DDL when the runtime account cannot own the schema update.
                 var canMigrate = await db.Database.SqlQueryRaw<bool>("""
                     SELECT has_schema_privilege('public', 'CREATE') AND
@@ -43,12 +48,16 @@ public static class AdminOperationsDeployment
                             (to_regclass('public.orders'), to_regclass('public.promotions'),
                              to_regclass('public.reviews'), to_regclass('public.users'), to_regclass('public.products'), to_regclass('public.support_tickets'))) AS "Value"
                     """).SingleAsync(timeout.Token);
-                if (!canMigrate) throw new InvalidOperationException("The API database account cannot apply DDL. Apply the reviewed operational SQL scripts with the database owner, then retry deployment.");
+
+                if (!canMigrate)
+                    throw new InvalidOperationException("The API database account cannot apply DDL. Apply the reviewed operational SQL scripts with the database owner, then retry deployment.");
                 await db.Database.MigrateAsync(timeout.Token);
                 Console.WriteLine("Operational database migrations applied.");
             }
             var applied = await db.Database.GetAppliedMigrationsAsync(timeout.Token);
-            if (!applied.Contains(Migration)) throw new InvalidOperationException("The operational database migration is missing.");
+
+            if (!applied.Contains(Migration))
+                throw new InvalidOperationException("The operational database migration is missing.");
             var externalLoginTable = "public." + ExternalLoginTableIdentifier(db);
             var privileges = await db.Database.SqlQuery<bool>($"""
                 SELECT has_schema_privilege('public', 'USAGE') AND
@@ -61,7 +70,9 @@ public static class AdminOperationsDeployment
                         ('public.customer_preferences'), ('public.notification_receipts'), ('public.feature_flags'), ('public.reviews'), ('public.review_reply_templates'), ('public.delivery_quotes'), ('public.order_shipments'), ('public.customer_notification_settings'), ('public.customer_notifications'), ({externalLoginTable})) AS t(name)
                      CROSS JOIN (VALUES ('SELECT'), ('INSERT'), ('UPDATE'), ('DELETE')) AS p(name)) AS "Value"
                 """).SingleAsync(timeout.Token);
-            if (!privileges) throw new InvalidOperationException("The API database account lacks operational table privileges.");
+
+            if (!privileges)
+                throw new InvalidOperationException("The API database account lacks operational table privileges.");
             // Check actual schema reads, not only the history marker.
             await db.Orders.AsNoTracking().Take(1).ToListAsync(timeout.Token);
             await db.Promotions.AsNoTracking().Take(1).ToListAsync(timeout.Token);
@@ -81,6 +92,7 @@ public static class AdminOperationsDeployment
             await db.CustomerNotifications.AsNoTracking().Take(1).ToListAsync(timeout.Token);
             await db.UserExternalLogins.AsNoTracking().Take(1).ToListAsync(timeout.Token);
             await db.TelegramGuardChallenges.AsNoTracking().Take(1).ToListAsync(timeout.Token);
+
             if (migrate)
             {
                 await ImportCatalogDeployment.ApplyAsync(db, timeout.Token);

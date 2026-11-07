@@ -18,20 +18,35 @@ public sealed class UpdateCurrentUserRequest
     public string LastName { get; set; } = string.Empty;
 
     [StringLength(100)]
-    public string? MiddleName { get; set; }
+    public string? MiddleName
+    {
+        get; set;
+    }
 
     [Phone]
     [StringLength(32)]
-    public string? Phone { get; set; }
+    public string? Phone
+    {
+        get; set;
+    }
 
-    public DateOnly? BirthDate { get; set; }
+    public DateOnly? BirthDate
+    {
+        get; set;
+    }
 
     [StringLength(32)]
-    public string? Gender { get; set; }
+    public string? Gender
+    {
+        get; set;
+    }
 
     [Required]
     [RegularExpression("^(uk|en|ru)$")]
     public string Language { get; set; } = "uk";
 
-    public bool MarketingEmailsEnabled { get; set; }
+    public bool MarketingEmailsEnabled
+    {
+        get; set;
+    }
 }

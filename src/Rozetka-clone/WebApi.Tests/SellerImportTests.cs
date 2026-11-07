@@ -78,6 +78,7 @@ public sealed class SellerImportTests
         await TelegramTestData.AllowImportAsync(db, seed);
         var imports = TelegramTestData.Import(db, new(), new(), new());
         var preview = await imports.PreviewAsync(seed.User.Id, TelegramTestData.SourceUrl, default);
+
         if (blocked)
             seed.User.Block();
         else

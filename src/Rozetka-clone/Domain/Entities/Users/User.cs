@@ -34,29 +34,59 @@ namespace Domain.Entities.Users
 
         public string Email { get; private set; } = null!;
 
-        public string? Phone { get; private set; }
+        public string? Phone
+        {
+            get; private set;
+        }
 
         public string FirstName { get; private set; } = null!;
 
         public string LastName { get; private set; } = null!;
 
-        public string? MiddleName { get; private set; }
+        public string? MiddleName
+        {
+            get; private set;
+        }
 
-        public UserStatus Status { get; private set; }
+        public UserStatus Status
+        {
+            get; private set;
+        }
 
-        public bool EmailVerified { get; private set; }
+        public bool EmailVerified
+        {
+            get; private set;
+        }
 
-        public bool PhoneVerified { get; private set; }
+        public bool PhoneVerified
+        {
+            get; private set;
+        }
 
-        public DateTimeOffset? LastLoginAt { get; private set; }
+        public DateTimeOffset? LastLoginAt
+        {
+            get; private set;
+        }
 
-        public bool IsDeleted { get; private set; }
+        public bool IsDeleted
+        {
+            get; private set;
+        }
 
-        public DateTimeOffset? DeletedAt { get; private set; }
+        public DateTimeOffset? DeletedAt
+        {
+            get; private set;
+        }
 
-        public Guid? DeletedBy { get; private set; }
+        public Guid? DeletedBy
+        {
+            get; private set;
+        }
 
-        public UserProfile? Profile { get; private set; }
+        public UserProfile? Profile
+        {
+            get; private set;
+        }
 
         private readonly List<Address> _addresses = [];
 
@@ -80,21 +110,45 @@ namespace Domain.Entities.Users
 
         public string PasswordHash { get; private set; } = string.Empty;
 
-        public Guid RoleId { get; private set; }
+        public Guid RoleId
+        {
+            get; private set;
+        }
 
-        public Role? Role { get; private set; }
+        public Role? Role
+        {
+            get; private set;
+        }
 
-        public string? RefreshToken { get; private set; }
+        public string? RefreshToken
+        {
+            get; private set;
+        }
 
-        public DateTimeOffset? RefreshTokenExpiryTime { get; private set; }
+        public DateTimeOffset? RefreshTokenExpiryTime
+        {
+            get; private set;
+        }
 
-        public bool AuthenticatorEnabled { get; private set; }
+        public bool AuthenticatorEnabled
+        {
+            get; private set;
+        }
 
-        public string? AuthenticatorSecretProtected { get; private set; }
+        public string? AuthenticatorSecretProtected
+        {
+            get; private set;
+        }
 
-        public DateTimeOffset? AuthenticatorEnabledAt { get; private set; }
+        public DateTimeOffset? AuthenticatorEnabledAt
+        {
+            get; private set;
+        }
 
-        public bool EmailTwoFactorEnabled { get; private set; }
+        public bool EmailTwoFactorEnabled
+        {
+            get; private set;
+        }
 
         public static User Create(
             Guid id,
@@ -296,6 +350,7 @@ namespace Domain.Entities.Users
             }
 
             PhoneVerified = true;
+
             if (Status == UserStatus.PendingActivation)
             {
                 Status = UserStatus.Active;
@@ -479,7 +534,9 @@ namespace Domain.Entities.Users
         )
         {
             EnsureCanBeModified();
-            if (RoleId != roleId) RevokeRefreshToken();
+
+            if (RoleId != roleId)
+                RevokeRefreshToken();
             RoleId = roleId;
             UpdatedAt = DateTimeOffset.UtcNow;
         }
@@ -516,6 +573,7 @@ namespace Domain.Entities.Users
         public void EnableAuthenticator()
         {
             EnsureCanBeModified();
+
             if (string.IsNullOrWhiteSpace(AuthenticatorSecretProtected))
             {
                 throw new UserDomainException("Authenticator setup has not been started.");
@@ -579,6 +637,7 @@ namespace Domain.Entities.Users
             ArgumentException.ThrowIfNullOrWhiteSpace(provider);
 
             var externalLogin = _externalLogins.FirstOrDefault(el => el.Provider == provider.ToLowerInvariant());
+
             if (externalLogin is null)
             {
                 throw new UserDomainException($"External login for {provider} not found.");

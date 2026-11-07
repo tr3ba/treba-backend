@@ -51,7 +51,9 @@ builder.Services.AddRateLimiter(options => options.AddPolicy("registration", con
         context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
         _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
         {
-            PermitLimit = 10, Window = TimeSpan.FromMinutes(1), QueueLimit = 0,
+            PermitLimit = 10,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
         })));
 
 builder.Services.AddCors(options =>
@@ -85,6 +87,7 @@ authBuilder.AddJwtBearer(
         var secretKey =
             jwtSection["SecretKey"]
             ?? throw new InvalidOperationException("JWT SecretKey is missing from configuration.");
+
         if (Encoding.UTF8.GetByteCount(secretKey) < 32)
         {
             throw new InvalidOperationException("JWT SecretKey must be at least 32 bytes.");
@@ -108,6 +111,7 @@ authBuilder.AddJwtBearer(
             OnTokenValidated = async context =>
             {
                 var idClaim = context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
                 if (!Guid.TryParse(
                     idClaim,
                     out var id
@@ -125,6 +129,7 @@ authBuilder.AddJwtBearer(
                         u => u.Id == id,
                         context.HttpContext.RequestAborted
                     );
+
                 if (
                     user is null
                     || user.Status != Domain.Entities.Users.UserStatus.Active
@@ -175,12 +180,14 @@ builder.Services.AddAuthorization();
 var app = builder.Build();
 
 app.UseExceptionHandler();
+
 if (operationsCheck || operationsMigrate)
 {
     Environment.ExitCode = await WebApi.Administration.AdminOperationsDeployment.RunAsync(app.Services, operationsMigrate);
     await app.DisposeAsync();
     return;
 }
+
 if (deploymentCheck)
 {
     Environment.ExitCode = await TelegramDeploymentCheck.RunAsync(app.Services,
@@ -188,6 +195,7 @@ if (deploymentCheck)
     await app.DisposeAsync();
     return;
 }
+
 if (builder.Configuration.GetValue<bool>("ApplyMigrations"))
 {
     await using var scope = app.Services.CreateAsyncScope();
