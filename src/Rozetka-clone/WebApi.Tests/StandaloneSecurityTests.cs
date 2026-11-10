@@ -308,4 +308,3 @@ public sealed class StandaloneSecurityTests
         Assert.Throws<Application.Common.BusinessRuleException>(() => new GenericProductParser().Parse(new("https://shop.example.test/product"), html));
     }
 }
-

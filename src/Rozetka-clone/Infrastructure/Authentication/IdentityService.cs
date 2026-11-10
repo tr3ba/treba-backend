@@ -374,9 +374,46 @@ public sealed class IdentityService : IIdentityService
         .Select(name => section[name]?.Trim())
         .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value) && !value.StartsWith("YOUR_", StringComparison.OrdinalIgnoreCase));
 
-    public async Task<LoginResponse> ExchangeExternalCodeAsync(
-        ExternalCodeLoginRequest request,
-        CancellationToken cancellationToken = default)
+    public async Task<LoginResponse> ExchangeExternalCodeAsync(ExternalCodeLoginRequest request, CancellationToken cancellationToken = default)
+    {
+        var token = await ExchangeProviderTokenAsync(request, cancellationToken);
+        return await ExternalLoginAsync(request.Provider, token, cancellationToken);
+    }
+
+    public async Task<TwoFactorChallengeResponse?> ReauthenticateAsync(Guid userId, string password, CancellationToken ct = default)
+    {
+        var user = await RequireActiveUserAsync(userId, ct);
+        if (string.IsNullOrEmpty(user.PasswordHash) || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
+            throw new UnauthorizedAccessException("Invalid account credentials.");
+        return await _secondFactorService.CreateLoginChallengeAsync(user, ct);
+    }
+
+    public async Task<TwoFactorChallengeResponse?> ReauthenticateExternalCodeAsync(Guid userId, ExternalCodeLoginRequest request, CancellationToken ct = default)
+    {
+        var token = await ExchangeProviderTokenAsync(request, ct);
+        var provider = request.Provider.Trim().ToLowerInvariant();
+        var (subject, _, _, _, _) = await GetExternalUserInfoAsync(provider, token, ct);
+        if (!await _context.UserExternalLogins.AnyAsync(l => l.UserId == userId && l.Provider == provider && l.ProviderUserId == subject, ct))
+            throw new UnauthorizedAccessException("Choose the provider account already linked to your current account.");
+        return await _secondFactorService.CreateLoginChallengeAsync(await RequireActiveUserAsync(userId, ct), ct);
+    }
+
+    public async Task<bool> LinkExternalCodeAsync(Guid userId, LinkExternalCodeRequest request, CancellationToken ct = default)
+    {
+        await RequireActiveUserAsync(userId, ct);
+        var token = await ExchangeProviderTokenAsync(request.Login, ct);
+        return await LinkExternalProviderAsync(userId, request.Login.Provider, token, ct, request.ConfirmationChallengeId, request.ConfirmationCode);
+    }
+
+    private async Task<User> RequireActiveUserAsync(Guid userId, CancellationToken ct)
+    {
+        var user = await _context.Users.Include(u => u.Role).SingleOrDefaultAsync(u => u.Id == userId, ct);
+        if (user is null || user.IsDeleted || user.Status != UserStatus.Active)
+            throw new UnauthorizedAccessException("Account is unavailable.");
+        return user;
+    }
+
+    private async Task<string> ExchangeProviderTokenAsync(ExternalCodeLoginRequest request, CancellationToken cancellationToken)
     {
         var provider = request.Provider.Trim().ToLowerInvariant();
         var info = GetExternalProviders().SingleOrDefault(p => p.Name == provider)
@@ -438,7 +475,7 @@ public sealed class IdentityService : IIdentityService
 
         if (accessTokenIsMissing)
             throw new UnauthorizedAccessException("Провайдер не підтвердив вхід.");
-        return await ExternalLoginAsync(provider, accessToken.GetString()!, cancellationToken);
+        return accessToken.GetString()!;
     }
 
     public async Task<LoginResponse> ExternalLoginAsync(

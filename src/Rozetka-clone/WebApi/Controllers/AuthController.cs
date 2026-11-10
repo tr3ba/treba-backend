@@ -128,6 +128,21 @@ public sealed class AuthController : ControllerBase
         catch (HttpRequestException) { return StatusCode(503, new { message = "Провайдер входу тимчасово недоступний." }); }
     }
 
+    [HttpPost("reauthenticate"), Authorize, EnableRateLimiting("registration")]
+    public async Task<IActionResult> Reauthenticate(ReauthenticateRequest request, CancellationToken ct) =>
+        Ok(new { challenge = await _identityService.ReauthenticateAsync(CurrentUserId, request.Password, ct) });
+
+    [HttpPost("external/reauth/code"), Authorize, EnableRateLimiting("registration")]
+    public async Task<IActionResult> ReauthenticateExternal(ExternalCodeLoginRequest request, CancellationToken ct) =>
+        Ok(new { challenge = await _identityService.ReauthenticateExternalCodeAsync(CurrentUserId, request, ct) });
+
+    [HttpPost("external/link/code"), Authorize, EnableRateLimiting("registration")]
+    public async Task<IActionResult> LinkExternalCode(LinkExternalCodeRequest request, CancellationToken ct) =>
+        Ok(new { success = await _identityService.LinkExternalCodeAsync(CurrentUserId, request, ct) });
+
+    private Guid CurrentUserId => Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+        ?? throw new UnauthorizedAccessException());
+
     [HttpPost("external")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]

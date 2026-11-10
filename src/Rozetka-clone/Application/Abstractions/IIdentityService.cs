@@ -66,6 +66,10 @@ public interface IIdentityService
         CancellationToken cancellationToken = default
     );
 
+    Task<TwoFactorChallengeResponse?> ReauthenticateAsync(Guid userId, string password, CancellationToken ct = default);
+    Task<TwoFactorChallengeResponse?> ReauthenticateExternalCodeAsync(Guid userId, ExternalCodeLoginRequest request, CancellationToken ct = default);
+    Task<bool> LinkExternalCodeAsync(Guid userId, LinkExternalCodeRequest request, CancellationToken ct = default);
+
     Task<LoginResponse> ExternalLoginAsync(
         string provider,
         string accessToken,

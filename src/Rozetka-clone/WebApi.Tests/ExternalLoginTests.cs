@@ -87,6 +87,50 @@ public sealed class ExternalLoginTests
     private static ExternalCodeLoginRequest Request(string provider, string code = "one-time-code") =>
         new(provider, code, Origin + "/api/auth/external/" + provider + "/callback", Verifier);
 
+    [Fact]
+    public async Task SensitiveReauthentication_ConfirmsOnlyTheCurrentAccount_WithoutIssuingSessions()
+    {
+        await using var db = TelegramTestData.Memory();
+        var user = await TelegramTestData.UserAsync(db, Roles.Customer);
+        user.SetPasswordHash(BCrypt.Net.BCrypt.HashPassword("CurrentPassword123!"));
+        user.SetRefreshToken("unchanged-current-session", DateTimeOffset.UtcNow.AddDays(1));
+        db.UserExternalLogins.Add(user.AddExternalLogin("google", "google-subject"));
+        await db.SaveChangesAsync();
+        var identity = Identity(db, new Provider("google"));
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => identity.ReauthenticateAsync(user.Id, "WrongPassword123!"));
+        Assert.Null(await identity.ReauthenticateAsync(user.Id, "CurrentPassword123!"));
+        Assert.Equal("unchanged-current-session", user.RefreshToken);
+        user.EnableEmailTwoFactor();
+        user.SetRefreshToken("unchanged-current-session", DateTimeOffset.UtcNow.AddDays(1));
+        await db.SaveChangesAsync();
+        Assert.NotNull(await identity.ReauthenticateAsync(user.Id, "CurrentPassword123!"));
+        Assert.NotNull(await identity.ReauthenticateExternalCodeAsync(user.Id, Request("google")));
+        Assert.Equal("unchanged-current-session", user.RefreshToken);
+        var other = await TelegramTestData.UserAsync(db, Roles.Customer);
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => identity.ReauthenticateExternalCodeAsync(other.Id, Request("google")));
+        Assert.Equal(2, await db.Users.CountAsync());
+        Assert.Null(other.RefreshToken);
+    }
+
+    [Fact]
+    public async Task ProviderCodeLinking_RequiresAccountConfirmation_AndPreservesTheCurrentSession()
+    {
+        await using var db = TelegramTestData.Memory();
+        var user = await TelegramTestData.UserAsync(db, Roles.Customer);
+        user.SetRefreshToken("unchanged-link-session", DateTimeOffset.UtcNow.AddDays(1));
+        await db.SaveChangesAsync();
+        var email = new Email();
+        var identity = Identity(db, new Provider("google"), email: email);
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => identity.LinkExternalCodeAsync(user.Id, new(Request("google"), Guid.NewGuid(), "000000")));
+        Assert.Empty(await db.UserExternalLogins.ToListAsync());
+        var changes = new AccountChangeService(db, new SecondFactorService(db, email, new(Security), Security), email, Security);
+        var challenge = await changes.BeginAsync(user.Id, new("google"), false, default);
+        Assert.True(await identity.LinkExternalCodeAsync(user.Id, new(Request("google"), challenge.ChallengeId, email.Code!)));
+        Assert.Equal("unchanged-link-session", user.RefreshToken);
+        Assert.Single(await db.Users.ToListAsync());
+        Assert.Equal("google-subject", (await db.UserExternalLogins.SingleAsync()).ProviderUserId);
+    }
+
     [Theory]
     [InlineData("google")]
     [InlineData("facebook")]
