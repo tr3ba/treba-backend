@@ -9,7 +9,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Application.Catalog;
 
 public sealed partial class CatalogService(
-    IApplicationDbContext db
+    IApplicationDbContext db,
+    IProductMediaUrls? mediaUrls = null
 )
 {
     public async Task<PagedResponse<CatalogProductDto>> ListAsync(
@@ -68,20 +69,7 @@ public sealed partial class CatalogService(
 
         if (publicOnly)
         {
-            query = query.Where(
-                p =>
-                    p.Status == ProductStatus.ACTIVE
-                    && db.Categories.Any(
-                        c =>
-                            c.Id == p.CategoryId
-                            && c.IsActive
-                    )
-                    && db.Brands.Any(
-                        b =>
-                            b.Id == p.BrandId
-                            && b.IsActive
-                    )
-            );
+            query = query.PubliclyVisible(db);
         }
         else if (!string.IsNullOrWhiteSpace(status))
         {
@@ -114,6 +102,7 @@ public sealed partial class CatalogService(
                     || db.ProductVariants.Any(
                         v =>
                             v.ProductId == p.Id
+                            && (!publicOnly || v.IsActive)
                             && v.Sku
                                 .ToLower()
                                 .Contains(term)
@@ -160,6 +149,7 @@ public sealed partial class CatalogService(
             decimal? number = decimal.TryParse(value, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var parsed) ? parsed : null;
             bool? boolean = bool.TryParse(value, out var parsedBool) ? parsedBool : null;
             query = query.Where(p => db.ProductAttributeValues.Any(v => v.ProductId == p.Id && v.AttributeId == attributeId
+                && (!publicOnly || v.VariantId == null || db.ProductVariants.Any(pv => pv.Id == v.VariantId && pv.IsActive))
                 && (v.StringValue == value || number.HasValue && v.NumberValue == number.Value || boolean.HasValue && v.BoolValue == boolean.Value
                     || db.AttributeOptions.Any(o => o.Id == v.OptionId && o.Value == value))));
         }
@@ -198,7 +188,7 @@ public sealed partial class CatalogService(
             .ToListAsync(ct);
 
         return new(
-            await MapAsync(products, ct),
+            await MapAsync(products, ct, publicOnly),
             page,
             size,
             count,
@@ -248,27 +238,14 @@ public sealed partial class CatalogService(
 
         if (publicOnly)
         {
-            query = query.Where(
-                p =>
-                    p.Status == ProductStatus.ACTIVE
-                    && db.Categories.Any(
-                        c =>
-                            c.Id == p.CategoryId
-                            && c.IsActive
-                    )
-                    && db.Brands.Any(
-                        b =>
-                            b.Id == p.BrandId
-                            && b.IsActive
-                    )
-            );
+            query = query.PubliclyVisible(db);
         }
 
         var product = await query.FirstOrDefaultAsync(ct);
 
         return product is null
             ? null
-            : (await MapAsync([product], ct))[0];
+            : (await MapAsync([product], ct, publicOnly))[0];
     }
 
     public async Task<CatalogStatsDto> StatsAsync(
@@ -338,7 +315,8 @@ public sealed partial class CatalogService(
 
     private async Task<List<CatalogProductDto>> MapAsync(
         List<Product> products,
-        CancellationToken ct)
+        CancellationToken ct,
+        bool publicOnly = false)
     {
         var ids = products
             .Select(p => p.Id)
@@ -375,7 +353,7 @@ public sealed partial class CatalogService(
         var variants = await db
             .ProductVariants
             .AsNoTracking()
-            .Where(v => ids.Contains(v.ProductId))
+            .Where(v => ids.Contains(v.ProductId) && (!publicOnly || v.IsActive))
             .OrderBy(v => v.Sku)
             .ToListAsync(ct);
 
@@ -403,14 +381,14 @@ public sealed partial class CatalogService(
                     var variant = productVariants.FirstOrDefault(v => v.IsActive) ?? productVariants.FirstOrDefault();
 
                     var productImages = images
-                        .Where(image => image.ProductId == p.Id)
+                        .Where(image => image.ProductId == p.Id && (!publicOnly || image.VariantId == null || productVariants.Any(v => v.Id == image.VariantId)))
                         .Select(
                             image =>
                                 new CatalogProductImageDto(
                                     image.Id,
                                     image.ProductId,
                                     image.VariantId,
-                                    image.ImageUrl,
+                                    publicOnly ? Application.ProductImages.ProductImageUrls.ForBrowser(image.ProductId, image.Id, image.ImageUrl) : mediaUrls?.ForCurrentActor(Application.ProductImages.ProductImageUrls.ForBrowser(image.ProductId, image.Id, image.ImageUrl)) ?? Application.ProductImages.ProductImageUrls.ForBrowser(image.ProductId, image.Id, image.ImageUrl),
                                     image.AltText,
                                     image.SortOrder,
                                     image.IsMain
@@ -452,7 +430,7 @@ public sealed partial class CatalogService(
                         UpdatedAt = p.UpdatedAt,
                         ManufacturerPartNumber = identities.GetValueOrDefault(p.Id, ""),
                         Variants = productVariants.Select(v => new CatalogVariantInput { Id = v.Id, Name = v.Name, Sku = v.Sku, Barcode = v.Barcode, Price = v.Price, OldPrice = v.OldPrice, StockQuantity = v.StockQuantity, IsActive = v.IsActive }).ToList(),
-                        Attributes = values.Where(v => v.ProductId == p.Id).Select(v => new CatalogAttributeInput { AttributeId = v.AttributeId, VariantId = v.VariantId, OptionId = v.OptionId, StringValue = v.StringValue, NumberValue = v.NumberValue, BoolValue = v.BoolValue }).ToList()
+                        Attributes = values.Where(v => v.ProductId == p.Id && (!publicOnly || v.VariantId == null || productVariants.Any(variant => variant.Id == v.VariantId))).Select(v => new CatalogAttributeInput { AttributeId = v.AttributeId, VariantId = v.VariantId, OptionId = v.OptionId, StringValue = v.StringValue, NumberValue = v.NumberValue, BoolValue = v.BoolValue }).ToList()
                     };
                 }
             )

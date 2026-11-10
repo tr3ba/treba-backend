@@ -178,7 +178,7 @@ public sealed class CustomerAccountService(IApplicationDbContext db, ICurrentAct
             o.DiscountAmount, o.DeliveryPrice, o.TotalAmount, o.Currency, o.CreatedAt, o.RecipientName, o.RecipientPhone, o.RecipientEmail,
             addresses.FirstOrDefault(a => a.OrderId == o.Id) is { } a ? string.Join(", ", new[] { a.Country, a.City, a.Street, a.Building, a.Apartment }.Where(x => !string.IsNullOrWhiteSpace(x))) : null,
             lines.Where(x => x.OrderId == o.Id).Select(x => new CustomerOrderItem(x.Id, x.ProductId, slugs.GetValueOrDefault(x.ProductId),
-                x.ProductName, x.Quantity, x.UnitPrice, x.TotalPrice, images.FirstOrDefault(i => i.ProductId == x.ProductId)?.ImageUrl,
+                x.ProductName, x.Quantity, x.UnitPrice, x.TotalPrice, images.FirstOrDefault(i => i.ProductId == x.ProductId) is { } image ? Application.ProductImages.ProductImageUrls.ForBrowser(image.ProductId, image.Id, image.ImageUrl) : null,
                 Application.Reviews.ReviewEligibility.IsPurchased(o.Status, o.PaymentStatus) && !reviews.ContainsKey(x.Id),
                 reviews.TryGetValue(x.Id, out var reviewId) ? reviewId : null)).ToList(),
             history.Where(x => x.OrderId == o.Id).Select(x => new CustomerOrderEvent(x.NewStatus.ToString(), x.CreatedAt)).ToList(),

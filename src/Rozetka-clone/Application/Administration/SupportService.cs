@@ -162,7 +162,7 @@ public sealed partial class SupportService(
                 || db.Users.Any(user => user.Id == t.CustomerId
                     && (user.FirstName.ToLower().Contains(term)
                         || user.LastName.ToLower().Contains(term)
-                        || user.Email.ToLower().Contains(term)))
+                        || (actor.Role != "Seller" && user.Email.ToLower().Contains(term))))
                 || db.Products.Any(p => p.Id == t.ProductId && p.Name.ToLower().Contains(term))
                 || db.Orders.Any(o => o.Id == t.OrderId && o.OrderNumber.ToLower().Contains(term)));
         }

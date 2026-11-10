@@ -26,6 +26,7 @@ public static class DeliveryNotificationsRegistration
         services.AddHttpClient<ICheckoutDeliveryProvider, NovaPoshtaClient>(client => client.Timeout = TimeSpan.FromSeconds(15))
             .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
         services.AddScoped<CheckoutDeliveryService>();
+        services.AddHostedService<DeliveryQuoteCleanupWorker>();
         services.AddOptions<CustomerNotificationOptions>().Bind(configuration.GetSection("Notifications"))
             .Validate(o => !o.Enabled || Uri.TryCreate(o.StoreOrigin, UriKind.Absolute, out var uri) && uri.Scheme == "https"
                 && uri.IsDefaultPort && string.IsNullOrEmpty(uri.UserInfo) && uri.AbsolutePath == "/"

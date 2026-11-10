@@ -718,6 +718,9 @@ namespace Infrastructure.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
+                    b.Property<bool>("FreeDelivery")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("PickupPoint")
                         .IsRequired()
                         .HasMaxLength(500)
@@ -2787,9 +2790,16 @@ namespace Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("AccountEmailSnapshot")
+                        .HasColumnType("text");
+
                     b.Property<string>("CodeHash")
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)");
+
+                    b.Property<int>("CodeSendCount")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
 
                     b.Property<DateTimeOffset?>("ConsumedAt")
                         .IsConcurrencyToken()
@@ -2817,6 +2827,13 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
+
+                    b.Property<string>("RegistrationPasswordHash")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("SecondaryCodeHash")
+                        .HasColumnType("text");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
@@ -2928,6 +2945,10 @@ namespace Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
+                    b.Property<long?>("LastAuthenticatorStep")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
                     b.Property<DateTimeOffset?>("LastLoginAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -2935,6 +2956,14 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<int>("MfaFailedAttempts")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("MfaWindowStart")
+                        .IsConcurrencyToken()
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("MiddleName")
                         .HasMaxLength(100)

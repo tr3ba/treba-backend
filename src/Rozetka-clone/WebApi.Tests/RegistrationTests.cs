@@ -107,6 +107,59 @@ public sealed class RegistrationTests
         new(email, "Password123!", "Олена", "Коваль", phone, VerificationMethod: method);
 
     [Fact]
+    public async Task PendingEmailCannotBeTakenOverByConfirmingAnUnrelatedPhone()
+    {
+        await using var f = new Fixture(); await f.Seed(true);
+        var pending = await f.Service.BeginAsync(Request());
+        var originalCode = f.Email.Code!;
+        var challenge = await f.Db.AuthenticationChallenges.SingleAsync();
+        f.Db.Entry(challenge).Property(c => c.LastCodeSentAt).CurrentValue = DateTimeOffset.UtcNow.AddMinutes(-1);
+        await f.Db.SaveChangesAsync();
+        await f.Service.BeginAsync(Request("sms", "+380681111111") with { Password = "AttackerPassword456!" });
+        Assert.Equal(0, f.Provider.Sends);
+        await f.Service.VerifyAsync(new(pending.ChallengeId, originalCode));
+        Assert.Equal(UserStatus.Active, (await f.Db.Users.SingleAsync()).Status);
+    }
+
+    [Fact]
+    public async Task UnknownAndRealRegistrationChallenges_HaveIdenticalFailureAndResendShapes()
+    {
+        await using var f = new Fixture(); await f.Seed();
+        var pending = await f.Service.BeginAsync(Request());
+        var wrong = f.Email.Code == "000000" ? "111111" : "000000";
+        var realError = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => f.Service.VerifyAsync(new(pending.ChallengeId, wrong)));
+        var fakeError = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => f.Service.VerifyAsync(new(Guid.NewGuid(), wrong)));
+        Assert.Equal(realError.Message, fakeError.Message);
+        var real = await f.Service.ResendAsync(pending.ChallengeId);
+        var fake = await f.Service.ResendAsync(Guid.NewGuid());
+        Assert.Equal(real.Method, fake.Method);
+        Assert.Equal(real.MaskedDestination, fake.MaskedDestination);
+        Assert.Equal(1, f.Email.Sends);
+    }
+
+    [Fact]
+    public async Task RegistrationSmsBudget_DoesNotConsumeExistingAccountRecoveryBudget()
+    {
+        await using var f = new Fixture(); await f.Seed(true);
+        var role = await f.Db.Roles.SingleAsync();
+        var owner = User.Create(Guid.NewGuid(), "registered@example.test", "380671234567", "Owner", "Test");
+        owner.AssignRole(role.Id); owner.VerifyEmail(); owner.VerifyPhone(); owner.SetPasswordHash(BCrypt.Net.BCrypt.HashPassword("OwnerPassword456!"));
+        f.Db.Users.Add(owner); await f.Db.SaveChangesAsync();
+        for (var i = 0; i < 5; i++)
+        {
+            foreach (var previous in await f.Db.AuthenticationChallenges.ToListAsync())
+                f.Db.Entry(previous).Property(c => c.LastCodeSentAt).CurrentValue = DateTimeOffset.UtcNow.AddMinutes(-2);
+            await f.Db.SaveChangesAsync();
+            await f.Service.BeginAsync(Request("sms", email: $"registration-{i}@example.test"));
+        }
+        Assert.Equal(5, f.Provider.Sends);
+        var reset = new PasswordResetService(f.Db, f.Service, f.Email, f.Sms, Security,
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<PasswordResetService>.Instance);
+        await reset.RequestAsync(new(owner.Email, "sms"));
+        Assert.Equal(6, f.Provider.Sends);
+    }
+
+    [Fact]
     public async Task HttpRegistration_RequiresExplicitChoice_AndReturnsTokensOnlyAfterVerification()
     {
         await using var f = new Fixture(); await f.Seed();
@@ -202,11 +255,21 @@ public sealed class RegistrationTests
         await using var f = new Fixture(); await f.Seed();
         await Assert.ThrowsAsync<InvalidOperationException>(() => f.Service.BeginAsync(Request() with { RoleName = Roles.Administrator }));
         var pending = await f.Service.BeginAsync(Request());
-        await Assert.ThrowsAsync<InvalidOperationException>(() => f.Service.BeginAsync(Request() with { Password = "DifferentPassword123!" }));
-        Assert.Equal(1, f.Email.Sends);
-        await f.Service.VerifyAsync(new(pending.ChallengeId, f.Email.Code!));
-        await Assert.ThrowsAsync<InvalidOperationException>(() => f.Service.BeginAsync(Request()));
-        Assert.Single(f.Db.Users); Assert.Equal(1, f.Email.Sends);
+        var oldCode = f.Email.Code!;
+        var old = await f.Db.AuthenticationChallenges.SingleAsync();
+        f.Db.Entry(old).Property(x => x.LastCodeSentAt).CurrentValue = DateTimeOffset.UtcNow.AddMinutes(-2);
+        await f.Db.SaveChangesAsync();
+        var owner = await f.Service.BeginAsync(Request() with { Password = "DifferentPassword123!" });
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => f.Service.VerifyAsync(new(pending.ChallengeId, oldCode)));
+        await f.Service.VerifyAsync(new(owner.ChallengeId, f.Email.Code!));
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => f.Identity.LoginAsync(new(Request().Email, Request().Password)));
+        Assert.NotNull((await f.Identity.LoginAsync(new(Request().Email, "DifferentPassword123!"))).Authentication);
+        var sends = f.Email.Sends;
+        var hidden = await f.Service.BeginAsync(Request());
+        Assert.Equal(sends, f.Email.Sends);
+        Assert.Single(f.Db.Users);
+        Assert.Equal(owner.Method, hidden.Method);
+        Assert.Equal(owner.MaskedDestination, hidden.MaskedDestination);
     }
 
     [Fact]
@@ -215,7 +278,7 @@ public sealed class RegistrationTests
         await using var f = new Fixture(); await f.Seed();
         Assert.Equal(new[] { "email" }, (await f.Service.GetMethodsAsync()).Methods);
         await Assert.ThrowsAsync<InvalidOperationException>(() => f.Service.BeginAsync(Request("sms")));
-        await Assert.ThrowsAsync<InvalidOperationException>(() => f.Sms.SendAsync("380671234567", "fixture", Guid.NewGuid()));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => f.Sms.SendAsync("380671234567", "TREBA: kod reiestratsii 123456. Diie 5 khv.", Guid.NewGuid()));
         Assert.Empty(f.Db.Users); Assert.Equal(0, f.Provider.Sends);
         var actor = new OperationsTests.Actor(Guid.NewGuid(), Roles.Administrator);
         var settings = new FeatureSettingsService(f.Db, actor);
@@ -223,8 +286,8 @@ public sealed class RegistrationTests
         Assert.Contains("sms", (await f.Service.GetMethodsAsync()).Methods);
         var pending = await f.Service.BeginAsync(Request("sms"));
         await settings.SetAsync(FeatureFlag.SmsSending, new(false, enabled.Version), default);
-        await Assert.ThrowsAsync<InvalidOperationException>(() => f.Service.ResendAsync(pending.ChallengeId));
-        await Assert.ThrowsAsync<InvalidOperationException>(() => f.Sms.SendAsync("380671234567", "fixture", Guid.NewGuid()));
+        await f.Service.ResendAsync(pending.ChallengeId);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => f.Sms.SendAsync("380671234567", "TREBA: kod reiestratsii 123456. Diie 5 khv.", Guid.NewGuid()));
         Assert.Equal(1, f.Provider.Sends);
         // Disabling new sends must not invalidate a code already delivered.
         await f.Service.VerifyAsync(new(pending.ChallengeId, f.Provider.Code!));
@@ -251,8 +314,8 @@ public sealed class RegistrationTests
     {
         await using var f = new Fixture(); await f.Seed(true);
         var pending = await f.Service.BeginAsync(Request("sms"));
-        await Assert.ThrowsAsync<InvalidOperationException>(() => f.Service.ResendAsync(pending.ChallengeId));
-        await Assert.ThrowsAsync<InvalidOperationException>(() => f.Service.BeginAsync(Request("sms", email: "other@example.test")));
+        await f.Service.ResendAsync(pending.ChallengeId);
+        await f.Service.BeginAsync(Request("sms", email: "other@example.test"));
         Assert.Equal(1, f.Provider.Sends);
         var oldCode = f.Provider.Code!;
         var previous = await f.Db.AuthenticationChallenges.SingleAsync();
@@ -273,7 +336,7 @@ public sealed class RegistrationTests
         foreach (var challenge in await f.Db.AuthenticationChallenges.ToListAsync())
             f.Db.Entry(challenge).Property(x => x.LastCodeSentAt).CurrentValue = DateTimeOffset.UtcNow.AddMinutes(-2);
         await f.Db.SaveChangesAsync();
-        await Assert.ThrowsAsync<InvalidOperationException>(() => f.Service.ResendAsync(renewed.ChallengeId));
+        await f.Service.ResendAsync(renewed.ChallengeId);
         Assert.Equal(5, f.Provider.Sends);
     }
 
@@ -282,7 +345,7 @@ public sealed class RegistrationTests
     {
         await using var f = new Fixture(); await f.Seed();
         f.Email.Fail = true;
-        await Assert.ThrowsAsync<InvalidOperationException>(() => f.Service.BeginAsync(Request()));
+        await f.Service.BeginAsync(Request());
         var user = await f.Db.Users.SingleAsync();
         Assert.Equal(UserStatus.PendingActivation, user.Status); Assert.Null(user.RefreshToken);
         await Assert.ThrowsAsync<InvalidOperationException>(() => f.Identity.LoginAsync(new(user.Email, "Password123!")));
@@ -306,8 +369,9 @@ public sealed class RegistrationTests
     public async Task TurboSms_Http200DoesNotHideProviderOrRecipientErrors(string body)
     {
         await using var f = new Fixture(); await f.Seed(true); f.Provider.Reply = body;
-        await Assert.ThrowsAsync<SmsDeliveryException>(() => f.Service.BeginAsync(Request("sms")));
-        Assert.Equal(1, f.Provider.Sends); Assert.Null((await f.Db.Users.SingleAsync()).RefreshToken);
+        await Assert.ThrowsAsync<SmsDeliveryException>(() => f.Sms.SendAsync("380671234567", "TREBA: kod reiestratsii 123456. Diie 5 khv.", Guid.NewGuid()));
+        await f.Service.BeginAsync(Request("sms"));
+        Assert.Equal(2, f.Provider.Sends); Assert.Null((await f.Db.Users.SingleAsync()).RefreshToken);
     }
 
     [Theory]

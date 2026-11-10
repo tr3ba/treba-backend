@@ -8,6 +8,7 @@ using Domain.Entities;
 using Domain.Entities.Users;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Authentication;
 
@@ -17,8 +18,10 @@ public sealed class RegistrationService(
     IEmailSender email,
     ISmsSender sms,
     IOptions<SecurityOptions> security,
-    IOptions<SmtpEmailOptions> smtp) : IRegistrationService
+    IOptions<SmtpEmailOptions> smtp, ILogger<RegistrationService>? logger = null) : IRegistrationService
 {
+    private const string InvalidConfirmation = "Invalid or expired registration confirmation.";
+
     private static bool IsRegistration(AuthenticationChallengePurpose purpose) =>
         purpose is AuthenticationChallengePurpose.RegistrationEmail or AuthenticationChallengePurpose.RegistrationSms;
 
@@ -75,22 +78,30 @@ public sealed class RegistrationService(
             ? AuthenticationChallengePurpose.RegistrationSms
             : AuthenticationChallengePurpose.RegistrationEmail;
 
+        var candidateHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+        await using var reservation = await SecurityOperationLock.AcquireAsync(db, "registration-codes", ct);
         var user = await db.Users
             .Include(existingUser => existingUser.Role)
             .SingleOrDefaultAsync(existingUser => existingUser.Email == normalizedEmail, ct);
 
-        if (user is not null && !CanResumePendingRegistration(user, request.Password))
-            throw new InvalidOperationException("Ця електронна адреса вже використовується.");
+        if (user is not null && db is DbContext tracked)
+            await tracked.Entry(user).ReloadAsync(ct);
 
-        await RequireSendLimitAsync(user?.Id, destination, ct);
-
+        var now = DateTimeOffset.UtcNow;
+        RegistrationChallengeResponse HiddenResponse() => new(Guid.NewGuid(), method, Mask(destination),
+            now.AddMinutes(Math.Clamp(security.Value.ChallengeLifetimeMinutes, 2, 15)), now.AddSeconds(30));
+        if (user is not null && (!CanResumePendingRegistration(user)
+            || method == "sms" && (user.Phone != phone || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))))
+            return HiddenResponse();
+        try { await RequireSendLimitAsync(user?.Id, destination, ct); }
+        catch (InvalidOperationException) { return HiddenResponse(); }
         if (user is null)
         {
             var role = await db.Roles.SingleOrDefaultAsync(item => item.Name == Roles.Customer, ct)
                 ?? throw new InvalidOperationException("Customer role is missing.");
 
             user = User.Create(Guid.NewGuid(), normalizedEmail, phone, request.FirstName, request.LastName);
-            user.SetPasswordHash(BCrypt.Net.BCrypt.HashPassword(request.Password));
+            user.SetPasswordHash(candidateHash);
             user.AssignRole(role.Id);
             db.Users.Add(user);
         }
@@ -99,22 +110,38 @@ public sealed class RegistrationService(
             user.UpdateProfile(request.FirstName, request.LastName, null, phone);
         }
 
-        return await SendAsync(user, purpose, destination, ct);
+        return await SendAsync(user, purpose, destination, candidateHash, reservation, ct);
     }
 
     public async Task<RegistrationChallengeResponse> ResendAsync(Guid challengeId, CancellationToken ct = default)
     {
+        var now = DateTimeOffset.UtcNow;
+        try
+        {
+            var result = await ResendCoreAsync(challengeId, ct);
+            return result with { Method = "", MaskedDestination = "" };
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or InvalidOperationException)
+        {
+            return new(Guid.NewGuid(), "", "", now.AddMinutes(Math.Clamp(security.Value.ChallengeLifetimeMinutes, 2, 15)), now.AddSeconds(30));
+        }
+    }
+
+    private async Task<RegistrationChallengeResponse> ResendCoreAsync(Guid challengeId, CancellationToken ct)
+    {
+        await using var reservation = await SecurityOperationLock.AcquireAsync(db, "registration-codes", ct);
         var (challenge, user) = await GetChallengeAsync(challengeId, requireActive: false, ct);
         var method = challenge.Purpose == AuthenticationChallengePurpose.RegistrationSms ? "sms" : "email";
 
         await RequireMethodAsync(method, ct);
         await RequireSendLimitAsync(user.Id, challenge.DeliveryAddress!, ct);
 
-        return await SendAsync(user, challenge.Purpose, challenge.DeliveryAddress!, ct);
+        return await SendAsync(user, challenge.Purpose, challenge.DeliveryAddress!, challenge.RegistrationPasswordHash ?? throw new UnauthorizedAccessException(InvalidConfirmation), reservation, ct);
     }
 
     public async Task<AuthResponse> VerifyAsync(VerifyRegistrationRequest request, CancellationToken ct = default)
     {
+        await using var reservation = await SecurityOperationLock.AcquireAsync(db, "registration-codes", ct);
         var (challenge, user) = await GetChallengeAsync(request.ChallengeId, requireActive: true, ct);
 
         var codeHasExpectedFormat = request.Code is { Length: 6 }
@@ -130,9 +157,13 @@ public sealed class RegistrationService(
         {
             challenge.RegisterFailure();
             await db.SaveChangesAsync(ct);
-            throw new UnauthorizedAccessException("Невірний або прострочений код підтвердження.");
+            await reservation.CommitAsync(ct);
+            throw new UnauthorizedAccessException(InvalidConfirmation);
         }
 
+        if (string.IsNullOrWhiteSpace(challenge.RegistrationPasswordHash))
+            throw new UnauthorizedAccessException(InvalidConfirmation);
+        user.SetPasswordHash(challenge.RegistrationPasswordHash);
         if (challenge.Purpose == AuthenticationChallengePurpose.RegistrationSms)
             user.VerifyPhone();
         else
@@ -147,6 +178,7 @@ public sealed class RegistrationService(
         // Activation, challenge consumption and refresh token commit together; concurrent replay fails.
         await db.SaveChangesAsync(ct);
 
+        await reservation.CommitAsync(ct);
         var role = user.Role?.Name ?? Roles.Customer;
         var accessToken = tokens.GenerateAccessToken(user, role);
 
@@ -161,19 +193,15 @@ public sealed class RegistrationService(
             tokens.GetAccessTokenExpiration());
     }
 
-    private static bool CanResumePendingRegistration(User user, string password)
-    {
-        return user.Status == UserStatus.PendingActivation
-            && !user.IsDeleted
-            && user.Role?.Name == Roles.Customer
-            && !string.IsNullOrEmpty(user.PasswordHash)
-            && BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
-    }
+    private static bool CanResumePendingRegistration(User user) =>
+        user.Status == UserStatus.PendingActivation && !user.IsDeleted && user.Role?.Name == Roles.Customer;
 
     private async Task<RegistrationChallengeResponse> SendAsync(
         User user,
         AuthenticationChallengePurpose purpose,
         string destination,
+        string passwordHash,
+        SecurityOperationLock reservation,
         CancellationToken ct)
     {
         var now = DateTimeOffset.UtcNow;
@@ -195,28 +223,39 @@ public sealed class RegistrationService(
         var code = RandomNumberGenerator.GetInt32(1_000_000)
             .ToString("D6", CultureInfo.InvariantCulture);
         challenge.SetDeliveryAddress(destination);
+        challenge.SetRegistrationPassword(passwordHash);
         challenge.SetCode(Hash(challenge.Id, code), expiresAt, now);
         db.AuthenticationChallenges.Add(challenge);
 
         // Reserve the send and invalidate old codes before calling a paid service. Failures count toward limits.
         await db.SaveChangesAsync(ct);
+        await reservation.CommitAsync(ct);
 
-        if (purpose == AuthenticationChallengePurpose.RegistrationSms)
+        try
         {
-            await sms.SendAsync(
-                destination,
-                $"TREBA: kod reiestratsii {code}. Diie {lifetime.TotalMinutes:0} khv.",
-                challenge.Id,
-                ct);
+            if (purpose == AuthenticationChallengePurpose.RegistrationSms)
+            {
+                await sms.SendAsync(
+                    destination,
+                    $"TREBA: kod reiestratsii {code}. Diie {lifetime.TotalMinutes:0} khv.",
+                    challenge.Id,
+                    ct);
+            }
+            else
+            {
+                await email.SendSecurityCodeAsync(
+                    destination,
+                    $"{user.FirstName} {user.LastName}",
+                    code,
+                    lifetime,
+                    ct);
+            }
         }
-        else
+        catch (Exception ex) when (ex is SmsDeliveryException or System.Net.Mail.SmtpException
+            or HttpRequestException or InvalidOperationException)
         {
-            await email.SendSecurityCodeAsync(
-                destination,
-                $"{user.FirstName} {user.LastName}",
-                code,
-                lifetime,
-                ct);
+            // Delivery failures consume quota and use the same public response as other registrations.
+            logger?.LogWarning("Registration delivery failed ({ErrorType}).", ex.GetType().Name);
         }
 
         var method = purpose == AuthenticationChallengePurpose.RegistrationSms ? "sms" : "email";
@@ -232,7 +271,7 @@ public sealed class RegistrationService(
         var challenge = await db.AuthenticationChallenges.SingleOrDefaultAsync(item => item.Id == id, ct);
 
         if (challenge is null)
-            throw new UnauthorizedAccessException("Підтвердження недійсне. Почніть реєстрацію ще раз.");
+            throw new UnauthorizedAccessException(InvalidConfirmation);
 
         var challengeIsInvalid = !IsRegistration(challenge.Purpose)
             || challenge.ConsumedAt is not null
@@ -240,14 +279,14 @@ public sealed class RegistrationService(
             || string.IsNullOrWhiteSpace(challenge.DeliveryAddress);
 
         if (challengeIsInvalid)
-            throw new UnauthorizedAccessException("Підтвердження недійсне. Почніть реєстрацію ще раз.");
+            throw new UnauthorizedAccessException(InvalidConfirmation);
 
         var user = await db.Users
             .Include(existingUser => existingUser.Role)
             .SingleOrDefaultAsync(existingUser => existingUser.Id == challenge.UserId, ct);
 
         if (user is null)
-            throw new UnauthorizedAccessException("Підтвердження недійсне. Почніть реєстрацію ще раз.");
+            throw new UnauthorizedAccessException(InvalidConfirmation);
 
         var expectedAddress = challenge.Purpose == AuthenticationChallengePurpose.RegistrationSms
             ? user.Phone
@@ -258,7 +297,7 @@ public sealed class RegistrationService(
             || challenge.DeliveryAddress != expectedAddress;
 
         if (userCannotCompleteRegistration)
-            throw new UnauthorizedAccessException("Підтвердження недійсне. Почніть реєстрацію ще раз.");
+            throw new UnauthorizedAccessException(InvalidConfirmation);
 
         return (challenge, user);
     }
@@ -285,9 +324,7 @@ public sealed class RegistrationService(
         var recentChallenges = db.AuthenticationChallenges.Where(challenge =>
             (challenge.UserId == userId || challenge.DeliveryAddress == destination)
             && (challenge.Purpose == AuthenticationChallengePurpose.RegistrationEmail
-                || challenge.Purpose == AuthenticationChallengePurpose.RegistrationSms
-                || challenge.Purpose == AuthenticationChallengePurpose.PasswordResetEmail
-                || challenge.Purpose == AuthenticationChallengePurpose.PasswordResetSms)
+                || challenge.Purpose == AuthenticationChallengePurpose.RegistrationSms)
             && challenge.LastCodeSentAt > now.AddHours(-1));
 
         var wasSentRecently = await recentChallenges

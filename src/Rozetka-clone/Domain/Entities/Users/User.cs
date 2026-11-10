@@ -300,6 +300,29 @@ namespace Domain.Entities.Users
             UpdatedAt = DateTimeOffset.UtcNow;
         }
 
+        public int MfaFailedAttempts { get; private set; }
+        public DateTimeOffset? MfaWindowStart { get; private set; }
+        public long? LastAuthenticatorStep { get; private set; }
+
+        public bool HasMfaBudget(DateTimeOffset now)
+        {
+            if (MfaWindowStart is null || now >= MfaWindowStart.Value.AddMinutes(15))
+            {
+                MfaWindowStart = now;
+                MfaFailedAttempts = 0;
+            }
+            return MfaFailedAttempts < 5;
+        }
+
+        public void RegisterMfaFailure() => MfaFailedAttempts++;
+
+        public bool AcceptAuthenticatorStep(long step)
+        {
+            if (LastAuthenticatorStep >= step) return false;
+            LastAuthenticatorStep = step;
+            return true;
+        }
+
         public void ChangeEmail(
             string email
         )
@@ -565,6 +588,7 @@ namespace Domain.Entities.Users
             EnsureCanBeModified();
             ArgumentException.ThrowIfNullOrWhiteSpace(protectedSecret);
             AuthenticatorSecretProtected = protectedSecret;
+            LastAuthenticatorStep = null;
             AuthenticatorEnabled = false;
             AuthenticatorEnabledAt = null;
             UpdatedAt = DateTimeOffset.UtcNow;

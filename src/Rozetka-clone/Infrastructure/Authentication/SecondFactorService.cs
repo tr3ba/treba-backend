@@ -66,6 +66,8 @@ public sealed class SecondFactorService : ISecondFactorService
             return null;
         }
 
+        if (!user.HasMfaBudget(DateTimeOffset.UtcNow))
+            throw new UnauthorizedAccessException("Спробуйте підтвердити вхід через 15 хвилин.");
         var expiresAt = DateTimeOffset.UtcNow.Add(ChallengeLifetime);
         var challenge = AuthenticationChallenge.Create(
             user.Id,
@@ -110,18 +112,23 @@ public sealed class SecondFactorService : ISecondFactorService
         CancellationToken cancellationToken = default
     )
     {
+        var accountId = await _context.AuthenticationChallenges.AsNoTracking()
+            .Where(c => c.Id == request.ChallengeId).Select(c => c.UserId).SingleOrDefaultAsync(cancellationToken);
+        await using var verification = await SecurityOperationLock.AcquireAsync(_context, "mfa:" + accountId, cancellationToken);
         var (challenge, user) = await GetActiveChallengeAsync(
             request.ChallengeId,
             AuthenticationChallengePurpose.Login,
             cancellationToken
         );
+        if (!user.HasMfaBudget(DateTimeOffset.UtcNow))
+            throw new UnauthorizedAccessException("Спробуйте підтвердити вхід через 15 хвилин.");
         var valid = request.Method switch
         {
             TwoFactorMethods.Authenticator when user.AuthenticatorEnabled => VerifyAuthenticator(
                 user,
                 request.Code
             ),
-            TwoFactorMethods.Email when user.EmailTwoFactorEnabled => VerifyEmailCode(
+            TwoFactorMethods.Email when user.EmailTwoFactorEnabled && challenge.DeliveryAddress == user.Email => VerifyEmailCode(
                 challenge,
                 request.Code
             ),
@@ -135,12 +142,15 @@ public sealed class SecondFactorService : ISecondFactorService
         if (!valid)
         {
             challenge.RegisterFailure();
+            user.RegisterMfaFailure();
             await _context.SaveChangesAsync(cancellationToken);
+            await verification.CommitAsync(cancellationToken);
             throw new UnauthorizedAccessException("Invalid or expired security code.");
         }
 
         challenge.Consume();
         await _context.SaveChangesAsync(cancellationToken);
+        await verification.CommitAsync(cancellationToken);
         return user;
     }
 
@@ -199,21 +209,29 @@ public sealed class SecondFactorService : ISecondFactorService
         CancellationToken cancellationToken = default
     )
     {
+        await using var verification = await SecurityOperationLock.AcquireAsync(_context, "mfa:" + userId, cancellationToken);
+
         var user = await GetUserAsync(
             userId,
             cancellationToken
         );
 
+        if (!user.HasMfaBudget(DateTimeOffset.UtcNow))
+            throw new UnauthorizedAccessException("Try again after the MFA cooldown.");
         if (!VerifyAuthenticator(
             user,
             code
         ))
         {
+            user.RegisterMfaFailure();
+            await _context.SaveChangesAsync(cancellationToken);
+            await verification.CommitAsync(cancellationToken);
             throw new UnauthorizedAccessException("Invalid authenticator code.");
         }
 
         user.EnableAuthenticator();
         await _context.SaveChangesAsync(cancellationToken);
+        await verification.CommitAsync(cancellationToken);
         return ToSettings(user);
     }
 
@@ -223,6 +241,8 @@ public sealed class SecondFactorService : ISecondFactorService
         CancellationToken cancellationToken = default
     )
     {
+        await using var verification = await SecurityOperationLock.AcquireAsync(_context, "mfa:" + userId, cancellationToken);
+
         var user = await GetUserAsync(
             userId,
             cancellationToken
@@ -233,16 +253,22 @@ public sealed class SecondFactorService : ISecondFactorService
             throw new InvalidOperationException("Google Authenticator is not enabled.");
         }
 
+        if (!user.HasMfaBudget(DateTimeOffset.UtcNow))
+            throw new UnauthorizedAccessException("Try again after the MFA cooldown.");
         if (!VerifyAuthenticator(
             user,
             code
         ))
         {
+            user.RegisterMfaFailure();
+            await _context.SaveChangesAsync(cancellationToken);
+            await verification.CommitAsync(cancellationToken);
             throw new UnauthorizedAccessException("Invalid authenticator code.");
         }
 
         user.DisableAuthenticator();
         await _context.SaveChangesAsync(cancellationToken);
+        await verification.CommitAsync(cancellationToken);
         return ToSettings(user);
     }
 
@@ -287,6 +313,8 @@ public sealed class SecondFactorService : ISecondFactorService
         CancellationToken cancellationToken = default
     )
     {
+        await using var verification = await SecurityOperationLock.AcquireAsync(_context, "mfa:" + userId, cancellationToken);
+
         var (challenge, user) = await GetActiveChallengeAsync(
             challengeId,
             AuthenticationChallengePurpose.EnableEmailTwoFactor,
@@ -298,18 +326,23 @@ public sealed class SecondFactorService : ISecondFactorService
             throw new UnauthorizedAccessException("Security challenge does not belong to this account.");
         }
 
-        if (!VerifyEmailCode(
+        if (!user.HasMfaBudget(DateTimeOffset.UtcNow))
+            throw new UnauthorizedAccessException("Try again after the MFA cooldown.");
+        if (challenge.DeliveryAddress != user.Email || !VerifyEmailCode(
             challenge,
             code
         ))
         {
             challenge.RegisterFailure();
+            user.RegisterMfaFailure();
             await _context.SaveChangesAsync(cancellationToken);
+            await verification.CommitAsync(cancellationToken);
             throw new UnauthorizedAccessException("Invalid or expired email code.");
         }
         challenge.Consume();
         user.EnableEmailTwoFactor();
         await _context.SaveChangesAsync(cancellationToken);
+        await verification.CommitAsync(cancellationToken);
         return ToSettings(user);
     }
 
@@ -354,6 +387,8 @@ public sealed class SecondFactorService : ISecondFactorService
         CancellationToken cancellationToken = default
     )
     {
+        await using var verification = await SecurityOperationLock.AcquireAsync(_context, "mfa:" + userId, cancellationToken);
+
         var (challenge, user) = await GetActiveChallengeAsync(
             challengeId,
             AuthenticationChallengePurpose.DisableEmailTwoFactor,
@@ -365,19 +400,24 @@ public sealed class SecondFactorService : ISecondFactorService
             throw new UnauthorizedAccessException("Security challenge does not belong to this account.");
         }
 
-        if (!VerifyEmailCode(
+        if (!user.HasMfaBudget(DateTimeOffset.UtcNow))
+            throw new UnauthorizedAccessException("Try again after the MFA cooldown.");
+        if (challenge.DeliveryAddress != user.Email || !VerifyEmailCode(
             challenge,
             code
         ))
         {
             challenge.RegisterFailure();
+            user.RegisterMfaFailure();
             await _context.SaveChangesAsync(cancellationToken);
+            await verification.CommitAsync(cancellationToken);
             throw new UnauthorizedAccessException("Invalid or expired email code.");
         }
 
         challenge.Consume();
         user.DisableEmailTwoFactor();
         await _context.SaveChangesAsync(cancellationToken);
+        await verification.CommitAsync(cancellationToken);
         return ToSettings(user);
     }
 
@@ -387,7 +427,13 @@ public sealed class SecondFactorService : ISecondFactorService
         CancellationToken cancellationToken
     )
     {
+        await using var sending = await SecurityOperationLock.AcquireAsync(_context, "mfa:" + user.Id, cancellationToken);
+        if (_context is DbContext context && context.Entry(challenge).State != EntityState.Added)
+            await context.Entry(challenge).ReloadAsync(cancellationToken);
         var now = DateTimeOffset.UtcNow;
+        if (challenge.DeliveryAddress is not null && challenge.DeliveryAddress != user.Email)
+            throw new UnauthorizedAccessException("Email security challenge has expired.");
+        challenge.SetDeliveryAddress(user.Email);
 
         if (!challenge.CanSendCode(now))
         {
@@ -412,6 +458,7 @@ public sealed class SecondFactorService : ISecondFactorService
             now
         );
         await _context.SaveChangesAsync(cancellationToken);
+        await sending.CommitAsync(cancellationToken);
         await _emailSender.SendSecurityCodeAsync(
             user.Email,
             DisplayName(user),
@@ -433,6 +480,9 @@ public sealed class SecondFactorService : ISecondFactorService
                 cancellationToken
             ) ?? throw new UnauthorizedAccessException("Security challenge was not found.");
 
+        if (_context is DbContext trackedChallenge)
+            await trackedChallenge.Entry(challenge).ReloadAsync(cancellationToken);
+
         if (challenge.Purpose != purpose
             || !challenge.IsActive(DateTimeOffset.UtcNow))
         {
@@ -449,6 +499,12 @@ public sealed class SecondFactorService : ISecondFactorService
                 )
             ?? throw new UnauthorizedAccessException("Account was not found.");
 
+        if (_context is DbContext trackedUser)
+        {
+            await trackedUser.Entry(user).ReloadAsync(cancellationToken);
+            await trackedUser.Entry(user).Reference(u => u.Role).LoadAsync(cancellationToken);
+        }
+
         if (user.Status is UserStatus.Blocked or UserStatus.Deleted)
         {
             throw new UnauthorizedAccessException("Account is unavailable.");
@@ -462,14 +518,12 @@ public sealed class SecondFactorService : ISecondFactorService
         CancellationToken cancellationToken
     )
     {
-        return await _context
-                .Users
-            .Include(item => item.Role)
-            .FirstOrDefaultAsync(
-                item => item.Id == userId,
-                cancellationToken
-            )
+        var user = await _context.Users.Include(item => item.Role)
+            .FirstOrDefaultAsync(item => item.Id == userId, cancellationToken)
             ?? throw new InvalidOperationException("Account was not found.");
+        if (_context is DbContext context)
+            await context.Entry(user).ReloadAsync(cancellationToken);
+        return user;
     }
 
     private bool VerifyAuthenticator(
@@ -482,11 +536,9 @@ public sealed class SecondFactorService : ISecondFactorService
             return false;
         }
 
-        return TotpUtility.Validate(
-            _protector.Unprotect(user.AuthenticatorSecretProtected),
-            code.Trim(),
-            DateTimeOffset.UtcNow
-        );
+        var step = TotpUtility.MatchStep(_protector.Unprotect(user.AuthenticatorSecretProtected),
+            code.Trim(), DateTimeOffset.UtcNow);
+        return step.HasValue && user.AcceptAuthenticatorStep(step.Value);
     }
 
     private bool VerifyEmailCode(

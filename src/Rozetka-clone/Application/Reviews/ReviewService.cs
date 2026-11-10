@@ -1,4 +1,4 @@
-﻿using Application.Abstractions;
+using Application.Abstractions;
 using Application.Common;
 using Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -33,9 +33,11 @@ namespace Application.Reviews
                                 .OrderByDescending(image => image.IsMain).ThenBy(image => image.SortOrder).ThenBy(image => image.Id)
                                 .Select(image => image.ImageUrl).FirstOrDefault(), order.Id, order.OrderNumber);
             var count = await query.CountAsync(cancellationToken);
+            var rows = await query.Skip((page - 1) * 20).Take(20).ToListAsync(cancellationToken);
+            var imageUrls = await Application.ProductImages.ProductImageUrls.PrimaryAsync(_dbContext, rows.Select(i => i.ProductId), cancellationToken);
             return new()
             {
-                Items = await query.Skip((page - 1) * 20).Take(20).ToListAsync(cancellationToken),
+                Items = rows.Select(i => i with { ImageUrl = imageUrls.GetValueOrDefault(i.ProductId) }).ToList(),
                 Page = page,
                 PageSize = 20,
                 TotalCount = count

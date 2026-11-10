@@ -10,11 +10,11 @@ public static class AdminOperationsDeployment
     public static string ExternalLoginTableIdentifier(ApplicationDbContext db) =>
         "\"" + db.Model.FindEntityType(typeof(UserExternalLogin))!.GetTableName()!.Replace("\"", "\"\"") + "\"";
 
-    public const string Migration = "20261030094652_AddReviewRepliesAndTemplates";
+    public const string Migration = "20261110110220_SecureStandaloneAccountChallenges";
 
     private static readonly HashSet<string> AllowedPending =
 
-        ["20261017112413_AddPromotions", "20261019213326_AddReviewOrderItemRelation", "20261020093201_AddAdminOperations", "20261020104554_AddSupportConversations", "20261020144055_AddWebsiteAdminLogin", "20261021191511_AddDelivery", "20261022084526_AddMarketplaceWorkflows", "20261022132542_AddAdminFeaturesAndChatTrash", "20261023110000_NormalizeProfileLanguages", "20261024192735_AddDeliveryAndCustomerNotifications", "20261025000601_AddUserExternalLogin", "20261026142406_AddManagedShipmentLifecycle", "20261029143639_AddRegistrationVerification", Migration];
+        ["20261017112413_AddPromotions", "20261019213326_AddReviewOrderItemRelation", "20261020093201_AddAdminOperations", "20261020104554_AddSupportConversations", "20261020144055_AddWebsiteAdminLogin", "20261021191511_AddDelivery", "20261022084526_AddMarketplaceWorkflows", "20261022132542_AddAdminFeaturesAndChatTrash", "20261023110000_NormalizeProfileLanguages", "20261024192735_AddDeliveryAndCustomerNotifications", "20261025000601_AddUserExternalLogin", "20261026142406_AddManagedShipmentLifecycle", "20261029143639_AddRegistrationVerification", "20261030094652_AddReviewRepliesAndTemplates", Migration];
     public static void ValidatePendingMigrations(IEnumerable<string> migrations)
     {
         var pending = migrations.ToArray();

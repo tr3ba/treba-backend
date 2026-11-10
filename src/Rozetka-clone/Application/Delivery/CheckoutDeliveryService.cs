@@ -58,6 +58,7 @@ public sealed class CheckoutDeliveryService(
             City = result.City.Name,
             PickupPoint = result.PickupPoint.Name,
             Postomat = result.PickupPoint.Postomat,
+            FreeDelivery = discount.FreeDelivery,
             Price = discount.FreeDelivery ? 0 : result.Price,
             Subtotal = discount.Subtotal,
             DeclaredValue = discount.TotalAmount,
@@ -168,6 +169,11 @@ public sealed class CheckoutDeliveryService(
             || quote.Subtotal != subtotal
             || quote.DeclaredValue != total)
             throw new BusinessRuleException("Розрахунок доставки застарів. Розрахуйте доставку ще раз.");
+
+        var currentDiscount = await discounts.CalculateDiscountAsync(userId,
+            items.Select(i => new PriceItem(i.VariantId, i.Quantity)).ToList(), coupon, ct);
+        if (currentDiscount.FreeDelivery != quote.FreeDelivery)
+            throw new BusinessRuleException("Delivery discount changed. Request a new delivery quote.");
 
         var quantities = items.ToDictionary(i => i.VariantId, i => i.Quantity);
 

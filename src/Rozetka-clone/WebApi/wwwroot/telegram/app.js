@@ -103,10 +103,26 @@ async function navigate(view, args = {}, force = false) {
     }
 }
 
+function productPhoto(url, alt = '') {
+    const image = el('img', { alt, loading: 'lazy', referrerpolicy: 'no-referrer' });
+    if (!url.startsWith('/uploads/products/') || preview) {
+        image.src = url;
+        return image;
+    }
+    fetch(url, { headers: { Authorization: 'Tma ' + tg.initData }, cache: 'no-store' })
+        .then(response => { if (!response.ok) throw new Error('Photo unavailable'); return response.blob(); })
+        .then(blob => {
+            const local = URL.createObjectURL(blob);
+            image.onload = image.onerror = () => URL.revokeObjectURL(local);
+            image.src = local;
+        }).catch(() => { image.alt = 'Photo unavailable'; });
+    return image;
+}
+
 function productCard(product) {
     const image = product.images?.[0]?.imageUrl;
     return el('button', { class: 'product-card', type: 'button', onclick: () => navigate('product', { id: product.id }) },
-        el('span', { class: 'thumb' }, image ? el('img', { src: image, alt: '', loading: 'lazy', referrerpolicy: 'no-referrer' }) : icon('box')),
+        el('span', { class: 'thumb' }, image ? productPhoto(image) : icon('box')),
         el('span', { class: 'product-copy' }, el('h3', {}, product.name), el('div', { class: 'sku' }, product.sku, ' · ', product.stockQuantity, ' шт.'),
             el('span', { class: 'product-meta' }, el('strong', {}, money(product.price)), badge(product.status))));
 }
@@ -154,7 +170,7 @@ async function productsPage(args) {
     return page;
 }
 
-function gallery(urls) { return urls.length ? el('div', { class: 'gallery' }, urls.map((url, index) => el('figure', {}, el('img', { src: url, alt: 'Фото товару ' + (index + 1), loading: index ? 'lazy' : 'eager', referrerpolicy: 'no-referrer' }), el('figcaption', {}, `${index + 1} / ${urls.length}`)))) : null; }
+function gallery(urls) { return urls.length ? el('div', { class: 'gallery' }, urls.map((url, index) => el('figure', {}, productPhoto(url, 'Фото товару ' + (index + 1)), el('figcaption', {}, `${index + 1} / ${urls.length}`)))) : null; }
 function timeline(rows) { return rows.length ? el('div', {}, rows.map(row => el('div', { class: 'history-entry' }, el('strong', {}, { Submitted: 'Надіслано на перевірку', Approved: 'Опубліковано', Rejected: 'Відхилено' }[row.decision] || row.decision), el('small', {}, when(row.occurredAt), ' · ', row.actorName), row.reason ? el('p', {}, row.reason) : null))) : el('p', { class: 'hint' }, 'Нових рішень щодо цього товару поки немає.'); }
 async function productPage(args) {
     const product = await request('products/' + args.id);

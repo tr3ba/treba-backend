@@ -18,10 +18,15 @@ internal static class TotpUtility
         DateTimeOffset now
     )
     {
+        return MatchStep(secret, code, now).HasValue;
+    }
+
+    public static long? MatchStep(string secret, string code, DateTimeOffset now)
+    {
         if (code.Length != 6
             || !code.All(char.IsAsciiDigit))
         {
-            return false;
+            return null;
         }
 
         var counter = now.ToUnixTimeSeconds() / 30;
@@ -39,11 +44,11 @@ internal static class TotpUtility
                 )
             )
             {
-                return true;
+                return counter + offset;
             }
         }
 
-        return false;
+        return null;
     }
 
     private static string GenerateCode(

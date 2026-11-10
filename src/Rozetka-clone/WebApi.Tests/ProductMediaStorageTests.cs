@@ -33,11 +33,15 @@ public sealed class ProductMediaStorageTests
         using var second = new ProductMediaStorage(options, new EnvironmentStub(root));
         try
         {
-            await first.SaveAsync(id, file, [1, 2, 3], default);
+            using var image = new ImageMagick.MagickImage(ImageMagick.MagickColors.Red, 2, 2);
+            var original = image.ToByteArray(ImageMagick.MagickFormat.Png);
+            await first.SaveAsync(id, file, original, default);
             var loaded = await second.ReadAsync(id, file, default);
             Assert.NotNull(loaded);
             Assert.Equal("image/png", loaded.ContentType);
-            Assert.Equal(new byte[] { 1, 2, 3 }, loaded.Bytes);
+            using var decoded = new ImageMagick.MagickImage(loaded.Bytes);
+            Assert.Equal(2u, decoded.Width);
+            Assert.Null(decoded.GetExifProfile());
             await second.DeleteAsync(id, file, default);
             Assert.Null(await second.ReadAsync(id, file, default));
         }

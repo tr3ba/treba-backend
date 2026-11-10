@@ -30,6 +30,8 @@ public sealed class DeliveryQuote
         get; set;
     }
 
+    public bool FreeDelivery { get; set; }
+
     public decimal Price
     {
         get; set;

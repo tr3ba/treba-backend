@@ -367,8 +367,8 @@ public sealed class OrderService(
             var term = search.Trim().ToLowerInvariant();
             query = query.Where(o => o.OrderNumber.ToLower().Contains(term)
                 || o.RecipientName.ToLower().Contains(term)
-                || o.RecipientPhone.Contains(term)
-                || o.RecipientEmail.ToLower().Contains(term));
+                || (actor.Role != "Seller" && (o.RecipientPhone.Contains(term)
+                    || o.RecipientEmail.ToLower().Contains(term))));
         }
 
         var total = await query.CountAsync(ct);
@@ -398,7 +398,7 @@ public sealed class OrderService(
         var a = order.Address;
         var shipment = delivery is null ? null : await db.OrderShipments.AsNoTracking().SingleOrDefaultAsync(s => s.OrderId == id, ct);
 
-        var address = a is null
+        var address = a is null || partial
             ? null
             : new OrderAddressView(a.Country, a.Region, a.City, a.Street, a.Building, a.Apartment, a.PostalCode, a.RecipientName, a.RecipientPhone);
         var lines = items.Select(item => new OrderLine(
@@ -429,8 +429,8 @@ public sealed class OrderService(
 
         return new OrderDetails(
             Row(order, order.Items, sellers),
-            order.RecipientPhone,
-            order.RecipientEmail,
+            partial ? "" : order.RecipientPhone,
+            partial ? "" : order.RecipientEmail,
             partial ? null : order.CustomerComment,
             partial ? items.Sum(item => item.UnitPrice * item.Quantity) : order.Subtotal,
             partial ? items.Sum(item => item.DiscountAmount) : order.DiscountAmount,

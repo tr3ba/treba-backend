@@ -14,6 +14,9 @@ namespace Infrastructure.Persistence.Configurations
         )
         {
             builder.ToTable("users");
+            builder.Property(u => u.MfaFailedAttempts).IsConcurrencyToken();
+            builder.Property(u => u.MfaWindowStart).IsConcurrencyToken();
+            builder.Property(u => u.LastAuthenticatorStep).IsConcurrencyToken();
 
             builder.HasKey(x => x.Id);
 

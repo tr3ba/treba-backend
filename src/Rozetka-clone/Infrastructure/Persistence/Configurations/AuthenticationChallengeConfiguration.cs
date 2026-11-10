@@ -11,6 +11,8 @@ public sealed class AuthenticationChallengeConfiguration : IEntityTypeConfigurat
     )
     {
         builder.ToTable("authentication_challenges");
+        builder.Property(c => c.RegistrationPasswordHash).HasMaxLength(500);
+        builder.Property(c => c.CodeSendCount).IsConcurrencyToken();
         builder.Property(challenge => challenge.ConsumedAt).IsConcurrencyToken();
         builder.Property(challenge => challenge.LastCodeSentAt).IsConcurrencyToken();
         builder.Property(challenge => challenge.FailedAttempts).IsConcurrencyToken();

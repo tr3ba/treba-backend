@@ -113,6 +113,8 @@ public class UsersController : ControllerBase
         var normalizedEmail = request.Email
             .Trim()
             .ToLowerInvariant();
+        if (normalizedEmail != user.Email)
+            return BadRequest(new { message = "Use the verified email-change flow to change your email." });
         var emailIsUsed = await _context.Users.AnyAsync(
             u =>
                 u.Id != userId
@@ -176,6 +178,27 @@ public class UsersController : ControllerBase
 
         return Ok(ToResponse(user));
     }
+
+    [HttpPost("me/email-change")]
+    public Task<Contracts.Authentication.AccountChangeChallengeResponse> BeginEmailChange(
+        Contracts.Authentication.BeginAccountChangeRequest request,
+        [FromServices] Infrastructure.Authentication.AccountChangeService changes, CancellationToken ct) =>
+        changes.BeginAsync(Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!), request, true, ct);
+
+    [HttpPost("me/email-change/confirm")]
+    public async Task<IActionResult> ConfirmEmailChange(Contracts.Authentication.ConfirmEmailChangeRequest request,
+        [FromServices] Infrastructure.Authentication.AccountChangeService changes, CancellationToken ct)
+    {
+        await changes.ConfirmAsync(Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!), request.ChallengeId,
+            request.CurrentEmailCode, request.NewEmailCode, true, null, ct);
+        return NoContent();
+    }
+
+    [HttpPost("me/external-link-confirmation")]
+    public Task<Contracts.Authentication.AccountChangeChallengeResponse> BeginExternalLink(
+        Contracts.Authentication.BeginAccountChangeRequest request,
+        [FromServices] Infrastructure.Authentication.AccountChangeService changes, CancellationToken ct) =>
+        changes.BeginAsync(Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!), request, false, ct);
 
     [HttpPost("me/avatar")]
     [Consumes("multipart/form-data")]
@@ -256,6 +279,7 @@ public class UsersController : ControllerBase
             );
         }
 
+        imageBytes = WebApi.Media.SafeImage.Normalize(imageBytes, extension);
         var oldAvatarUrl = user.Profile?.AvatarUrl;
         var userDirectoryName = userId.ToString("N");
         var fileName = $"{Guid.NewGuid():N}.{extension}";

@@ -9,7 +9,7 @@ public sealed partial class CatalogService
     public async Task<bool> DeleteAsync(Guid id, Guid? sellerUserId, CancellationToken ct)
     {
         var product = await db.Products.SingleOrDefaultAsync(p => p.Id == id && (!sellerUserId.HasValue
-            || db.Stores.Any(s => s.Id == p.StoreId && db.Sellers.Any(seller => seller.Id == s.SellerId && seller.UserId == sellerUserId.Value))), ct);
+            || db.Stores.Any(s => s.Id == p.StoreId && db.Sellers.Any(seller => seller.Id == s.SellerId && seller.UserId == sellerUserId.Value && seller.Status == SellerStatus.ACTIVE))), ct);
 
         if (product is null)
             return false;

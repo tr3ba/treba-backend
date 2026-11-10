@@ -29,7 +29,9 @@ public sealed class ExternalLoginTests
 
     private sealed class Email : IEmailSender
     {
-        public Task SendSecurityCodeAsync(string recipient, string displayName, string code, TimeSpan validFor, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public string? Code;
+        public Task SendSecurityCodeAsync(string recipient, string displayName, string code, TimeSpan validFor, CancellationToken cancellationToken = default)
+        { Code = code; return Task.CompletedTask; }
     }
 
     private sealed class Provider(string provider, string email = "customer@example.test", bool verified = true, bool missingSurname = false) : HttpMessageHandler
@@ -62,7 +64,7 @@ public sealed class ExternalLoginTests
         }
     }
 
-    private static IdentityService Identity(ApplicationDbContext db, Provider provider, bool enabled = true)
+    private static IdentityService Identity(ApplicationDbContext db, Provider provider, bool enabled = true, Email? email = null)
     {
         var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         {
@@ -77,7 +79,9 @@ public sealed class ExternalLoginTests
             ["ExternalAuth:Facebook:ClientId"] = "facebook-client",
             ["ExternalAuth:Facebook:ClientSecret"] = "facebook-fixture-secret",
         }).Build();
-        return new(db, new TokenService(config), new SecondFactorService(db, new Email(), new(Security), Security), config, new HttpClient(provider));
+        email ??= new Email();
+        var factors = new SecondFactorService(db, email, new(Security), Security);
+        return new(db, new TokenService(config), factors, config, new HttpClient(provider), new AccountChangeService(db, factors, email, Security));
     }
 
     private static ExternalCodeLoginRequest Request(string provider, string code = "one-time-code") =>
@@ -112,6 +116,9 @@ public sealed class ExternalLoginTests
         var user = await TelegramTestData.UserAsync(db, Roles.Customer);
         user.EnableEmailTwoFactor(); await db.SaveChangesAsync();
         var service = Identity(db, new Provider(provider, user.Email));
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.ExchangeExternalCodeAsync(Request(provider)));
+        db.UserExternalLogins.Add(user.AddExternalLogin(provider, provider + "-subject"));
+        await db.SaveChangesAsync();
         var login = await service.ExchangeExternalCodeAsync(Request(provider));
         Assert.Null(login.Authentication); Assert.NotNull(login.Challenge);
         Assert.Contains("email", login.Challenge.Methods); Assert.Null(user.RefreshToken);
@@ -151,8 +158,12 @@ public sealed class ExternalLoginTests
     {
         await using var db = TelegramTestData.Memory();
         var user = await TelegramTestData.UserAsync(db, Roles.Customer);
-        var service = Identity(db, new Provider("google"));
-        Assert.True(await service.LinkExternalProviderAsync(user.Id, "GOOGLE", "provider-token"));
+        var email = new Email();
+        var service = Identity(db, new Provider("google"), email: email);
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.LinkExternalProviderAsync(user.Id, "GOOGLE", "provider-token"));
+        var changes = new AccountChangeService(db, new SecondFactorService(db, email, new(Security), Security), email, Security);
+        var confirmation = await changes.BeginAsync(user.Id, new("google"), false, default);
+        Assert.True(await service.LinkExternalProviderAsync(user.Id, "GOOGLE", "provider-token", default, confirmation.ChallengeId, email.Code));
         db.ChangeTracker.Clear();
         var login = await service.ExternalLoginAsync("google", "provider-token");
         Assert.Equal(user.Id, login.Authentication!.UserId);

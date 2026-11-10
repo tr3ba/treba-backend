@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Contracts.Authentication;
@@ -76,7 +76,8 @@ public interface IIdentityService
         Guid userId,
         string provider,
         string accessToken,
-        CancellationToken cancellationToken = default
+        CancellationToken cancellationToken = default,
+        Guid? confirmationId = null, string? confirmationCode = null
     );
 
     Task<bool> UnlinkExternalProviderAsync(

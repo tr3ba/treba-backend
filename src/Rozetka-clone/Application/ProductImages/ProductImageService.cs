@@ -11,69 +11,28 @@ namespace Application.ProductImages
     public sealed class ProductImageService : IProductImageService
     {
         private readonly IApplicationDbContext _dbContext;
+        private readonly IProductMediaUrls? _urls;
 
         public ProductImageService(
-            IApplicationDbContext dbContext
+            IApplicationDbContext dbContext, IProductMediaUrls? urls = null
         )
         {
             _dbContext = dbContext;
+            _urls = urls;
         }
 
-        public async Task<IReadOnlyList<ProductImageDto>> GetByProductIdAsync(
-            Guid productId,
-            CancellationToken cancellationToken = default
-        )
+        public async Task<IReadOnlyList<ProductImageDto>> GetByProductIdAsync(Guid productId, CancellationToken cancellationToken = default)
         {
-            return await _dbContext
-                .ProductImages
-                .AsNoTracking()
-                .Where(x => x.ProductId == productId)
-                .OrderByDescending(x => x.IsMain)
-                .ThenBy(x => x.SortOrder)
-                .Select(
-                    x =>
-                        new ProductImageDto
-                        {
-                            Id = x.Id,
-                            ProductId = x.ProductId,
-                            VariantId = x.VariantId,
-                            ImageUrl = x.ImageUrl,
-                            AltText = x.AltText,
-                            SortOrder = x.SortOrder,
-                            IsMain = x.IsMain,
-                        }
-                )
-                .ToListAsync(cancellationToken);
+            var images = await _dbContext.ProductImages.AsNoTracking().Where(i => i.ProductId == productId)
+                .OrderByDescending(i => i.IsMain).ThenBy(i => i.SortOrder).ToListAsync(cancellationToken);
+            return images.Select(ToDto).ToList();
         }
 
-        public async Task<ProductImageDto?> GetByIdAsync(
-            Guid productId,
-            Guid imageId,
-            CancellationToken cancellationToken = default
-        )
+        public async Task<ProductImageDto?> GetByIdAsync(Guid productId, Guid imageId, CancellationToken cancellationToken = default)
         {
-            return await _dbContext
-                .ProductImages
-                .AsNoTracking()
-                .Where(
-                    x =>
-                        x.Id == imageId
-                        && x.ProductId == productId
-                )
-                .Select(
-                    x =>
-                        new ProductImageDto
-                        {
-                            Id = x.Id,
-                            ProductId = x.ProductId,
-                            VariantId = x.VariantId,
-                            ImageUrl = x.ImageUrl,
-                            AltText = x.AltText,
-                            SortOrder = x.SortOrder,
-                            IsMain = x.IsMain,
-                        }
-                )
-                .FirstOrDefaultAsync(cancellationToken);
+            var image = await _dbContext.ProductImages.AsNoTracking()
+                .SingleOrDefaultAsync(i => i.ProductId == productId && i.Id == imageId, cancellationToken);
+            return image is null ? null : ToDto(image);
         }
 
         public async Task<ProductImageDto> CreateAsync(
@@ -98,7 +57,7 @@ namespace Application.ProductImages
                 cancellationToken
             );
 
-            var imageUrl = request.ImageUrl.Trim();
+            var imageUrl = ProductImageUrls.Validate(productId, request.ImageUrl);
 
             if (string.IsNullOrWhiteSpace(imageUrl))
             {
@@ -163,7 +122,8 @@ namespace Application.ProductImages
 
             if (request.ImageUrl is not null)
             {
-                var imageUrl = request.ImageUrl.Trim();
+                var imageUrl = request.ImageUrl.Trim().Split('?', 2)[0] == ProductImageUrls.ForBrowser(image.ProductId, image.Id, image.ImageUrl)
+                    ? image.ImageUrl : ProductImageUrls.Validate(productId, request.ImageUrl);
 
                 if (string.IsNullOrWhiteSpace(imageUrl))
                 {
@@ -276,7 +236,7 @@ namespace Application.ProductImages
             }
         }
 
-        private static ProductImageDto ToDto(
+        private ProductImageDto ToDto(
             ProductImage image
         )
         {
@@ -285,7 +245,8 @@ namespace Application.ProductImages
                 Id = image.Id,
                 ProductId = image.ProductId,
                 VariantId = image.VariantId,
-                ImageUrl = image.ImageUrl,
+                ImageUrl = _urls?.ForCurrentActor(ProductImageUrls.ForBrowser(image.ProductId, image.Id, image.ImageUrl))
+                    ?? ProductImageUrls.ForBrowser(image.ProductId, image.Id, image.ImageUrl),
                 AltText = image.AltText,
                 SortOrder = image.SortOrder,
                 IsMain = image.IsMain,

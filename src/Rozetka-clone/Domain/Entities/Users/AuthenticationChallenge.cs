@@ -5,6 +5,8 @@ namespace Domain.Entities.Users;
 public enum AuthenticationChallengePurpose
 {
     Login,
+    EmailChange,
+    ExternalProviderLink,
     EnableEmailTwoFactor,
     DisableEmailTwoFactor,
     AdminEntry,
@@ -74,6 +76,20 @@ public sealed class AuthenticationChallenge : BaseEntity
         get; private set;
     }
 
+    public string? AccountEmailSnapshot { get; private set; }
+    public string? SecondaryCodeHash { get; private set; }
+    public void SetAccountChange(string currentEmail, string? secondaryHash)
+    {
+        AccountEmailSnapshot = currentEmail;
+        SecondaryCodeHash = secondaryHash;
+    }
+
+    public string? RegistrationPasswordHash { get; private set; }
+
+    public int CodeSendCount { get; private set; }
+
+    public void SetRegistrationPassword(string hash) => RegistrationPasswordHash = hash;
+
     public string? DeliveryAddress
     {
         get; private set;
@@ -99,6 +115,7 @@ public sealed class AuthenticationChallenge : BaseEntity
     )
     {
         return IsActive(now)
+            && CodeSendCount < 5
             && (
                 LastCodeSentAt is null
                 || LastCodeSentAt <= now.AddSeconds(-30)
@@ -126,9 +143,10 @@ public sealed class AuthenticationChallenge : BaseEntity
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(codeHash);
         CodeHash = codeHash;
-        ExpiresAt = expiresAt;
+        CodeSendCount++;
+        if (expiresAt < ExpiresAt)
+            ExpiresAt = expiresAt;
         LastCodeSentAt = now;
-        FailedAttempts = 0;
     }
 
     public void RegisterFailure()

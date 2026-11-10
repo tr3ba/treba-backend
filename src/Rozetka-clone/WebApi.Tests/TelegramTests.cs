@@ -119,7 +119,12 @@ public sealed class TelegramTests
         await TelegramTestData.BindAsync(db, user, clock);
         var links = new TelegramLinkService(db, TelegramTestData.Options, clock);
         var guard = new TelegramGuardService(db, links, TelegramTestData.Identity(db), TelegramTestData.Options, clock);
-        var start = await guard.CreateAsync("Test browser", "127.0.0.1", default);
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => guard.CreateAsync("Unbound", null, default));
+        var login = AuthenticationChallenge.Create(user.Id, AuthenticationChallengePurpose.Login, DateTimeOffset.UtcNow.AddMinutes(5));
+        db.AuthenticationChallenges.Add(login);
+        await db.SaveChangesAsync();
+        clock.Now = DateTimeOffset.UtcNow;
+        var start = await guard.CreateAsync("Test browser", "127.0.0.1", default, login.Id);
         Assert.DoesNotContain(start.BrowserSecret, start.QrPayload);
         Assert.StartsWith("data:image/png;base64,", start.QrCodeDataUrl);
         Assert.Equal("waiting", (await guard.StatusAsync(start.Id, start.BrowserSecret, default)).Status);
@@ -163,7 +168,11 @@ public sealed class TelegramTests
         await TelegramTestData.BindAsync(db, user, clock);
         var links = new TelegramLinkService(db, TelegramTestData.Options, clock);
         var guard = new TelegramGuardService(db, links, TelegramTestData.Identity(db), TelegramTestData.Options, clock);
-        var start = await guard.CreateAsync("Test", null, default);
+        var login = AuthenticationChallenge.Create(user.Id, AuthenticationChallengePurpose.Login, DateTimeOffset.UtcNow.AddMinutes(5));
+        db.AuthenticationChallenges.Add(login);
+        await db.SaveChangesAsync();
+        clock.Now = DateTimeOffset.UtcNow;
+        var start = await guard.CreateAsync("Test", null, default, login.Id);
         await guard.ApproveAsync(start.QrPayload, user.Id, 12345, default);
 
         if (change == "expired")
