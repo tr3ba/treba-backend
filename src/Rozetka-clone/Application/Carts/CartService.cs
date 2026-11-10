@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Application.Abstractions;
@@ -33,7 +33,7 @@ namespace Application.Carts
 
             if (cart is null)
             {
-                return new CartDto
+            return new CartDto
                 {
                     UserId = userId
                 };
@@ -281,6 +281,15 @@ namespace Application.Carts
                 }
             ).ToListAsync(cancellationToken);
 
+            var imageUrls = await Application.ProductImages.ProductImageUrls.PrimaryAsync(_dbContext, items.Select(i => i.ProductId), cancellationToken);
+            items = items.Select(item => new CartItemDto
+            {
+                Id = item.Id, ProductVariantId = item.ProductVariantId, ProductId = item.ProductId,
+                ProductName = item.ProductName, VariantName = item.VariantName,
+                ImageUrl = imageUrls.GetValueOrDefault(item.ProductId), Price = item.Price,
+                OldPrice = item.OldPrice, Quantity = item.Quantity, TotalPrice = item.TotalPrice,
+                IsAvailable = item.IsAvailable
+            }).ToList();
             return new CartDto
             {
                 Id = cart.Id,

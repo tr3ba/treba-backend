@@ -15,6 +15,20 @@ public sealed class GenericProductParser
 {
     public MarketplaceProductData Parse(Uri source, string html)
     {
+        var cleaned = new Dictionary<(string, int), string>();
+        long parsedCharacters = 0;
+        string Clean(string? value, int max)
+        {
+            value ??= "";
+            parsedCharacters += value.Length;
+            if (value.Length > 256 * 1024 || parsedCharacters > 8 * 1024 * 1024)
+                throw new BusinessRuleException("Сторінка містить забагато даних для імпорту.");
+            if (cleaned.TryGetValue((value, max), out var cached))
+                return cached;
+            var result = MarketplaceProductParser.Clean(value, max);
+            cleaned[(value, max)] = result;
+            return result;
+        }
         using var document = new HtmlParser().ParseDocument(html);
         var pageHasChallenge = document.QuerySelector("#challenge-running, #challenge-form, script[src*='challenge-platform'], iframe[src*='captcha']") is not null;
         var pageIsBrowserVerification = document.Title?.Contains("Just a moment", StringComparison.OrdinalIgnoreCase) == true;

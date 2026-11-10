@@ -26,6 +26,7 @@ public sealed class ProductMediaStorage(IOptions<ProductMediaOptions> options, I
         if (bytes.Length is <= 0 or > MaxImageBytes)
             throw new ArgumentException("Invalid photo size.");
 
+        bytes = SafeImage.Normalize(bytes, Path.GetExtension(fileName));
         if (_options.Provider == "Local")
         {
             var path = LocalPath(productId, fileName);
@@ -80,6 +81,7 @@ public sealed class ProductMediaStorage(IOptions<ProductMediaOptions> options, I
             }
             finally { File.Delete(temporary); }
         }
+        bytes = SafeImage.Normalize(bytes, Path.GetExtension(fileName));
         var media = new ProductMediaFile(bytes, ContentType(fileName));
         _cache.Set(key, media, new MemoryCacheEntryOptions().SetSize(bytes.Length).SetAbsoluteExpiration(TimeSpan.FromMinutes(30)));
         return media;

@@ -1,4 +1,4 @@
-﻿using Application.Abstractions;
+using Application.Abstractions;
 using Application.Delivery;
 using Application.Payments;
 using Infrastructure.Authentication;
@@ -107,6 +107,7 @@ namespace Infrastructure
             services.AddScoped<ISecondFactorService, SecondFactorService>();
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<AdminEntryService>();
+            services.AddScoped<AccountChangeService>();
 
             // MockPaymentProvider is ONLY for Development environment.
             // In Production/Staging, a real payment provider implementation must be registered instead.

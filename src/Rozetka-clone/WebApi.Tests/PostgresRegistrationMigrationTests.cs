@@ -50,7 +50,8 @@ public sealed class PostgresRegistrationMigrationTests
             await migrator.MigrateAsync(target);
             Assert.Equal(target, (await db.Database.GetAppliedMigrationsAsync()).Last());
 
-            var existing = await db.AuthenticationChallenges.AsNoTracking().SingleAsync();
+            var existing = await db.AuthenticationChallenges.AsNoTracking()
+                .Select(c => new { c.UserId, c.Purpose, c.CodeHash, c.FailedAttempts, c.ConsumedAt, c.DeliveryAddress }).SingleAsync();
             Assert.Equal(AuthenticationChallengePurpose.Login, existing.Purpose);
             Assert.Equal("preserved-code-hash", existing.CodeHash);
             Assert.Equal(2, existing.FailedAttempts);
@@ -67,13 +68,18 @@ public sealed class PostgresRegistrationMigrationTests
                 Assert.Contains("\"DeliveryAddress\", \"LastCodeSentAt\"", definition);
             }
 
-            var now = DateTimeOffset.UtcNow;
-            var registration = AuthenticationChallenge.Create(existing.UserId, AuthenticationChallengePurpose.RegistrationSms, now.AddMinutes(5));
-            registration.SetDeliveryAddress("380671234567");
-            registration.SetCode("fixture-registration-hash", registration.ExpiresAt, now);
-            db.AuthenticationChallenges.Add(registration);
-            await db.SaveChangesAsync();
-            Assert.Equal("380671234567", (await db.AuthenticationChallenges.AsNoTracking().SingleAsync(x => x.Id == registration.Id)).DeliveryAddress);
+            var registrationId = Guid.NewGuid();
+            await using var insertRegistration = new NpgsqlCommand("""
+                INSERT INTO authentication_challenges ("Id", "UserId", "Purpose", "CodeHash", "ExpiresAt", "CreatedAt",
+                    "LastCodeSentAt", "ConsumedAt", "FailedAttempts", "DeliveryAddress")
+                VALUES (@id, @user, 'RegistrationSms', 'fixture-registration-hash', now() + interval '5 minutes', now(),
+                    now(), NULL, 0, '380671234567')
+                """, sql);
+            insertRegistration.Parameters.AddWithValue("id", registrationId);
+            insertRegistration.Parameters.AddWithValue("user", existing.UserId);
+            await insertRegistration.ExecuteNonQueryAsync();
+            Assert.Equal("380671234567", await db.AuthenticationChallenges.Where(c => c.Id == registrationId)
+                .Select(c => c.DeliveryAddress).SingleAsync());
         }
         finally
         {

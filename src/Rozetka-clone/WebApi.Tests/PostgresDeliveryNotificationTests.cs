@@ -284,7 +284,7 @@ public sealed class PostgresDeliveryNotificationTests
                 Assert.True(StringComparer.Ordinal.Compare(migration, shipmentMigration) > 0));
 
             Assert.Empty(await db.CustomerNotifications.ToListAsync());
-            Assert.Empty(await db.DeliveryQuotes.ToListAsync());
+            Assert.Empty(await db.DeliveryQuotes.Select(q => q.Id).ToListAsync());
             var shipments = await db.OrderShipments.AsNoTracking().OrderBy(s => s.OrderId).ToListAsync();
 
             Assert.Null(shipments[0].Reference);

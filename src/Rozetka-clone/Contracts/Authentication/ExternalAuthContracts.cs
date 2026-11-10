@@ -4,7 +4,9 @@ namespace Contracts.Authentication;
 
 public sealed record ExternalLoginRequest(
     [Required] string Provider,
-    [Required] string AccessToken
+    [Required] string AccessToken,
+    Guid? ConfirmationChallengeId = null,
+    string? ConfirmationCode = null
 );
 
 public sealed record ExternalLoginResponse(

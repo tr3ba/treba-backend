@@ -89,7 +89,19 @@ public sealed class SellerImportQueue(ApplicationDbContext db, SellerCategoryAcc
     public async Task RetryAsync(Guid userId, Guid id, CancellationToken ct, Guid? categoryId = null, bool resetCategory = false)
     {
         await RequireSeller(userId, ct);
+        await using var transaction = db.Database.IsRelational() ? await db.Database.BeginTransactionAsync(ct) : null;
+        if (db.Database.IsNpgsql())
+        {
+            var lockKey = BitConverter.ToInt64(SHA256.HashData(userId.ToByteArray()), 0);
+            await db.Database.ExecuteSqlRawAsync("SELECT pg_advisory_xact_lock({0})", [lockKey], ct);
+        }
         var job = await db.SellerImportJobs.SingleOrDefaultAsync(j => j.Id == id && j.UserId == userId, ct) ?? throw new KeyNotFoundException();
+        var now = clock.GetUtcNow();
+        if (await db.SellerImportJobs.CountAsync(j => j.UserId == userId
+            && (j.Status == "Queued" || j.Status == "Processing"
+                || j.Status == "Ready" && db.ProductImportDrafts.Any(d => d.Id == j.PreviewId
+                    && d.SubmittedAt == null && d.ExpiresAt > now)), ct) >= 50)
+            throw new BusinessRuleException("Завершіть поточні імпорти: одночасно доступно до 50 посилань.");
 
         var expired = job.PreviewId.HasValue && await db.ProductImportDrafts.AnyAsync(d => d.Id == job.PreviewId && d.SubmittedAt == null && d.ExpiresAt <= clock.GetUtcNow(), ct);
         var isFailed = job.Status == "Failed";
@@ -115,6 +127,8 @@ public sealed class SellerImportQueue(ApplicationDbContext db, SellerCategoryAcc
         job.UpdatedAt = clock.GetUtcNow();
         job.Version = Guid.NewGuid();
         await db.SaveChangesAsync(ct);
+        if (transaction is not null)
+            await transaction.CommitAsync(ct);
     }
 
     private async Task RequireSeller(Guid id, CancellationToken ct)

@@ -51,7 +51,16 @@ public sealed class SellerWorkspaceRunner(ApplicationDbContext db, ProductImport
     public async Task<bool> ImportOneAsync(CancellationToken ct)
     {
         var now = clock.GetUtcNow();
-        var job = await db.SellerImportJobs.Where(j => j.Status == "Queued" || j.Status == "Processing" && j.LeaseUntil < now).OrderBy(j => j.CreatedAt).FirstOrDefaultAsync(ct);
+        await using var claim = db.Database.IsRelational() ? await db.Database.BeginTransactionAsync(ct) : null;
+        if (db.Database.IsNpgsql())
+            await db.Database.ExecuteSqlRawAsync("SELECT pg_advisory_xact_lock(752319401)", ct);
+        var job = await db.SellerImportJobs
+            .Where(j => (j.Status == "Queued" || j.Status == "Processing" && j.LeaseUntil < now)
+                && !db.SellerImportJobs.Any(active => active.UserId == j.UserId
+                    && active.Status == "Processing" && active.LeaseUntil >= now))
+            .OrderBy(j => db.SellerImportJobs.Where(previous => previous.UserId == j.UserId && previous.UpdatedAt > previous.CreatedAt)
+                .Select(previous => (DateTimeOffset?)previous.UpdatedAt).Max() ?? DateTimeOffset.UnixEpoch)
+            .ThenBy(j => j.CreatedAt).ThenBy(j => j.Id).FirstOrDefaultAsync(ct);
 
         if (job is null)
             return false;
@@ -65,6 +74,11 @@ public sealed class SellerWorkspaceRunner(ApplicationDbContext db, ProductImport
             await db.SaveChangesAsync(ct);
         }
         catch (DbUpdateConcurrencyException) { return false; }
+        if (claim is not null)
+        {
+            await claim.CommitAsync(ct);
+            await claim.DisposeAsync();
+        }
         var leaseVersion = job.Version;
         try
         {

@@ -20,13 +20,15 @@ public sealed class IdentityService : IIdentityService
     private readonly IConfiguration _configuration;
 
     private readonly HttpClient _httpClient;
+    private readonly AccountChangeService? _accountChanges;
 
     public IdentityService(
         IApplicationDbContext context,
         ITokenService tokenService,
         ISecondFactorService secondFactorService,
         IConfiguration configuration,
-        HttpClient httpClient
+        HttpClient httpClient,
+        AccountChangeService? accountChanges = null
     )
     {
         _context = context;
@@ -34,6 +36,7 @@ public sealed class IdentityService : IIdentityService
         _secondFactorService = secondFactorService;
         _configuration = configuration;
         _httpClient = httpClient;
+        _accountChanges = accountChanges;
     }
 
     public async Task<LoginResponse> LoginAsync(
@@ -493,25 +496,7 @@ public sealed class IdentityService : IIdentityService
             .FirstOrDefaultAsync(u => u.Email == emailNormalized, cancellationToken);
 
         if (userByEmail is not null)
-        {
-            if (userByEmail.Status != UserStatus.Active)
-                throw new UnauthorizedAccessException("Обліковий запис заблоковано або видалено.");
-
-            if (userByEmail.ExternalLogins.Any(el => el.Provider == provider))
-                throw new UnauthorizedAccessException("Для цього облікового запису вже підключено інший профіль провайдера.");
-
-            _context.UserExternalLogins.Add(userByEmail.AddExternalLogin(provider, providerUserId));
-            await _context.SaveChangesAsync(cancellationToken);
-
-            var challenge = await _secondFactorService.CreateLoginChallengeAsync(userByEmail, cancellationToken);
-
-            if (challenge is not null)
-            {
-                return new LoginResponse(null, challenge);
-            }
-
-            return new LoginResponse(await IssueLoginTokensAsync(userByEmail, cancellationToken), null);
-        }
+            throw new UnauthorizedAccessException("Sign in to the existing account and explicitly confirm linking this provider.");
 
         var customerRole = await _context.Roles.FirstOrDefaultAsync(r => r.Name == Roles.Customer, cancellationToken)
             ?? throw new InvalidOperationException("Роль Customer не знайдено.");
@@ -550,7 +535,8 @@ public sealed class IdentityService : IIdentityService
         Guid userId,
         string provider,
         string accessToken,
-        CancellationToken cancellationToken = default
+        CancellationToken cancellationToken = default,
+        Guid? confirmationId = null, string? confirmationCode = null
     )
     {
         provider = provider.Trim().ToLowerInvariant();
@@ -578,6 +564,9 @@ public sealed class IdentityService : IIdentityService
             throw new InvalidOperationException("Цей обліковий запис вже пов'язаний з іншим користувачем.");
         }
 
+        if (_accountChanges is null || confirmationId is null || confirmationCode is null)
+            throw new UnauthorizedAccessException("Confirm linking from the current account first.");
+        await _accountChanges.ConfirmAsync(userId, confirmationId.Value, confirmationCode, null, false, provider, cancellationToken);
         _context.UserExternalLogins.Add(user.AddExternalLogin(provider, providerUserId));
         await _context.SaveChangesAsync(cancellationToken);
         return true;

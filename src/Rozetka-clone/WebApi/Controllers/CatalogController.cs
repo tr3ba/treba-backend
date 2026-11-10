@@ -17,8 +17,21 @@ public sealed class CatalogController(
     CatalogService catalog,
     IApplicationDbContext db,
     Microsoft.Extensions.Options.IOptions<WebApi.Telegram.TelegramOptions> telegram
-) : ControllerBase
+) : ControllerBase, Microsoft.AspNetCore.Mvc.Filters.IAsyncActionFilter
 {
+    [NonAction]
+    public async Task OnActionExecutionAsync(Microsoft.AspNetCore.Mvc.Filters.ActionExecutingContext context,
+        Microsoft.AspNetCore.Mvc.Filters.ActionExecutionDelegate next)
+    {
+        if (!HttpMethods.IsGet(Request.Method) && SellerUserScope() is { } sellerId
+            && !await db.Sellers.AnyAsync(s => s.UserId == sellerId && s.Status == Domain.Enums.SellerStatus.ACTIVE, HttpContext.RequestAborted))
+        {
+            context.Result = NotFound();
+            return;
+        }
+        await next();
+    }
+
     [HttpGet("duplicates")]
     public Task<IReadOnlyList<Contracts.Telegram.ProductDuplicateDto>> Duplicates(Guid brandId, string? manufacturerPartNumber, string? barcode, Guid? excludeId,
 

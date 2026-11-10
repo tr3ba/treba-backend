@@ -20,6 +20,9 @@ public sealed class TelegramGuardService(ApplicationDbContext db, TelegramLinkSe
         if (!options.Value.Configured)
             throw new BusinessRuleException("Telegram Guard ще не підключено.");
 
+        if (loginChallengeId is null)
+            throw new UnauthorizedAccessException("Спочатку підтвердьте пароль або соціальний вхід цього облікового запису.");
+
         if (loginChallengeId is { } loginId)
         {
             var login = await db.AuthenticationChallenges.SingleOrDefaultAsync(c => c.Id == loginId, ct);
@@ -144,7 +147,7 @@ public sealed class TelegramGuardService(ApplicationDbContext db, TelegramLinkSe
     private async Task CheckLoginOwner(TelegramGuardChallenge guard, Guid userId, CancellationToken ct)
     {
         if (guard.LoginChallengeId is not { } loginId)
-            return;
+            throw new UnauthorizedAccessException("Спочатку підтвердьте пароль або соціальний вхід цього облікового запису.");
 
         var login = await db.AuthenticationChallenges.SingleOrDefaultAsync(c => c.Id == loginId, ct);
 

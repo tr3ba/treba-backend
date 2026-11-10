@@ -1,5 +1,6 @@
 using Application.Abstractions;
 using Application.Common;
+using Application.Catalog;
 using Domain.Entities.Inventory;
 using Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +12,8 @@ public sealed class InventoryService(IApplicationDbContext db, ICurrentActor act
 {
     public async Task<InventoryDto?> GetInventoryAsync(Guid variantId, CancellationToken ct = default)
     {
-        var variant = await db.ProductVariants.AsNoTracking().SingleOrDefaultAsync(v => v.Id == variantId, ct);
+        var variant = await db.ProductVariants.AsNoTracking().SingleOrDefaultAsync(v => v.Id == variantId && v.IsActive
+                && db.Products.PubliclyVisible(db).Any(p => p.Id == v.ProductId), ct);
 
         if (variant is null)
             return null;
@@ -33,7 +35,8 @@ public sealed class InventoryService(IApplicationDbContext db, ICurrentActor act
     public Task<bool> IsAvailableAsync(Guid variantId, int quantity, CancellationToken ct = default) =>
         quantity <= 0
             ? Task.FromResult(false)
-            : db.ProductVariants.AnyAsync(v => v.Id == variantId && v.IsActive && v.StockQuantity >= quantity, ct);
+            : db.ProductVariants.AnyAsync(v => v.Id == variantId && v.IsActive && v.StockQuantity >= quantity
+                && db.Products.PubliclyVisible(db).Any(p => p.Id == v.ProductId), ct);
 
     public Task IncreaseStockAsync(Guid variantId, Guid warehouseId, int quantity, CancellationToken ct = default) =>
         Adjust(variantId, warehouseId, quantity, true, ct);

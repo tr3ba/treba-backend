@@ -177,6 +177,10 @@ builder.Services.AddHostedService<PromotionActivationWorker>();
 
 builder.Services.AddAuthorization();
 
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<WebApi.Media.ProductMediaUrls>();
+builder.Services.AddScoped<Application.Abstractions.IProductMediaUrls>(sp => sp.GetRequiredService<WebApi.Media.ProductMediaUrls>());
+
 var app = builder.Build();
 
 app.UseExceptionHandler();
@@ -228,7 +232,9 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseDefaultFiles();
-app.UseStaticFiles();
+app.UseWhen(context => !context.Request.Path.StartsWithSegments("/uploads/products")
+    && !context.Request.Path.StartsWithSegments("/uploads/avatars"),
+    staticFiles => staticFiles.UseStaticFiles());
 app.UseCors("Frontend");
 app.UseAuthentication();
 app.UseAuthorization();

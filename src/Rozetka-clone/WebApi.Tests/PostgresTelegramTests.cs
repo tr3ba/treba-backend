@@ -247,7 +247,11 @@ public sealed class PostgresTelegramTests
                     TelegramTestData.Options,
                     clock
                 );
-                var start = await guard.CreateAsync("PostgreSQL test", null, default);
+                var login = Domain.Entities.Users.AuthenticationChallenge.Create(seed.User.Id, Domain.Entities.Users.AuthenticationChallengePurpose.Login, DateTimeOffset.UtcNow.AddMinutes(5));
+                db.AuthenticationChallenges.Add(login);
+                await db.SaveChangesAsync();
+                clock.Now = DateTimeOffset.UtcNow;
+                var start = await guard.CreateAsync("PostgreSQL test", null, default, login.Id);
                 await guard.ApproveAsync(start.QrPayload, seed.User.Id, 12345, default);
                 challengeId = start.Id;
                 browserSecret = start.BrowserSecret;
@@ -271,7 +275,7 @@ public sealed class PostgresTelegramTests
                     TelegramTestData.Options,
                     clock
                 );
-                await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() =>
+                await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
                     staleGuard.CompleteAsync(challengeId, browserSecret, default)
                 );
             }

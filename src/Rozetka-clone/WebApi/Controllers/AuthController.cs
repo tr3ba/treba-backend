@@ -194,7 +194,7 @@ public sealed class AuthController : ControllerBase
                 userId,
                 request.Provider,
                 request.AccessToken,
-                cancellationToken
+                cancellationToken, request.ConfirmationChallengeId, request.ConfirmationCode
             );
 
             return Ok(new

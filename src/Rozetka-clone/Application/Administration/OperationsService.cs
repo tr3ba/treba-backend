@@ -75,7 +75,7 @@ public sealed class OperationsService(IApplicationDbContext db)
             !user.IsDeleted
             && (db.Orders.Any(order => order.CustomerId == user.Id)
                 || db.Reviews.Any(review => review.UserId == user.Id)
-                || db.SupportTickets.Any(ticket => ticket.CustomerId == user.Id)));
+                || db.SupportTickets.IgnoreQueryFilters().Any(ticket => ticket.CustomerId == user.Id)));
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -146,7 +146,10 @@ public sealed class OperationsService(IApplicationDbContext db)
     public async Task<CustomerDetails?> CustomerAsync(Guid id, CancellationToken ct)
     {
         var user = await db.Users.AsNoTracking()
-            .SingleOrDefaultAsync(customer => customer.Id == id && !customer.IsDeleted, ct);
+            .SingleOrDefaultAsync(customer => customer.Id == id && !customer.IsDeleted
+                && (db.Orders.Any(o => o.CustomerId == customer.Id)
+                    || db.Reviews.Any(r => r.UserId == customer.Id)
+                    || db.SupportTickets.IgnoreQueryFilters().Any(t => t.CustomerId == customer.Id)), ct);
 
         if (user is null)
             return null;

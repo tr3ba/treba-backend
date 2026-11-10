@@ -56,6 +56,7 @@ public sealed class PasswordResetService(
             RequestMessage);
 
         var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+        await using var reservation = await SecurityOperationLock.AcquireAsync(db, "password-reset-codes", ct);
         var user = await db.Users.SingleOrDefaultAsync(item => item.Email == normalizedEmail, ct);
         var isSms = request.VerificationMethod == "sms";
 
@@ -77,9 +78,7 @@ public sealed class PasswordResetService(
         var destination = isSms ? user.Phone! : user.Email;
         var recentChallenges = db.AuthenticationChallenges.Where(challenge =>
             (challenge.UserId == user.Id || challenge.DeliveryAddress == destination)
-            && (challenge.Purpose == AuthenticationChallengePurpose.RegistrationEmail
-                || challenge.Purpose == AuthenticationChallengePurpose.RegistrationSms
-                || challenge.Purpose == AuthenticationChallengePurpose.PasswordResetEmail
+            && (challenge.Purpose == AuthenticationChallengePurpose.PasswordResetEmail
                 || challenge.Purpose == AuthenticationChallengePurpose.PasswordResetSms)
             && challenge.LastCodeSentAt > now.AddHours(-1));
 
@@ -117,6 +116,7 @@ public sealed class PasswordResetService(
         challenge.SetCode(Hash(challenge.Id, user.PasswordHash, code), expiresAt, now);
         db.AuthenticationChallenges.Add(challenge);
         await db.SaveChangesAsync(ct);
+        await reservation.CommitAsync(ct);
 
         try
         {

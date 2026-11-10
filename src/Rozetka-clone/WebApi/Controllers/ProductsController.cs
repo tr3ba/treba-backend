@@ -198,6 +198,7 @@ namespace WebApi.Controllers
                                 seller =>
                                     seller.Id == store.SellerId
                                     && seller.UserId == userId
+                                    && seller.Status == Domain.Enums.SellerStatus.ACTIVE
                             )
                     ),
                 ct
