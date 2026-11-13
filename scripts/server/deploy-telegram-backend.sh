@@ -12,6 +12,17 @@ test -f "$env_file"
 test -d /opt/treba-backend/uploads
 test -f "$caddy_file"
 docker container inspect treba-backend >/dev/null
+# First migrate the running topology with migrate-private-routing.py.
+# Rollback must also be private: never restart a legacy public-port container.
+docker inspect treba-backend | python3 -c '
+import json, sys
+item = json.load(sys.stdin)[0]
+if any((item["HostConfig"].get("PortBindings") or {}).values()):
+    raise SystemExit("Run the coordinated private-routing migration before this deployment.")
+if "treba-app" not in item["NetworkSettings"]["Networks"]:
+    raise SystemExit("The current backend is missing its reviewed private network.")
+'
+[[ "$(docker network inspect --format '{{.Driver}} {{.Internal}}' treba-app)" == 'bridge false' ]] || exit 1
 docker container inspect treba-caddy >/dev/null
 mounted_caddy=$(docker inspect --format '{{range .Mounts}}{{if eq .Destination "/etc/caddy/Caddyfile"}}{{.Source}}{{end}}{{end}}' treba-caddy)
 [[ "$mounted_caddy" == "$caddy_file" ]] || { echo 'Unexpected Caddy configuration mount'; exit 1; }
@@ -135,10 +146,12 @@ docker rename treba-backend "$previous"
 switched=1
 docker run -d --name treba-backend --restart unless-stopped --env-file "$env_file" \
     -e ApplyMigrations=false --label "org.opencontainers.image.revision=$revision" \
-    -p 5000:5000 -v /opt/treba-backend/uploads:/app/wwwroot/uploads "$image" >/dev/null
-wait_for_api http://127.0.0.1:5000
-verify_mini_app http://127.0.0.1:5000
-verify_operations http://127.0.0.1:5000
+    --network treba-app -v /opt/treba-backend/uploads:/app/wwwroot/uploads "$image" >/dev/null
+private_address=$(docker inspect --format '{{(index .NetworkSettings.Networks "treba-app").IPAddress}}' treba-backend)
+[[ -n "$private_address" ]]
+wait_for_api "http://$private_address:5000"
+verify_mini_app "http://$private_address:5000"
+verify_operations "http://$private_address:5000"
 
 cp -p "$caddy_file" "$caddy_backup"
 proxy_changed=1
