@@ -19,12 +19,15 @@ public sealed class PostgresChatDeletionTests
         public override void Customize(ModelBuilder builder, DbContext context)
         {
             base.Customize(builder, context);
+
             foreach (var entity in builder.Model.GetEntityTypes())
                 if (entity.GetTableName() is { } table)
                 {
                     entity.SetTableName(Prefix + table);
                     entity.SetSchema("public");
                 }
+
+            PostgresTestTables.RenameIndexes(builder, Prefix);
         }
     }
 

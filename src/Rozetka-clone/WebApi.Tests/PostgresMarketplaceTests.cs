@@ -22,6 +22,8 @@ public sealed class PostgresMarketplaceTests
                     entity.SetTableName(Prefix + table);
                     entity.SetSchema("public");
                 }
+
+            PostgresTestTables.RenameIndexes(builder, Prefix);
         }
     }
 

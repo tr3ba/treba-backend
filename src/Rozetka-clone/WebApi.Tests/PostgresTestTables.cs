@@ -26,7 +26,14 @@ internal static class PostgresTestTables
 
         foreach (var index in operations.OfType<CreateIndexOperation>())
         {
-            index.Name = $"{prefix}{index.Name}";
+            var originalName = index.Name;
+            var hash = Convert.ToHexString(
+                System.Security.Cryptography.SHA256.HashData(
+                    System.Text.Encoding.UTF8.GetBytes($"{prefix}:{index.Table}:{originalName}")
+                )
+            )[..16];
+
+            index.Name = $"qa_{hash}";
         }
         var tables = operations.OfType<CreateTableOperation>().ToArray();
         Assert.NotEmpty(tables);
@@ -36,6 +43,30 @@ internal static class PostgresTestTables
         {
             await using var command = new NpgsqlCommand(statement.CommandText, connection);
             await command.ExecuteNonQueryAsync();
+        }
+    }
+
+    internal static void RenameIndexes(ModelBuilder builder, string prefix)
+    {
+        Assert.StartsWith("treba_qa_", prefix);
+
+        foreach (var entity in builder.Model.GetEntityTypes())
+        {
+            foreach (var index in entity.GetIndexes())
+            {
+                var originalName = index.GetDatabaseName();
+                var tableName = entity.GetTableName();
+
+                var hash = Convert.ToHexString(
+                    System.Security.Cryptography.SHA256.HashData(
+                        System.Text.Encoding.UTF8.GetBytes(
+                            $"{prefix}:{tableName}:{originalName}"
+                        )
+                    )
+                )[..16];
+
+                index.SetDatabaseName($"qa_{hash}");
+            }
         }
     }
 }
