@@ -52,6 +52,15 @@ public sealed class StandaloneSecurityTests
         var controller = new WebApi.Controllers.ProductMediaController(media, db, new OperationsTests.Actor(null), null!, urls)
         { ControllerContext = new Microsoft.AspNetCore.Mvc.ControllerContext { HttpContext = new DefaultHttpContext() } };
         var name = Guid.NewGuid().ToString("N") + ".png";
+        db.ProductImages.Add(new ProductImage
+        {
+            Id = Guid.NewGuid(),
+            ProductId = seed.Product.Id,
+            ImageUrl = $"/uploads/products/{seed.Product.Id:N}/{name}",
+            SortOrder = 0,
+            IsMain = true
+        });
+        await db.SaveChangesAsync();
         Assert.IsType<Microsoft.AspNetCore.Mvc.FileContentResult>(await controller.Get(seed.Product.Id, name, default));
         seed.Product.Status = ProductStatus.DRAFT;
         await db.SaveChangesAsync();

@@ -43,10 +43,16 @@ public sealed class DeploymentMigrationTests
         var migrations = db
             .Database.GetMigrations()
             .SkipWhile(m => m != "20261019213326_AddReviewOrderItemRelation")
+            .TakeWhile(m => m != "20261113175717_AddProductImageModeration")
             .ToArray();
         Assert.NotEmpty(migrations);
         Assert.Contains(AdminOperationsDeployment.Migration, migrations);
         AdminOperationsDeployment.ValidatePendingMigrations(migrations);
+        Assert.Throws<InvalidOperationException>(() =>
+            AdminOperationsDeployment.ValidatePendingMigrations([
+                "20261113175717_AddProductImageModeration"
+            ])
+        );
         AdminOperationsDeployment.ValidatePendingMigrations([]);
         Assert.Throws<InvalidOperationException>(() =>
             AdminOperationsDeployment.ValidatePendingMigrations([

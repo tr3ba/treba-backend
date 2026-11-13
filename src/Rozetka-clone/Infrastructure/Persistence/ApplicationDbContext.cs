@@ -108,6 +108,8 @@ namespace Infrastructure.Persistence
 
         public DbSet<ProductImage> ProductImages => Set<ProductImage>();
 
+        public DbSet<ProductImageChange> ProductImageChanges => Set<ProductImageChange>();
+
         public DbSet<ProductTag> ProductTags => Set<ProductTag>();
 
         public DbSet<Category> Categories => Set<Category>();

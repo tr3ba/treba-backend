@@ -85,43 +85,102 @@ namespace WebApi.Controllers
             return Ok(image);
         }
 
+
+        [HttpGet("changes")]
+        public async Task<ActionResult<IReadOnlyList<ProductImageChangeDto>>> GetChanges(
+            Guid productId,
+            CancellationToken cancellationToken
+        )
+        {
+            if (!await CanReadProductAsync(productId, cancellationToken))
+            {
+                return NotFound();
+            }
+
+            var changes = await _productImageService.GetChangesAsync(
+                productId,
+                cancellationToken
+            );
+
+            return Ok(changes);
+        }
+
+
+        [HttpPost("changes/{changeId:guid}/reject")]
+        [Authorize(Roles = $"{Roles.Administrator},{Roles.Manager},{Roles.Moderator}")]
+        public async Task<ActionResult<ProductImageChangeDto>> RejectChange(
+            Guid productId,
+            Guid changeId,
+            [FromBody] RejectProductImageChangeRequest request,
+            CancellationToken cancellationToken
+        )
+        {
+            var change = await _productImageService.RejectChangeAsync(
+                productId,
+                changeId,
+                request.Reason,
+                cancellationToken
+            );
+
+            if (change is null)
+            {
+                return NotFound();
+            }
+
+            return Ok(change);
+        }
+
+
+        [HttpPost("changes/{changeId:guid}/approve")]
+        [Authorize(Roles = $"{Roles.Administrator},{Roles.Manager},{Roles.Moderator}")]
+        public async Task<ActionResult<ProductImageChangeDto>> ApproveChange(
+            Guid productId,
+            Guid changeId,
+            CancellationToken cancellationToken
+        )
+        {
+            var change = await _productImageService.ApproveChangeAsync(
+                productId,
+                changeId,
+                cancellationToken
+            );
+
+            if (change is null)
+            {
+                return NotFound();
+            }
+
+            return Ok(change);
+        }
+
+
         [HttpPost]
         [Authorize(Roles = $"{Roles.Administrator},{Roles.Manager},{Roles.Seller}")]
-        public async Task<ActionResult<ProductImageDto>> Create(
+        public async Task<ActionResult<ProductImageChangeDto>> Create(
             Guid productId,
             [FromBody] CreateProductImageRequest request,
             CancellationToken cancellationToken
         )
         {
-            if (!await CanWriteProductAsync(
-                    productId,
-                    cancellationToken
-                ))
+            if (!await CanWriteProductAsync(productId, cancellationToken))
             {
                 return NotFound();
             }
 
-            var image = await _productImageService.CreateAsync(
+            var change = await _productImageService.SubmitCreateAsync(
                 productId,
                 request,
                 cancellationToken
             );
 
-            return CreatedAtAction(
-                nameof(GetById),
-                new
-                {
-                    productId,
-                    imageId = image.Id
-                },
-                image
-            );
+            return Accepted(change);
         }
+
 
         [HttpPost("upload")]
         [Authorize(Roles = $"{Roles.Administrator},{Roles.Manager},{Roles.Seller}")]
         [RequestSizeLimit(MaxImageBytes + 1024 * 1024)]
-        public async Task<ActionResult<ProductImageDto>> Upload(
+        public async Task<ActionResult<ProductImageChangeDto>> Upload(
             Guid productId,
             [FromForm] UploadProductImageRequest request,
             CancellationToken cancellationToken
@@ -171,7 +230,8 @@ namespace WebApi.Controllers
                 var imageUrl =
                     $"/uploads/products/{productId:N}/{fileName}";
 
-                var image = await _productImageService.CreateAsync(
+
+                var change = await _productImageService.SubmitCreateAsync(
                     productId,
                     new CreateProductImageRequest
                     {
@@ -180,23 +240,13 @@ namespace WebApi.Controllers
                             file.FileName
                         ),
                         IsMain = request.IsMain,
-                        SortOrder = Math.Max(
-                            0,
-                            request.SortOrder
-                        )
+                        SortOrder = Math.Max(0, request.SortOrder)
                     },
                     cancellationToken
                 );
 
-                return CreatedAtAction(
-                    nameof(GetById),
-                    new
-                    {
-                        productId,
-                        imageId = image.Id
-                    },
-                    image
-                );
+                return Accepted(change);
+
             }
             catch
             {
@@ -205,81 +255,61 @@ namespace WebApi.Controllers
             }
         }
 
+
         [HttpPatch("{imageId:guid}")]
         [Authorize(Roles = $"{Roles.Administrator},{Roles.Manager},{Roles.Seller}")]
-        public async Task<ActionResult<ProductImageDto>> Update(
+        public async Task<ActionResult<ProductImageChangeDto>> Update(
             Guid productId,
             Guid imageId,
             [FromBody] UpdateProductImageRequest request,
             CancellationToken cancellationToken
         )
         {
-            if (!await CanWriteProductAsync(
-                    productId,
-                    cancellationToken
-                ))
+            if (!await CanWriteProductAsync(productId, cancellationToken))
             {
                 return NotFound();
             }
 
-            var image = await _productImageService.UpdateAsync(
+            var change = await _productImageService.SubmitUpdateAsync(
                 productId,
                 imageId,
                 request,
                 cancellationToken
             );
 
-            if (image is null)
+            if (change is null)
             {
                 return NotFound();
             }
 
-            return Ok(image);
+            return Accepted(change);
         }
 
         [HttpDelete("{imageId:guid}")]
         [Authorize(Roles = $"{Roles.Administrator},{Roles.Manager},{Roles.Seller}")]
-        public async Task<IActionResult> Delete(
+        public async Task<ActionResult<ProductImageChangeDto>> Delete(
             Guid productId,
             Guid imageId,
             CancellationToken cancellationToken
         )
         {
-            if (!await CanWriteProductAsync(
-                    productId,
-                    cancellationToken
-                ))
+            if (!await CanWriteProductAsync(productId, cancellationToken))
             {
                 return NotFound();
             }
 
-            var image = await _productImageService.GetByIdAsync(
+            var change = await _productImageService.SubmitDeleteAsync(
                 productId,
                 imageId,
                 cancellationToken
             );
 
-            var deleted = await _productImageService.DeleteAsync(
-                productId,
-                imageId,
-                cancellationToken
-            );
-
-            if (!deleted)
+            if (change is null)
             {
                 return NotFound();
             }
 
-            if (image is not null)
-            {
-                await DeleteUploadedFile(
-                    productId,
-                    image.ImageUrl,
-                    cancellationToken
-                );
-            }
-
-            return NoContent();
+            return Accepted(change);
         }
 
         private Task<bool> CanReadProductAsync(
@@ -420,6 +450,15 @@ namespace WebApi.Controllers
             }
 
             return null;
+        }
+        
+    }
+
+    public sealed class RejectProductImageChangeRequest
+    {
+        public required string Reason
+        {
+            get; init;
         }
     }
 }
