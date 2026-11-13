@@ -177,6 +177,11 @@ namespace Application.Abstractions
             get;
         }
 
+        DbSet<ProductImageChange> ProductImageChanges
+        {
+            get;
+        }
+
         DbSet<ProductTag> ProductTags
         {
             get;

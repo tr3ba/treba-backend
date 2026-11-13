@@ -107,6 +107,58 @@ public sealed class AdminWorkspaceTests
     }
 
     [Fact]
+    public async Task Moderation_RejectsStaleContentRevision_AfterCustomerEdit()
+    {
+        await using var db = Database();
+        var (product, author) = await SeedAsync(db);
+        var review = Review(product, author, ReviewStatus.PENDING);
+
+        db.Reviews.Add(review);
+        await db.SaveChangesAsync();
+
+        var workspace = new AdminWorkspaceService(db);
+        var moderationQueue = await workspace.ReviewsAsync(
+            1, 12, "PENDING", null);
+
+        var expectedRevision = Assert.Single(moderationQueue.Content).ContentRevision;
+        Assert.Equal(1, expectedRevision);
+
+        var service = new ReviewService(db);
+
+        await service.UpdateReviewAsync(
+            review.Id,
+            author.Id,
+            new UpdateReviewRequest
+            {
+                Rating = 2,
+                Title = "Updated title",
+                Comment = "Updated review content"
+            });
+
+        Assert.Equal(2, review.ContentRevision);
+        Assert.Equal(ReviewStatus.PENDING, review.Status);
+
+        await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() =>
+            service.ModerateReviewAsync(
+                review.Id,
+                ReviewStatus.PUBLISHED,
+                expectedRevision));
+
+        Assert.Equal(ReviewStatus.PENDING, review.Status);
+        Assert.Equal("Updated review content", review.Comment);
+        Assert.Equal(0, product.ReviewCount);
+
+        await service.ModerateReviewAsync(
+            review.Id,
+            ReviewStatus.PUBLISHED,
+            review.ContentRevision);
+
+        Assert.Equal(ReviewStatus.PUBLISHED, review.Status);
+        Assert.Equal(1, product.ReviewCount);
+        Assert.Equal(2, product.AverageRating);
+    }
+
+    [Fact]
     public async Task Moderation_PublishesAndRejects_UpdatingOnlyPublishedRating()
     {
         await using var db = Database();
@@ -119,10 +171,10 @@ public sealed class AdminWorkspaceTests
         );
         await db.SaveChangesAsync();
         var service = new ReviewService(db);
-        await service.ModerateReviewAsync(pending.Id, ReviewStatus.PUBLISHED);
+        await service.ModerateReviewAsync(pending.Id, ReviewStatus.PUBLISHED, pending.ContentRevision);
         Assert.Equal(2, product.ReviewCount);
         Assert.Equal(4, product.AverageRating);
-        await service.ModerateReviewAsync(pending.Id, ReviewStatus.REJECTED);
+        await service.ModerateReviewAsync(pending.Id, ReviewStatus.REJECTED, pending.ContentRevision);
         Assert.Equal(1, product.ReviewCount);
         Assert.Equal(3, product.AverageRating);
         db.ChangeTracker.Clear();
@@ -138,7 +190,7 @@ public sealed class AdminWorkspaceTests
         var review = Review(product, author, ReviewStatus.PUBLISHED, 5);
         db.Reviews.Add(review);
         await db.SaveChangesAsync();
-        await new ReviewService(db).ModerateReviewAsync(review.Id, ReviewStatus.REJECTED);
+        await new ReviewService(db).ModerateReviewAsync(review.Id, ReviewStatus.REJECTED, review.ContentRevision);
         Assert.Equal(0, product.ReviewCount);
         Assert.Equal(0, product.AverageRating);
     }
@@ -153,11 +205,18 @@ public sealed class AdminWorkspaceTests
         await db.SaveChangesAsync();
         var service = new ReviewService(db);
         await Assert.ThrowsAsync<BusinessRuleException>(() =>
-            service.ModerateReviewAsync(review.Id, ReviewStatus.PUBLISHED)
+        service.ModerateReviewAsync(
+                review.Id, ReviewStatus.PUBLISHED, review.ContentRevision)
         );
-        await Assert.ThrowsAsync<ArgumentException>(() => service.ModerateReviewAsync(review.Id, ReviewStatus.PENDING));
+
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            service.ModerateReviewAsync(
+                review.Id, ReviewStatus.PENDING, review.ContentRevision)
+        );
+
         await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            service.ModerateReviewAsync(Guid.NewGuid(), ReviewStatus.PUBLISHED)
+            service.ModerateReviewAsync(
+                Guid.NewGuid(), ReviewStatus.PUBLISHED, review.ContentRevision)
         );
         Assert.Equal(ReviewStatus.DELETED, review.Status);
     }
@@ -229,6 +288,67 @@ public sealed class AdminWorkspaceTests
         db.ChangeTracker.Clear();
         Assert.Equal(SellerStatus.SUSPENDED, (await db.Sellers.SingleAsync()).Status);
         Assert.Null(await service.ApproveAsync(Guid.NewGuid()));
+    }
+
+    [Fact]
+    public async Task ActiveSeller_CannotChangeApprovedLegalDetails_ButCanUpdateContacts()
+    {
+        await using var db = Database();
+
+        var seller = new Seller
+        {
+            Id = Guid.NewGuid(),
+            CompanyName = "Approved Company",
+            TaxNumber = "1234567890",
+            Status = SellerStatus.ACTIVE,
+        };
+
+        db.Sellers.Add(seller);
+        await db.SaveChangesAsync();
+
+        var service = new SellerService(db);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.UpdateAsync(
+                seller.Id,
+                new UpdateSellerRequest { CompanyName = "Different Company" }
+            )
+        );
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.UpdateAsync(
+                seller.Id,
+                new UpdateSellerRequest { TaxNumber = "9876543210" }
+            )
+        );
+
+        var updated = await service.UpdateAsync(
+            seller.Id,
+            new UpdateSellerRequest
+            {
+                CompanyName = " Approved Company ",
+                TaxNumber = "1234567890",
+                Description = "Updated description",
+                Phone = "+380501234567",
+                Email = "seller@example.com",
+            }
+        );
+
+        Assert.NotNull(updated);
+        Assert.Equal("Approved Company", updated.CompanyName);
+        Assert.Equal("1234567890", updated.TaxNumber);
+        Assert.Equal("Updated description", updated.Description);
+        Assert.Equal("+380501234567", updated.Phone);
+        Assert.Equal("seller@example.com", updated.Email);
+        Assert.Equal(SellerStatus.ACTIVE, updated.Status);
+
+        db.ChangeTracker.Clear();
+
+        var persisted = await db.Sellers.SingleAsync(x => x.Id == seller.Id);
+
+        Assert.Equal("Approved Company", persisted.CompanyName);
+        Assert.Equal("1234567890", persisted.TaxNumber);
+        Assert.Equal(SellerStatus.ACTIVE, persisted.Status);
     }
 
     [Theory]

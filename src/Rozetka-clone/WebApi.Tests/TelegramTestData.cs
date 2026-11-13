@@ -43,17 +43,30 @@ internal static class TelegramTestData
     internal static ApplicationDbContext Memory() =>
         new(new DbContextOptionsBuilder<ApplicationDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
 
-    internal static async Task<User> UserAsync(ApplicationDbContext db, string roleName = Roles.Seller)
+    internal static async Task<User> UserAsync(
+        ApplicationDbContext db,
+        string roleName = Roles.Seller,
+        Guid? userId = null)
     {
-        var role = await db.Roles.SingleOrDefaultAsync(r => r.Name == roleName) ?? Role.Create(roleName, roleName);
+        var role = await db.Roles.SingleOrDefaultAsync(r => r.Name == roleName)
+            ?? Role.Create(roleName, roleName);
 
         if (db.Entry(role).State == EntityState.Detached)
             db.Roles.Add(role);
-        var user = User.Create(Guid.NewGuid(), Guid.NewGuid().ToString("N") + "@example.test", null, "Test", roleName);
+
+        var user = User.Create(
+            userId ?? Guid.NewGuid(),
+            Guid.NewGuid().ToString("N") + "@example.test",
+            null,
+            "Test",
+            roleName);
+
         user.AssignRole(role.Id);
         user.VerifyEmail();
+
         db.Users.Add(user);
         await db.SaveChangesAsync();
+
         return user;
     }
 

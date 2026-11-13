@@ -29,6 +29,15 @@ public sealed class ApiExceptionHandler(
             UnauthorizedAccessException => (401, exception.Message),
             DbUpdateException { InnerException: Npgsql.PostgresException { SqlState: "42P01" } }
                 or Npgsql.PostgresException { SqlState: "42P01" } => (503, "A database update is required before this operation."),
+
+            DbUpdateException
+            {
+                InnerException: Npgsql.PostgresException
+                {
+                    SqlState: Npgsql.PostgresErrorCodes.UniqueViolation,
+                    ConstraintName: "IX_product_image_changes_ImageId"
+                }
+            } => (409, "This image already has a pending moderation request."),
             DbUpdateException => (409, "Data conflicts with an existing record or references an unavailable entity."),
             IOException => (503, "Photo storage is unavailable. Check the connection and try again."),
             _ => (500, "An unexpected error occurred."),

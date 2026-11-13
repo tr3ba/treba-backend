@@ -15,7 +15,12 @@ namespace Infrastructure.Persistence.Configurations
 
             builder.HasKey(x => x.Id);
 
-            builder.HasIndex(x => x.OrderId);
+            builder.HasIndex(x => x.OrderId)
+                .IsUnique()
+                .HasDatabaseName("UX_shipments_OrderId_Active")
+                .HasFilter(
+                    "\"Status\" IN ('CREATING', 'CREATED', 'PREPARING', 'READY', 'SHIPPED', 'IN_TRANSIT')"
+                );
 
             builder.HasIndex(x => x.DeliveryMethodId);
 

@@ -30,10 +30,12 @@ public sealed class OperationsTests
 
     internal sealed record Seed(TelegramTestData.Seed Seller, User Customer, Product Product, ProductVariant Variant);
 
-    internal static async Task<Seed> SeedAsync(ApplicationDbContext db, string suffix = "")
+    internal static async Task<Seed> SeedAsync(ApplicationDbContext db, string suffix = "", Guid? customerId = null)
     {
         var seed = await TelegramTestData.SeedAsync(db);
-        var customer = await TelegramTestData.UserAsync(db, "Customer");
+        var customer = customerId is Guid id
+            ? await TelegramTestData.UserAsync(db, "Customer", id)
+            : await TelegramTestData.UserAsync(db, "Customer");
         var product = new Product
         {
             Id = Guid.NewGuid(),

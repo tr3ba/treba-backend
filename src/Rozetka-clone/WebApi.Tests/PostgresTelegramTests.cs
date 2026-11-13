@@ -117,6 +117,8 @@ public sealed class PostgresTelegramTests
                     entity.SetTableName(Prefix + table);
                     entity.SetSchema("public");
                 }
+
+            PostgresTestTables.RenameIndexes(builder, Prefix);
         }
     }
 

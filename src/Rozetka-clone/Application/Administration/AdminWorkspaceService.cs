@@ -60,7 +60,8 @@ public sealed class AdminWorkspaceService(IApplicationDbContext db)
             row.Review.UserId, $"{row.FirstName} {row.LastName}".Trim(), row.AuthorEmail,
             row.Review.Rating, row.Review.Title, row.Review.Comment, row.Review.Status.ToString(),
             row.Review.VerifiedPurchase, row.Review.CreatedAt, row.Review.UpdatedAt,
-            row.Review.StaffReply, row.Review.StaffRepliedAt)).ToList();
+            row.Review.StaffReply, row.Review.StaffRepliedAt,
+            row.Review.ContentRevision)).ToList();
 
         return new(content, page, size, total, (int)Math.Ceiling(total / (double)size));
     }

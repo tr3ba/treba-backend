@@ -17,14 +17,18 @@ namespace Application.Delivery
 
         private readonly ICurrentActor _currentActor;
 
+        private readonly IShipmentConflictDetector _shipmentConflictDetector;
+
         public DeliveryService(
             IApplicationDbContext context,
             IDeliveryProvider deliveryProvider,
-            ICurrentActor currentActor)
+            ICurrentActor currentActor,
+            IShipmentConflictDetector shipmentConflictDetector)
         {
             _context = context;
             _deliveryProvider = deliveryProvider;
             _currentActor = currentActor;
+            _shipmentConflictDetector = shipmentConflictDetector;
         }
 
         public async Task<List<DeliveryOptionDto>> CalculateOptionsAsync(
@@ -114,6 +118,35 @@ namespace Application.Delivery
                     $"Заказ с ID {orderId} не найден или недоступен текущему пользователю."
                 );
 
+            var existingShipment = await _context.Shipments
+                .AsNoTracking()
+                .FirstOrDefaultAsync(
+                    x => x.OrderId == orderId
+                        && x.Status != ShipmentStatus.FAILED
+                        && x.Status != ShipmentStatus.DELIVERED
+                        && x.Status != ShipmentStatus.RETURNED,
+                    cancellationToken
+                );
+
+            if (existingShipment is not null)
+            {
+                if (existingShipment.DeliveryMethodId != deliveryMethodId)
+                {
+                    throw new ShipmentConflictException(
+                        "Для заказа уже существует активное отправление с другим способом доставки."
+                    );
+                }
+
+                if (existingShipment.Status == ShipmentStatus.CREATING)
+                {
+                    throw new ShipmentConflictException(
+                        "Создание отправления уже выполняется."
+                    );
+                }
+
+                return MapToDto(existingShipment);
+            }
+
             if (order.Status != OrderStatus.READY_FOR_SHIPMENT)
             {
                 throw new InvalidOperationException(
@@ -155,20 +188,6 @@ namespace Application.Delivery
                 }.Where(x => !string.IsNullOrWhiteSpace(x))
             );
 
-            var totalQuantity = order.Items.Sum(x => x.Quantity);
-
-            var providerResponse = await _deliveryProvider.CreateShipmentAsync(
-                new CreateShipmentRequest(
-                    order.Id,
-                    deliveryMethod.Id,
-                    order.Address.City,
-                    address,
-                    order.TotalAmount,
-                    totalQuantity
-                ),
-                cancellationToken
-            );
-
             var providerName = _deliveryProvider
                 .GetType()
                 .Name
@@ -180,10 +199,8 @@ namespace Application.Delivery
                 OrderId = order.Id,
                 DeliveryMethodId = deliveryMethod.Id,
                 Provider = providerName,
-                TrackingNumber = providerResponse.TrackingNumber,
-                Status = ShipmentStatus.CREATED,
-                Price = providerResponse.Price,
-                EstimatedDeliveryDate = providerResponse.EstimatedDeliveryDate
+                Status = ShipmentStatus.CREATING,
+                Price = 0m
             };
 
             foreach (var orderItem in order.Items)
@@ -198,6 +215,37 @@ namespace Application.Delivery
             }
 
             _context.Shipments.Add(shipment);
+
+            try
+            {
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateException ex) when (_shipmentConflictDetector.IsActiveShipmentConflict(ex))
+            {
+                throw new ShipmentConflictException(
+                    "Для заказа уже существует активное отправление.",
+                    ex
+                );
+            }
+
+            var totalQuantity = order.Items.Sum(x => x.Quantity);
+
+            var providerResponse = await _deliveryProvider.CreateShipmentAsync(
+                new CreateShipmentRequest(
+                    order.Id,
+                    deliveryMethod.Id,
+                    order.Address.City,
+                    address,
+                    order.TotalAmount,
+                    totalQuantity
+                ),
+                cancellationToken
+            );
+
+            shipment.TrackingNumber = providerResponse.TrackingNumber;
+            shipment.Status = ShipmentStatus.CREATED;
+            shipment.Price = providerResponse.Price;
+            shipment.EstimatedDeliveryDate = providerResponse.EstimatedDeliveryDate;
 
             await _context.SaveChangesAsync(cancellationToken);
 

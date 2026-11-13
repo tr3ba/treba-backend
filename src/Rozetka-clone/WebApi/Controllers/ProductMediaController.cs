@@ -29,10 +29,36 @@ public sealed class ProductMediaController(IProductMediaStorage media, IApplicat
         var owner = user?.Role?.Name == "Seller" && await db.Products.AnyAsync(p => p.Id == productId
             && db.Stores.Any(s => s.Id == p.StoreId && db.Sellers.Any(seller => seller.Id == s.SellerId
                 && seller.UserId == userId && seller.Status == Domain.Enums.SellerStatus.ACTIVE)), ct);
+
         if (!visible && !staff && !owner)
+        {
             return NotFound();
+        }
+
+        if (!staff && !owner)
+        {
+            var approvedFile = await db.ProductImages
+                .AsNoTracking()
+                .AnyAsync(
+                    image => image.ProductId == productId
+                        && (
+                            image.ImageUrl == $"/uploads/products/{productId:N}/{fileName}"
+                            || (
+                                fileName.StartsWith("external-")
+                                && ("external-" + image.Id.ToString("N")) == fileName
+                            )
+                        ),
+                    ct
+                );
+
+            if (!approvedFile)
+            {
+                return NotFound();
+            }
+        }
 
         ProductMediaFile? file;
+
         if (fileName.StartsWith("external-", StringComparison.Ordinal) && Guid.TryParseExact(fileName[9..], "N", out var imageId))
         {
             var image = await db.ProductImages.AsNoTracking().SingleOrDefaultAsync(i => i.ProductId == productId && i.Id == imageId, ct);

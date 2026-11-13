@@ -28,6 +28,8 @@ public sealed class PostgresWorkspaceTests
                     entity.SetTableName(Prefix + table);
                     entity.SetSchema("public");
                 }
+
+            PostgresTestTables.RenameIndexes(builder, Prefix);
         }
     }
 

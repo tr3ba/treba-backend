@@ -14,7 +14,11 @@ public static class AdminOperationsDeployment
 
     private static readonly HashSet<string> AllowedPending =
 
-        ["20261017112413_AddPromotions", "20261019213326_AddReviewOrderItemRelation", "20261020093201_AddAdminOperations", "20261020104554_AddSupportConversations", "20261020144055_AddWebsiteAdminLogin", "20261021191511_AddDelivery", "20261022084526_AddMarketplaceWorkflows", "20261022132542_AddAdminFeaturesAndChatTrash", "20261023110000_NormalizeProfileLanguages", "20261024192735_AddDeliveryAndCustomerNotifications", "20261025000601_AddUserExternalLogin", "20261026142406_AddManagedShipmentLifecycle", "20261029143639_AddRegistrationVerification", "20261030094652_AddReviewRepliesAndTemplates", Migration];
+        ["20261017112413_AddPromotions", "20261019213326_AddReviewOrderItemRelation", "20261020093201_AddAdminOperations", "20261020104554_AddSupportConversations", "20261020144055_AddWebsiteAdminLogin", "20261021191511_AddDelivery", "20261022084526_AddMarketplaceWorkflows", "20261022132542_AddAdminFeaturesAndChatTrash", "20261023110000_NormalizeProfileLanguages", "20261024192735_AddDeliveryAndCustomerNotifications", "20261025000601_AddUserExternalLogin", "20261026142406_AddManagedShipmentLifecycle", "20261029143639_AddRegistrationVerification", "20261030094652_AddReviewRepliesAndTemplates",
+Migration,
+"20261113175717_AddProductImageModeration",
+"20261113191617_AddReviewContentRevision",
+"20261113202159_AddActiveShipmentUniqueIndex"];
     public static void ValidatePendingMigrations(IEnumerable<string> migrations)
     {
         var pending = migrations.ToArray();

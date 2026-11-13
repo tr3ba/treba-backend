@@ -18,6 +18,7 @@ public sealed record AdminReviewDto(
     DateTime CreatedAt,
     DateTime UpdatedAt,
     string? StaffReply = null,
-    DateTime? StaffRepliedAt = null);
+    DateTime? StaffRepliedAt = null,
+    long ContentRevision = 1);
 
-public sealed record ModerateReviewRequest([Required] string Status, [StringLength(2000)] string? Reply = null);
+public sealed record ModerateReviewRequest([Required] string Status, [Range(1, long.MaxValue)] long ExpectedRevision, [StringLength(2000)] string? Reply = null);

@@ -141,6 +141,21 @@ namespace Application.Sellers
                 return null;
             }
 
+            if (seller.Status == SellerStatus.ACTIVE)
+            {
+                var companyNameChanged = request.CompanyName is not null
+                    && NormalizeRequired(request.CompanyName, "Company name") != seller.CompanyName;
+
+                var taxNumberChanged = request.TaxNumber is not null
+                    && NormalizeRequired(request.TaxNumber, "Tax number") != seller.TaxNumber;
+
+                if (companyNameChanged || taxNumberChanged)
+                {
+                    throw new InvalidOperationException(
+                        "Approved seller legal details cannot be changed without reapproval.");
+                }
+            }
+
             if (request.CompanyName is not null)
             {
                 seller.CompanyName = NormalizeRequired(

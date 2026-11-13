@@ -24,6 +24,8 @@ public sealed class PostgresStandaloneSecurityTests
             foreach (var entity in builder.Model.GetEntityTypes())
                 if (entity.GetTableName() is { } table)
                 { entity.SetTableName(Prefix + table); entity.SetSchema("public"); }
+
+            PostgresTestTables.RenameIndexes(builder, Prefix);
         }
     }
     private sealed class Mail : IEmailSender

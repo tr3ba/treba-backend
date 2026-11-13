@@ -45,6 +45,7 @@ public sealed class AdminHttpTests
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentActor, WebApi.Authentication.HttpCurrentActor>();
         services.AddScoped<IReviewService, ReviewService>();
+        services.AddScoped<Application.Sellers.ISellerService, Application.Sellers.SellerService>();
         services.AddScoped<Application.Inventory.InventoryService>();
         services.AddScoped<Application.Inventory.IInventoryService>(sp =>
             sp.GetRequiredService<Application.Inventory.InventoryService>()
@@ -76,6 +77,125 @@ public sealed class AdminHttpTests
         app.MapControllers();
         await app.StartAsync();
         return app;
+    }
+
+    [Fact]
+    public async Task ActiveSeller_PatchLegalDetails_ReturnsConflict()
+    {
+        await using var server = await ServerAsync();
+        using var client = server.GetTestClient();
+
+        var userId = Guid.NewGuid();
+        var sellerId = Guid.NewGuid();
+
+        client.DefaultRequestHeaders.Add("X-Test-Role", "Seller");
+        client.DefaultRequestHeaders.Add("X-Test-UserId", userId.ToString());
+
+        using (var scope = server.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+            db.Sellers.Add(new Seller
+            {
+                Id = sellerId,
+                UserId = userId,
+                CompanyName = "Approved Company",
+                TaxNumber = "1234567890",
+                Status = SellerStatus.ACTIVE,
+            });
+
+            await db.SaveChangesAsync();
+        }
+
+        var response = await client.PatchAsJsonAsync(
+            $"/api/v1/sellers/{sellerId}",
+            new { CompanyName = "Unapproved Company" }
+        );
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+
+        using (var scope = server.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var seller = await db.Sellers.SingleAsync(x => x.Id == sellerId);
+
+            Assert.Equal("Approved Company", seller.CompanyName);
+            Assert.Equal("1234567890", seller.TaxNumber);
+            Assert.Equal(SellerStatus.ACTIVE, seller.Status);
+        }
+    }
+
+    [Fact]
+    public async Task ModerationHttpRequest_RejectsStaleContentRevision()
+    {
+        await using var server = await ServerAsync();
+        using var client = server.GetTestClient();
+
+        client.DefaultRequestHeaders.Add("X-Test-Role", "Administrator");
+
+        var reviewId = Guid.NewGuid();
+
+        using (var scope = server.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+            var product = new Product
+            {
+                Id = Guid.NewGuid(),
+                Name = "Product",
+                Slug = "product"
+            };
+
+            db.Products.Add(product);
+
+            db.Reviews.Add(new Review
+            {
+                Id = reviewId,
+                ProductId = product.Id,
+                Rating = 5,
+                Comment = "Original content",
+                Status = ReviewStatus.PENDING
+            });
+
+            await db.SaveChangesAsync();
+        }
+
+        var path = $"/api/v1/admin/reviews/{reviewId}/moderate";
+
+        // Модератор получил первую редакцию.
+        const long expectedRevision = 1;
+
+        // Покупатель изменил отзыв до решения модератора.
+        using (var scope = server.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var review = await db.Reviews.SingleAsync(x => x.Id == reviewId);
+
+            review.Comment = "Updated content";
+            review.ContentRevision++;
+            review.Status = ReviewStatus.PENDING;
+
+            await db.SaveChangesAsync();
+        }
+
+        using var response = await client.PutAsJsonAsync(
+            path,
+            new ModerateReviewRequest("PUBLISHED", expectedRevision));
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+
+        using (var scope = server.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+            var review = await db.Reviews.SingleAsync(x => x.Id == reviewId);
+            var product = await db.Products.SingleAsync();
+
+            Assert.Equal(ReviewStatus.PENDING, review.Status);
+            Assert.Equal(2, review.ContentRevision);
+            Assert.Equal("Updated content", review.Comment);
+            Assert.Equal(0, product.ReviewCount);
+        }
     }
 
     [Fact]
@@ -111,7 +231,7 @@ public sealed class AdminHttpTests
         Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
         using var published = await client.PutAsJsonAsync(
             $"/api/v1/admin/reviews/{id}/moderate",
-            new ModerateReviewRequest("PUBLISHED")
+            new ModerateReviewRequest("PUBLISHED", 1)
         );
         Assert.Equal(HttpStatusCode.NoContent, published.StatusCode);
         using (var scope = server.Services.CreateScope())
@@ -124,12 +244,12 @@ public sealed class AdminHttpTests
         }
         using var missing = await client.PutAsJsonAsync(
             $"/api/v1/admin/reviews/{Guid.NewGuid()}/moderate",
-            new ModerateReviewRequest("REJECTED")
+            new ModerateReviewRequest("REJECTED", 1)
         );
         Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
         using var invalidState = await client.PutAsJsonAsync(
             $"/api/v1/admin/reviews/{id}/moderate",
-            new ModerateReviewRequest("PENDING")
+            new ModerateReviewRequest("PENDING", 1)
         );
         Assert.Equal(HttpStatusCode.BadRequest, invalidState.StatusCode);
     }

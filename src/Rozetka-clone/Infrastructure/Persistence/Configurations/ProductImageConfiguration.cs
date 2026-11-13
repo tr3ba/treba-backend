@@ -47,6 +47,10 @@ namespace Infrastructure.Persistence.Configurations
             builder.HasIndex(x => x.ProductId);
             builder.HasIndex(x => x.VariantId);
 
+            builder.HasIndex(x => x.ProductId)
+                .IsUnique()
+                .HasFilter("\"IsMain\" = TRUE");
+
             builder
                 .HasOne<Product>()
                 .WithMany()

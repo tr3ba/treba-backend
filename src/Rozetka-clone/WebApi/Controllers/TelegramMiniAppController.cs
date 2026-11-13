@@ -111,7 +111,23 @@ public sealed class TelegramMiniAppController(ApplicationDbContext db, CatalogSe
 
         if (status is not (ReviewStatus.PUBLISHED or ReviewStatus.REJECTED))
             return BadRequest();
-        await reviews.ModerateReviewAsync(id, status, ct);
+
+        try
+        {
+            await reviews.ModerateReviewAsync(
+                id,
+                status,
+                request.ExpectedRevision,
+                ct);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return Conflict(new
+            {
+                message = "Review content has changed. Reload the review before moderating."
+            });
+        }
+
         return NoContent();
     }
 

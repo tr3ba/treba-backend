@@ -80,7 +80,13 @@ public sealed class FulfillmentAndReviewTests
         Assert.Equal(review.Id, Assert.Single((await reviews.GetMyReviewsAsync(seed.Customer.Id, 1)).Items).Id);
         Assert.Empty((await reviews.GetMyReviewsAsync(seed.Seller.User.Id, 1)).Items);
         await Assert.ThrowsAsync<BusinessRuleException>(() => reviews.CreateReviewAsync(seed.Customer.Id, Review(seed, item.Id)));
-        await reviews.ModerateReviewAsync(review.Id, ReviewStatus.PUBLISHED);
+        var contentRevision = await db.Reviews
+            .Where(x => x.Id == review.Id)
+            .Select(x => x.ContentRevision)
+            .SingleAsync();
+
+        await reviews.ModerateReviewAsync(
+            review.Id, ReviewStatus.PUBLISHED, contentRevision);
         Assert.Equal(review.Id, Assert.Single((await reviews.GetProductReviewsAsync(seed.Product.Id, 1, 20)).Items).Id);
         var delivered = (await staff.DetailsAsync(order.Id, default))!;
         await staff.ChangeStatusAsync(order.Id, new("COMPLETED", delivered.Version, null), default);
