@@ -23,6 +23,11 @@ internal static class PostgresTestTables
                 || operation is CreateIndexOperation index && index.Table.StartsWith(prefix, StringComparison.Ordinal)
             )
             .ToArray();
+
+        foreach (var index in operations.OfType<CreateIndexOperation>())
+        {
+            index.Name = $"{prefix}{index.Name}";
+        }
         var tables = operations.OfType<CreateTableOperation>().ToArray();
         Assert.NotEmpty(tables);
         foreach (var table in tables)
