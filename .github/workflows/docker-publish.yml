@@ -21,6 +21,10 @@ env:
 
 jobs:
   docker:
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      id-token: write
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -51,9 +55,18 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: arn:aws:iam::019066823315:role/treba-backend-ecr-publish
+          role-session-name: treba-backend-publish-${{ github.run_id }}
+          unset-current-credentials: true
           aws-region: ${{ env.AWS_REGION }}
+
+      - name: Verify backend publish identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          caller_arn="$(aws sts get-caller-identity --query Arn --output text)"
+          [[ "$caller_arn" == arn:aws:sts::019066823315:assumed-role/treba-backend-ecr-publish/* ]]
+          printf 'AWS caller: %s\n' "$caller_arn"
 
       - name: Login to Amazon ECR
         id: login-ecr
