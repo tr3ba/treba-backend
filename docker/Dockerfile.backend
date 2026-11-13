@@ -25,7 +25,7 @@ WORKDIR /app
 RUN set -eu; \
     package_inventory="$(dpkg-query -W -f='${db:Status-Status} ${source:Package} ${binary:Package}\n')"; \
     runtime_packages="$(printf '%s\n' "$package_inventory" \
-        | sed -n -E 's/^installed (apt|pcre2|perl) ([^ ]+)$/\2/p')"; \
+        | sed -n -E 's/^installed (apt|glibc|pcre2|perl) ([^ ]+)$/\2/p')"; \
     test -n "$runtime_packages"; \
     apt-get -o Acquire::Retries=0 --error-on=any update; \
     apt-get -o Acquire::Retries=0 install -y --no-remove --only-upgrade $runtime_packages; \
