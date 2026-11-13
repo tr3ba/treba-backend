@@ -79,6 +79,79 @@ public sealed class AdminHttpTests
     }
 
     [Fact]
+    public async Task ModerationHttpRequest_RejectsStaleContentRevision()
+    {
+        await using var server = await ServerAsync();
+        using var client = server.GetTestClient();
+
+        client.DefaultRequestHeaders.Add("X-Test-Role", "Administrator");
+
+        var reviewId = Guid.NewGuid();
+
+        using (var scope = server.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+            var product = new Product
+            {
+                Id = Guid.NewGuid(),
+                Name = "Product",
+                Slug = "product"
+            };
+
+            db.Products.Add(product);
+
+            db.Reviews.Add(new Review
+            {
+                Id = reviewId,
+                ProductId = product.Id,
+                Rating = 5,
+                Comment = "Original content",
+                Status = ReviewStatus.PENDING
+            });
+
+            await db.SaveChangesAsync();
+        }
+
+        var path = $"/api/v1/admin/reviews/{reviewId}/moderate";
+
+        // Модератор получил первую редакцию.
+        const long expectedRevision = 1;
+
+        // Покупатель изменил отзыв до решения модератора.
+        using (var scope = server.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var review = await db.Reviews.SingleAsync(x => x.Id == reviewId);
+
+            review.Comment = "Updated content";
+            review.ContentRevision++;
+            review.Status = ReviewStatus.PENDING;
+
+            await db.SaveChangesAsync();
+        }
+
+        using var response = await client.PutAsJsonAsync(
+            path,
+            new ModerateReviewRequest("PUBLISHED", expectedRevision));
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+
+        using (var scope = server.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+            var review = await db.Reviews.SingleAsync(x => x.Id == reviewId);
+            var product = await db.Products.SingleAsync();
+
+            Assert.Equal(ReviewStatus.PENDING, review.Status);
+            Assert.Equal(2, review.ContentRevision);
+            Assert.Equal("Updated content", review.Comment);
+            Assert.Equal(0, product.ReviewCount);
+        }
+    }
+
+    [Fact]
     public async Task ModerationHttpRequest_ValidatesBody_AndPersistsRating()
     {
         await using var server = await ServerAsync();
@@ -111,7 +184,7 @@ public sealed class AdminHttpTests
         Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
         using var published = await client.PutAsJsonAsync(
             $"/api/v1/admin/reviews/{id}/moderate",
-            new ModerateReviewRequest("PUBLISHED")
+            new ModerateReviewRequest("PUBLISHED", 1)
         );
         Assert.Equal(HttpStatusCode.NoContent, published.StatusCode);
         using (var scope = server.Services.CreateScope())
@@ -124,12 +197,12 @@ public sealed class AdminHttpTests
         }
         using var missing = await client.PutAsJsonAsync(
             $"/api/v1/admin/reviews/{Guid.NewGuid()}/moderate",
-            new ModerateReviewRequest("REJECTED")
+            new ModerateReviewRequest("REJECTED", 1)
         );
         Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
         using var invalidState = await client.PutAsJsonAsync(
             $"/api/v1/admin/reviews/{id}/moderate",
-            new ModerateReviewRequest("PENDING")
+            new ModerateReviewRequest("PENDING", 1)
         );
         Assert.Equal(HttpStatusCode.BadRequest, invalidState.StatusCode);
     }

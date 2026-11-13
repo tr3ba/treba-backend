@@ -78,15 +78,15 @@ public sealed class ReviewRepliesTests
             await db.SaveChangesAsync();
         }
         var path = $"/api/v1/admin/reviews/{id}/moderate";
-        Assert.Equal(HttpStatusCode.BadRequest, (await client.PutAsJsonAsync(path, new ModerateReviewRequest("PUBLISHED", new string('x', 2001)))).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PutAsJsonAsync(path, new ModerateReviewRequest("PUBLISHED", 1, new string('x', 2001)))).StatusCode);
         using (var scope = server.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             Assert.Equal(ReviewStatus.PENDING, (await db.Reviews.SingleAsync()).Status);
             Assert.Equal(0, (await db.Products.SingleAsync()).ReviewCount);
         }
-        Assert.Equal(HttpStatusCode.NoContent, (await client.PutAsJsonAsync(path, new ModerateReviewRequest("PUBLISHED", "  Дякуємо за відгук!  "))).StatusCode);
-        Assert.Equal(HttpStatusCode.NoContent, (await client.PutAsJsonAsync(path, new ModerateReviewRequest("PUBLISHED", "Оновлена відповідь"))).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await client.PutAsJsonAsync(path, new ModerateReviewRequest("PUBLISHED", 1, "  Дякуємо за відгук!  "))).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await client.PutAsJsonAsync(path, new ModerateReviewRequest("PUBLISHED", 1, "Оновлена відповідь"))).StatusCode);
         using (var scope = server.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -99,12 +99,12 @@ public sealed class ReviewRepliesTests
         }
         var publicReviews = await client.GetFromJsonAsync<PagedResult<ReviewDto>>($"/api/v1/reviews/products/{productId}");
         Assert.Equal("Оновлена відповідь", Assert.Single(publicReviews!.Items).StaffReply);
-        Assert.Equal(HttpStatusCode.BadRequest, (await client.PutAsJsonAsync(path, new ModerateReviewRequest("REJECTED", "Forbidden reply"))).StatusCode);
-        Assert.Equal(HttpStatusCode.NoContent, (await client.PutAsJsonAsync(path, new ModerateReviewRequest("REJECTED"))).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PutAsJsonAsync(path, new ModerateReviewRequest("REJECTED", 1, "Forbidden reply"))).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await client.PutAsJsonAsync(path, new ModerateReviewRequest("REJECTED", 1))).StatusCode);
         Assert.Empty((await client.GetFromJsonAsync<PagedResult<ReviewDto>>($"/api/v1/reviews/products/{productId}"))!.Items);
-        Assert.Equal(HttpStatusCode.NoContent, (await client.PutAsJsonAsync(path, new ModerateReviewRequest("PUBLISHED"))).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await client.PutAsJsonAsync(path, new ModerateReviewRequest("PUBLISHED", 1))).StatusCode);
         Assert.Equal("Оновлена відповідь", Assert.Single((await client.GetFromJsonAsync<PagedResult<ReviewDto>>($"/api/v1/reviews/products/{productId}"))!.Items).StaffReply);
-        Assert.Equal(HttpStatusCode.NoContent, (await client.PutAsJsonAsync(path, new ModerateReviewRequest("PUBLISHED", ""))).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await client.PutAsJsonAsync(path, new ModerateReviewRequest("PUBLISHED", 1, ""))).StatusCode);
         Assert.Null(Assert.Single((await client.GetFromJsonAsync<PagedResult<ReviewDto>>($"/api/v1/reviews/products/{productId}"))!.Items).StaffReply);
     }
 

@@ -36,6 +36,8 @@ namespace Domain.Entities
 
         public string Comment { get; set; } = string.Empty;
 
+        public long ContentRevision { get; set; } = 1;
+
         public string? StaffReply
         {
             get; set;

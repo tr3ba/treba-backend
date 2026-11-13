@@ -26,6 +26,10 @@ namespace Infrastructure.Persistence.Configurations
             );
 
             builder.HasKey(x => x.Id);
+            builder.Property(x => x.ContentRevision)
+            .IsRequired()
+            .HasDefaultValue(1L)
+            .IsConcurrencyToken();
             builder.Property(x => x.StaffReply).HasMaxLength(2000);
 
             builder

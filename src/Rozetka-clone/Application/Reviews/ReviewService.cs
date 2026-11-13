@@ -218,6 +218,7 @@ namespace Application.Reviews
             review.Title = request.Title;
             review.Comment = request.Comment;
             review.Status = ReviewStatus.PENDING;
+            review.ContentRevision++;
             review.UpdatedAt = DateTime.UtcNow;
 
             await _dbContext.SaveChangesAsync(cancellationToken);
@@ -278,6 +279,7 @@ namespace Application.Reviews
         public async Task ModerateReviewAsync(
             Guid reviewId,
             ReviewStatus status,
+            long expectedRevision,
             CancellationToken cancellationToken = default,
             string? reply = null,
             Guid? repliedBy = null)
@@ -307,6 +309,10 @@ namespace Application.Reviews
             {
                 throw new KeyNotFoundException("Review not found.");
             }
+
+            if (expectedRevision < 1 || review.ContentRevision != expectedRevision)
+                throw new DbUpdateConcurrencyException(
+                    "Review content has changed. Reload the review before moderating.");
 
             if (review.Status == ReviewStatus.DELETED)
                 throw new BusinessRuleException("Deleted reviews cannot be moderated.");

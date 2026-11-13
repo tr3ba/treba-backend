@@ -8,6 +8,7 @@ using Domain.Entities.Users;
 using Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace WebApi.Controllers;
 
@@ -40,9 +41,26 @@ public sealed class AdminReviewsController(AdminWorkspaceService workspace, IRev
 
         try
         {
-            await reviews.ModerateReviewAsync(id, status, ct, request.Reply, actor.UserId);
+            await reviews.ModerateReviewAsync(
+                id,
+                status,
+                request.ExpectedRevision,
+                ct,
+                request.Reply,
+                actor.UserId);
         }
-        catch (KeyNotFoundException) { return NotFound(); }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return Conflict(new
+            {
+                message = "Review content has changed. Reload the review before moderating."
+            });
+        }
+
         return NoContent();
     }
 }

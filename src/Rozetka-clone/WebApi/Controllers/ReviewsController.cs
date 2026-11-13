@@ -5,6 +5,7 @@ using Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace WebApi.Controllers
@@ -67,12 +68,24 @@ namespace WebApi.Controllers
         public async Task<IActionResult> ModerateReview(
             Guid reviewId,
             [FromQuery] ReviewStatus status,
+            [FromQuery] long expectedRevision,
             CancellationToken cancellationToken)
         {
-            await _reviewService.ModerateReviewAsync(
-                reviewId,
-                status,
-                cancellationToken);
+            try
+            {
+                await _reviewService.ModerateReviewAsync(
+                    reviewId,
+                    status,
+                    expectedRevision,
+                    cancellationToken);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return Conflict(new
+                {
+                    message = "Review content has changed. Reload the review before moderating."
+                });
+            }
 
             return NoContent();
         }
