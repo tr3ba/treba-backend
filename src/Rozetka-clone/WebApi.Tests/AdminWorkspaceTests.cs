@@ -290,6 +290,67 @@ public sealed class AdminWorkspaceTests
         Assert.Null(await service.ApproveAsync(Guid.NewGuid()));
     }
 
+    [Fact]
+    public async Task ActiveSeller_CannotChangeApprovedLegalDetails_ButCanUpdateContacts()
+    {
+        await using var db = Database();
+
+        var seller = new Seller
+        {
+            Id = Guid.NewGuid(),
+            CompanyName = "Approved Company",
+            TaxNumber = "1234567890",
+            Status = SellerStatus.ACTIVE,
+        };
+
+        db.Sellers.Add(seller);
+        await db.SaveChangesAsync();
+
+        var service = new SellerService(db);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.UpdateAsync(
+                seller.Id,
+                new UpdateSellerRequest { CompanyName = "Different Company" }
+            )
+        );
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.UpdateAsync(
+                seller.Id,
+                new UpdateSellerRequest { TaxNumber = "9876543210" }
+            )
+        );
+
+        var updated = await service.UpdateAsync(
+            seller.Id,
+            new UpdateSellerRequest
+            {
+                CompanyName = " Approved Company ",
+                TaxNumber = "1234567890",
+                Description = "Updated description",
+                Phone = "+380501234567",
+                Email = "seller@example.com",
+            }
+        );
+
+        Assert.NotNull(updated);
+        Assert.Equal("Approved Company", updated.CompanyName);
+        Assert.Equal("1234567890", updated.TaxNumber);
+        Assert.Equal("Updated description", updated.Description);
+        Assert.Equal("+380501234567", updated.Phone);
+        Assert.Equal("seller@example.com", updated.Email);
+        Assert.Equal(SellerStatus.ACTIVE, updated.Status);
+
+        db.ChangeTracker.Clear();
+
+        var persisted = await db.Sellers.SingleAsync(x => x.Id == seller.Id);
+
+        Assert.Equal("Approved Company", persisted.CompanyName);
+        Assert.Equal("1234567890", persisted.TaxNumber);
+        Assert.Equal(SellerStatus.ACTIVE, persisted.Status);
+    }
+
     [Theory]
     [InlineData("Administrator", true)]
     [InlineData("Manager", true)]

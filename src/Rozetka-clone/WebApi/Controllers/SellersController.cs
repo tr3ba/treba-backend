@@ -93,11 +93,24 @@ namespace WebApi.Controllers
                     return Forbid();
                 }
             }
-            var seller = await _sellerService.UpdateAsync(
-                id,
-                request,
-                cancellationToken
-            );
+            SellerDto? seller;
+
+            try
+            {
+                seller = await _sellerService.UpdateAsync(
+                    id,
+                    request,
+                    cancellationToken
+                );
+            }
+            catch (InvalidOperationException ex)
+                when (ex.Message == "Approved seller legal details cannot be changed without reapproval.")
+            {
+                return Conflict(new
+                {
+                    message = ex.Message
+                });
+            }
 
             if (seller is null)
             {
