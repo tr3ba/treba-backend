@@ -60,7 +60,7 @@ internal static class PostgresTestTables
                 var hash = Convert.ToHexString(
                     System.Security.Cryptography.SHA256.HashData(
                         System.Text.Encoding.UTF8.GetBytes(
-                            $"{prefix}:{tableName}:{originalName}"
+                            $"{prefix}:{tableName}:{originalName}:{string.Join(",", index.Properties.Select(p => p.Name))}"
                         )
                     )
                 )[..16];
