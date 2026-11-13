@@ -17,8 +17,8 @@ public sealed class BulkCatalogRequest : IValidatableObject
         get; set;
     }
 
-    [Range(0, 1000000)]
-    public int? StockQuantity
+    [Range(0, 1000000000000)]
+    public long? StockQuantity
     {
         get; set;
     }
@@ -53,7 +53,7 @@ public sealed class BulkCatalogRequest : IValidatableObject
     }
 }
 public sealed record BulkCatalogRowDto(Guid ProductId, Guid VariantId, string Name, string Sku, decimal BeforePrice, decimal AfterPrice,
-    int BeforeStock, int AfterStock, bool BeforeActive, bool AfterActive)
+    long BeforeStock, long AfterStock, bool BeforeActive, bool AfterActive)
 {
     public decimal? BeforeOldPrice
     {

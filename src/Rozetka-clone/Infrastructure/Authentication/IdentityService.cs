@@ -614,12 +614,87 @@ public sealed class IdentityService : IIdentityService
     {
         if (!GetExternalProviders().Any(p => p.Name == provider.Trim().ToLowerInvariant()))
             throw new InvalidOperationException("Цей спосіб входу тимчасово недоступний.");
+
+        // Validate token audience (aud claim) matches our client ID
+        await ValidateTokenAudienceAsync(provider, accessToken, cancellationToken);
+
         return provider.ToLowerInvariant() switch
         {
             "google" => await GetGoogleUserInfoAsync(accessToken, cancellationToken),
             "facebook" => await GetFacebookUserInfoAsync(accessToken, cancellationToken),
             _ => throw new InvalidOperationException($"Unsupported provider: {provider}")
         };
+    }
+
+    private async Task ValidateTokenAudienceAsync(
+        string provider,
+        string accessToken,
+        CancellationToken cancellationToken)
+    {
+        var info = GetExternalProviders().SingleOrDefault(p => p.Name == provider.Trim().ToLowerInvariant())
+            ?? throw new InvalidOperationException("Цей спосіб входу тимчасово недоступний.");
+
+        var expectedClientId = info.ClientId;
+
+        if (provider == "google")
+        {
+            // Google tokeninfo endpoint returns the audience (aud) claim
+            using var request = new HttpRequestMessage(HttpMethod.Get,
+                $"https://www.googleapis.com/oauth2/v3/tokeninfo?access_token={Uri.EscapeDataString(accessToken)}");
+
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+                throw new UnauthorizedAccessException("Не вдалося перевірити токен Google.");
+
+            using var jsonDoc = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
+            var root = jsonDoc.RootElement;
+
+            if (root.TryGetProperty("aud", out var audElement))
+            {
+                var actualAudience = audElement.GetString();
+                if (!string.Equals(actualAudience, expectedClientId, StringComparison.Ordinal))
+                    throw new UnauthorizedAccessException("Токен виданий іншому OAuth-клієнту.");
+            }
+            else
+            {
+                throw new UnauthorizedAccessException("Токен Google не містить аудиторії.");
+            }
+        }
+        else if (provider == "facebook")
+        {
+            // Facebook debug_token endpoint
+            var section = _configuration.GetSection("ExternalAuth:facebook");
+            var appSecret = ConfiguredValue(section, "AppSecret", "ClientSecret");
+
+            if (string.IsNullOrWhiteSpace(appSecret))
+                throw new InvalidOperationException("Facebook app secret not configured.");
+
+            var appAccessToken = $"{expectedClientId}|{appSecret}";
+
+            using var request = new HttpRequestMessage(HttpMethod.Get,
+                $"https://graph.facebook.com/debug_token?input_token={Uri.EscapeDataString(accessToken)}&access_token={Uri.EscapeDataString(appAccessToken)}");
+
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+                throw new UnauthorizedAccessException("Не вдалося перевірити токен Facebook.");
+
+            using var jsonDoc = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
+            var root = jsonDoc.RootElement;
+
+            if (root.TryGetProperty("data", out var data) &&
+                data.TryGetProperty("app_id", out var appIdElement))
+            {
+                var actualAppId = appIdElement.GetString();
+                if (!string.Equals(actualAppId, expectedClientId, StringComparison.Ordinal))
+                    throw new UnauthorizedAccessException("Токен виданий іншому OAuth-клієнту.");
+            }
+            else
+            {
+                throw new UnauthorizedAccessException("Токен Facebook не містить ідентифікатора додатку.");
+            }
+        }
     }
 
     private async Task<(string ProviderUserId, string Email, string FirstName, string LastName, string? AvatarUrl)> GetGoogleUserInfoAsync(

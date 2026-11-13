@@ -4,8 +4,8 @@ public sealed record InventoryDto(
     Guid Id,
     Guid WarehouseId,
     Guid VariantId,
-    int AvailableQuantity,
-    int ReservedQuantity,
-    int AvailableForSale,
-    int MinimumQuantity
+    long AvailableQuantity,
+    long ReservedQuantity,
+    long AvailableForSale,
+    long MinimumQuantity
 );

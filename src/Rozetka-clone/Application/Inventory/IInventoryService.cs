@@ -12,14 +12,14 @@ public interface IInventoryService
     Task IncreaseStockAsync(
         Guid variantId,
         Guid warehouseId,
-        int quantity,
+        long quantity,
         CancellationToken cancellationToken = default
     );
 
     Task DecreaseStockAsync(
         Guid variantId,
         Guid warehouseId,
-        int quantity,
+        long quantity,
         CancellationToken cancellationToken = default
     );
 
@@ -42,6 +42,12 @@ public interface IInventoryService
     Task<bool> IsAvailableAsync(
         Guid variantId,
         int quantity,
+        CancellationToken cancellationToken = default
+    );
+
+    Task<bool> IsAvailableAsync(
+        Guid variantId,
+        long quantity,
         CancellationToken cancellationToken = default
     );
 }

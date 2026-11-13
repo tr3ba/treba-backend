@@ -42,8 +42,8 @@ public sealed class SaveCatalogProductRequest : IValidatableObject
         get; set;
     }
 
-    [Range(0, 1000000)]
-    public int StockQuantity
+    [Range(0, 1000000000000)]
+    public long StockQuantity
     {
         get; set;
     }
@@ -157,7 +157,7 @@ public sealed record CatalogProductDto(
     string Sku,
     decimal Price,
     decimal? OldPrice,
-    int StockQuantity,
+    long StockQuantity,
     int WarrantyMonths,
     string CountryOfOrigin,
     DateTime CreatedAt,
@@ -227,8 +227,8 @@ public sealed class CatalogVariantInput : IValidatableObject
         get; set;
     }
 
-    [Range(0, 1000000)]
-    public int StockQuantity
+    [Range(0, 1000000000000)]
+    public long StockQuantity
     {
         get; set;
     }
