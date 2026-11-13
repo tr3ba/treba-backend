@@ -1402,9 +1402,9 @@ namespace Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<int>("StockQuantity")
+                    b.Property<long>("StockQuantity")
                         .IsConcurrencyToken()
-                        .HasColumnType("integer");
+                        .HasColumnType("bigint");
 
                     b.Property<double?>("Weight")
                         .HasColumnType("double precision");

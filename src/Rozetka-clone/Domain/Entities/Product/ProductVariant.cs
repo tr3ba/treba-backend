@@ -63,13 +63,13 @@ public class ProductVariant
         get; private set;
     }
 
-    public int StockQuantity
+    public long StockQuantity
     {
         get; private set;
     }
 
     public void SetStock(
-        int quantity
+        long quantity
     )
     {
         if (quantity < 0)

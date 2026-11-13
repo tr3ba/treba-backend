@@ -42,7 +42,10 @@ public sealed class ExternalLoginTests
         {
             Requests++;
 
-            if (request.RequestUri!.AbsolutePath.EndsWith("/token") || request.RequestUri.AbsolutePath.EndsWith("/access_token"))
+            var uri = request.RequestUri!.AbsoluteUri;
+
+            // Handle token endpoint (exact paths)
+            if (uri.EndsWith("/token") || uri.EndsWith("/access_token"))
             {
                 Assert.Equal(HttpMethod.Post, request.Method);
                 var fields = (await request.Content!.ReadAsStringAsync(cancellationToken)).Split('&')
@@ -56,6 +59,30 @@ public sealed class ExternalLoginTests
                 if (fields["code"] == "invalid") return new(HttpStatusCode.BadRequest) { Content = new StringContent("{}") };
                 return new(HttpStatusCode.OK) { Content = new StringContent("{\"access_token\":\"provider-token\"}") };
             }
+
+            // Handle Google tokeninfo endpoint (audience validation) - GET request
+            if (provider == "google" && uri.Contains("oauth2/v3/tokeninfo"))
+            {
+                Assert.Equal(HttpMethod.Get, request.Method);
+                // Return token info with aud matching our client ID
+                return new(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(JsonSerializer.Serialize(new { aud = "google-client", email, email_verified = verified }))
+                };
+            }
+
+            // Handle Facebook debug_token endpoint (audience validation) - GET request
+            if (provider == "facebook" && uri.Contains("debug_token"))
+            {
+                Assert.Equal(HttpMethod.Get, request.Method);
+                // Return debug token info with app_id matching our client ID
+                return new(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(JsonSerializer.Serialize(new { data = new { app_id = "facebook-client", is_valid = true, user_id = "facebook-subject" } }))
+                };
+            }
+
+            // Handle userinfo endpoints (Google userinfo, Facebook graph API)
             Assert.Equal("Bearer provider-token", request.Headers.Authorization!.ToString());
             var profile = provider == "google"
                 ? JsonSerializer.Serialize(new { id = "google-subject", email, given_name = "Олена", family_name = missingSurname ? null : "Коваль", verified_email = verified })

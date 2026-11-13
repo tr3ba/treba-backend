@@ -20,7 +20,7 @@ public sealed class InventoryService(IApplicationDbContext db, ICurrentActor act
 
         var reserved = await db.InventoryReservations
             .Where(r => r.VariantId == variantId && r.Status == ReservationStatus.ACTIVE)
-            .SumAsync(r => (int?)r.Quantity, ct) ?? 0;
+            .SumAsync(r => (long?)r.Quantity, ct) ?? 0;
 
         return new(
             variantId,
@@ -38,13 +38,19 @@ public sealed class InventoryService(IApplicationDbContext db, ICurrentActor act
             : db.ProductVariants.AnyAsync(v => v.Id == variantId && v.IsActive && v.StockQuantity >= quantity
                 && db.Products.PubliclyVisible(db).Any(p => p.Id == v.ProductId), ct);
 
-    public Task IncreaseStockAsync(Guid variantId, Guid warehouseId, int quantity, CancellationToken ct = default) =>
+    public Task<bool> IsAvailableAsync(Guid variantId, long quantity, CancellationToken ct = default) =>
+        quantity <= 0
+            ? Task.FromResult(false)
+            : db.ProductVariants.AnyAsync(v => v.Id == variantId && v.IsActive && v.StockQuantity >= quantity
+                && db.Products.PubliclyVisible(db).Any(p => p.Id == v.ProductId), ct);
+
+    public Task IncreaseStockAsync(Guid variantId, Guid warehouseId, long quantity, CancellationToken ct = default) =>
         Adjust(variantId, warehouseId, quantity, true, ct);
 
-    public Task DecreaseStockAsync(Guid variantId, Guid warehouseId, int quantity, CancellationToken ct = default) =>
+    public Task DecreaseStockAsync(Guid variantId, Guid warehouseId, long quantity, CancellationToken ct = default) =>
         Adjust(variantId, warehouseId, quantity, false, ct);
 
-    private async Task Adjust(Guid variantId, Guid warehouseId, int quantity, bool increase, CancellationToken ct)
+    private async Task Adjust(Guid variantId, Guid warehouseId, long quantity, bool increase, CancellationToken ct)
     {
         if (warehouseId != Guid.Empty)
             throw new ArgumentException("Catalog stock is managed without warehouses; use an empty warehouse id.");
@@ -60,7 +66,11 @@ public sealed class InventoryService(IApplicationDbContext db, ICurrentActor act
         if (!increase && variant.StockQuantity < quantity)
             throw new BusinessRuleException("Insufficient available stock.");
 
-        variant.SetStock(checked(variant.StockQuantity + (increase ? quantity : -quantity)));
+        var newStock = variant.StockQuantity + (increase ? quantity : -quantity);
+        if (newStock < 0)
+            throw new BusinessRuleException("Stock overflow detected.");
+
+        variant.SetStock(newStock);
 
         await TouchProducts([variant.ProductId], ct);
         await db.SaveChangesAsync(ct);
@@ -115,7 +125,13 @@ public sealed class InventoryService(IApplicationDbContext db, ICurrentActor act
         }).ToList();
 
         foreach (var item in items)
-            variants[item.VariantId].SetStock(variants[item.VariantId].StockQuantity - item.Quantity);
+        {
+            var variant = variants[item.VariantId];
+            var newStock = variant.StockQuantity - item.Quantity;
+            if (newStock < 0)
+                throw new BusinessRuleException("Stock overflow detected.");
+            variant.SetStock(newStock);
+        }
 
         await TouchProducts(variants.Values.Select(v => v.ProductId), ct);
 
@@ -172,7 +188,10 @@ public sealed class InventoryService(IApplicationDbContext db, ICurrentActor act
                     "Reconcile this legacy warehouse reservation with catalog stock before processing the order.");
             }
 
-            variant.SetStock(checked(variant.StockQuantity + r.Quantity));
+            var newStock = variant.StockQuantity + r.Quantity;
+            if (newStock < 0)
+                throw new BusinessRuleException("Stock overflow detected during restoration.");
+            variant.SetStock(newStock);
             r.Status = ReservationStatus.RELEASED;
         }
 
