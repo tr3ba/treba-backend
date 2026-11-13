@@ -2,6 +2,7 @@
 {
     public enum ShipmentStatus
     {
+        CREATING,
         CREATED,
         PREPARING,
         READY,

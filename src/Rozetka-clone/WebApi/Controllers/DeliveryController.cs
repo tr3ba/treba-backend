@@ -51,6 +51,7 @@ namespace WebApi.Controllers
         [ProducesResponseType(typeof(ShipmentDto), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
         public async Task<IActionResult> CreateShipment(
             [FromRoute] Guid orderId,
             [FromBody] CreateOrderShipmentRequest request,
@@ -79,6 +80,13 @@ namespace WebApi.Controllers
             catch (KeyNotFoundException ex)
             {
                 return NotFound(new
+                {
+                    message = ex.Message
+                });
+            }
+            catch (ShipmentConflictException ex)
+            {
+                return Conflict(new
                 {
                     message = ex.Message
                 });

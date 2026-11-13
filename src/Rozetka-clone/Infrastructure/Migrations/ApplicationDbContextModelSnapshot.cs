@@ -2099,7 +2099,10 @@ namespace Infrastructure.Migrations
 
                     b.HasIndex("DeliveryMethodId");
 
-                    b.HasIndex("OrderId");
+                    b.HasIndex("OrderId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_shipments_OrderId_Active")
+                        .HasFilter("\"Status\" IN ('CREATING', 'CREATED', 'PREPARING', 'READY', 'SHIPPED', 'IN_TRANSIT')");
 
                     b.HasIndex("TrackingNumber");
 
