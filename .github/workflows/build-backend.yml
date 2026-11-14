@@ -23,15 +23,20 @@ jobs:
           --health-interval 5s --health-timeout 5s --health-retries 12
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6
         with:
           dotnet-version: '10.0.x'
 
       - name: Restore all projects
-        run: dotnet restore src/Rozetka-clone/Rozetka-clone.sln
+        run: >-
+          dotnet restore src/Rozetka-clone/Rozetka-clone.sln
+          -p:NuGetAudit=true
+          -p:NuGetAuditMode=all
+          -p:NuGetAuditLevel=high
+          -warnaserror:NU1900,NU1903,NU1904,NU1905
 
       - name: Build all projects
         run: dotnet build src/Rozetka-clone/Rozetka-clone.sln --configuration Release --no-restore

@@ -41,9 +41,9 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6
         with:
           dotnet-version: '10.0.x'
 
@@ -53,7 +53,7 @@ jobs:
         run: dotnet test src/Rozetka-clone/WebApi.Tests/WebApi.Tests.csproj -c Release
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6
         with:
           role-to-assume: arn:aws:iam::019066823315:role/treba-backend-ecr-publish
           role-session-name: treba-backend-publish-${{ github.run_id }}
@@ -70,7 +70,7 @@ jobs:
 
       - name: Login to Amazon ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
+        uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # v2
 
       - name: Build, smoke test and push Docker image
         env:
