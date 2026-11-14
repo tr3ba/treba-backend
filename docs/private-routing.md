@@ -57,3 +57,7 @@ Run one normal frontend and backend deployment using the reviewed scripts. Verif
 These are local fixture results. They do not prove EC2 rollout, authenticated application behavior, or a normal backend ECR/SSM deployment. Those remain acceptance steps.
 
 The legacy `telegram-mini-app.Caddyfile.example` is intentionally unchanged because the image-publishing smoke test transforms its upstream strings. The live migration and deploy scripts implement private routing without changing that build-time fixture.
+
+## Backup and recovery
+
+See [TREBA backups and recovery](backup-and-recovery.md) for the deployed Google Drive backup schedule, retention, verification and recovery limits.
